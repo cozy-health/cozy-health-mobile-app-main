@@ -1,0 +1,84 @@
+import '../../../core/constants/api_constants.dart';
+import '../../../core/network/api_client.dart';
+
+class SettingsService {
+  final ApiClient _apiClient;
+
+  SettingsService({
+    ApiClient? apiClient,
+  }) : _apiClient = apiClient ?? ApiClient();
+
+  Future<Map<String, dynamic>> getProfile() async {
+    return _apiClient.get(ApiConstants.me);
+  }
+
+  Future<Map<String, dynamic>> updateProfile({
+    required String firstname,
+    required String lastname,
+    String? username,
+  }) async {
+    return _apiClient.put(
+      ApiConstants.me,
+      body: {
+        'firstname': firstname,
+        'lastname': lastname,
+        if (username != null) 'username': username,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> getProvider() async {
+    return _apiClient.get(ApiConstants.provider);
+  }
+
+  Future<Map<String, dynamic>> requestProvider({
+    required String providerEmail,
+    String? providerName,
+  }) async {
+    return _apiClient.post(
+      ApiConstants.providerRequest,
+      body: {
+        'provider_email': providerEmail,
+        if (providerName != null) 'provider_name': providerName,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> verifyProvider({
+    required String code,
+  }) async {
+    return _apiClient.post(
+      ApiConstants.providerVerify,
+      body: {
+        'code': code,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> removeProvider() async {
+    return _apiClient.delete(ApiConstants.provider);
+  }
+
+  Future<Map<String, dynamic>> getSubscription() async {
+    return _apiClient.get(ApiConstants.subscription);
+  }
+
+  Future<Map<String, dynamic>> getPackages() async {
+    return _apiClient.get(ApiConstants.subscriptionPackages);
+  }
+
+  Future<Map<String, dynamic>> activateSubscription({
+    required int packageId,
+  }) async {
+    return _apiClient.post(
+      ApiConstants.subscriptionActivate,
+      body: {
+        'package_id': packageId,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> cancelSubscription() async {
+    return _apiClient.post(ApiConstants.subscriptionCancel);
+  }
+}
