@@ -1,0 +1,243 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../widgets/post_card.dart';
+import '../widgets/report_sheet.dart';
+
+class UserProfileScreen extends StatefulWidget {
+  final Map<String, dynamic> extra;
+
+  const UserProfileScreen({super.key, required this.extra});
+
+  @override
+  State<UserProfileScreen> createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends State<UserProfileScreen> {
+  bool _isFollowing = false;
+  
+  // Mock recent posts
+  final List<Map<String, dynamic>> _recentPosts = [
+    {
+      'username': 'sarahchen',
+      'isAnonymous': false,
+      'timeAgo': '2h',
+      'content': 'Today was hard but I wanted to share that I\'m still here. Small wins.',
+      'likes': 12,
+      'comments': 4,
+      'isLiked': true,
+      'topic': 'Self-compassion',
+    },
+  ];
+
+  void _showContextMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.link, color: AppColors.text),
+              title: const Text('Copy link'),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_off_outlined, color: AppColors.text),
+              title: const Text('Mute (hide posts)'),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.block, color: AppColors.text),
+              title: const Text('Block user'),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.flag_outlined, color: AppColors.danger),
+              title: Text('Report user', style: AppTextStyles.body1.copyWith(color: AppColors.danger)),
+              onTap: () {
+                Navigator.pop(context);
+                ReportSheet.show(
+                  context,
+                  onSubmit: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Report submitted. Thank you.'),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final username = widget.extra['username'] as String? ?? 'user';
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_horiz, color: AppColors.text),
+            onPressed: _showContextMenu,
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Avatar
+              Center(
+                child: Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    username.substring(0, 1).toUpperCase(),
+                    style: AppTextStyles.heading1.copyWith(
+                      color: AppColors.primary,
+                      fontSize: 40,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Name & Join Date
+              Text(
+                '@$username',
+                style: AppTextStyles.heading1.copyWith(fontSize: 28),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Joined March 2026',
+                style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              
+              // Bio
+              Text(
+                '"Trying to be kinder to myself."',
+                style: AppTextStyles.body1.copyWith(
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              
+              // Stats
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildStatCard('42', 'Posts'),
+                  const SizedBox(width: 16),
+                  _buildStatCard('28', 'Followers'),
+                ],
+              ),
+              const SizedBox(height: 32),
+              
+              // Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton(
+                      text: _isFollowing ? 'Following' : 'Follow',
+                      isOutlined: _isFollowing,
+                      onPressed: () {
+                        setState(() {
+                          _isFollowing = !_isFollowing;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.chat_bubble_outline, color: AppColors.text),
+                      onPressed: () {
+                        context.push(AppRouter.directMessages, extra: {'username': username});
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 48),
+              
+              // Recent Posts
+              Text('Recent posts', style: AppTextStyles.heading2),
+              const SizedBox(height: 16),
+              
+              ..._recentPosts.map((post) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: PostCard(
+                  post: post,
+                  onTap: () => context.push(AppRouter.postDetail, extra: {'post': post}),
+                  onAvatarTap: () {},
+                  onLongPress: () {},
+                ),
+              )),
+              
+              const SizedBox(height: 64),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String count, String label) {
+    return Container(
+      width: 100,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        children: [
+          Text(count, style: AppTextStyles.heading2),
+          const SizedBox(height: 4),
+          Text(label, style: AppTextStyles.body2.copyWith(color: AppColors.textMuted)),
+        ],
+      ),
+    );
+  }
+}

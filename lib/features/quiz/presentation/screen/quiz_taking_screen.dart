@@ -3,191 +3,195 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../utils/responsive_extensions.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../widgets/quiz_progress_indicator.dart';
+import '../widgets/quiz_back_confirm_dialog.dart';
 
 class QuizTakingScreen extends StatefulWidget {
-  final String quizType;
+  final Map<String, dynamic> extra;
 
-  const QuizTakingScreen({
-    super.key,
-    required this.quizType,
-  });
+  const QuizTakingScreen({super.key, required this.extra});
 
   @override
   State<QuizTakingScreen> createState() => _QuizTakingScreenState();
 }
 
 class _QuizTakingScreenState extends State<QuizTakingScreen> {
-  int currentQuestionIndex = 0;
-  String? selectedAnswer;
+  int _currentIndex = 0;
+  final int _totalQuestions = 3; // Mock
+  int? _selectedIndex;
+  int _score = 0;
+  final List<int> _answers = [];
 
-  // Sample questions - you can make this dynamic later
-  final List<QuizQuestion> questions = [
-    QuizQuestion(
-      question: '1. How often do you experience sudden mood changes?',
-      options: ['Rarely', 'Sometimes', 'Often', 'Always'],
-    ),
-    QuizQuestion(
-      question: '2. Do you find it difficult to control your emotions in stressful situations?',
-      options: ['Not at all', 'Occasionally', 'Frequently', 'Always'],
-    ),
-    QuizQuestion(
-      question: '3. How would you rate your overall energy levels throughout the day?',
-      options: ['Very Low', 'Low', 'Moderate', 'High'],
-    ),
+  final List<String> _questions = [
+    'Little interest or pleasure in doing things?',
+    'Feeling down, depressed, or hopeless?',
+    'Trouble falling or staying asleep, or sleeping too much?',
   ];
+
+  final List<String> _options = [
+    'Not at all',
+    'Several days',
+    'More than half the days',
+    'Nearly every day',
+  ];
+
+  Future<bool> _onWillPop() async {
+    final result = await QuizBackConfirmDialog.show(context);
+    return result ?? false;
+  }
+
+  void _nextQuestion() {
+    if (_selectedIndex == null) return;
+    
+    // Simple mock scoring
+    _score += _selectedIndex!;
+    _answers.add(_selectedIndex!);
+
+    if (_currentIndex < _totalQuestions - 1) {
+      setState(() {
+        _currentIndex++;
+        _selectedIndex = null;
+      });
+    } else {
+      context.pushReplacement(
+        AppRouter.quizResults, 
+        extra: {
+          ...widget.extra,
+          'score': _score,
+          'answers': _answers,
+        },
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final currentQuestion = questions[currentQuestionIndex];
+    // Check for reduce motion
+    final bool reduceMotion = MediaQuery.of(context).accessibleNavigation;
 
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.black),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'Mental Health Quiz',
-          style: AppTextStyles.heading2,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close, color: AppColors.black),
-            onPressed: () => context.pop(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final res = await _onWillPop();
+        if (res == true && context.mounted) {
+          context.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.warmBackground,
+        appBar: AppBar(
+          backgroundColor: AppColors.warmBackground,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.close, color: AppColors.text),
+            onPressed: () async {
+              final res = await _onWillPop();
+              if (res == true && context.mounted) {
+                context.pop();
+              }
+            },
           ),
-        ],
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            4.sh,
-
-            // Progress indicator
-            LinearProgressIndicator(
-              value: (currentQuestionIndex + 1) / questions.length,
-              backgroundColor: AppColors.lightGrey,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-              minHeight: 6,
-              borderRadius: BorderRadius.circular(4),
-            ),
-
-            5.sh,
-
-            // Question number
-            Text(
-              'Question ${currentQuestionIndex + 1} of ${questions.length}',
-              style: AppTextStyles.body2.copyWith(color: AppColors.grey),
-            ),
-
-            2.sh,
-
-            // Question text
-            Text(
-              currentQuestion.question,
-              style: AppTextStyles.heading1.copyWith(fontSize: 22),
-            ),
-
-            6.sh,
-
-            // Answer options
-            Column(
-              children: currentQuestion.options.map((option) {
-                final isSelected = selectedAnswer == option;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedAnswer = option;
-                    });
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(bottom: 2.h),
-                    padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 3.h),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected ? AppColors.primary : AppColors.midGrey,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            option,
-                            style: AppTextStyles.body1.copyWith(
-                              color: isSelected ? AppColors.white : AppColors.black,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected ? AppColors.white : AppColors.midGrey,
-                              width: 2,
-                            ),
-                            color: isSelected ? AppColors.white : Colors.transparent,
-                          ),
-                          child: isSelected
-                              ? const Icon(Icons.check, size: 16, color: AppColors.primary)
-                              : null,
-                        ),
-                      ],
-                    ),
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                QuizProgressIndicator(
+                  currentIndex: _currentIndex + 1,
+                  totalQuestions: _totalQuestions,
+                ),
+                const SizedBox(height: 32),
+                
+                Semantics(
+                  header: true,
+                  child: Text(
+                    _questions[_currentIndex],
+                    style: AppTextStyles.heading1.copyWith(fontSize: 24, color: AppColors.text, height: 1.3),
                   ),
-                );
-              }).toList(),
-            ),
+                ),
+                const SizedBox(height: 32),
+                
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: _options.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final isSelected = _selectedIndex == index;
+                      
+                      Widget card = GestureDetector(
+                        onTap: () => setState(() => _selectedIndex = index),
+                        child: Semantics(
+                          button: true,
+                          selected: isSelected,
+                          label: _options[index],
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected ? AppColors.primary : AppColors.border,
+                                width: isSelected ? 2 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _options[index],
+                                    style: AppTextStyles.body1.copyWith(
+                                      color: isSelected ? AppColors.primary : AppColors.text,
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  const Icon(Icons.check_circle, color: AppColors.primary),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
 
-            const Spacer(),
+                      if (reduceMotion) {
+                        return card;
+                      }
 
-            // Next button
-            Padding(
-              padding: EdgeInsets.only(bottom: 4.h),
-              child: AppButton(
-                text: currentQuestionIndex == questions.length - 1 ? 'Finish Quiz' : 'Next',
-                onPressed: selectedAnswer == null
-                    ? null
-                    : () {
-                        if (currentQuestionIndex < questions.length - 1) {
-                          setState(() {
-                            currentQuestionIndex++;
-                            selectedAnswer = null;
-                          });
-                        }  else {
-  // Navigate to Quiz Results Screen
-  context.push(
-    AppRouter.quizResults,
-    extra: widget.quizType,   // Pass the quiz title/type
-  );
-}
-                      },
-              ),
+                      // Only animate on first load or question change
+                      return TweenAnimationBuilder<double>(
+                        key: ValueKey('q${_currentIndex}_opt$index'),
+                        duration: Duration(milliseconds: 300 + (index * 100)),
+                        curve: Curves.easeOutCubic,
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        builder: (context, value, child) {
+                          return Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, 20 * (1 - value)),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: card,
+                      );
+                    },
+                  ),
+                ),
+                
+                AppButton(
+                  text: _currentIndex < _totalQuestions - 1 ? 'Next' : 'Finish',
+                  onPressed: _selectedIndex != null ? _nextQuestion : null,
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
-}
-
-class QuizQuestion {
-  final String question;
-  final List<String> options;
-
-  QuizQuestion({
-    required this.question,
-    required this.options,
-  });
 }

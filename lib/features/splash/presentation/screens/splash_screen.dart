@@ -1,301 +1,249 @@
-import 'dart:math' as math;
 import 'package:cozy_health/gen/assets.gen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/storage/token_storage.dart';
-
-const Color _kBgC    = Color(0xFFF0ECD8);
-const Color _kBlueC  = Color(0xFF1A68D0);
-const Color _kYellowC= Color(0xFFF5C318);
-const Color _kGreenC = Color(0xFF2D9E54);
-const Color _kOrangeC= Color(0xFFF26B1D);
-
-class _Particle {
-  final double startX, startY;
-  final double endX, endY;
-  final double size;
-  final Color  color;
-  final double delay;
-  final double spinDir;
-
-  const _Particle({
-    required this.startX, required this.startY,
-    required this.endX,   required this.endY,
-    required this.size,   required this.color,
-    required this.delay,
-    required this.spinDir,
-  });
-}
-
-List<_Particle> _buildParticles(double sw, double sh) {
-  final rng = math.Random(42);
-  final colors = [_kBlueC, _kGreenC, _kOrangeC, _kYellowC];
-  return List.generate(100, (i) {
-    final angle = rng.nextDouble() * 2 * math.pi;
-    final dist  = 0.6 + rng.nextDouble() * 0.3;
-    final sx    = 0.5 + math.cos(angle) * dist;
-    final sy    = 0.5 + math.sin(angle) * dist * (sh / sw);
-    final ex    = 0.5 + (rng.nextDouble() - 0.5) * 0.12;
-    final ey    = 0.5 + (rng.nextDouble() - 0.5) * 0.12;
-    return _Particle(
-      startX: sx, startY: sy,
-      endX:   ex, endY:   ey,
-      size:   2.0 + rng.nextDouble() * 6.0,
-      color:  colors[i % colors.length],
-      delay:  rng.nextDouble() * 0.5,
-      spinDir: rng.nextBool() ? 1.0 : -1.0,
-    );
-  });
-}
+import '../../../../core/theme/app_colors.dart';
+import '../../data/splash_service.dart';
+import '../widgets/breathing_glow.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
+  static const Duration _brandMomentDuration = Duration(milliseconds: 2500);
+  static const Duration _fadeOutDuration = Duration(milliseconds: 500);
 
-  late final AnimationController _partCtrl;
-  late final AnimationController _logoCtrl;
-  late final AnimationController _dotCtrl;
+  final SplashService _splashService = SplashService();
 
-  late final Animation<double> _logoAlpha;
+  late final AnimationController _timeline;
+  late final AnimationController _breathing;
+  late final AnimationController _fadeOutCtrl;
+
+  late final Animation<double> _glowOpacity;
+  late final Animation<double> _logoOpacity;
   late final Animation<double> _logoScale;
-  late final Animation<double> _flashRadius;
-  late final Animation<double> _flashAlpha;
-
-  List<_Particle>? _particles;
-  bool _authDone = false;
+  late final Animation<double> _logoBreathScale;
+  late final Animation<double> _headlineOpacity;
+  late final Animation<Offset> _headlineOffset;
+  late final Animation<double> _taglineOpacity;
+  late final Animation<Offset> _taglineOffset;
+  late final Animation<double> _screenOpacity;
 
   @override
   void initState() {
     super.initState();
 
-    _partCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 2600));
-    _logoCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
-    _dotCtrl  = AnimationController(vsync: this, duration: const Duration(milliseconds: 650));
-
-    _logoAlpha = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _logoCtrl, curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
-    );
-    _logoScale = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _logoCtrl, curve: Curves.elasticOut),
-    );
-    
-    _flashRadius = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _logoCtrl, curve: Curves.easeOutExpo),
-    );
-    _flashAlpha = Tween<double>(begin: 0.8, end: 0.0).animate(
-      CurvedAnimation(parent: _logoCtrl, curve: const Interval(0.0, 0.8, curve: Curves.easeOut)),
+    _timeline = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
     );
 
-    _partCtrl.forward();
-    // 0.8 * 2600ms = 2080ms. Trigger logo right when explosion happens
-    Future.delayed(const Duration(milliseconds: 2080), () {
-      if (mounted) {
-        _logoCtrl.forward().then((_) {
-          if (mounted && !_authDone) _dotCtrl.repeat(reverse: true);
-        });
-      }
-    });
+    _breathing = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    );
 
-    _runAuthCheck();
+    _fadeOutCtrl = AnimationController(vsync: this, duration: _fadeOutDuration);
+
+    _glowOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0, 0.44, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _logoOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0, 0.44, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _logoScale = Tween<double>(begin: 0.9, end: 1).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0, 0.44, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _logoBreathScale = Tween<double>(
+      begin: 0.98,
+      end: 1.04,
+    ).animate(CurvedAnimation(parent: _breathing, curve: Curves.easeInOut));
+
+    _headlineOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0.36, 0.72, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _headlineOffset =
+        Tween<Offset>(begin: const Offset(0, 0.32), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _timeline,
+            curve: const Interval(0.36, 0.72, curve: Curves.easeOutCubic),
+          ),
+        );
+
+    _taglineOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _timeline,
+        curve: const Interval(0.48, 0.86, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _taglineOffset =
+        Tween<Offset>(begin: const Offset(0, 0.32), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _timeline,
+            curve: const Interval(0.48, 0.86, curve: Curves.easeOutCubic),
+          ),
+        );
+
+    _screenOpacity = Tween<double>(
+      begin: 1,
+      end: 0,
+    ).animate(CurvedAnimation(parent: _fadeOutCtrl, curve: Curves.easeInCubic));
+
+    _runSequence();
   }
 
-  Future<void> _runAuthCheck() async {
+  Future<void> _runSequence() async {
+    final authStateFuture = _splashService.hasValidSession();
+
+    _timeline.forward();
+    _breathing.repeat(reverse: true);
+
     final results = await Future.wait([
-      _fetchToken(),
-      Future.delayed(const Duration(milliseconds: 4500)),
+      authStateFuture,
+      Future.delayed(_brandMomentDuration, () => false),
     ]);
-    final token = results[0] as String?;
-    if (!mounted) return;
-    setState(() => _authDone = true);
-    _dotCtrl.stop();
-    await Future.delayed(const Duration(milliseconds: 200));
-    if (!mounted) return;
-    context.go(token != null && token.isNotEmpty ? AppRouter.home : AppRouter.onboarding);
-  }
 
-  Future<String?> _fetchToken() async {
-    try { return await TokenStorage().getToken(); } catch (_) { return null; }
+    if (!mounted) return;
+
+    await _fadeOutCtrl.forward();
+
+    if (!mounted) return;
+
+    context.go(results.first ? AppRouter.home : AppRouter.onboarding);
   }
 
   @override
   void dispose() {
-    _partCtrl.dispose();
-    _logoCtrl.dispose();
-    _dotCtrl.dispose();
+    _timeline.dispose();
+    _breathing.dispose();
+    _fadeOutCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final size   = MediaQuery.of(context).size;
-    final logoSz = size.width * 0.48;
-    _particles ??= _buildParticles(size.width, size.height);
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: AnimatedBuilder(
-        animation: Listenable.merge([_partCtrl, _logoCtrl, _dotCtrl]),
-        builder: (context, _) {
-          final p  = _partCtrl.value;
-          final la = _logoAlpha.value;
-          final ls = _logoScale.value;
-          final fr = _flashRadius.value;
-          final fa = _flashAlpha.value;
-
-          return Stack(children: [
-            // Particles
-            CustomPaint(
-              size: size,
-              painter: _ParticlePainter(
-                progress: p,
-                particles: _particles!, w: size.width, h: size.height,
-              ),
-            ),
-
-            // Flash effect when logo appears
-            if (la > 0 && fa > 0)
-              Positioned.fill(
-                child: Center(
-                  child: Opacity(
-                    opacity: fa,
-                    child: Container(
-                      width: size.width * 1.5 * fr,
-                      height: size.width * 1.5 * fr,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
+    return FadeTransition(
+      opacity: _screenOpacity,
+      child: Scaffold(
+        backgroundColor: AppColors.white,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 220,
+                  height: 220,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      FadeTransition(
+                        opacity: reduceMotion
+                            ? const AlwaysStoppedAnimation(1)
+                            : _glowOpacity,
+                        child: const BreathingGlow(
+                          size: 220,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      FadeTransition(
+                        opacity: reduceMotion
+                            ? const AlwaysStoppedAnimation(1)
+                            : _logoOpacity,
+                        child: ScaleTransition(
+                          scale: reduceMotion
+                              ? const AlwaysStoppedAnimation(1)
+                              : _logoScale,
+                          child: AnimatedBuilder(
+                            animation: _logoBreathScale,
+                            builder: (_, child) => Transform.scale(
+                              scale: reduceMotion ? 1 : _logoBreathScale.value,
+                              child: child,
+                            ),
+                            child: SvgPicture.asset(
+                              Assets.svg.logo,
+                              width: 140,
+                              height: 140,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 40),
+                FadeTransition(
+                  opacity: reduceMotion
+                      ? const AlwaysStoppedAnimation(1)
+                      : _headlineOpacity,
+                  child: SlideTransition(
+                    position: reduceMotion
+                        ? const AlwaysStoppedAnimation(Offset.zero)
+                        : _headlineOffset,
+                    child: Text(
+                      'COZY HEALTH',
+                      style: GoogleFonts.outfit(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                        letterSpacing: 2,
+                        height: 1.2,
                       ),
                     ),
                   ),
                 ),
-              ),
-
-            // Logo
-            Positioned.fill(
-              child: Center(
-                child: Opacity(
-                  opacity: la,
-                  child: Transform.scale(
-                    scale: ls,
-                    child: SvgPicture.asset(Assets.svg.logo, width: logoSz, height: logoSz),
+                const SizedBox(height: 12),
+                FadeTransition(
+                  opacity: reduceMotion
+                      ? const AlwaysStoppedAnimation(1)
+                      : _taglineOpacity,
+                  child: SlideTransition(
+                    position: reduceMotion
+                        ? const AlwaysStoppedAnimation(Offset.zero)
+                        : _taglineOffset,
+                    child: Text(
+                      'Breathe. Reflect. Grow.',
+                      style: GoogleFonts.outfit(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.black.withValues(alpha: 0.6),
+                        letterSpacing: 0.5,
+                        height: 1.4,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-
-            // Dots
-            if (la > 0.4 && !_authDone)
-              Positioned(
-                bottom: size.height * 0.10,
-                left: 0, right: 0,
-                child: _LoadingDots(ctrl: _dotCtrl),
-              ),
-          ]);
-        },
-      ),
-    );
-  }
-}
-
-class _ParticlePainter extends CustomPainter {
-  final double progress;
-  final List<_Particle> particles;
-  final double w, h;
-  final _paint = Paint();
-
-  _ParticlePainter({required this.progress, required this.particles, required this.w, required this.h});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (final p in particles) {
-      double x, y, currentAlpha, sizeScale;
-      
-      if (progress < 0.8) {
-        // Phase 1: Fly in and cluster (progress 0.0 to 0.7 is moving, 0.7 to 0.8 is clustered)
-        final localP = ((progress - p.delay) / (0.7 - p.delay)).clamp(0.0, 1.0);
-        final tIn = Curves.easeOutCubic.transform(localP);
-        
-        final angleOffset = localP * math.pi * 1.5 * p.spinDir; 
-        final dx = (p.startX - 0.5) * (1 - tIn) + (p.endX - 0.5) * tIn;
-        final dy = (p.startY - 0.5) * (1 - tIn) + (p.endY - 0.5) * tIn;
-        
-        final cosA = math.cos(angleOffset);
-        final sinA = math.sin(angleOffset);
-        
-        final rotDx = dx * cosA - dy * sinA;
-        final rotDy = dx * sinA + dy * cosA;
-        
-        x = (0.5 + rotDx) * w;
-        y = (0.5 + rotDy) * h;
-        sizeScale = 1.0;
-        currentAlpha = math.min(1.0, localP * 3.0); // fade in quickly at start
-      } else {
-        // Phase 2: Explode outward! (progress 0.8 to 1.0)
-        final tOut = Curves.easeOutQuart.transform((progress - 0.8) / 0.2);
-        
-        final endAngle = 1.0 * math.pi * 1.5 * p.spinDir;
-        final dx = (p.endX - 0.5);
-        final dy = (p.endY - 0.5);
-        final cosA = math.cos(endAngle);
-        final sinA = math.sin(endAngle);
-        
-        final rotDx = dx * cosA - dy * sinA;
-        final rotDy = dx * sinA + dy * cosA;
-        
-        final len = math.sqrt(rotDx*rotDx + rotDy*rotDy) + 0.001;
-        final nx = rotDx / len;
-        final ny = rotDy / len;
-        
-        final explodeDist = 0.5 * tOut; // fly radially out half the screen
-        
-        x = (0.5 + rotDx + nx * explodeDist) * w;
-        y = (0.5 + rotDy + ny * explodeDist) * h;
-        sizeScale = 1.0 + 3.0 * tOut; // get larger as they fly
-        currentAlpha = 1.0 - tOut; // fade out
-      }
-      
-      _paint.color = p.color.withOpacity(currentAlpha);
-      canvas.drawCircle(Offset(x, y), p.size * sizeScale, _paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ParticlePainter old) => old.progress != progress;
-}
-
-class _LoadingDots extends StatelessWidget {
-  final AnimationController ctrl;
-  const _LoadingDots({required this.ctrl});
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: ctrl,
-      builder: (_, __) => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(3, (i) {
-          final phase = (ctrl.value + i * 0.28) % 1.0;
-          final s = 0.4 + 0.6 * phase;
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: Transform.scale(
-              scale: s,
-              child: Container(
-                width: 8, height: 8,
-                decoration: BoxDecoration(
-                  color: _kBlueC.withOpacity(0.35 + 0.65 * phase),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          );
-        }),
+          ),
+        ),
       ),
     );
   }

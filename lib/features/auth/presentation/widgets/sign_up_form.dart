@@ -15,7 +15,6 @@ import '../../../../core/widgets/apple_sign_in_button.dart';
 import '../../../../core/widgets/password_validation.dart';
 import '../../../../gen/assets.gen.dart';
 import '../../../../utils/responsive_extensions.dart';
-import '../../../../utils/screen_util.dart';
 
 import '../../data/auth_service.dart';
 
@@ -32,7 +31,8 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   bool _agreeToTerms = false;
   bool _isLoading = false;
@@ -68,18 +68,21 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
     final password = _passwordController.text.trim();
     final confirm = _confirmPasswordController.text.trim();
 
-    final hasUpperAndLower = password.contains(RegExp(r'[a-z]')) && password.contains(RegExp(r'[A-Z]'));
+    final hasUpperAndLower =
+        password.contains(RegExp(r'[a-z]')) &&
+        password.contains(RegExp(r'[A-Z]'));
     final hasNumber = password.contains(RegExp(r'[0-9]'));
     final hasSpecial = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
 
     return username.isNotEmpty &&
-           email.isNotEmpty && email.contains('@') &&
-           password.length >= 8 &&
-           hasUpperAndLower &&
-           hasNumber &&
-           hasSpecial &&
-           password == confirm &&
-           _agreeToTerms;
+        email.isNotEmpty &&
+        email.contains('@') &&
+        password.length >= 8 &&
+        hasUpperAndLower &&
+        hasNumber &&
+        hasSpecial &&
+        password == confirm &&
+        _agreeToTerms;
   }
 
   @override
@@ -106,7 +109,8 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
               icon: const Icon(Icons.close, color: AppColors.grey),
               onPressed: () => Navigator.pop(context),
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(), // Removes default padding to keep it tight
+              constraints:
+                  const BoxConstraints(), // Removes default padding to keep it tight
             ),
           ],
         ),
@@ -117,7 +121,10 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
               const SizedBox(height: 16),
               Text(
                 'Last Updated: September 2026\n',
-                style: AppTextStyles.body2.copyWith(fontWeight: FontWeight.bold, color: AppColors.grey),
+                style: AppTextStyles.body2.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.grey,
+                ),
               ),
               Text(
                 '1. Introduction\n'
@@ -248,12 +255,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
           children: [
             SizedBox(height: 4),
 
-            Center(
-              child: SvgPicture.asset(
-                Assets.svg.logo,
-                height: 48,
-              ),
-            ),
+            Center(child: SvgPicture.asset(Assets.svg.logo, height: 48)),
 
             SizedBox(height: 16),
 
@@ -274,7 +276,10 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
             ],
 
             if (_usernameError != null) ...[
-              Text(_usernameError!, style: AppTextStyles.body2.copyWith(color: Colors.red)),
+              Text(
+                _usernameError!,
+                style: AppTextStyles.body2.copyWith(color: Colors.red),
+              ),
               SizedBox(height: 4),
             ],
             CustomTextField(
@@ -286,7 +291,10 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
             SizedBox(height: 16),
 
             if (_emailError != null) ...[
-              Text(_emailError!, style: AppTextStyles.body2.copyWith(color: Colors.red)),
+              Text(
+                _emailError!,
+                style: AppTextStyles.body2.copyWith(color: Colors.red),
+              ),
               SizedBox(height: 4),
             ],
             CustomTextField(
@@ -299,7 +307,10 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
             SizedBox(height: 16),
 
             if (_passwordError != null) ...[
-              Text(_passwordError!, style: AppTextStyles.body2.copyWith(color: Colors.red)),
+              Text(
+                _passwordError!,
+                style: AppTextStyles.body2.copyWith(color: Colors.red),
+              ),
               SizedBox(height: 4),
             ],
             CustomTextField(
@@ -312,7 +323,10 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
             SizedBox(height: 16),
 
             if (_confirmPasswordError != null) ...[
-              Text(_confirmPasswordError!, style: AppTextStyles.body2.copyWith(color: Colors.red)),
+              Text(
+                _confirmPasswordError!,
+                style: AppTextStyles.body2.copyWith(color: Colors.red),
+              ),
               SizedBox(height: 4),
             ],
             CustomTextField(
@@ -344,7 +358,9 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                             });
                           },
                     activeColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -352,7 +368,9 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                   child: RichText(
                     text: TextSpan(
                       text: 'By signing up, you are agreeing to our ',
-                      style: AppTextStyles.body2.copyWith(color: AppColors.grey),
+                      style: AppTextStyles.body2.copyWith(
+                        color: AppColors.grey,
+                      ),
                       children: [
                         TextSpan(
                           text: 'terms and conditions',
@@ -374,7 +392,9 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
 
             AppButton(
               text: 'Create An Account',
-              onPressed: (_isLoading || !_isFormValid) ? null : _handleCreateAccount,
+              onPressed: (_isLoading || !_isFormValid)
+                  ? null
+                  : _handleCreateAccount,
               isLoading: _isLoading,
               isOutlined: false,
             ),
@@ -383,12 +403,19 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
 
             Row(
               children: [
-                Expanded(child: Divider(color: AppColors.lightGrey, thickness: 1)),
+                Expanded(
+                  child: Divider(color: AppColors.lightGrey, thickness: 1),
+                ),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 4.w),
-                  child: Text('or', style: AppTextStyles.body2.copyWith(color: AppColors.grey)),
+                  child: Text(
+                    'or',
+                    style: AppTextStyles.body2.copyWith(color: AppColors.grey),
+                  ),
                 ),
-                Expanded(child: Divider(color: AppColors.lightGrey, thickness: 1)),
+                Expanded(
+                  child: Divider(color: AppColors.lightGrey, thickness: 1),
+                ),
               ],
             ),
 
@@ -407,7 +434,9 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
 
             Center(
               child: TextButton(
-                onPressed: _isLoading ? null : () => context.go(AppRouter.login),
+                onPressed: _isLoading
+                    ? null
+                    : () => context.go(AppRouter.login),
                 child: RichText(
                   text: TextSpan(
                     text: 'Already have an account? ',

@@ -1,153 +1,347 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../gen/assets.gen.dart';
-import '../../../../utils/responsive_extensions.dart';
 
-class NotificationsScreen extends StatelessWidget {
+import '../../../../core/models/app_notification.dart';
+import '../../data/notification_repository.dart';
+import 'package:intl/intl.dart';
+
+class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // For demo purposes - you can make this dynamic later
-    final bool hasNotifications = true;
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
+}
 
+class _NotificationsScreenState extends State<NotificationsScreen> {
+  void _markAllAsRead() async {
+    await NotificationRepository().markAllAsRead();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All caught up')),
+      );
+    }
+  }
+
+  void _deleteNotification(AppNotification item) async {
+    await NotificationRepository().deleteNotification(item.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notification dismissed'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.warmBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.warmBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          'Notifications',
-          style: AppTextStyles.heading2,
-        ),
-        centerTitle: true,
+        actions: [
+          StreamBuilder<List<AppNotification>>(
+            stream: NotificationRepository().watchNotifications(),
+            builder: (context, snapshot) {
+              final items = snapshot.data ?? [];
+              final unreadCount = items.where((n) => !n.read).length;
+              if (unreadCount == 0) return const SizedBox.shrink();
+
+              return TextButton(
+                onPressed: _markAllAsRead,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                ),
+                child: Text(
+                  'Mark all as read',
+                  style: AppTextStyles.body2.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              );
+            }
+          ),
+        ],
       ),
-      body: hasNotifications
-          ? _buildNotificationsList()
-          : _buildEmptyState(),
+      body: SafeArea(
+        child: StreamBuilder<List<AppNotification>>(
+          stream: NotificationRepository().watchNotifications(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final items = snapshot.data ?? [];
+            if (items.isEmpty) return _buildEmptyState();
+            return _buildList(items);
+          }
+        ),
+      ),
     );
   }
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SvgPicture.asset(
-            Assets.svg.noNotification,
-            width: 120,
-            height: 120,
-          ),
-          6.sh,
-          Text(
-            'No new notifications for now.\nCheck back later',
-            style: AppTextStyles.body1,
-            textAlign: TextAlign.center,
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.notifications_none,
+                size: 64,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              'You\'re all caught up.',
+              style: AppTextStyles.heading2.copyWith(fontSize: 24, color: AppColors.text),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'When something happens, we\'ll let you know here.',
+              style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            TextButton(
+              onPressed: () => context.push(AppRouter.notificationPreferences),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Notification settings',
+                    style: AppTextStyles.body1.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward, size: 20, color: AppColors.primary),
+                ],
+              ),
+            ),
+            const SizedBox(height: 64),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildNotificationsList() {
-    return ListView(
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 12),
-      children: [
-        // Mood Check-in Card
-        _buildNotificationCard(
-          icon: '😊',
-          title: 'Mood Check-in',
-          description:
-          'It’s time to check in! How are you feeling today?\nA few words can make a difference',
-          actionText: 'Check-in Mood',
-          color: const Color(0xFFFFF4E5), // Light peach
-          onTap: () {
-            // Navigate to Mood Check-in flow
-          },
-        ),
-        4.sh,
+  Widget _buildList(List<AppNotification> items) {
+    // Sort items latest first
+    final sortedItems = List<AppNotification>.from(items)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-        // Journaling Card
-        _buildNotificationCard(
-          icon: '💭',
-          title: 'Journaling',
-          description:
-          'Gentle reminder: Journaling can help reduce stress.\nLet’s reflect on your day!',
-          actionText: 'Start Journaling',
-          color: AppColors.lightGrey,
-          onTap: () {
-            // Navigate to Journaling
-          },
-        ),
-        4.sh,
+    final Map<String, List<AppNotification>> grouped = {};
+    for (var item in sortedItems) {
+      // Very simple grouping logic
+      final now = DateTime.now();
+      final difference = now.difference(item.createdAt).inDays;
+      String group;
+      if (difference == 0 && now.day == item.createdAt.day) {
+        group = 'Today';
+      } else if (difference <= 1) {
+        group = 'Yesterday';
+      } else {
+        group = 'Earlier';
+      }
+      grouped.putIfAbsent(group, () => []).add(item);
+    }
 
-        // Mental Health Quiz Card
-        _buildNotificationCard(
-          icon: '🧠',
-          title: 'Mental Health Quiz',
-          description:
-          'Hey there! Don’t forget your self-assessment.\nIt’s been 7 days since your last check-in',
-          actionText: 'Take self-assessment quiz',
-          color: AppColors.lightGrey,
-          onTap: () {
-            // Navigate to Quiz
-          },
-        ),
-      ],
+    return RefreshIndicator(
+      onRefresh: () async {
+        await Future.delayed(const Duration(seconds: 1));
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        itemCount: grouped.length + 1, // +1 for the header
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Text(
+                'Notifications',
+                style: AppTextStyles.heading1.copyWith(fontSize: 28, color: AppColors.text),
+              ),
+            );
+          }
+
+          final groupIndex = index - 1;
+          final dateGroup = grouped.keys.elementAt(groupIndex);
+          final items = grouped[dateGroup]!;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                dateGroup,
+                style: AppTextStyles.heading2.copyWith(fontSize: 20, color: AppColors.text),
+              ),
+              const SizedBox(height: 16),
+              ...items.map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _buildNotificationCard(item),
+                  )),
+              const SizedBox(height: 24),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildNotificationCard({
-    required String icon,
-    required String title,
-    required String description,
-    required String actionText,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(6.w),
+  Widget _buildNotificationCard(AppNotification item) {
+    String icon = '🔔';
+    if (item.type == 'achievement') icon = '🏆';
+    if (item.type == 'check_in') icon = '💛';
+    if (item.type == 'comment') icon = '💬';
+    if (item.type == 'export') icon = '📄';
+    if (item.type == 'security') icon = '🔒';
+
+    final time = DateFormat('h:mm a').format(item.createdAt);
+
+    return Dismissible(
+      key: Key(item.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => _deleteNotification(item),
+      background: Container(
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.danger,
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(icon, style: const TextStyle(fontSize: 28)),
-                3.w.sw,
-                Text(
-                  title,
-                  style: AppTextStyles.heading2.copyWith(fontSize: 18),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: const Icon(Icons.delete_outline, color: AppColors.white),
+      ),
+      child: GestureDetector(
+        onTap: () async {
+          await NotificationRepository().markAsRead(item.id);
+          if (item.type == 'achievement' && mounted) {
+            context.push(AppRouter.notificationDetail);
+          } else {
+            // Navigation to other routes based on type
+          }
+        },
+        onLongPress: () {
+          // Context menu (simulated with a bottom sheet for now)
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: AppColors.surface,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            builder: (context) {
+              return SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.check, color: AppColors.text),
+                      title: Text('Mark as read', style: AppTextStyles.body1.copyWith(color: AppColors.text)),
+                      onTap: () async {
+                        await NotificationRepository().markAsRead(item.id);
+                        if (mounted) context.pop();
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.delete_outline, color: AppColors.danger),
+                      title: Text('Delete', style: AppTextStyles.body1.copyWith(color: AppColors.danger)),
+                      onTap: () {
+                        context.pop();
+                        _deleteNotification(item);
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            3.sh,
-            Text(
-              description,
-              style: AppTextStyles.body1,
-            ),
-            4.sh,
-            Text(
-              '$actionText →',
-              style: AppTextStyles.linkText.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
+              );
+            },
+          );
+        },
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 72),
+          decoration: BoxDecoration(
+            color: item.read ? AppColors.surface : AppColors.primary.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(12),
+            border: Border(
+              left: BorderSide(
+                color: item.read ? Colors.transparent : AppColors.primary,
+                width: 3,
               ),
+              top: BorderSide(color: AppColors.border, width: item.read ? 1 : 0),
+              right: BorderSide(color: AppColors.border, width: item.read ? 1 : 0),
+              bottom: BorderSide(color: AppColors.border, width: item.read ? 1 : 0),
             ),
-          ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Stack(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(icon, style: const TextStyle(fontSize: 24)),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.title,
+                          style: AppTextStyles.body1.copyWith(
+                            color: AppColors.text,
+                            fontWeight: item.read ? FontWeight.w500 : FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.body,
+                          style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    time,
+                    style: AppTextStyles.body2.copyWith(color: AppColors.textSubtle, fontSize: 12),
+                  ),
+                ],
+              ),
+              if (!item.read)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

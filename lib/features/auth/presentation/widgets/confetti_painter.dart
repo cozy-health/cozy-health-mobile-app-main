@@ -57,16 +57,17 @@ class ConfettiPainter extends CustomPainter {
       canvas.translate(p.position.dx, p.position.dy);
       canvas.rotate(p.rotation);
 
-      paint.color = p.color.withOpacity(p.opacity.clamp(0.0, 1.0));
+      paint.color = p.color.withValues(alpha: p.opacity.clamp(0.0, 1.0));
 
       switch (p.shape) {
         case ConfettiShape.rect:
           canvas.scale(p.scaleX.abs().clamp(0.15, 1.0), 1.0);
           canvas.drawRect(
             Rect.fromCenter(
-                center: Offset.zero,
-                width: p.size * 1.6,
-                height: p.size * 0.7),
+              center: Offset.zero,
+              width: p.size * 1.6,
+              height: p.size * 0.7,
+            ),
             paint,
           );
           break;
@@ -75,9 +76,10 @@ class ConfettiPainter extends CustomPainter {
           canvas.scale(p.scaleX.abs().clamp(0.1, 1.0), 1.0);
           canvas.drawRect(
             Rect.fromCenter(
-                center: Offset.zero,
-                width: p.size * 3.5,
-                height: p.size * 0.4),
+              center: Offset.zero,
+              width: p.size * 3.5,
+              height: p.size * 0.4,
+            ),
             paint,
           );
           break;
@@ -91,9 +93,10 @@ class ConfettiPainter extends CustomPainter {
           paint.strokeWidth = p.size * 0.35;
           canvas.drawArc(
             Rect.fromCenter(
-                center: Offset.zero,
-                width: p.size * 1.4,
-                height: p.size * 1.4),
+              center: Offset.zero,
+              width: p.size * 1.4,
+              height: p.size * 1.4,
+            ),
             0,
             pi,
             false,

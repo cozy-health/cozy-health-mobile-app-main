@@ -1,141 +1,275 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../utils/responsive_extensions.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../data/profile_repository.dart';
 
-class PrivacySettingsScreen extends StatelessWidget {
+class PrivacySettingsScreen extends StatefulWidget {
   const PrivacySettingsScreen({super.key});
+
+  @override
+  State<PrivacySettingsScreen> createState() => _PrivacySettingsScreenState();
+}
+
+class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
+  bool _showUsername = true;
+  bool _showStats = true;
+  bool _referenceMood = true;
+  bool _referenceJournal = false;
+  bool _improveAi = false;
+  bool _shareAnalytics = false;
+  bool _shareCrashReports = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = LocalDbService().getUserProfile();
+    if (profile != null) {
+      _showUsername = profile.showUsername;
+      _showStats = profile.showStats;
+    }
+  }
+
+  void _updateShowUsername(bool value) {
+    setState(() => _showUsername = value);
+    ProfileRepository().updateField('showUsername', value);
+  }
+
+  void _updateShowStats(bool value) {
+    setState(() => _showStats = value);
+    ProfileRepository().updateField('showStats', value);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.warmBackground,
+      appBar: AppBar(
+        backgroundColor: AppColors.warmBackground,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Privacy',
+          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+        ),
+        centerTitle: false,
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5.w),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              3.sh,
-
-              Row(
+              const SizedBox(height: 24),
+              
+              _SettingsSection(
+                title: 'Profile visibility',
                 children: [
-                  GestureDetector(
-                    onTap: () => context.pop(),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.chevron_left,
-                          size: 22,
-                          color: AppColors.darkGrey,
-                        ),
-                        Text(
-                          'Back',
-                          style: AppTextStyles.body2.copyWith(
-                            color: AppColors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
+                  _SettingsToggleRow(
+                    label: 'Show my username',
+                    value: _showUsername,
+                    onChanged: _updateShowUsername,
                   ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Privacy Settings',
-                        style: AppTextStyles.heading2.copyWith(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.black,
+                  _SettingsToggleRow(
+                    label: 'Show my stats',
+                    value: _showStats,
+                    onChanged: _updateShowStats,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              
+              _SettingsSection(
+                title: 'AI & Data',
+                children: [
+                  _SettingsToggleRow(
+                    label: 'Let Cozy reference my mood logs',
+                    value: _referenceMood,
+                    onChanged: (v) => setState(() => _referenceMood = v),
+                  ),
+                  _SettingsToggleRow(
+                    label: 'Let Cozy reference my journal',
+                    value: _referenceJournal,
+                    onChanged: (v) => setState(() => _referenceJournal = v),
+                  ),
+                  _SettingsToggleRow(
+                    label: 'Improve AI with my conversations',
+                    value: _improveAi,
+                    onChanged: (v) => setState(() => _improveAi = v),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              
+              _SettingsSection(
+                title: 'Analytics',
+                children: [
+                  _SettingsToggleRow(
+                    label: 'Share anonymous usage data',
+                    value: _shareAnalytics,
+                    onChanged: (v) => setState(() => _shareAnalytics = v),
+                  ),
+                  _SettingsToggleRow(
+                    label: 'Share crash reports',
+                    value: _shareCrashReports,
+                    onChanged: (v) => setState(() => _shareCrashReports = v),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              
+              _SettingsSection(
+                title: 'Blocked users',
+                children: [
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => context.push(AppRouter.blockedUsers),
+                      child: Container(
+                        height: 56,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Manage blocked users',
+                                style: AppTextStyles.body1.copyWith(
+                                  color: AppColors.text,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right,
+                              size: 20,
+                              color: AppColors.textSubtle,
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                  SizedBox(width: 14.w),
                 ],
               ),
-
-              5.sh,
-
-              _privacyTile(
-                icon: Icons.person_outline,
-                title: 'Manage your account',
-                subtitle: 'Choose and control your\nprivacy options',
-                onTap: () {},
-              ),
-
-              Padding(
-                padding: EdgeInsets.only(left: 11.w),
-                child: const Divider(
-                  color: Color(0xFFE5E7EB),
-                  height: 24,
-                ),
-              ),
-
-              _privacyTile(
-                icon: Icons.delete_outline,
-                title: 'Delete my account',
-                subtitle:
-                    'Permanently delete your account and\nany data associated with it, including\ncycle and health-related data.',
-                onTap: () {},
-              ),
+              const SizedBox(height: 48),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _privacyTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 1.2.h),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              icon,
-              size: 22,
-              color: AppColors.darkGrey,
+class _SettingsSection extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _SettingsSection({
+    required this.title,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            title,
+            style: AppTextStyles.body1.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: AppColors.text,
             ),
-            5.sw,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.body1.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.black,
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border, width: 1),
+          ),
+          child: Column(
+            children: List.generate(
+              children.length,
+              (index) {
+                final isLast = index == children.length - 1;
+                return Column(
+                  children: [
+                    children[index],
+                    if (!isLast)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16, right: 16),
+                        child: Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: AppColors.border.withValues(alpha: 0.4),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingsToggleRow extends StatelessWidget {
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SettingsToggleRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onChanged(!value),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          constraints: const BoxConstraints(minHeight: 56),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      label,
+                      style: AppTextStyles.body1.copyWith(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
-                  ),
-                  0.8.sh,
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.body2.copyWith(
-                      fontSize: 13,
-                      color: AppColors.darkGrey,
-                      height: 1.35,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              size: 24,
-              color: AppColors.black,
-            ),
-          ],
+              const SizedBox(width: 16),
+              CupertinoSwitch(
+                value: value,
+                onChanged: onChanged,
+                activeTrackColor: AppColors.primary,
+              ),
+            ],
+          ),
         ),
       ),
     );
