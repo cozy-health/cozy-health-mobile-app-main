@@ -34,7 +34,7 @@ class ActivityScreen extends StatelessWidget {
       ),
 
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 6.w),
+        padding: EdgeInsets.fromLTRB(6.w, 0, 6.w, 112),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -2,6 +2,8 @@ import '../../../core/constants/api_constants.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/response_data.dart';
+import '../../../core/models/user_profile.dart';
+import '../../../core/services/local_db_service.dart';
 import '../../../core/storage/token_storage.dart';
 
 class AuthService {
@@ -33,6 +35,7 @@ class AuthService {
     if (token != null && token.isNotEmpty) {
       await _tokenStorage.saveToken(token);
     }
+    await _cacheUserProfile(data['user']);
 
     return data;
   }
@@ -62,6 +65,7 @@ class AuthService {
     if (token != null && token.isNotEmpty) {
       await _tokenStorage.saveToken(token);
     }
+    await _cacheUserProfile(data['user']);
 
     return data;
   }
@@ -110,5 +114,28 @@ class AuthService {
   Map<String, dynamic> _payload(Map<String, dynamic> response) {
     final data = response['data'];
     return data is Map<String, dynamic> ? data : response;
+  }
+
+  Future<void> _cacheUserProfile(dynamic user) async {
+    if (user is! Map) return;
+
+    final json = Map<String, dynamic>.from(user);
+    final id = json['id']?.toString();
+    final email = json['email']?.toString();
+    final name = json['name']?.toString();
+
+    if (id == null || email == null || name == null || name.isEmpty) return;
+
+    await LocalDbService.instance.saveUserProfile(
+      UserProfile(
+        id: id,
+        name: name,
+        email: email,
+        username: json['username']?.toString(),
+        avatarUrl: json['avatar_url']?.toString() ?? json['avatar_path']?.toString(),
+        updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
+            DateTime.now(),
+      ),
+    );
   }
 }

@@ -108,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen>
             return Semantics(
               label: 'Home dashboard loaded. $streak day streak. ${recentEntries.length} recent entries.',
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 112),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

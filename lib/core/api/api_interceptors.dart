@@ -86,7 +86,14 @@ class ErrorInterceptor extends Interceptor {
         exception = ApiAuthException(statusCode: statusCode);
       } else if (statusCode == 422) {
         Map<String, List<String>> errors = {};
-        if (data is Map && data['error'] != null && data['error']['details'] != null) {
+        if (data is Map && data['errors'] is Map) {
+          final details = data['errors'] as Map;
+          details.forEach((key, value) {
+            if (value is List) {
+              errors[key.toString()] = value.map((e) => e.toString()).toList();
+            }
+          });
+        } else if (data is Map && data['error'] != null && data['error']['details'] != null) {
           final details = data['error']['details'];
           if (details is Map) {
             details.forEach((key, value) {
@@ -96,7 +103,10 @@ class ErrorInterceptor extends Interceptor {
             });
           }
         }
-        exception = ApiValidationException(errors, 'Validation Failed', statusCode: statusCode);
+        final message = errors.values.firstOrNull?.firstOrNull ??
+            (data is Map ? data['message']?.toString() : null) ??
+            'Validation Failed';
+        exception = ApiValidationException(errors, message, statusCode: statusCode);
       } else if (statusCode != null && statusCode >= 500) {
         exception = ApiServerException(statusCode: statusCode);
       } else {

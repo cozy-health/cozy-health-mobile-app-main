@@ -49,7 +49,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       bottomNavigationBar: SafeArea(
         top: false,
         child: CustomBottomNavigationBar(

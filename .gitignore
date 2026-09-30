@@ -4,6 +4,11 @@
 *.pyc
 *.swp
 .DS_Store
+analyze_*_output.txt
+analyze_output.txt
+analyze_out.txt
+analyze_final.txt
+ci_status.json
 .atom/
 .build/
 .buildlog/

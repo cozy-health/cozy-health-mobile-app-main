@@ -27,10 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _emailError;
   String? _passwordError;
 
-  bool get _isValid =>
-      _emailController.text.trim().contains('@') &&
-      _passwordController.text.isNotEmpty;
-
   @override
   void initState() {
     super.initState();
@@ -58,10 +54,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
 
     setState(() {
-      _emailError = email.contains('@')
-          ? null
-          : "That email doesn't look quite right.";
-      _passwordError = password.isNotEmpty ? null : 'This field is required.';
+      _emailError = email.contains('@') ? null : 'Enter a valid email.';
+      _passwordError = password.isNotEmpty ? null : 'Enter your password.';
     });
 
     if (_emailError != null || _passwordError != null) return;
@@ -239,7 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 32),
         AuthPrimaryButton(
           text: 'Log In',
-          onPressed: _isLoading || !_isValid ? null : _login,
+          onPressed: _isLoading ? null : _login,
           isLoading: _isLoading,
         ),
         const SizedBox(height: 24),

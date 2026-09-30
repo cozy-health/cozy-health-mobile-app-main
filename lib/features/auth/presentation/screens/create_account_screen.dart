@@ -16,12 +16,14 @@ class CreateAccountScreen extends StatefulWidget {
 
 class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final AuthService _authService = AuthService();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmController = TextEditingController();
 
   bool _agreeToTerms = false;
   bool _isLoading = false;
+  String? _nameError;
   String? _emailError;
   String? _passwordError;
   String? _confirmError;
@@ -30,7 +32,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool get _isFormValid {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    return email.contains('@') &&
+    return _nameController.text.trim().isNotEmpty &&
+        email.contains('@') &&
         password.length >= 8 &&
         _confirmController.text == password &&
         _agreeToTerms;
@@ -39,6 +42,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   @override
   void initState() {
     super.initState();
+    _nameController.addListener(_clearLiveErrors);
     _emailController.addListener(_clearLiveErrors);
     _passwordController.addListener(_clearLiveErrors);
     _confirmController.addListener(_clearLiveErrors);
@@ -47,6 +51,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   void _clearLiveErrors() {
     setState(() {
       _emailError = null;
+      _nameError = null;
       _passwordError = null;
       _confirmError = null;
       _termsError = null;
@@ -55,6 +60,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
@@ -63,10 +69,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
+    final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     setState(() {
+      _nameError = name.isNotEmpty ? null : 'Enter your name.';
       _emailError = email.contains('@')
           ? null
           : "That email doesn't look quite right.";
@@ -82,6 +90,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     });
 
     if (_emailError != null ||
+        _nameError != null ||
         _passwordError != null ||
         _confirmError != null ||
         _termsError != null) {
@@ -102,7 +111,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
     try {
       await _authService.register(
-        firstname: email.split('@').first,
+        firstname: name,
         lastname: '',
         email: email,
         password: password,
@@ -157,6 +166,13 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         onTap: () => context.go(AppRouter.login),
       ),
       children: [
+        AuthTextField(
+          label: 'Full Name',
+          error: _nameError,
+          controller: _nameController,
+          enabled: !_isLoading,
+        ),
+        const SizedBox(height: 24),
         AuthTextField(
           label: 'Email',
           helper: "We'll never share this.",
