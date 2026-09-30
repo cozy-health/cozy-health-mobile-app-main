@@ -156,15 +156,26 @@ class MoodSuccessScreen extends StatelessWidget {
 
               const Spacer(flex: 3),
 
-              // Finish button
               Padding(
                 padding: EdgeInsets.only(bottom: 4.h),
-                child: AppButton(
-                  text: 'Finish',
-                  onPressed: () {
-                    context.go(AppRouter.home);
-                  },
-                  isOutlined: true,
+                child: Column(
+                  children: [
+                    AppButton(
+                      text: 'Back to Home',
+                      onPressed: () => context.go(AppRouter.home),
+                    ),
+                    1.5.sh,
+                    AppButton(
+                      text: 'Log another',
+                      onPressed: () => context.go(AppRouter.moodFeeling),
+                      isOutlined: true,
+                    ),
+                    1.5.sh,
+                    TextButton(
+                      onPressed: () => context.push(AppRouter.moodHistory),
+                      child: const Text('See past entries'),
+                    ),
+                  ],
                 ),
               ),
             ],

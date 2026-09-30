@@ -64,6 +64,19 @@ class _JournalScreenState extends State<JournalScreen>
 
     return Scaffold(
       backgroundColor: AppColors.warmBackground,
+      appBar: Navigator.of(context).canPop()
+          ? AppBar(
+              backgroundColor: AppColors.warmBackground,
+              elevation: 0,
+              leading: const BackButton(color: AppColors.text),
+              title: Text(
+                'Journal',
+                style: AppTextStyles.heading2.copyWith(
+                  color: AppColors.text,
+                ),
+              ),
+            )
+          : null,
       body: SafeArea(
         child: StreamBuilder<List<JournalEntry>>(
           stream: _repo.watchJournalEntries(),
@@ -436,6 +449,8 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   late final TextEditingController _controller;
   late final List<String> _tags;
   late final String _draftId;
+  JournalEntry? _availableDraft;
+  bool _showDraftPrompt = false;
   Timer? _autoSaveTimer;
   String _saveStatus = 'No draft yet';
 
@@ -446,14 +461,15 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
     _draftId =
         widget.existing?.id ??
         'journal_draft_${widget.type}_${widget.prompt?.id ?? 'free'}';
-    final draft = widget.existing == null
+    _availableDraft = widget.existing == null
         ? LocalDbService.instance.getJournalDraft(_draftId)
         : null;
+    _showDraftPrompt = _availableDraft != null;
     _controller = TextEditingController(
-      text: widget.existing?.body ?? draft?.body ?? '',
+      text: widget.existing?.body ?? '',
     );
-    _tags = [...(widget.existing?.tags ?? draft?.tags ?? const <String>[])];
-    if (draft != null) _saveStatus = 'Draft restored';
+    _tags = [...(widget.existing?.tags ?? const <String>[])];
+    if (_availableDraft != null) _saveStatus = 'Draft available';
   }
 
   @override
@@ -515,6 +531,14 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                     const SizedBox(height: 18),
                     _PromptPinnedCard(prompt: prompt),
                   ],
+                  if (_showDraftPrompt && _availableDraft != null) ...[
+                    const SizedBox(height: 18),
+                    _DraftRestoreCard(
+                      draft: _availableDraft!,
+                      onResume: _resumeDraft,
+                      onDiscard: () => _discardDraft(),
+                    ),
+                  ],
                   const SizedBox(height: 18),
                   TextField(
                     controller: _controller,
@@ -554,6 +578,29 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
     final text = _controller.text.trim();
     if (text.isEmpty) return 0;
     return text.split(RegExp(r'\s+')).length;
+  }
+
+  void _resumeDraft() {
+    final draft = _availableDraft;
+    if (draft == null) return;
+    setState(() {
+      _controller.text = draft.body;
+      _tags
+        ..clear()
+        ..addAll(draft.tags ?? const <String>[]);
+      _showDraftPrompt = false;
+      _saveStatus = 'Draft restored';
+    });
+  }
+
+  Future<void> _discardDraft() async {
+    await LocalDbService.instance.deleteJournalDraft(_draftId);
+    if (!mounted) return;
+    setState(() {
+      _availableDraft = null;
+      _showDraftPrompt = false;
+      _saveStatus = 'No draft yet';
+    });
   }
 
   void _addTag() {
@@ -1410,6 +1457,63 @@ class _JournalEntryCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DraftRestoreCard extends StatelessWidget {
+  const _DraftRestoreCard({
+    required this.draft,
+    required this.onResume,
+    required this.onDiscard,
+  });
+
+  final JournalEntry draft;
+  final VoidCallback onResume;
+  final VoidCallback onDiscard;
+
+  @override
+  Widget build(BuildContext context) {
+    final time =
+        '${draft.updatedAt.hour.toString().padLeft(2, '0')}:${draft.updatedAt.minute.toString().padLeft(2, '0')}';
+
+    return _WarmPanel(
+      color: AppColors.primarySoft,
+      borderColor: AppColors.primary.withValues(alpha: .28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'You have a draft from $time.',
+            style: AppTextStyles.body1.copyWith(
+              color: AppColors.text,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            draft.body.isEmpty ? 'Tags saved without body text.' : draft.body,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _PrimaryButton(label: 'Resume', onPressed: onResume),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _SecondaryButton(
+                  label: 'Discard',
+                  onPressed: onDiscard,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

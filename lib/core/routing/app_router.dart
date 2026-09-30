@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
 import 'package:cozy_health/features/mood_check_in/presentation/screens/coping_mechanisms_screen.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_detail_screen.dart';
@@ -155,6 +156,8 @@ class AppRouter {
   static const String moodReason = '/mood-reason';
   static const String moodJournal = '/mood-journal';
   static const String moodSuccess = '/mood-success';
+  static const String moodHistory = '/mood-history';
+  static const String moodDetail = '/mood-detail';
   static const String quizSelection = '/quiz-selection';
   static const String quizTaking = '/quiz-taking';
   static const String journal = '/journal';
@@ -336,6 +339,18 @@ class AppRouter {
           selectedReasons: [],
           selectedCoping: [],
           journalText: '',
+        ),
+      ),
+      GoRoute(
+        path: moodHistory,
+        name: 'moodHistory',
+        builder: (_, __) => const MoodHistoryScreen(),
+      ),
+      GoRoute(
+        path: moodDetail,
+        name: 'moodDetail',
+        builder: (_, state) => MoodDetailViewScreen(
+          entry: state.extra is MoodEntry ? state.extra as MoodEntry : null,
         ),
       ),
 

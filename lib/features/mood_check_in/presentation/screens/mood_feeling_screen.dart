@@ -183,13 +183,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => MoodCheckInSuccessScreen(
-          onLogAnother: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const MoodFeelingScreen()),
-            );
-          },
-        ),
+        builder: (_) => const MoodCheckInSuccessScreen(),
       ),
     );
   }
@@ -671,9 +665,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
 }
 
 class MoodCheckInSuccessScreen extends StatefulWidget {
-  const MoodCheckInSuccessScreen({super.key, required this.onLogAnother});
-
-  final VoidCallback onLogAnother;
+  const MoodCheckInSuccessScreen({super.key});
 
   @override
   State<MoodCheckInSuccessScreen> createState() =>
@@ -689,7 +681,6 @@ class _MoodCheckInSuccessScreenState extends State<MoodCheckInSuccessScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Entry saved.')));
-      context.go(AppRouter.home);
     });
   }
 
@@ -760,11 +751,11 @@ class _MoodCheckInSuccessScreenState extends State<MoodCheckInSuccessScreen> {
               const SizedBox(height: 12),
               _SecondaryButton(
                 label: 'Log another',
-                onPressed: widget.onLogAnother,
+                onPressed: () => context.go(AppRouter.moodFeeling),
               ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: () => context.go(AppRouter.home),
+                onPressed: () => context.push(AppRouter.moodHistory),
                 child: const Text('See past entries'),
               ),
             ],
@@ -775,11 +766,193 @@ class _MoodCheckInSuccessScreenState extends State<MoodCheckInSuccessScreen> {
   }
 }
 
-class MoodDetailViewScreen extends StatelessWidget {
-  const MoodDetailViewScreen({super.key});
+class MoodHistoryScreen extends StatelessWidget {
+  const MoodHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.warmBackground,
+      body: SafeArea(
+        child: StreamBuilder<List<MoodEntry>>(
+          stream: MoodRepository().watchMoodEntries(),
+          builder: (context, snapshot) {
+            final entries = snapshot.data ?? const <MoodEntry>[];
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Back',
+                      onPressed: () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        } else {
+                          context.go(AppRouter.home);
+                        }
+                      },
+                      icon: const Icon(Icons.arrow_back, color: AppColors.text),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Mood history',
+                        style: AppTextStyles.heading2.copyWith(
+                          color: AppColors.text,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    !snapshot.hasData)
+                  const Center(child: CircularProgressIndicator())
+                else if (entries.isEmpty)
+                  _WarmPanel(
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.mood_rounded,
+                          color: AppColors.primary,
+                          size: 42,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No mood entries yet',
+                          style: AppTextStyles.heading2.copyWith(
+                            color: AppColors.text,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Your saved check-ins will appear here.',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.body2.copyWith(
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        _PrimaryButton(
+                          label: 'Log a mood',
+                          onPressed: () => context.go(AppRouter.moodFeeling),
+                        ),
+                      ],
+                    ),
+                  )
+                else ...[
+                  Text(
+                    '${entries.length} ${entries.length == 1 ? 'entry' : 'entries'}',
+                    style: AppTextStyles.body2.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  for (final entry in entries) ...[
+                    _MoodHistoryCard(entry: entry),
+                    const SizedBox(height: 12),
+                  ],
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _MoodHistoryCard extends StatelessWidget {
+  const _MoodHistoryCard({required this.entry});
+
+  final MoodEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '${entry.mood}, intensity ${entry.intensity} of 10',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => context.push(AppRouter.moodDetail, extra: entry),
+        child: _WarmPanel(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  _moodIcon(entry.mood),
+                  color: AppColors.primary,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.mood,
+                      style: AppTextStyles.body1.copyWith(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatMoodDate(entry.createdAt),
+                      style: AppTextStyles.body2.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                    if ((entry.note ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        entry.note!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.body2.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Text(
+                '${entry.intensity}/10',
+                style: AppTextStyles.body2.copyWith(
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MoodDetailViewScreen extends StatelessWidget {
+  const MoodDetailViewScreen({super.key, this.entry});
+
+  final MoodEntry? entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final moodEntry = entry;
     return Scaffold(
       backgroundColor: AppColors.warmBackground,
       body: SafeArea(
@@ -794,48 +967,92 @@ class MoodDetailViewScreen extends StatelessWidget {
                     icon: const Icon(Icons.arrow_back),
                   ),
                   const Spacer(),
-                  TextButton(onPressed: () {}, child: const Text('Edit')),
                 ],
               ),
               const SizedBox(height: 18),
-              const Text('😊', style: TextStyle(fontSize: 64)),
-              Text(
-                'Good',
-                style: AppTextStyles.heading1.copyWith(fontSize: 28),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Today, 9:42 AM',
-                style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
-              ),
-              const SizedBox(height: 30),
-              const _DetailRow('Intensity: 7/10'),
-              const _DetailRow('Body: Chest, Stomach'),
-              const _DetailRow('Triggers: Work, Sleep'),
-              const _DetailRow('Sleep: ★★★★☆'),
-              const _DetailRow('Energy: 6/10'),
-              const _DetailRow('Note\n"Long day at work..."'),
-              const SizedBox(height: 18),
-              _WarmPanel(
-                child: Row(
-                  children: [
-                    const Icon(Icons.delete_outline, color: AppColors.danger),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Delete entry',
-                      style: AppTextStyles.body1.copyWith(
-                        color: AppColors.danger,
-                      ),
+              if (moodEntry == null)
+                _WarmPanel(
+                  child: Text(
+                    'Mood entry not found.',
+                    style: AppTextStyles.body1.copyWith(
+                      color: AppColors.text,
                     ),
-                  ],
+                  ),
+                )
+              else ...[
+                Icon(
+                  _moodIcon(moodEntry.mood),
+                  size: 64,
+                  color: AppColors.primary,
                 ),
-              ),
+                Text(
+                  moodEntry.mood,
+                  style: AppTextStyles.heading1.copyWith(fontSize: 28),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _formatMoodDate(moodEntry.createdAt),
+                  style: AppTextStyles.body2.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                _DetailRow('Intensity: ${moodEntry.intensity}/10'),
+                if ((moodEntry.bodySensations ?? []).isNotEmpty)
+                  _DetailRow('Body: ${moodEntry.bodySensations!.join(', ')}'),
+                if ((moodEntry.triggers ?? []).isNotEmpty)
+                  _DetailRow('Triggers: ${moodEntry.triggers!.join(', ')}'),
+                if ((moodEntry.customTrigger ?? '').isNotEmpty)
+                  _DetailRow('Other trigger: ${moodEntry.customTrigger}'),
+                if (moodEntry.sleepQuality != null &&
+                    moodEntry.sleepQuality! > 0)
+                  _DetailRow('Sleep: ${moodEntry.sleepQuality}/5'),
+                if (moodEntry.energyLevel != null && moodEntry.energyLevel! > 0)
+                  _DetailRow('Energy: ${moodEntry.energyLevel}/10'),
+                if ((moodEntry.copingStrategies ?? []).isNotEmpty)
+                  _DetailRow(
+                    'Coping: ${moodEntry.copingStrategies!.join(', ')}',
+                  ),
+                if ((moodEntry.note ?? '').isNotEmpty)
+                  _DetailRow('Note\n"${moodEntry.note}"'),
+              ],
             ],
           ),
         ),
       ),
     );
   }
+}
+
+IconData _moodIcon(String mood) {
+  switch (mood.toLowerCase()) {
+    case 'good':
+      return Icons.sentiment_very_satisfied_rounded;
+    case 'calm':
+      return Icons.self_improvement_rounded;
+    case 'low':
+      return Icons.sentiment_dissatisfied_rounded;
+    case 'anxious':
+      return Icons.sentiment_neutral_rounded;
+    case 'angry':
+      return Icons.sentiment_very_dissatisfied_rounded;
+    default:
+      return Icons.sentiment_satisfied_rounded;
+  }
+}
+
+String _formatMoodDate(DateTime date) {
+  final local = date.toLocal();
+  final now = DateTime.now();
+  final sameDay =
+      local.year == now.year && local.month == now.month && local.day == now.day;
+  final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+  final minute = local.minute.toString().padLeft(2, '0');
+  final period = local.hour >= 12 ? 'PM' : 'AM';
+  final dayLabel = sameDay
+      ? 'Today'
+      : '${local.month}/${local.day}/${local.year}';
+  return '${dayLabel}, ${hour}:${minute} ${period}';
 }
 
 class _MoodProgressHeader extends StatelessWidget {
