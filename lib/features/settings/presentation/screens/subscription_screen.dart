@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/routing/app_router.dart';
+
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/models/subscription_status.dart';
-import '../../data/subscription_repository.dart';
-import 'package:intl/intl.dart';
+import '../../../../utils/responsive_extensions.dart';
+import '../../data/settings_service.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -16,367 +16,342 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
+  final SettingsService _settingsService = SettingsService();
+
+  bool _loading = true;
+  bool _processing = false;
+  String? _error;
+
+  Map<String, dynamic>? _subscription;
+  List<dynamic> _packages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSubscriptionData();
+  }
+
+  Future<void> _loadSubscriptionData() async {
+    try {
+      final subRes = await _settingsService.getSubscription();
+      final packagesRes = await _settingsService.getPackages();
+
+      setState(() {
+        _subscription = subRes['subscription'] as Map<String, dynamic>?;
+        _packages = packagesRes['packages'] as List<dynamic>? ?? [];
+      });
+    } on ApiException catch (e) {
+      _error = e.message;
+    } catch (_) {
+      _error = 'Unable to load subscription.';
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _activatePackage(int packageId) async {
+    setState(() {
+      _processing = true;
+      _error = null;
+    });
+
+    try {
+      await _settingsService.activateSubscription(packageId: packageId);
+      await _loadSubscriptionData();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Subscription activated successfully.')),
+      );
+    } on ApiException catch (e) {
+      setState(() => _error = e.message);
+    } catch (_) {
+      setState(() => _error = 'Unable to activate subscription.');
+    } finally {
+      if (mounted) {
+        setState(() => _processing = false);
+      }
+    }
+  }
+
+  Future<void> _cancelSubscription() async {
+    setState(() {
+      _processing = true;
+      _error = null;
+    });
+
+    try {
+      await _settingsService.cancelSubscription();
+      await _loadSubscriptionData();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Subscription cancelled successfully.')),
+      );
+    } on ApiException catch (e) {
+      setState(() => _error = e.message);
+    } catch (_) {
+      setState(() => _error = 'Unable to cancel subscription.');
+    } finally {
+      if (mounted) {
+        setState(() => _processing = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final status = _subscription?['status']?.toString() ?? 'inactive';
+    final current = _subscription?['current'];
+    final package = current is Map<String, dynamic> ? current['package'] : null;
+    final packageName = package is Map<String, dynamic>
+        ? package['package_name']?.toString() ?? 'Free Plan'
+        : 'Free Plan';
+
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.warmBackground,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
-          onPressed: () => context.pop(),
-          tooltip: 'Back',
+      backgroundColor: AppColors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 5.w),
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      3.sh,
+                      _header(context),
+                      5.sh,
+
+                      Text(
+                        'My Subscription',
+                        style: AppTextStyles.heading1.copyWith(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.black,
+                        ),
+                      ),
+
+                      2.sh,
+
+                      Text(
+                        'Manage your plan, billing, and access to Cozy Health features.',
+                        style: AppTextStyles.body1.copyWith(
+                          color: AppColors.grey,
+                          height: 1.4,
+                        ),
+                      ),
+
+                      3.sh,
+
+                      if (_error != null) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(3.w),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            _error!,
+                            style: AppTextStyles.body2.copyWith(
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                        3.sh,
+                      ],
+
+                      _currentPlanCard(
+                        packageName: packageName,
+                        status: status,
+                        expiryDate: _subscription?['expiry_date']?.toString(),
+                      ),
+
+                      4.sh,
+
+                      Text(
+                        'Available Plans',
+                        style: AppTextStyles.heading2.copyWith(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+
+                      2.sh,
+
+                      if (_packages.isEmpty)
+                        Text(
+                          'No packages available yet.',
+                          style: AppTextStyles.body2.copyWith(
+                            color: AppColors.grey,
+                          ),
+                        )
+                      else
+                        ..._packages.map((item) {
+                          final pkg = item as Map<String, dynamic>;
+                          final id = int.tryParse(pkg['id'].toString()) ?? 0;
+                          final name = pkg['package_name']?.toString() ?? 'Plan';
+                          final price = pkg['price']?.toString() ?? '0';
+                          final duration = pkg['duration']?.toString() ?? '';
+
+                          return _packageCard(
+                            id: id,
+                            name: name,
+                            price: price,
+                            duration: duration,
+                          );
+                        }),
+
+                      3.sh,
+
+                      if (status == 'active')
+                        Center(
+                          child: TextButton(
+                            onPressed: _processing ? null : _cancelSubscription,
+                            child: Text(
+                              _processing ? 'Processing...' : 'Cancel subscription',
+                              style: AppTextStyles.body2.copyWith(
+                                color: AppColors.grey,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      4.sh,
+                    ],
+                  ),
+                ),
         ),
-        title: Text(
-          'Subscription',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+      ),
+    );
+  }
+
+  Widget _header(BuildContext context) {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () => context.pop(),
+          child: Row(
+            children: [
+              const Icon(Icons.chevron_left, size: 22, color: AppColors.darkGrey),
+              Text(
+                'Back',
+                style: AppTextStyles.body2.copyWith(color: AppColors.grey),
+              ),
+            ],
+          ),
         ),
-        centerTitle: false,
-        actions: [
-          // Temp toggle for development removed, using stream
+        Expanded(
+          child: Center(
+            child: Text(
+              'Subscription',
+              style: AppTextStyles.heading2.copyWith(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.black,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 14.w),
+      ],
+    );
+  }
+
+  Widget _currentPlanCard({
+    required String packageName,
+    required String status,
+    String? expiryDate,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(5.w),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F5FA),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Current Plan', style: AppTextStyles.body2.copyWith(color: AppColors.grey)),
+          1.sh,
+          Text(
+            packageName,
+            style: AppTextStyles.heading1.copyWith(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: AppColors.black,
+            ),
+          ),
+          1.sh,
+          Text(
+            'Status: ${status.toUpperCase()}',
+            style: AppTextStyles.body2.copyWith(
+              color: status == 'active' ? AppColors.primary : AppColors.grey,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (expiryDate != null) ...[
+            1.sh,
+            Text(
+              'Expires: $expiryDate',
+              style: AppTextStyles.body2.copyWith(color: AppColors.darkGrey),
+            ),
+          ],
         ],
       ),
-      body: SafeArea(
-        child: StreamBuilder<SubscriptionStatus?>(
-          stream: SubscriptionRepository().watchStatus(),
-          builder: (context, snapshot) {
-            final status = snapshot.data;
-            final isPro = status?.isActive == true && status?.cancelAtPeriodEnd == false;
-            
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 24),
-                  isPro ? _buildProState(status!) : _buildFreeState(),
-                  const SizedBox(height: 48),
-                ],
-              ),
-            );
-          }
-        ),
+    );
+  }
+
+  Widget _packageCard({
+    required int id,
+    required String name,
+    required String price,
+    required String duration,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 2.h),
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE1E4EA)),
       ),
-    );
-  }
-
-  Widget _buildFreeState() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Current Plan',
-          style: AppTextStyles.body2.copyWith(
-            color: AppColors.text,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.warmBackground,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.favorite_border, color: AppColors.text, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Cozy Free',
-                      style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Basic journaling and mood tracking',
-                      style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.primary.withValues(alpha: 0.1),
-                AppColors.primary.withValues(alpha: 0.02),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Cozy Pro',
-                      style: AppTextStyles.heading2.copyWith(fontSize: 24, color: AppColors.text),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      'Popular',
-                      style: AppTextStyles.body2.copyWith(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '\$7.99',
-                    style: AppTextStyles.heading1.copyWith(fontSize: 36, color: AppColors.text),
-                  ),
-                  const SizedBox(width: 4),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Text(
-                      '/month',
-                      style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _buildFeatureRow('Unlimited AI therapy conversations'),
-              const SizedBox(height: 12),
-              _buildFeatureRow('Detailed mood analytics and trends'),
-              const SizedBox(height: 12),
-              _buildFeatureRow('Priority customer support'),
-              const SizedBox(height: 12),
-              _buildFeatureRow('Data export and backup'),
-              const SizedBox(height: 32),
-              AppButton(
-                text: 'Start Free Trial',
-                onPressed: () async {
-                  await SubscriptionRepository().purchase('pro');
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Welcome to Cozy Pro!')),
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '7 days free, then \$7.99/month. Cancel anytime.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.body2.copyWith(color: AppColors.textMuted, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProState(SubscriptionStatus status) {
-    final renewText = status.expiresAt != null 
-        ? 'Renews on ${DateFormat('MMM d, yyyy').format(status.expiresAt!)}' 
-        : 'Active Subscription';
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Current Plan',
-          style: AppTextStyles.body2.copyWith(
-            color: AppColors.text,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.star, color: AppColors.primary, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Cozy Pro',
-                      style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      renewText,
-                      style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
-          ),
-          child: Column(
-            children: [
-              _SettingsRow(
-                icon: Icons.autorenew,
-                label: 'Change Plan',
-                onTap: () {},
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
-              ),
-              _SettingsRow(
-                icon: Icons.receipt_long_outlined,
-                label: 'Billing History',
-                onTap: () => context.push(AppRouter.billingHistory),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
-              ),
-              _SettingsRow(
-                icon: Icons.restore,
-                label: 'Restore Purchases',
-                onTap: () => context.push(AppRouter.restorePurchases),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
-              ),
-              _SettingsRow(
-                icon: Icons.cancel_outlined,
-                label: 'Cancel Subscription',
-                isDanger: true,
-                onTap: () => context.push(AppRouter.cancelSubscription),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFeatureRow(String text) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Icon(Icons.check_circle, color: AppColors.primary, size: 20),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: AppTextStyles.body1.copyWith(color: AppColors.text),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SettingsRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isDanger;
-
-  const _SettingsRow({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.isDanger = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isDanger ? AppColors.danger : AppColors.text;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Icon(icon, color: color, size: 24),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  label,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
                   style: AppTextStyles.body1.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w400,
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-              Icon(Icons.chevron_right, color: AppColors.textMuted, size: 24),
-            ],
+                0.8.sh,
+                Text(
+                  '₦$price ${duration.isNotEmpty ? '/ $duration' : ''}',
+                  style: AppTextStyles.body2.copyWith(color: AppColors.grey),
+                ),
+              ],
+            ),
           ),
-        ),
+          SizedBox(
+            width: 110,
+            child: AppButton(
+              text: _processing ? '...' : 'Activate',
+              onPressed: _processing ? null : () => _activatePackage(id),
+            ),
+          ),
+        ],
       ),
     );
   }

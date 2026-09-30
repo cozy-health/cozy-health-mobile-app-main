@@ -45,14 +45,14 @@ class _CustomTextFieldState extends State<CustomTextField> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: widget.hasError ? Colors.red : AppColors.midGrey, 
+            color: widget.hasError ? Colors.red : AppColors.primary, 
             width: 1.5,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: widget.hasError ? Colors.red : AppColors.midGrey, 
+            color: widget.hasError ? Colors.red : AppColors.primary, 
             width: 1.5,
           ),
         ),
