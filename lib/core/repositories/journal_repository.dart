@@ -42,7 +42,7 @@ class JournalRepository {
   
   Future<void> deleteJournalEntry(String id) async {
     await _local.deleteJournalEntry(id);
-    await _local.enqueueSync(type: 'journal_entry', action: 'delete', recordId: id);
+    await _local.enqueueSync(type: 'journal_entry', action: 'delete', recordId: id, payload: '');
     try {
       await ApiClient.instance.delete('/journal-entries/$id');
     } catch (e) {
@@ -57,3 +57,4 @@ class JournalRepository {
     }
   }
 }
+

@@ -28,6 +28,30 @@ class SavedArticle extends HiveObject {
     required this.imageUrl,
     required this.savedAt,
   });
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      'article_id': articleId,
+      'article_slug': articleSlug,
+      'title': title,
+      'category': category,
+      'read_time_minutes': readTimeMinutes,
+      'saved_at': savedAt.toUtc().toIso8601String(),
+    };
+  }
+
+  factory SavedArticle.fromJson(Map<String, dynamic> json) {
+    return SavedArticle(
+      id: json['id'] as String,
+      articleId: json['article_id'] as String,
+      articleSlug: json['article_slug'] as String,
+      title: json['title'] as String,
+      category: json['category'] as String,
+      readTimeMinutes: json['read_time_minutes'] as int,
+      savedAt: json['saved_at'] != null ? DateTime.parse(json['saved_at']) : DateTime.now(),
+    );
+  }
 }
 
 class SavedArticleAdapter extends TypeAdapter<SavedArticle> {
@@ -68,27 +92,7 @@ class SavedArticleAdapter extends TypeAdapter<SavedArticle> {
       ..write(obj.savedAt);
   }
 
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'id': id,
-      'article_id': articleId,
-      'article_slug': articleSlug,
-      'title': title,
-      'category': category,
-      'read_time_minutes': readTimeMinutes,
-      'saved_at': savedAt.toUtc().toIso8601String(),
-    };
-  }
 
-  factory SavedArticle.fromJson(Map<String, dynamic> json) {
-    return SavedArticle(
-      id: json['id'] as String,
-      articleId: json['article_id'] as String,
-      articleSlug: json['article_slug'] as String,
-      title: json['title'] as String,
-      category: json['category'] as String,
-      readTimeMinutes: json['read_time_minutes'] as int,
-      savedAt: json['saved_at'] != null ? DateTime.parse(json['saved_at']) : DateTime.now(),
-    );
-  }
+
+
 }

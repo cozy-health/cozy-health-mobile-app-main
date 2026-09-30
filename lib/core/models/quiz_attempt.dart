@@ -40,6 +40,33 @@ class QuizAttempt extends HiveObject {
     required this.isCrisisFlagged,
     required this.completedAt,
   });
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'id': id,
+      'quiz_slug': quizSlug,
+      'quiz_title': quizTitle,
+      'answers': answers,
+      'score': score,
+      'is_crisis_flagged': isCrisisFlagged,
+      'completed_at': completedAt.toUtc().toIso8601String(),
+    };
+    if (interpretation != null) json['interpretation'] = interpretation;
+    return json;
+  }
+
+  factory QuizAttempt.fromJson(Map<String, dynamic> json) {
+    return QuizAttempt(
+      id: json['id'] as String,
+      quizSlug: json['quiz_slug'] as String,
+      quizTitle: json['quiz_title'] as String,
+      answers: Map<String, dynamic>.from(json['answers'] as Map),
+      score: json['score'] as int,
+      interpretation: json['interpretation'] as String?,
+      isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
+      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : DateTime.now(),
+    );
+  }
 }
 
 class QuizAttemptAdapter extends TypeAdapter<QuizAttempt> {
@@ -89,30 +116,7 @@ class QuizAttemptAdapter extends TypeAdapter<QuizAttempt> {
       ..write(obj.completedAt);
   }
 
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{
-      'id': id,
-      'quiz_slug': quizSlug,
-      'quiz_title': quizTitle,
-      'answers': answers,
-      'score': score,
-      'is_crisis_flagged': isCrisisFlagged,
-      'completed_at': completedAt.toUtc().toIso8601String(),
-    };
-    if (interpretation != null) json['interpretation'] = interpretation;
-    return json;
-  }
 
-  factory QuizAttempt.fromJson(Map<String, dynamic> json) {
-    return QuizAttempt(
-      id: json['id'] as String,
-      quizSlug: json['quiz_slug'] as String,
-      quizTitle: json['quiz_title'] as String,
-      answers: Map<String, dynamic>.from(json['answers'] as Map),
-      score: json['score'] as int,
-      interpretation: json['interpretation'] as String?,
-      isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
-      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : DateTime.now(),
-    );
-  }
+
+
 }

@@ -52,6 +52,35 @@ class AppNotification extends HiveObject {
       createdAt: createdAt ?? this.createdAt,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'id': id,
+      'type': type,
+      'title': title,
+      'body': body,
+      'is_read': isRead,
+      'client_created_at': createdAt.toUtc().toIso8601String(),
+    };
+    if (deepLink != null) json['deep_link'] = deepLink;
+    if (data != null) json['data'] = data;
+    if (readAt != null) json['read_at'] = readAt!.toUtc().toIso8601String();
+    return json;
+  }
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    return AppNotification(
+      id: json['id'] as String,
+      type: json['type'] as String,
+      title: json['title'] as String,
+      body: json['body'] as String,
+      deepLink: json['deep_link'] as String?,
+      data: json['data'] != null ? Map<String, dynamic>.from(json['data'] as Map) : null,
+      isRead: json['is_read'] as bool? ?? false,
+      readAt: json['read_at'] != null ? DateTime.parse(json['read_at']) : null,
+      createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
+    );
+  }
 }
 
 class AppNotificationAdapter extends TypeAdapter<AppNotification> {
@@ -95,32 +124,7 @@ class AppNotificationAdapter extends TypeAdapter<AppNotification> {
       ..write(obj.createdAt);
   }
 
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{
-      'id': id,
-      'type': type,
-      'title': title,
-      'body': body,
-      'is_read': isRead,
-      'client_created_at': createdAt.toUtc().toIso8601String(),
-    };
-    if (deepLink != null) json['deep_link'] = deepLink;
-    if (data != null) json['data'] = data;
-    if (readAt != null) json['read_at'] = readAt!.toUtc().toIso8601String();
-    return json;
-  }
 
-  factory AppNotification.fromJson(Map<String, dynamic> json) {
-    return AppNotification(
-      id: json['id'] as String,
-      type: json['type'] as String,
-      title: json['title'] as String,
-      body: json['body'] as String,
-      deepLink: json['deep_link'] as String?,
-      data: json['data'] != null ? Map<String, dynamic>.from(json['data'] as Map) : null,
-      isRead: json['is_read'] as bool? ?? false,
-      readAt: json['read_at'] != null ? DateTime.parse(json['read_at']) : null,
-      createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
-    );
-  }
+
+
 }

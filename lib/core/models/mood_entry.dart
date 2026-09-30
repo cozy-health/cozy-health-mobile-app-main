@@ -43,6 +43,9 @@ class MoodEntry extends HiveObject {
   @HiveField(12)
   final DateTime updatedAt;
 
+  @HiveField(13)
+  final bool isCrisisFlagged;
+
   MoodEntry({
     required this.id,
     required this.mood,
@@ -55,9 +58,47 @@ class MoodEntry extends HiveObject {
     this.note,
     this.copingStrategies,
     this.copingHelped,
+    this.isCrisisFlagged = false,
     required this.createdAt,
     required this.updatedAt,
   });
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'id': id,
+      'mood': mood,
+    };
+    if (energyLevel != null) json['energy_level'] = energyLevel;
+    if (bodySensations != null) json['body_sensations'] = bodySensations;
+    if (triggers != null) json['triggers'] = triggers;
+    if (customTrigger != null) json['custom_trigger'] = customTrigger;
+    if (sleepQuality != null) json['sleep_quality'] = sleepQuality;
+    if (note != null) json['note'] = note;
+    if (copingStrategies != null) json['coping_strategies'] = copingStrategies;
+    if (copingHelped != null) json['coping_helped'] = copingHelped;
+    json['is_crisis_flagged'] = isCrisisFlagged;
+    json['client_created_at'] = createdAt.toUtc().toIso8601String();
+    if (updatedAt != null) json['client_updated_at'] = updatedAt!.toUtc().toIso8601String();
+    return json;
+  }
+
+  factory MoodEntry.fromJson(Map<String, dynamic> json) {
+    return MoodEntry(
+      id: json['id'] as String,
+      mood: json['mood'] as String,
+      energyLevel: json['energy_level'] as int?,
+      bodySensations: (json['body_sensations'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      triggers: (json['triggers'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      customTrigger: json['custom_trigger'] as String?,
+      sleepQuality: json['sleep_quality'] as int?,
+      note: json['note'] as String?,
+      copingStrategies: (json['coping_strategies'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      copingHelped: json['coping_helped'] as String?,
+      isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
+      createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
+      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : null,
+    );
+  }
 }
 
 class MoodEntryAdapter extends TypeAdapter<MoodEntry> {
@@ -100,40 +141,7 @@ class MoodEntryAdapter extends TypeAdapter<MoodEntry> {
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
   }
 
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{
-      'id': id,
-      'mood': mood,
-    };
-    if (energyLevel != null) json['energy_level'] = energyLevel;
-    if (bodySensations != null) json['body_sensations'] = bodySensations;
-    if (triggers != null) json['triggers'] = triggers;
-    if (customTrigger != null) json['custom_trigger'] = customTrigger;
-    if (sleepQuality != null) json['sleep_quality'] = sleepQuality;
-    if (note != null) json['note'] = note;
-    if (copingStrategies != null) json['coping_strategies'] = copingStrategies;
-    if (copingHelped != null) json['coping_helped'] = copingHelped;
-    json['is_crisis_flagged'] = isCrisisFlagged;
-    json['client_created_at'] = createdAt.toUtc().toIso8601String();
-    if (updatedAt != null) json['client_updated_at'] = updatedAt!.toUtc().toIso8601String();
-    return json;
-  }
 
-  factory MoodEntry.fromJson(Map<String, dynamic> json) {
-    return MoodEntry(
-      id: json['id'] as String,
-      mood: json['mood'] as String,
-      energyLevel: json['energy_level'] as int?,
-      bodySensations: (json['body_sensations'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      triggers: (json['triggers'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      customTrigger: json['custom_trigger'] as String?,
-      sleepQuality: json['sleep_quality'] as int?,
-      note: json['note'] as String?,
-      copingStrategies: (json['coping_strategies'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      copingHelped: json['coping_helped'] as String?,
-      isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
-      createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
-      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : null,
-    );
-  }
+
+
 }

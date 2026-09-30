@@ -22,6 +22,7 @@ class LocalDbService {
   static final LocalDbService _instance = LocalDbService._internal();
   factory LocalDbService() => _instance;
   LocalDbService._internal();
+  static LocalDbService get instance => _instance;
 
   static const String moodBoxName = 'moods';
   static const String journalBoxName = 'journals';
@@ -273,6 +274,15 @@ class LocalDbService {
     }
   }
 
+  Future<void> enqueueSync({
+    required String type,
+    required String action,
+    required String recordId,
+    required dynamic payload,
+  }) async {
+    await queueSync(type, recordId);
+  }
+
   Future<void> removeFromQueue(String type, String id) async {
     await syncQueueBox.delete('$type:$id');
   }
@@ -306,6 +316,12 @@ class LocalDbService {
     }
   }
 
+    // Notifications
+  Future<void> deleteAppNotification(String id) async { await Hive.box<AppNotification>(appNotificationBoxName).delete(id); }
+  
+  // Quizzes
+  List<QuizAttempt> getAllQuizAttempts() { return Hive.box<QuizAttempt>(quizAttemptBoxName).values.toList(); }
+
   // --- Scoping / Logout ---
   Future<void> clearAllUserData() async {
     await moodBox.clear();
@@ -321,3 +337,4 @@ class LocalDbService {
     await syncQueueBox.clear();
   }
 }
+

@@ -34,6 +34,29 @@ class ChatConversation extends HiveObject {
     required this.createdAt,
     required this.updatedAt,
   });
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'id': id,
+      'title': title,
+      'message_count': messageCount,
+      'is_archived': isArchived,
+      'client_updated_at': updatedAt.toUtc().toIso8601String(),
+    };
+    if (lastMessagePreview != null) json['last_message_preview'] = lastMessagePreview;
+    return json;
+  }
+
+  factory ChatConversation.fromJson(Map<String, dynamic> json) {
+    return ChatConversation(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      lastMessagePreview: json['last_message_preview'] as String?,
+      messageCount: json['message_count'] as int? ?? 0,
+      isArchived: json['is_archived'] as bool? ?? false,
+      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
+    );
+  }
 }
 
 class ChatConversationAdapter extends TypeAdapter<ChatConversation> {
@@ -64,26 +87,7 @@ class ChatConversationAdapter extends TypeAdapter<ChatConversation> {
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
   }
 
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{
-      'id': id,
-      'title': title,
-      'message_count': messageCount,
-      'is_archived': isArchived,
-      'client_updated_at': updatedAt.toUtc().toIso8601String(),
-    };
-    if (lastMessagePreview != null) json['last_message_preview'] = lastMessagePreview;
-    return json;
-  }
 
-  factory ChatConversation.fromJson(Map<String, dynamic> json) {
-    return ChatConversation(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      lastMessagePreview: json['last_message_preview'] as String?,
-      messageCount: json['message_count'] as int? ?? 0,
-      isArchived: json['is_archived'] as bool? ?? false,
-      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
-    );
-  }
+
+
 }

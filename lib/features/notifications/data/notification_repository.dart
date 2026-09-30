@@ -39,7 +39,7 @@ class NotificationRepository {
 
   Future<void> deleteNotification(String id) async {
     await _local.deleteAppNotification(id);
-    await _local.enqueueSync(type: 'app_notification', action: 'delete', recordId: id);
+    await _local.enqueueSync(type: 'app_notification', action: 'delete', recordId: id, payload: '');
     try {
       await ApiClient.instance.delete('/notifications/$id');
     } catch (e) {}

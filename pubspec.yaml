@@ -49,6 +49,7 @@ dependencies:
   path_provider: ^2.1.6
   dio: ^5.11.1
   intl: ^0.20.3
+  uuid: ^4.6.0
 
 dev_dependencies:
   flutter_gen_runner:

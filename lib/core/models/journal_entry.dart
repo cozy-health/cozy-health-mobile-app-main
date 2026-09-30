@@ -66,6 +66,48 @@ class JournalEntry extends HiveObject {
     required this.updatedAt,
     this.isDraft = false,
   });
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'id': id,
+      'type': type,
+      'body': body,
+      'word_count': wordCount,
+      'is_crisis_flagged': isCrisisFlagged,
+      'client_created_at': createdAt.toUtc().toIso8601String(),
+    };
+    if (title != null) json['title'] = title;
+    if (voiceUrl != null) json['voice_url'] = voiceUrl;
+    if (voiceDuration != null) json['voice_duration'] = voiceDuration;
+    if (transcription != null) json['transcription'] = transcription;
+    if (promptId != null) json['prompt_id'] = promptId;
+    if (promptText != null) json['prompt_text'] = promptText;
+    if (tags != null) json['tags'] = tags;
+    if (linkedMoodEntryId != null) json['linked_mood_entry_id'] = linkedMoodEntryId;
+    if (updatedAt != null) json['client_updated_at'] = updatedAt!.toUtc().toIso8601String();
+    return json;
+  }
+
+  factory JournalEntry.fromJson(Map<String, dynamic> json) {
+    return JournalEntry(
+      id: json['id'] as String,
+      type: json['type'] as String? ?? 'free',
+      title: json['title'] as String?,
+      body: json['body'] as String? ?? '',
+      voiceUrl: json['voice_url'] as String?,
+      voiceDuration: json['voice_duration'] as int?,
+      transcription: json['transcription'] as String?,
+      promptId: json['prompt_id'] as String?,
+      promptText: json['prompt_text'] as String?,
+      tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      linkedMoodEntryId: json['linked_mood_entry_id'] as String?,
+      wordCount: json['word_count'] as int? ?? 0,
+      isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
+      isFavorite: json['is_favorite'] as bool? ?? false,
+      createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
+      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : null,
+    );
+  }
 }
 
 class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
@@ -112,45 +154,7 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
     writer.writeBool(obj.isDraft);
   }
 
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{
-      'id': id,
-      'type': type,
-      'body': body,
-      'word_count': wordCount,
-      'is_crisis_flagged': isCrisisFlagged,
-      'client_created_at': createdAt.toUtc().toIso8601String(),
-    };
-    if (title != null) json['title'] = title;
-    if (voiceUrl != null) json['voice_url'] = voiceUrl;
-    if (voiceDuration != null) json['voice_duration'] = voiceDuration;
-    if (transcription != null) json['transcription'] = transcription;
-    if (promptId != null) json['prompt_id'] = promptId;
-    if (promptText != null) json['prompt_text'] = promptText;
-    if (tags != null) json['tags'] = tags;
-    if (linkedMoodEntryId != null) json['linked_mood_entry_id'] = linkedMoodEntryId;
-    if (updatedAt != null) json['client_updated_at'] = updatedAt!.toUtc().toIso8601String();
-    return json;
-  }
 
-  factory JournalEntry.fromJson(Map<String, dynamic> json) {
-    return JournalEntry(
-      id: json['id'] as String,
-      type: json['type'] as String? ?? 'free',
-      title: json['title'] as String?,
-      body: json['body'] as String? ?? '',
-      voiceUrl: json['voice_url'] as String?,
-      voiceDuration: json['voice_duration'] as int?,
-      transcription: json['transcription'] as String?,
-      promptId: json['prompt_id'] as String?,
-      promptText: json['prompt_text'] as String?,
-      tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      linkedMoodEntryId: json['linked_mood_entry_id'] as String?,
-      wordCount: json['word_count'] as int? ?? 0,
-      isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
-      isFavorite: json['is_favorite'] as bool? ?? false,
-      createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
-      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : null,
-    );
-  }
+
+
 }

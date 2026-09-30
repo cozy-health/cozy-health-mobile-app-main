@@ -53,7 +53,7 @@ class MoodRepository {
   Future<void> deleteMoodEntry(String id) async {
     // Should ideally mark as deleted, but removing for now
     // await _local.deleteMoodEntry(id);
-    await _local.enqueueSync(type: 'mood_entry', action: 'delete', recordId: id);
+    await _local.enqueueSync(type: 'mood_entry', action: 'delete', recordId: id, payload: '');
     try {
       await ApiClient.instance.delete('/mood-entries/$id');
     } catch (e) {
@@ -84,3 +84,4 @@ class MoodRepository {
     }
   }
 }
+

@@ -40,6 +40,41 @@ class SubscriptionStatus extends HiveObject {
       cancelAtPeriodEnd: cancelAtPeriodEnd ?? this.cancelAtPeriodEnd,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'id': id,
+      'plan': plan,
+      'status': status,
+    };
+    if (platform != null) json['platform'] = platform;
+    if (productId != null) json['product_id'] = productId;
+    if (transactionId != null) json['transaction_id'] = transactionId;
+    if (originalTransactionId != null) json['original_transaction_id'] = originalTransactionId;
+    if (startedAt != null) json['started_at'] = startedAt!.toUtc().toIso8601String();
+    if (expiresAt != null) json['expires_at'] = expiresAt!.toUtc().toIso8601String();
+    if (cancelledAt != null) json['cancelled_at'] = cancelledAt!.toUtc().toIso8601String();
+    if (trialEndsAt != null) json['trial_ends_at'] = trialEndsAt!.toUtc().toIso8601String();
+    if (lastChecked != null) json['last_checked'] = lastChecked!.toUtc().toIso8601String();
+    return json;
+  }
+
+  factory SubscriptionStatus.fromJson(Map<String, dynamic> json) {
+    return SubscriptionStatus(
+      id: json['id'] as String,
+      plan: json['plan'] as String? ?? 'free',
+      status: json['status'] as String? ?? 'active',
+      platform: json['platform'] as String?,
+      productId: json['product_id'] as String?,
+      transactionId: json['transaction_id'] as String?,
+      originalTransactionId: json['original_transaction_id'] as String?,
+      startedAt: json['started_at'] != null ? DateTime.parse(json['started_at']) : null,
+      expiresAt: json['expires_at'] != null ? DateTime.parse(json['expires_at']) : null,
+      cancelledAt: json['cancelled_at'] != null ? DateTime.parse(json['cancelled_at']) : null,
+      trialEndsAt: json['trial_ends_at'] != null ? DateTime.parse(json['trial_ends_at']) : null,
+      lastChecked: json['last_checked'] != null ? DateTime.parse(json['last_checked']) : null,
+    );
+  }
 }
 
 class SubscriptionStatusAdapter extends TypeAdapter<SubscriptionStatus> {
@@ -77,38 +112,7 @@ class SubscriptionStatusAdapter extends TypeAdapter<SubscriptionStatus> {
       ..write(obj.cancelAtPeriodEnd);
   }
 
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{
-      'id': id,
-      'plan': plan,
-      'status': status,
-    };
-    if (platform != null) json['platform'] = platform;
-    if (productId != null) json['product_id'] = productId;
-    if (transactionId != null) json['transaction_id'] = transactionId;
-    if (originalTransactionId != null) json['original_transaction_id'] = originalTransactionId;
-    if (startedAt != null) json['started_at'] = startedAt!.toUtc().toIso8601String();
-    if (expiresAt != null) json['expires_at'] = expiresAt!.toUtc().toIso8601String();
-    if (cancelledAt != null) json['cancelled_at'] = cancelledAt!.toUtc().toIso8601String();
-    if (trialEndsAt != null) json['trial_ends_at'] = trialEndsAt!.toUtc().toIso8601String();
-    if (lastChecked != null) json['last_checked'] = lastChecked!.toUtc().toIso8601String();
-    return json;
-  }
 
-  factory SubscriptionStatus.fromJson(Map<String, dynamic> json) {
-    return SubscriptionStatus(
-      id: json['id'] as String,
-      plan: json['plan'] as String? ?? 'free',
-      status: json['status'] as String? ?? 'active',
-      platform: json['platform'] as String?,
-      productId: json['product_id'] as String?,
-      transactionId: json['transaction_id'] as String?,
-      originalTransactionId: json['original_transaction_id'] as String?,
-      startedAt: json['started_at'] != null ? DateTime.parse(json['started_at']) : null,
-      expiresAt: json['expires_at'] != null ? DateTime.parse(json['expires_at']) : null,
-      cancelledAt: json['cancelled_at'] != null ? DateTime.parse(json['cancelled_at']) : null,
-      trialEndsAt: json['trial_ends_at'] != null ? DateTime.parse(json['trial_ends_at']) : null,
-      lastChecked: json['last_checked'] != null ? DateTime.parse(json['last_checked']) : null,
-    );
-  }
+
+
 }

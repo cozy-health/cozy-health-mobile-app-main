@@ -69,4 +69,21 @@ class SubscriptionRepository {
     
     return updated;
   }
+
+  Future<void> cancel() async {
+    final current = await _local.getSubscriptionStatus();
+    if (current != null) {
+      final updated = current.copyWith(
+        isActive: false,
+        cancelAtPeriodEnd: true,
+      );
+      await _local.saveSubscriptionStatus(updated);
+      await _local.enqueueSync(
+        type: 'subscription',
+        action: 'cancel',
+        recordId: updated.id,
+        payload: updated.id,
+      );
+    }
+  }
 }

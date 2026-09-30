@@ -147,6 +147,84 @@ class UserProfile extends HiveObject {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+  UserProfile copyWithField(String key, dynamic value) {
+    switch (key) {
+      case 'theme': return copyWith(theme: value as String);
+      case 'accent_color': return copyWith(accentColor: value as String);
+      case 'language': return copyWith(language: value as String);
+      case 'reduce_motion': return copyWith(reduceMotion: value as bool);
+      case 'high_contrast': return copyWith(highContrast: value as bool);
+      case 'haptics_enabled': return copyWith(hapticsEnabled: value as bool);
+      case 'text_size': return copyWith(textSize: (value as num).toDouble());
+      case 'show_stats': return copyWith(showStats: value as bool);
+      case 'show_username': return copyWith(showUsername: value as bool);
+      case 'notifications_master': return copyWith(notificationsMaster: value as bool);
+      case 'daily_checkin_enabled': return copyWith(dailyCheckinEnabled: value as bool);
+      case 'daily_checkin_time': return copyWith(dailyCheckinTime: value as String);
+      case 'journal_reminder_enabled': return copyWith(journalReminderEnabled: value as bool);
+      case 'comments_notifications': return copyWith(commentsNotifications: value as bool);
+      case 'achievements_notifications': return copyWith(achievementsNotifications: value as bool);
+      case 'marketing_notifications': return copyWith(marketingNotifications: value as bool);
+      default: return this;
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'id': id,
+      'name': name,
+      'email': email,
+      'theme': theme,
+      'accent_color': accentColor,
+      'language': language,
+      'reduce_motion': reduceMotion,
+      'high_contrast': highContrast,
+      'haptics_enabled': hapticsEnabled,
+      'text_size': textSize,
+      'show_stats': showStats,
+      'show_username': showUsername,
+      'notifications_master': notificationsMaster,
+      'daily_checkin_enabled': dailyCheckinEnabled,
+      'daily_checkin_time': dailyCheckinTime,
+      'journal_reminder_enabled': journalReminderEnabled,
+      'comments_notifications': commentsNotifications,
+      'achievements_notifications': achievementsNotifications,
+      'marketing_notifications': marketingNotifications,
+      'client_updated_at': updatedAt.toUtc().toIso8601String(),
+    };
+    if (username != null) json['username'] = username;
+    if (avatarUrl != null) json['avatar_url'] = avatarUrl;
+    if (bio != null) json['bio'] = bio;
+    return json;
+  }
+
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    return UserProfile(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      email: json['email'] as String,
+      username: json['username'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
+      bio: json['bio'] as String?,
+      theme: json['theme'] as String? ?? 'system',
+      accentColor: json['accent_color'] as String? ?? '#0460D8',
+      language: json['language'] as String? ?? 'en',
+      reduceMotion: json['reduce_motion'] as bool? ?? false,
+      highContrast: json['high_contrast'] as bool? ?? false,
+      hapticsEnabled: json['haptics_enabled'] as bool? ?? true,
+      textSize: (json['text_size'] as num?)?.toDouble() ?? 1.0,
+      showStats: json['show_stats'] as bool? ?? false,
+      showUsername: json['show_username'] as bool? ?? true,
+      notificationsMaster: json['notifications_master'] as bool? ?? true,
+      dailyCheckinEnabled: json['daily_checkin_enabled'] as bool? ?? true,
+      dailyCheckinTime: json['daily_checkin_time'] as String? ?? '09:00',
+      journalReminderEnabled: json['journal_reminder_enabled'] as bool? ?? false,
+      commentsNotifications: json['comments_notifications'] as bool? ?? true,
+      achievementsNotifications: json['achievements_notifications'] as bool? ?? true,
+      marketingNotifications: json['marketing_notifications'] as bool? ?? false,
+      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
+    );
+  }
 }
 
 class UserProfileAdapter extends TypeAdapter<UserProfile> {
@@ -209,84 +287,6 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
   }
 
-  UserProfile copyWithField(String key, dynamic value) {
-    switch (key) {
-      case 'theme': return copyWith(theme: value as String);
-      case 'accent_color': return copyWith(accentColor: value as String);
-      case 'language': return copyWith(language: value as String);
-      case 'reduce_motion': return copyWith(reduceMotion: value as bool);
-      case 'high_contrast': return copyWith(highContrast: value as bool);
-      case 'haptics_enabled': return copyWith(hapticsEnabled: value as bool);
-      case 'text_size': return copyWith(textSize: (value as num).toDouble());
-      case 'show_stats': return copyWith(showStats: value as bool);
-      case 'show_username': return copyWith(showUsername: value as bool);
-      case 'notifications_master': return copyWith(notificationsMaster: value as bool);
-      case 'daily_checkin_enabled': return copyWith(dailyCheckinEnabled: value as bool);
-      case 'daily_checkin_time': return copyWith(dailyCheckinTime: value as String);
-      case 'journal_reminder_enabled': return copyWith(journalReminderEnabled: value as bool);
-      case 'comments_notifications': return copyWith(commentsNotifications: value as bool);
-      case 'achievements_notifications': return copyWith(achievementsNotifications: value as bool);
-      case 'marketing_notifications': return copyWith(marketingNotifications: value as bool);
-      default: return this;
-    }
-  }
-
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{
-      'id': id,
-      'name': name,
-      'email': email,
-      'theme': theme,
-      'accent_color': accentColor,
-      'language': language,
-      'reduce_motion': reduceMotion,
-      'high_contrast': highContrast,
-      'haptics_enabled': hapticsEnabled,
-      'text_size': textSize,
-      'show_stats': showStats,
-      'show_username': showUsername,
-      'notifications_master': notificationsMaster,
-      'daily_checkin_enabled': dailyCheckinEnabled,
-      'daily_checkin_time': dailyCheckinTime,
-      'journal_reminder_enabled': journalReminderEnabled,
-      'comments_notifications': commentsNotifications,
-      'achievements_notifications': achievementsNotifications,
-      'marketing_notifications': marketingNotifications,
-      'client_updated_at': updatedAt.toUtc().toIso8601String(),
-    };
-    if (username != null) json['username'] = username;
-    if (avatarUrl != null) json['avatar_url'] = avatarUrl;
-    if (bio != null) json['bio'] = bio;
-    if (onboardingCompletedAt != null) json['onboarding_completed_at'] = onboardingCompletedAt!.toUtc().toIso8601String();
-    return json;
-  }
-
-  factory UserProfile.fromJson(Map<String, dynamic> json) {
-    return UserProfile(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      username: json['username'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
-      bio: json['bio'] as String?,
-      theme: json['theme'] as String? ?? 'system',
-      accentColor: json['accent_color'] as String? ?? '#0460D8',
-      language: json['language'] as String? ?? 'en',
-      reduceMotion: json['reduce_motion'] as bool? ?? false,
-      highContrast: json['high_contrast'] as bool? ?? false,
-      hapticsEnabled: json['haptics_enabled'] as bool? ?? true,
-      textSize: (json['text_size'] as num?)?.toDouble() ?? 1.0,
-      showStats: json['show_stats'] as bool? ?? false,
-      showUsername: json['show_username'] as bool? ?? true,
-      notificationsMaster: json['notifications_master'] as bool? ?? true,
-      dailyCheckinEnabled: json['daily_checkin_enabled'] as bool? ?? true,
-      dailyCheckinTime: json['daily_checkin_time'] as String? ?? '09:00',
-      journalReminderEnabled: json['journal_reminder_enabled'] as bool? ?? false,
-      commentsNotifications: json['comments_notifications'] as bool? ?? true,
-      achievementsNotifications: json['achievements_notifications'] as bool? ?? true,
-      marketingNotifications: json['marketing_notifications'] as bool? ?? false,
-      onboardingCompletedAt: json['onboarding_completed_at'] != null ? DateTime.parse(json['onboarding_completed_at']) : null,
-      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
-    );
-  }
 }
+
+

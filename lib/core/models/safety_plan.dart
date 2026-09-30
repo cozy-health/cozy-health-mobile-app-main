@@ -42,6 +42,35 @@ class SafetyPlan extends HiveObject {
     required this.isComplete,
     required this.lastUpdatedAt,
   });
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'id': id,
+      'is_complete': isComplete,
+      'last_updated_at': lastUpdatedAt.toUtc().toIso8601String(),
+    };
+    if (warningSigns != null) json['warning_signs'] = warningSigns;
+    if (copingStrategies != null) json['coping_strategies'] = copingStrategies;
+    if (distractions != null) json['distractions'] = distractions;
+    if (people != null) json['people'] = people;
+    if (professionals != null) json['professionals'] = professionals;
+    if (environmentSteps != null) json['environment_steps'] = environmentSteps;
+    return json;
+  }
+
+  factory SafetyPlan.fromJson(Map<String, dynamic> json) {
+    return SafetyPlan(
+      id: json['id'] as String,
+      warningSigns: (json['warning_signs'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      copingStrategies: (json['coping_strategies'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      distractions: (json['distractions'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      people: (json['people'] as List<dynamic>?)?.map((e) => Map<String, String>.from(e)).toList(),
+      professionals: (json['professionals'] as List<dynamic>?)?.map((e) => Map<String, String>.from(e)).toList(),
+      environmentSteps: (json['environment_steps'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      isComplete: json['is_complete'] as bool? ?? false,
+      lastUpdatedAt: json['last_updated_at'] != null ? DateTime.parse(json['last_updated_at']) : DateTime.now(),
+    );
+  }
 }
 
 class SafetyPlanAdapter extends TypeAdapter<SafetyPlan> {
@@ -76,32 +105,7 @@ class SafetyPlanAdapter extends TypeAdapter<SafetyPlan> {
     writer.writeInt(obj.lastUpdatedAt.millisecondsSinceEpoch);
   }
 
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{
-      'id': id,
-      'is_complete': isComplete,
-      'last_updated_at': lastUpdatedAt.toUtc().toIso8601String(),
-    };
-    if (warningSigns != null) json['warning_signs'] = warningSigns;
-    if (copingStrategies != null) json['coping_strategies'] = copingStrategies;
-    if (distractions != null) json['distractions'] = distractions;
-    if (people != null) json['people'] = people;
-    if (professionals != null) json['professionals'] = professionals;
-    if (environmentSteps != null) json['environment_steps'] = environmentSteps;
-    return json;
-  }
 
-  factory SafetyPlan.fromJson(Map<String, dynamic> json) {
-    return SafetyPlan(
-      id: json['id'] as String,
-      warningSigns: (json['warning_signs'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      copingStrategies: (json['coping_strategies'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      distractions: (json['distractions'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      people: (json['people'] as List<dynamic>?)?.map((e) => Map<String, String>.from(e)).toList(),
-      professionals: (json['professionals'] as List<dynamic>?)?.map((e) => Map<String, String>.from(e)).toList(),
-      environmentSteps: (json['environment_steps'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      isComplete: json['is_complete'] as bool? ?? false,
-      lastUpdatedAt: json['last_updated_at'] != null ? DateTime.parse(json['last_updated_at']) : DateTime.now(),
-    );
-  }
+
+
 }

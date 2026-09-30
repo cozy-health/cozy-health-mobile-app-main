@@ -34,35 +34,6 @@ class ChatMessage extends HiveObject {
     required this.isCrisisFlagged,
     required this.createdAt,
   });
-}
-
-class ChatMessageAdapter extends TypeAdapter<ChatMessage> {
-  @override
-  final int typeId = 3;
-
-  @override
-  ChatMessage read(BinaryReader reader) {
-    return ChatMessage(
-      id: reader.readString(),
-      conversationId: reader.readString(),
-      role: reader.readString(),
-      content: reader.readString(),
-      status: reader.readString(),
-      isCrisisFlagged: reader.readBool(),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
-    );
-  }
-
-  @override
-  void write(BinaryWriter writer, ChatMessage obj) {
-    writer.writeString(obj.id);
-    writer.writeString(obj.conversationId);
-    writer.writeString(obj.role);
-    writer.writeString(obj.content);
-    writer.writeString(obj.status);
-    writer.writeBool(obj.isCrisisFlagged);
-    writer.writeInt(obj.createdAt.millisecondsSinceEpoch);
-  }
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{
@@ -94,4 +65,37 @@ class ChatMessageAdapter extends TypeAdapter<ChatMessage> {
       createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
     );
   }
+}
+
+class ChatMessageAdapter extends TypeAdapter<ChatMessage> {
+  @override
+  final int typeId = 3;
+
+  @override
+  ChatMessage read(BinaryReader reader) {
+    return ChatMessage(
+      id: reader.readString(),
+      conversationId: reader.readString(),
+      role: reader.readString(),
+      content: reader.readString(),
+      status: reader.readString(),
+      isCrisisFlagged: reader.readBool(),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, ChatMessage obj) {
+    writer.writeString(obj.id);
+    writer.writeString(obj.conversationId);
+    writer.writeString(obj.role);
+    writer.writeString(obj.content);
+    writer.writeString(obj.status);
+    writer.writeBool(obj.isCrisisFlagged);
+    writer.writeInt(obj.createdAt.millisecondsSinceEpoch);
+  }
+
+
+
+
 }

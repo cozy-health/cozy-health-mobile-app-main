@@ -49,7 +49,7 @@ class QuizHistoryScreen extends StatelessWidget {
                   if (trendData.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.all(20),
-                      margin: const EdgeInsets.bottom(32),
+                      margin: EdgeInsets.only(bottom: 24)(32),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
@@ -196,3 +196,4 @@ class _TrendChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _TrendChartPainter oldDelegate) => false;
 }
+
