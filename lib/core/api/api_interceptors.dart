@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'auth_token_service.dart';
 import 'api_exceptions.dart';
-import '../../routing/app_router.dart';
+import '../routing/app_router.dart';
 import '../services/local_db_service.dart';
 
 class AuthInterceptor extends Interceptor {
@@ -25,7 +25,9 @@ class AuthInterceptor extends Interceptor {
       
       final context = AppRouter.navigatorKey.currentContext;
       if (context != null) {
-        Fluttertoast.showToast(msg: "Session expired. Please log in again.");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Session expired. Please log in again.")),
+        );
         context.go(AppRouter.login);
       }
     }

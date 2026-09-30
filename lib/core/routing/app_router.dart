@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
 import 'package:cozy_health/features/mood_check_in/presentation/screens/coping_mechanisms_screen.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_detail_screen.dart';
@@ -200,24 +201,6 @@ class AppRouter {
     return {};
   }
 
-  static String _extraString(
-    GoRouterState state, {
-    String fallback = '',
-    List<String> keys = const [],
-  }) {
-    final extra = state.extra;
-
-    if (extra is String) return extra;
-
-    if (extra is Map<String, dynamic>) {
-      for (final key in keys) {
-        final value = extra[key];
-        if (value is String && value.isNotEmpty) return value;
-      }
-    }
-
-    return fallback;
-  }
 
   static final GoRouter router = GoRouter(
     navigatorKey: navigatorKey,
@@ -736,3 +719,4 @@ class AppRouter {
     ],
   );
 }
+
