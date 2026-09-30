@@ -106,6 +106,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         lastname: '',
         email: email,
         password: password,
+        confirmPassword: _confirmController.text,
       );
       if (!mounted) return;
       showAuthToast(

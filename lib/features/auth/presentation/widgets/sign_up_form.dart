@@ -223,6 +223,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
         lastname: '',
         email: email,
         password: password,
+        confirmPassword: confirmPassword,
       );
 
       if (!mounted) return;

@@ -27,8 +27,8 @@ class AuthService {
       },
     );
 
-    final data = responseMap(response);
-    final token = data['access_token']?.toString();
+    final data = _payload(responseMap(response));
+    final token = data['token']?.toString();
 
     if (token != null && token.isNotEmpty) {
       await _tokenStorage.saveToken(token);
@@ -42,20 +42,22 @@ class AuthService {
     required String lastname,
     required String email,
     required String password,
+    required String confirmPassword,
   }) async {
+    final name = '$firstname $lastname'.trim();
     final response = await _apiClient.post(
       ApiConstants.register,
       withAuth: false,
       body: {
-        'firstname': firstname,
-        'lastname': lastname,
+        'name': name,
         'email': email,
         'password': password,
+        'password_confirmation': confirmPassword,
       },
     );
 
-    final data = responseMap(response);
-    final token = data['access_token']?.toString();
+    final data = _payload(responseMap(response));
+    final token = data['token']?.toString();
 
     if (token != null && token.isNotEmpty) {
       await _tokenStorage.saveToken(token);
@@ -65,7 +67,7 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> me() async {
-    return responseMap(await _apiClient.get(ApiConstants.me));
+    return _payload(responseMap(await _apiClient.get(ApiConstants.me)));
   }
 
   Future<void> logout() async {
@@ -82,11 +84,11 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> forgotPassword(String email) async {
-    return responseMap(await _apiClient.post(
+    return _payload(responseMap(await _apiClient.post(
       ApiConstants.forgotPassword,
       withAuth: false,
       body: {'email': email},
-    ));
+    )));
   }
 
   Future<Map<String, dynamic>> resetPassword({
@@ -94,7 +96,7 @@ class AuthService {
     required String otp,
     required String newPassword,
   }) async {
-    return responseMap(await _apiClient.post(
+    return _payload(responseMap(await _apiClient.post(
       ApiConstants.resetPassword,
       withAuth: false,
       body: {
@@ -102,6 +104,11 @@ class AuthService {
         'otp': otp,
         'new_password': newPassword,
       },
-    ));
+    )));
+  }
+
+  Map<String, dynamic> _payload(Map<String, dynamic> response) {
+    final data = response['data'];
+    return data is Map<String, dynamic> ? data : response;
   }
 }

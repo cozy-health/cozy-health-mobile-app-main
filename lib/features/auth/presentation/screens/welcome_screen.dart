@@ -47,13 +47,13 @@ class WelcomeScreen extends StatelessWidget {
               const Spacer(),
               AuthPrimaryButton(
                 text: 'Sign Up',
-                onPressed: () => context.go(AppRouter.createAccount),
+                onPressed: () => context.push(AppRouter.createAccount),
               ),
               const SizedBox(height: 12),
               AuthPrimaryButton(
                 text: 'Log In',
                 isOutlined: true,
-                onPressed: () => context.go(AppRouter.login),
+                onPressed: () => context.push(AppRouter.login),
               ),
               const SizedBox(height: 16),
               TextButton(
