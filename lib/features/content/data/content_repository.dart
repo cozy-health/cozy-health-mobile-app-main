@@ -36,4 +36,19 @@ class ContentRepository {
       fetchSavedArticles();
     } catch(e) {}
   }
+
+  Stream<bool> isSaved(String articleId) {
+    return watchSavedArticles().map((articles) => articles.any((a) => a.articleId == articleId));
+  }
+
+  Future<void> toggleSave(Map<String, dynamic> articleData) async {
+    final articleId = articleData['id'] as String;
+    final savedArticles = _local.getAllSavedArticles();
+    final isCurrentlySaved = savedArticles.any((a) => a.articleId == articleId);
+    if (isCurrentlySaved) {
+      await unsaveArticle(articleId);
+    } else {
+      await saveArticle(articleId);
+    }
+  }
 }

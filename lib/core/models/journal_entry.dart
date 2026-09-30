@@ -73,7 +73,7 @@ class JournalEntry extends HiveObject {
       'type': type,
       'body': body,
       'word_count': wordCount,
-      'is_crisis_flagged': isCrisisFlagged,
+      'is_draft': isDraft,
       'client_created_at': createdAt.toUtc().toIso8601String(),
     };
     if (title != null) json['title'] = title;
@@ -84,7 +84,7 @@ class JournalEntry extends HiveObject {
     if (promptText != null) json['prompt_text'] = promptText;
     if (tags != null) json['tags'] = tags;
     if (linkedMoodEntryId != null) json['linked_mood_entry_id'] = linkedMoodEntryId;
-    if (updatedAt != null) json['client_updated_at'] = updatedAt!.toUtc().toIso8601String();
+    json['client_updated_at'] = updatedAt.toUtc().toIso8601String();
     return json;
   }
 
@@ -102,10 +102,9 @@ class JournalEntry extends HiveObject {
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
       linkedMoodEntryId: json['linked_mood_entry_id'] as String?,
       wordCount: json['word_count'] as int? ?? 0,
-      isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
-      isFavorite: json['is_favorite'] as bool? ?? false,
+      isDraft: json['is_draft'] as bool? ?? false,
       createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
-      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : null,
+      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
     );
   }
 }

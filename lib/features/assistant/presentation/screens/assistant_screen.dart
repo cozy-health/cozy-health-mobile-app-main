@@ -75,14 +75,25 @@ class _AssistantScreenState extends State<AssistantScreen>
     );
     _listenToMessages();
     _historySub?.cancel();
-    _historySub = _repo.watchConversations().listen((convs) {
+    _historySub = _repo.watchConversations().map((convs) => convs.map((c) => Conversation(
+      id: c.id,
+      title: c.title ?? 'New conversation',
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+      messages: [],
+    )).toList()).listen((convs) {
       if (mounted) setState(() => _history = convs);
     });
   }
 
   void _listenToMessages() {
     _messageSub?.cancel();
-    _messageSub = _repo.watchMessages(_activeConversation.id).listen((msgs) {
+    _messageSub = _repo.watchMessages(_activeConversation.id).map((msgs) => msgs.map((m) => ChatMessage(
+      id: m.id,
+      role: m.role == 'assistant' ? ChatRole.assistant : ChatRole.user,
+      text: m.content,
+      createdAt: m.createdAt,
+    )).toList()).listen((msgs) {
       if (!mounted) return;
       setState(() {
         _activeConversation.messages.clear();
@@ -261,10 +272,10 @@ class _AssistantScreenState extends State<AssistantScreen>
 
     if (_activeConversation.messages.isEmpty) {
       _activeConversation.title = _titleFrom(text);
-      _repo.saveConversation(_activeConversation);
+      _repo.saveConversation(_activeConversation.toChatConversation());
     }
     
-    _repo.saveMessage(_activeConversation.id, userMessage);
+    _repo.saveMessage(userMessage.toCoreMessage(_activeConversation.id));
 
     setState(() {
       _isTyping = true;
@@ -307,7 +318,7 @@ class _AssistantScreenState extends State<AssistantScreen>
           text: reply,
           createdAt: DateTime.now(),
         );
-        _repo.saveMessage(_activeConversation.id, assistantMessage);
+        _repo.saveMessage(assistantMessage.toCoreMessage(_activeConversation.id));
         
         setState(() {
           _isStreaming = false;
@@ -357,7 +368,7 @@ class _AssistantScreenState extends State<AssistantScreen>
 
   void _retryMessage(ChatMessage message) {
     setState(() => message.status = MessageStatus.sent);
-    _repo.updateMessageStatus(message.id, MessageStatus.sent);
+    _repo.updateMessageStatus(message.id, MessageStatus.sent.name);
     // Ideally, we would also trigger a resend to the AI backend here
   }
 

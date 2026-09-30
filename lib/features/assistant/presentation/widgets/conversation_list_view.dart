@@ -107,7 +107,7 @@ class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
                 label: 'Undo',
                 onPressed: () {
                   setState(() => _conversations.insert(index, conversation));
-                  repo.saveConversation(conversation);
+                  repo.saveConversation(conversation.toChatConversation());
                   // also need to restore messages, but for now just saving the conversation back is enough
                 }
               ),

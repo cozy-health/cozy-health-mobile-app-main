@@ -1,4 +1,5 @@
-
+import '../../../core/models/chat_conversation.dart';
+import '../../../core/models/chat_message.dart' as core;
 
 enum ChatRole { user, assistant, system }
 enum MessageStatus { sending, sent, failed }
@@ -42,6 +43,18 @@ class Conversation {
       messages: messages.map((message) => message.copy()).toList(),
     );
   }
+
+  // To fix type mismatch with repo
+  ChatConversation toChatConversation() {
+    return ChatConversation(
+      id: id,
+      title: title,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      messageCount: messageCount,
+      isArchived: false,
+    );
+  }
 }
 
 class ChatMessage {
@@ -72,6 +85,19 @@ class ChatMessage {
       status: status,
       isCrisisFlagged: isCrisisFlagged,
       metadata: Map.from(metadata),
+    );
+  }
+
+  // To fix type mismatch with repo
+  core.ChatMessage toCoreMessage(String conversationId) {
+    return core.ChatMessage(
+      id: id,
+      conversationId: conversationId,
+      role: role.name,
+      content: text,
+      status: status.name,
+      isCrisisFlagged: isCrisisFlagged,
+      createdAt: createdAt,
     );
   }
 }

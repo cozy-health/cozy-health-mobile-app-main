@@ -49,7 +49,7 @@ class QuizHistoryScreen extends StatelessWidget {
                   if (trendData.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.all(20),
-                      margin: EdgeInsets.only(bottom: 24)(32),
+                      margin: const EdgeInsets.only(bottom: 24),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),

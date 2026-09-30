@@ -54,6 +54,7 @@ class ChatConversation extends HiveObject {
       lastMessagePreview: json['last_message_preview'] as String?,
       messageCount: json['message_count'] as int? ?? 0,
       isArchived: json['is_archived'] as bool? ?? false,
+      createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
       updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
     );
   }

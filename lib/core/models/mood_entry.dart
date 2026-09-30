@@ -86,6 +86,7 @@ class MoodEntry extends HiveObject {
     return MoodEntry(
       id: json['id'] as String,
       mood: json['mood'] as String,
+      intensity: json['intensity'] as int? ?? 5,
       energyLevel: json['energy_level'] as int?,
       bodySensations: (json['body_sensations'] as List<dynamic>?)?.map((e) => e as String).toList(),
       triggers: (json['triggers'] as List<dynamic>?)?.map((e) => e as String).toList(),
@@ -96,7 +97,7 @@ class MoodEntry extends HiveObject {
       copingHelped: json['coping_helped'] as String?,
       isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
       createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
-      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : null,
+      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
     );
   }
 }

@@ -127,9 +127,13 @@ class LocalDbService {
     yield* chatConversationBox.watch().map((_) => getAllConversations());
   }
 
+  Stream<List<ChatConversation>> watchChatConversations() => watchConversations();
+
   List<ChatConversation> getAllConversations() {
     return chatConversationBox.values.toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
   }
+
+  List<ChatConversation> getAllChatConversations() => getAllConversations();
 
   Future<void> deleteChatConversation(String id) async {
     await chatConversationBox.delete(id);
@@ -144,6 +148,8 @@ class LocalDbService {
     yield getMessagesForConversation(conversationId);
     yield* chatMessageBox.watch().map((_) => getMessagesForConversation(conversationId));
   }
+
+  Stream<List<ChatMessage>> watchChatMessages(String conversationId) => watchMessages(conversationId);
 
   List<ChatMessage> getMessagesForConversation(String conversationId) {
     return chatMessageBox.values.where((m) => m.conversationId == conversationId).toList()
@@ -168,6 +174,10 @@ class LocalDbService {
 
   SafetyPlan? getSafetyPlan() {
     return safetyPlanBox.values.firstOrNull;
+  }
+
+  Future<void> clearSafetyPlan() async {
+    await safetyPlanBox.clear();
   }
 
   // --- User Profile ---
@@ -207,6 +217,8 @@ class LocalDbService {
     return quizAttemptBox.values.toList()..sort((a, b) => b.completedAt.compareTo(a.completedAt));
   }
 
+  List<QuizAttempt> getAllQuizAttempts() => getQuizAttempts();
+
   // --- Saved Articles ---
   Box<SavedArticle> get savedArticleBox => Hive.box<SavedArticle>(savedArticleBoxName);
 
@@ -229,6 +241,10 @@ class LocalDbService {
     return savedArticleBox.get(articleId);
   }
 
+  List<SavedArticle> getAllSavedArticles() {
+    return savedArticleBox.values.toList()..sort((a, b) => b.savedAt.compareTo(a.savedAt));
+  }
+
   // --- Notifications ---
   Box<AppNotification> get appNotificationBox => Hive.box<AppNotification>(appNotificationBoxName);
 
@@ -247,6 +263,23 @@ class LocalDbService {
 
   List<AppNotification> getNotifications() {
     return appNotificationBox.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  Future<void> saveAppNotification(AppNotification n) async {
+    await appNotificationBox.put(n.id, n);
+  }
+
+  List<AppNotification> getAllAppNotifications() {
+    return appNotificationBox.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  Stream<List<AppNotification>> watchAppNotifications() async* {
+    yield getAllAppNotifications();
+    yield* appNotificationBox.watch().map((_) => getAllAppNotifications());
+  }
+
+  Future<void> deleteAppNotification(String id) async {
+    await appNotificationBox.delete(id);
   }
 
   // --- Subscription ---
@@ -315,12 +348,6 @@ class LocalDbService {
       }
     }
   }
-
-    // Notifications
-  Future<void> deleteAppNotification(String id) async { await Hive.box<AppNotification>(appNotificationBoxName).delete(id); }
-  
-  // Quizzes
-  List<QuizAttempt> getAllQuizAttempts() { return Hive.box<QuizAttempt>(quizAttemptBoxName).values.toList(); }
 
   // --- Scoping / Logout ---
   Future<void> clearAllUserData() async {

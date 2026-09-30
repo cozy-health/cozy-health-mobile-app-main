@@ -31,4 +31,12 @@ class SafetyPlanRepository {
     } catch(e) {}
     return plan;
   }
+
+  Future<SafetyPlan?> getSafetyPlan() async {
+    return _local.getSafetyPlan();
+  }
+
+  Future<void> clearSafetyPlan() async {
+    await _local.clearSafetyPlan();
+  }
 }

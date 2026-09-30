@@ -58,11 +58,12 @@ class QuizAttempt extends HiveObject {
   factory QuizAttempt.fromJson(Map<String, dynamic> json) {
     return QuizAttempt(
       id: json['id'] as String,
+      quizId: json['quiz_id'] as String? ?? json['quiz_slug'] as String,
       quizSlug: json['quiz_slug'] as String,
       quizTitle: json['quiz_title'] as String,
-      answers: Map<String, dynamic>.from(json['answers'] as Map),
+      answers: (json['answers'] as List<dynamic>?)?.map((e) => e as int).toList() ?? [],
       score: json['score'] as int,
-      interpretation: json['interpretation'] as String?,
+      interpretation: json['interpretation'] as String? ?? '',
       isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
       completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : DateTime.now(),
     );

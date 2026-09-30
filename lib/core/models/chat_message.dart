@@ -25,6 +25,10 @@ class ChatMessage extends HiveObject {
   @HiveField(6)
   final DateTime createdAt;
 
+  final String? modelUsed;
+  final int? tokensUsed;
+  final int? latencyMs;
+
   ChatMessage({
     required this.id,
     required this.conversationId,
@@ -33,6 +37,9 @@ class ChatMessage extends HiveObject {
     required this.status,
     required this.isCrisisFlagged,
     required this.createdAt,
+    this.modelUsed,
+    this.tokensUsed,
+    this.latencyMs,
   });
 
   Map<String, dynamic> toJson() {

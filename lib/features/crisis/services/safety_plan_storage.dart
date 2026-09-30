@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../models/safety_plan.dart';
+import '../../../core/models/safety_plan.dart';
 import '../data/safety_plan_repository.dart';
 import '../../../../core/services/local_db_service.dart';
 

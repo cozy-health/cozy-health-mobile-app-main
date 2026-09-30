@@ -83,5 +83,8 @@ class MoodRepository {
       return null;
     }
   }
+
+  /// Alias for saveMoodEntry — some UI code calls save() directly.
+  Future<MoodEntry> save(MoodEntry entry) => saveMoodEntry(entry);
 }
 

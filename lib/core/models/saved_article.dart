@@ -20,6 +20,10 @@ class SavedArticle extends HiveObject {
   @HiveField(5)
   final DateTime savedAt;
 
+  final String? articleSlug;
+  final String? category;
+  final int? readTimeMinutes;
+
   SavedArticle({
     required this.id,
     required this.articleId,
@@ -27,28 +31,36 @@ class SavedArticle extends HiveObject {
     required this.excerpt,
     required this.imageUrl,
     required this.savedAt,
+    this.articleSlug,
+    this.category,
+    this.readTimeMinutes,
   });
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    final json = <String, dynamic>{
       'id': id,
       'article_id': articleId,
-      'article_slug': articleSlug,
       'title': title,
-      'category': category,
-      'read_time_minutes': readTimeMinutes,
+      'excerpt': excerpt,
+      'image_url': imageUrl,
       'saved_at': savedAt.toUtc().toIso8601String(),
     };
+    if (articleSlug != null) json['article_slug'] = articleSlug;
+    if (category != null) json['category'] = category;
+    if (readTimeMinutes != null) json['read_time_minutes'] = readTimeMinutes;
+    return json;
   }
 
   factory SavedArticle.fromJson(Map<String, dynamic> json) {
     return SavedArticle(
       id: json['id'] as String,
       articleId: json['article_id'] as String,
-      articleSlug: json['article_slug'] as String,
+      articleSlug: json['article_slug'] as String?,
       title: json['title'] as String,
-      category: json['category'] as String,
-      readTimeMinutes: json['read_time_minutes'] as int,
+      category: json['category'] as String?,
+      readTimeMinutes: json['read_time_minutes'] as int?,
+      excerpt: json['excerpt'] as String? ?? '',
+      imageUrl: json['image_url'] as String? ?? '',
       savedAt: json['saved_at'] != null ? DateTime.parse(json['saved_at']) : DateTime.now(),
     );
   }

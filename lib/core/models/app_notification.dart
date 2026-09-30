@@ -23,6 +23,9 @@ class AppNotification extends HiveObject {
   @HiveField(6)
   final DateTime createdAt;
 
+  final String? deepLink;
+  final DateTime? readAt;
+
   AppNotification({
     required this.id,
     required this.title,
@@ -31,6 +34,8 @@ class AppNotification extends HiveObject {
     required this.read,
     this.payload,
     required this.createdAt,
+    this.deepLink,
+    this.readAt,
   });
 
   AppNotification copyWith({
@@ -41,6 +46,8 @@ class AppNotification extends HiveObject {
     bool? read,
     Map<String, dynamic>? payload,
     DateTime? createdAt,
+    String? deepLink,
+    DateTime? readAt,
   }) {
     return AppNotification(
       id: id ?? this.id,
@@ -50,6 +57,8 @@ class AppNotification extends HiveObject {
       read: read ?? this.read,
       payload: payload ?? this.payload,
       createdAt: createdAt ?? this.createdAt,
+      deepLink: deepLink ?? this.deepLink,
+      readAt: readAt ?? this.readAt,
     );
   }
 
@@ -59,11 +68,11 @@ class AppNotification extends HiveObject {
       'type': type,
       'title': title,
       'body': body,
-      'is_read': isRead,
+      'is_read': read,
       'client_created_at': createdAt.toUtc().toIso8601String(),
     };
     if (deepLink != null) json['deep_link'] = deepLink;
-    if (data != null) json['data'] = data;
+    if (payload != null) json['data'] = payload;
     if (readAt != null) json['read_at'] = readAt!.toUtc().toIso8601String();
     return json;
   }
@@ -75,8 +84,8 @@ class AppNotification extends HiveObject {
       title: json['title'] as String,
       body: json['body'] as String,
       deepLink: json['deep_link'] as String?,
-      data: json['data'] != null ? Map<String, dynamic>.from(json['data'] as Map) : null,
-      isRead: json['is_read'] as bool? ?? false,
+      payload: json['data'] != null ? Map<String, dynamic>.from(json['data'] as Map) : null,
+      read: json['is_read'] as bool? ?? false,
       readAt: json['read_at'] != null ? DateTime.parse(json['read_at']) : null,
       createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
     );

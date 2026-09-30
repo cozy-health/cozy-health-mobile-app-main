@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../models/safety_plan.dart';
+import '../../../../core/models/safety_plan.dart';
 import '../../services/crisis_detector.dart';
 import '../../services/crisis_launcher.dart';
 import '../../services/safety_plan_storage.dart';
@@ -908,12 +908,12 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
       _step = saved.currentStep.clamp(0, 5);
       _selected
         ..clear()
-        ..addAll(_keysForStep(0, saved.warningSigns))
-        ..addAll(_keysForStep(1, saved.copingStrategies))
-        ..addAll(_keysForStep(2, saved.distractions))
-        ..addAll(_keysForStep(3, saved.people.map((item) => item.name)))
-        ..addAll(_keysForStep(4, saved.professionals.map((item) => item.name)))
-        ..addAll(_keysForStep(5, saved.environmentSteps));
+        ..addAll(_keysForStep(0, saved.warningSigns ?? []))
+        ..addAll(_keysForStep(1, saved.copingStrategies ?? []))
+        ..addAll(_keysForStep(2, saved.distractions ?? []))
+        ..addAll(_keysForStep(3, (saved.peopleToCall ?? []).map((item) => item['name']!)))
+        ..addAll(_keysForStep(4, (saved.professionals ?? []).map((item) => item['name']!)))
+        ..addAll(_keysForStep(5, saved.environmentSteps ?? []));
       _loaded = true;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -939,32 +939,32 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
       warningSigns: values[0],
       copingStrategies: values[1],
       distractions: values[2],
-      people: (values[3] ?? const [])
+      peopleToCall: (values[3] ?? const [])
           .map(
-            (name) => PlanContact(
-              name: name,
-              phone: name == 'Sarah Chen' ? '+15550101234' : '',
-              relationship: name == 'Sarah Chen'
+            (name) => {
+              'name': name,
+              'phone': name == 'Sarah Chen' ? '+15550101234' : '',
+              'relation': name == 'Sarah Chen'
                   ? 'Sister'
                   : name == 'Mom'
                   ? 'Mother'
                   : '',
-            ),
+            },
           )
           .toList(),
       professionals: (values[4] ?? const [])
           .map(
-            (name) => PlanProfessional(
-              name: name,
-              role: name,
-              phone: name == 'Local crisis line' ? '988' : '',
-            ),
+            (name) => {
+              'name': name,
+              'role': name,
+              'phone': name == 'Local crisis line' ? '988' : '',
+            },
           )
           .toList(),
       environmentSteps: values[5],
       currentStep: complete ? 5 : (_step + 1).clamp(0, 5),
       isComplete: complete,
-      lastUpdated: DateTime.now(),
+      lastUpdatedAt: DateTime.now(),
     );
     setState(() => _plan = nextPlan);
     await _storage.save(nextPlan);
@@ -1308,18 +1308,18 @@ class PersistedSafetyPlanViewScreen extends StatelessWidget {
           'My warning signs': plan.warningSigns,
           'What helps me': plan.copingStrategies,
           'Distractions': plan.distractions,
-          'People I can call': plan.people
-              .map((item) => '${item.name} (${item.relationship})')
+          'People I can call': (plan.peopleToCall ?? [])
+              .map((item) => '${item['name']} (${item['relation']})')
               .toList(),
-          'Professionals': plan.professionals
-              .map((item) => '${item.name} (${item.role})')
+          'Professionals': (plan.professionals ?? [])
+              .map((item) => '${item['name']} (${item['role']})')
               .toList(),
           'Making my space safe': plan.environmentSteps,
         };
 
         return CrisisShell(
           title: 'My Safety Plan',
-          subtitle: 'Last updated ${_formatPlanDate(plan.lastUpdated)}',
+          subtitle: 'Last updated ${_formatPlanDate(plan.lastUpdatedAt)}',
           trailing: TextButton(
             onPressed: () => context.push(AppRouter.safetyPlan),
             child: Text('Edit', style: CrisisText.caption),
@@ -1345,10 +1345,10 @@ class PersistedSafetyPlanViewScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    if (entry.value.isEmpty)
+                    if (entry.value == null || entry.value!.isEmpty)
                       Text('Nothing added yet.', style: CrisisText.bodyMuted)
                     else
-                      ...entry.value.map(
+                      ...entry.value!.map(
                         (item) => Text('- $item', style: CrisisText.bodyMuted),
                       ),
                   ],

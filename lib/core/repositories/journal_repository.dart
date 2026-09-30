@@ -56,5 +56,8 @@ class JournalRepository {
       debugPrint('Sync failed: $e');
     }
   }
+
+  /// Alias for saveJournalEntry — some UI code calls save() directly.
+  Future<JournalEntry> save(JournalEntry entry) => saveJournalEntry(entry);
 }
 

@@ -31,6 +31,9 @@ class SafetyPlan extends HiveObject {
   @HiveField(8)
   final DateTime lastUpdatedAt;
 
+  @HiveField(9)
+  final int currentStep;
+
   SafetyPlan({
     required this.id,
     this.warningSigns,
@@ -41,7 +44,42 @@ class SafetyPlan extends HiveObject {
     this.environmentSteps,
     required this.isComplete,
     required this.lastUpdatedAt,
+    this.currentStep = 0,
   });
+
+  factory SafetyPlan.empty() {
+    return SafetyPlan(
+      id: 'sp-${DateTime.now().microsecondsSinceEpoch}',
+      isComplete: false,
+      lastUpdatedAt: DateTime.now(),
+    );
+  }
+
+  SafetyPlan copyWith({
+    String? id,
+    List<String>? warningSigns,
+    List<String>? copingStrategies,
+    List<String>? distractions,
+    List<Map<String, String>>? peopleToCall,
+    List<Map<String, String>>? professionals,
+    List<String>? environmentSteps,
+    bool? isComplete,
+    DateTime? lastUpdatedAt,
+    int? currentStep,
+  }) {
+    return SafetyPlan(
+      id: id ?? this.id,
+      warningSigns: warningSigns ?? this.warningSigns,
+      copingStrategies: copingStrategies ?? this.copingStrategies,
+      distractions: distractions ?? this.distractions,
+      peopleToCall: peopleToCall ?? this.peopleToCall,
+      professionals: professionals ?? this.professionals,
+      environmentSteps: environmentSteps ?? this.environmentSteps,
+      isComplete: isComplete ?? this.isComplete,
+      lastUpdatedAt: lastUpdatedAt ?? this.lastUpdatedAt,
+      currentStep: currentStep ?? this.currentStep,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{
@@ -52,7 +90,7 @@ class SafetyPlan extends HiveObject {
     if (warningSigns != null) json['warning_signs'] = warningSigns;
     if (copingStrategies != null) json['coping_strategies'] = copingStrategies;
     if (distractions != null) json['distractions'] = distractions;
-    if (people != null) json['people'] = people;
+    if (peopleToCall != null) json['people'] = peopleToCall;
     if (professionals != null) json['professionals'] = professionals;
     if (environmentSteps != null) json['environment_steps'] = environmentSteps;
     return json;
@@ -64,11 +102,34 @@ class SafetyPlan extends HiveObject {
       warningSigns: (json['warning_signs'] as List<dynamic>?)?.map((e) => e as String).toList(),
       copingStrategies: (json['coping_strategies'] as List<dynamic>?)?.map((e) => e as String).toList(),
       distractions: (json['distractions'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      people: (json['people'] as List<dynamic>?)?.map((e) => Map<String, String>.from(e)).toList(),
+      peopleToCall: (json['people'] as List<dynamic>?)?.map((e) => Map<String, String>.from(e)).toList(),
       professionals: (json['professionals'] as List<dynamic>?)?.map((e) => Map<String, String>.from(e)).toList(),
       environmentSteps: (json['environment_steps'] as List<dynamic>?)?.map((e) => e as String).toList(),
       isComplete: json['is_complete'] as bool? ?? false,
       lastUpdatedAt: json['last_updated_at'] != null ? DateTime.parse(json['last_updated_at']) : DateTime.now(),
+      currentStep: json['current_step'] as int? ?? 0,
+    );
+  }
+}
+
+class PlanContact {
+  final String name;
+  final String phone;
+  final String? relationship;
+
+  const PlanContact({required this.name, required this.phone, this.relationship});
+
+  Map<String, String> toMap() {
+    final m = {'name': name, 'phone': phone};
+    if (relationship != null) m['relation'] = relationship!;
+    return m;
+  }
+
+  factory PlanContact.fromMap(Map<String, String> map) {
+    return PlanContact(
+      name: map['name'] ?? '',
+      phone: map['phone'] ?? '',
+      relationship: map['relation'],
     );
   }
 }
