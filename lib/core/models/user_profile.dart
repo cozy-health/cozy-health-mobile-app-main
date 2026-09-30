@@ -209,6 +209,28 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
   }
 
+  UserProfile copyWithField(String key, dynamic value) {
+    switch (key) {
+      case 'theme': return copyWith(theme: value as String);
+      case 'accent_color': return copyWith(accentColor: value as String);
+      case 'language': return copyWith(language: value as String);
+      case 'reduce_motion': return copyWith(reduceMotion: value as bool);
+      case 'high_contrast': return copyWith(highContrast: value as bool);
+      case 'haptics_enabled': return copyWith(hapticsEnabled: value as bool);
+      case 'text_size': return copyWith(textSize: (value as num).toDouble());
+      case 'show_stats': return copyWith(showStats: value as bool);
+      case 'show_username': return copyWith(showUsername: value as bool);
+      case 'notifications_master': return copyWith(notificationsMaster: value as bool);
+      case 'daily_checkin_enabled': return copyWith(dailyCheckinEnabled: value as bool);
+      case 'daily_checkin_time': return copyWith(dailyCheckinTime: value as String);
+      case 'journal_reminder_enabled': return copyWith(journalReminderEnabled: value as bool);
+      case 'comments_notifications': return copyWith(commentsNotifications: value as bool);
+      case 'achievements_notifications': return copyWith(achievementsNotifications: value as bool);
+      case 'marketing_notifications': return copyWith(marketingNotifications: value as bool);
+      default: return this;
+    }
+  }
+
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{
       'id': id,

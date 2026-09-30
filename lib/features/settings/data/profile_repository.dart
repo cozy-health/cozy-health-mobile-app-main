@@ -44,4 +44,25 @@ class ProfileRepository {
       fetchProfile();
     } catch (e) {}
   }
+  
+  Future<void> updateField(String key, dynamic value) async {
+    final profile = await _local.getUserProfile();
+    if (profile == null) return;
+    
+    final updated = profile.copyWithField(key, value);
+    await _local.saveUserProfile(updated);
+    
+    await _local.enqueueSync(
+      type: 'user_profile',
+      action: 'upsert',
+      recordId: profile.id,
+      payload: updated.toJson(),
+    );
+    
+    try {
+      await ApiClient.instance.patch('/user/preferences', data: {key: value});
+    } catch (e) {
+      debugPrint('Preference sync failed: $e');
+    }
+  }
 }
