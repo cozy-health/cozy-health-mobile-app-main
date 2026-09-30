@@ -34,7 +34,7 @@ class OptionSelectionWidget extends StatelessWidget {
                 color: AppColors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.midGrey,
+                  color: isSelected ? const Color(0xFF1EAE55) : AppColors.midGrey,
                   width: 1.5,
                 ),
               ),
@@ -54,7 +54,7 @@ class OptionSelectionWidget extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isSelected
-                          ? AppColors.primary
+                          ? const Color(0xFF1EAE55)
                           : Colors.transparent,
                       border: isSelected
                           ? null

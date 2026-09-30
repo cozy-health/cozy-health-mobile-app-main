@@ -27,6 +27,11 @@ class PersonalizationQuestion {
             'Depression',
             'Motivation',
             'Anger',
+            'Sleep',
+            'Loneliness',
+            'Burnout',
+            'Parenting',
+            'Self-esteem',
           ],
         ),
         PersonalizationQuestion(

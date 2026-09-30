@@ -3,10 +3,26 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../../utils/responsive_extensions.dart';
 
+class BubbleTheme {
+  final Color background;
+  final Color border;
+  const BubbleTheme(this.background, this.border);
+}
+
 class ChallengeSelectionWidget extends StatelessWidget {
   final List<String> challenges;
   final List<String> selectedChallenges;
   final Function(String) onChallengeToggle;
+
+  static const List<BubbleTheme> _themes = [
+    BubbleTheme(Color(0xFFFFE0D0), Color(0xFFCC5500)), // Peach/Orange
+    BubbleTheme(Color(0xFFD1F2D9), Color(0xFF16A34A)), // Mint/Emerald
+    BubbleTheme(Color(0xFFFFC5C5), Color(0xFFB91C1C)), // Pink/Red
+    BubbleTheme(Color(0xFFCBE3FF), Color(0xFF1D4ED8)), // Blue/Dark Blue
+    BubbleTheme(Color(0xFFFFF0C2), Color(0xFFCA8A04)), // Yellow/Dark Yellow
+    BubbleTheme(Color(0xFFE8D1FF), Color(0xFF7E22CE)), // Lavender/Purple
+    BubbleTheme(Color(0xFFE2E2E2), Color(0xFF4B5563)), // Grey/Dark Grey
+  ];
 
   const ChallengeSelectionWidget({
     super.key,
@@ -15,156 +31,96 @@ class ChallengeSelectionWidget extends StatelessWidget {
     required this.onChallengeToggle,
   });
 
-  Color _getChallengeColor(String challenge) {
-    switch (challenge) {
-      case 'Anxiety':
-        return const Color(0xFFFFDDD4); // Light peach
-      case 'Grief':
-        return const Color(0xFFD4F4DD); // Light green
-      case 'Pregnancy':
-        return const Color(0xFFFFDDD4); // Light peach
-      case 'Trauma':
-        return const Color(0xFFFFDDD4); // Light peach
-      case 'Health Issues':
-        return const Color(0xFFFFB3BA); // Light pink
-      case 'Relationships':
-        return const Color(0xFFB3D9FF); // Light blue
-      case 'Work Stress':
-        return const Color(0xFFFFDDD4); // Light peach
-      case 'Depression':
-        return const Color(0xFFD3D3D3); // Light grey
-      case 'Motivation':
-        return const Color(0xFFFFB3BA); // Light pink
-      case 'Anger':
-        return const Color(0xFFD4F4DD); // Light green
-      default:
-        return const Color(0xFFFFDDD4);
-    }
+  BubbleTheme _getTheme(String challenge) {
+    int index = challenges.indexOf(challenge);
+    if (index == -1) index = challenge.hashCode.abs();
+    
+    // Multiply by a prime (3) to shuffle the 7 themes. 
+    // This guarantees adjacent bubbles in the Wrap never share a color.
+    int colorIndex = (index * 3) % _themes.length;
+    return _themes[colorIndex];
   }
 
   double _getChallengeSize(String challenge) {
-    switch (challenge) {
-      case 'Anxiety':
-        return 25.w; // Large
-      case 'Grief':
-        return 18.w; // Medium
-      case 'Pregnancy':
-        return 28.w; // Extra large
-      case 'Trauma':
-        return 20.w; // Medium
-      case 'Health Issues':
-        return 22.w; // Medium-large
-      case 'Relationships':
-        return 26.w; // Large
-      case 'Work Stress':
-        return 24.w; // Large
-      case 'Depression':
-        return 20.w; // Medium
-      case 'Motivation':
-        return 26.w; // Large
-      case 'Anger':
-        return 18.w; // Medium
-      default:
-        return 20.w;
-    }
+    if (challenge.length > 12) return 28.w;
+    if (challenge.length > 8) return 26.w;
+    
+    int index = challenges.indexOf(challenge);
+    if (index == -1) index = challenge.hashCode.abs();
+
+    return 22.w + ((index * 2) % 3) * 2.w; 
+  }
+
+  Alignment _getAlignment(int index) {
+    // A precisely calculated interlocking honeycomb matrix to ensure 
+    // bubbles scatter organically without ever eclipsing each other's text.
+    const alignments = [
+      Alignment(-0.9, -1.0), // Row 1, Left
+      Alignment(0.0, -1.0),  // Row 1, Center
+      Alignment(0.9, -1.0),  // Row 1, Right
+      Alignment(-0.5, -0.6), // Row 2, Mid-Left
+      Alignment(0.5, -0.6),  // Row 2, Mid-Right
+      Alignment(-0.9, -0.2), // Row 3, Left
+      Alignment(0.0, -0.2),  // Row 3, Center
+      Alignment(0.9, -0.2),  // Row 3, Right
+      Alignment(-0.5, 0.2),  // Row 4, Mid-Left
+      Alignment(0.5, 0.2),   // Row 4, Mid-Right
+      Alignment(-0.9, 0.6),  // Row 5, Left
+      Alignment(0.0, 0.6),   // Row 5, Center
+      Alignment(0.9, 0.6),   // Row 5, Right
+      Alignment(-0.5, 1.0),  // Row 6, Mid-Left
+      Alignment(0.5, 1.0),   // Row 6, Mid-Right
+    ];
+    return alignments[index % alignments.length];
   }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 65.h, // Reduced height to bring circles closer
+    return SizedBox.expand(
       child: Stack(
-        children: [
-          // Anxiety - Top left
-          Positioned(
-            top: 0,
-            left: 8.w,
-            child: _buildChallengeCircle('Anxiety'),
-          ),
-          // Grief - Top right
-          Positioned(
-            top: 1.h,
-            right: 15.w,
-            child: _buildChallengeCircle('Grief'),
-          ),
-          // Pregnancy - Left middle (overlapping with Anxiety)
-          Positioned(
-            top: 12.h,
-            left: 2.w,
-            child: _buildChallengeCircle('Pregnancy'),
-          ),
-          // Trauma - Right middle (closer to Grief)
-          Positioned(
-            top: 14.h,
-            right: 8.w,
-            child: _buildChallengeCircle('Trauma'),
-          ),
-          // Health Issues - Center (overlapping area)
-          Positioned(
-            top: 22.h,
-            left: 32.w,
-            child: _buildChallengeCircle('Health Issues'),
-          ),
-          // Relationships - Left bottom (overlapping with Pregnancy)
-          Positioned(
-            top: 35.h,
-            left: 5.w,
-            child: _buildChallengeCircle('Relationships'),
-          ),
-          // Work Stress - Right bottom (closer to Trauma)
-          Positioned(
-            top: 38.h,
-            right: 2.w,
-            child: _buildChallengeCircle('Work Stress'),
-          ),
-          // Depression - Center bottom (closer to Health Issues)
-          Positioned(
-            top: 45.h,
-            left: 38.w,
-            child: _buildChallengeCircle('Depression'),
-          ),
-          // Motivation - Bottom left (overlapping with Relationships)
-          Positioned(
-            top: 52.h,
-            left: 12.w,
-            child: _buildChallengeCircle('Motivation'),
-          ),
-          // Anger - Bottom right (closer to others)
-          Positioned(
-            top: 54.h,
-            right: 18.w,
-            child: _buildChallengeCircle('Anger'),
-          ),
-        ],
+        clipBehavior: Clip.none,
+        children: challenges.asMap().entries.map((entry) {
+          return Align(
+            alignment: _getAlignment(entry.key),
+            child: _buildChallengeCircle(entry.value),
+          );
+        }).toList(),
       ),
     );
   }
 
   Widget _buildChallengeCircle(String challenge) {
+    if (!challenges.contains(challenge)) return const SizedBox.shrink();
     final isSelected = selectedChallenges.contains(challenge);
     final size = _getChallengeSize(challenge);
-    
+    final theme = _getTheme(challenge);
+
     return GestureDetector(
       onTap: () => onChallengeToggle(challenge),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: size,
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isSelected ? AppColors.primary : _getChallengeColor(challenge),
+          color: theme.background,
           border: isSelected 
-              ? Border.all(color: AppColors.primary, width: 3)
-              : null,
+              ? Border.all(color: theme.border, width: 2.5)
+              : Border.all(color: Colors.transparent, width: 2.5),
         ),
         child: Center(
-          child: Text(
-            challenge,
-            style: AppTextStyles.body2.copyWith(
-              color: isSelected ? AppColors.white : AppColors.black,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              fontSize: challenge.length > 8 ? 11 : 12,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: Text(
+              challenge,
+              style: AppTextStyles.body2.copyWith(
+                color: AppColors.black,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                fontSize: challenge.length > 8 ? 11 : 13,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
             ),
-            textAlign: TextAlign.center,
           ),
         ),
       ),

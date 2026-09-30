@@ -76,4 +76,28 @@ class AuthService {
     final token = await _tokenStorage.getToken();
     return token != null && token.isNotEmpty;
   }
+
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    return _apiClient.post(
+      ApiConstants.forgotPassword,
+      withAuth: false,
+      body: {'email': email},
+    );
+  }
+
+  Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    return _apiClient.post(
+      ApiConstants.resetPassword,
+      withAuth: false,
+      body: {
+        'email': email,
+        'otp': otp,
+        'new_password': newPassword,
+      },
+    );
+  }
 }

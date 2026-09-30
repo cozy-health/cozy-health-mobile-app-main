@@ -13,18 +13,11 @@ class PreparingCozyScreen extends StatefulWidget {
   State<PreparingCozyScreen> createState() => _PreparingCozyScreenState();
 }
 
-class _PreparingCozyScreenState extends State<PreparingCozyScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
+class _PreparingCozyScreenState extends State<PreparingCozyScreen> {
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    );
-    _animationController.repeat();
     _navigateToHome();
   }
 
@@ -33,12 +26,6 @@ class _PreparingCozyScreenState extends State<PreparingCozyScreen>
     if (mounted) {
       context.go('/home');
     }
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
   }
 
   @override
