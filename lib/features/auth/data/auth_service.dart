@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/constants/api_constants.dart';
 
 import '../../../core/api/api_client.dart';
@@ -10,11 +12,9 @@ class AuthService {
   final ApiClient _apiClient;
   final TokenStorage _tokenStorage;
 
-  AuthService({
-    ApiClient? apiClient,
-    TokenStorage? tokenStorage,
-  })  : _apiClient = apiClient ?? ApiClient(),
-        _tokenStorage = tokenStorage ?? TokenStorage();
+  AuthService({ApiClient? apiClient, TokenStorage? tokenStorage})
+    : _apiClient = apiClient ?? ApiClient(),
+      _tokenStorage = tokenStorage ?? TokenStorage();
 
   Future<Map<String, dynamic>> login({
     required String email,
@@ -23,10 +23,7 @@ class AuthService {
     final response = await _apiClient.post(
       ApiConstants.login,
       withAuth: false,
-      body: {
-        'email': email,
-        'password': password,
-      },
+      body: {'email': email, 'password': password},
     );
 
     final data = _payload(responseMap(response));
@@ -36,6 +33,7 @@ class AuthService {
       await _tokenStorage.saveToken(token);
     }
     await _cacheUserProfile(data['user']);
+    await _fetchAndCacheProfile();
 
     return data;
   }
@@ -66,6 +64,7 @@ class AuthService {
       await _tokenStorage.saveToken(token);
     }
     await _cacheUserProfile(data['user']);
+    await _fetchAndCacheProfile();
 
     return data;
   }
@@ -88,11 +87,15 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> forgotPassword(String email) async {
-    return _payload(responseMap(await _apiClient.post(
-      ApiConstants.forgotPassword,
-      withAuth: false,
-      body: {'email': email},
-    )));
+    return _payload(
+      responseMap(
+        await _apiClient.post(
+          ApiConstants.forgotPassword,
+          withAuth: false,
+          body: {'email': email},
+        ),
+      ),
+    );
   }
 
   Future<Map<String, dynamic>> resetPassword({
@@ -100,15 +103,15 @@ class AuthService {
     required String otp,
     required String newPassword,
   }) async {
-    return _payload(responseMap(await _apiClient.post(
-      ApiConstants.resetPassword,
-      withAuth: false,
-      body: {
-        'email': email,
-        'otp': otp,
-        'new_password': newPassword,
-      },
-    )));
+    return _payload(
+      responseMap(
+        await _apiClient.post(
+          ApiConstants.resetPassword,
+          withAuth: false,
+          body: {'email': email, 'token': otp, 'password': newPassword},
+        ),
+      ),
+    );
   }
 
   Map<String, dynamic> _payload(Map<String, dynamic> response) {
@@ -132,10 +135,29 @@ class AuthService {
         name: name,
         email: email,
         username: json['username']?.toString(),
-        avatarUrl: json['avatar_url']?.toString() ?? json['avatar_path']?.toString(),
-        updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
+        avatarUrl:
+            json['avatar_url']?.toString() ?? json['avatar_path']?.toString(),
+        updatedAt:
+            DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
             DateTime.now(),
       ),
     );
+  }
+
+  Future<void> _fetchAndCacheProfile() async {
+    try {
+      final response = await ApiClient.instance.get(ApiConstants.me);
+      final data = responseMap(response);
+      final profileData = data['data'];
+
+      if (profileData is Map) {
+        final profile = UserProfile.fromJson(
+          Map<String, dynamic>.from(profileData),
+        );
+        await LocalDbService.instance.saveUserProfile(profile);
+      }
+    } catch (e) {
+      debugPrint('Profile fetch after auth failed: $e');
+    }
   }
 }

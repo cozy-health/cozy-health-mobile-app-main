@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/models/user_profile.dart';
 import '../../../../core/services/local_db_service.dart';
+import '../../../../core/widgets/app_scaffold_padding.dart';
 import '../../data/profile_repository.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -18,10 +19,6 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.warmBackground,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
-          onPressed: () => context.pop(),
-        ),
         title: Text(
           'Settings',
           style: AppTextStyles.heading2.copyWith(color: AppColors.text),
@@ -30,13 +27,19 @@ class SettingsScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: EdgeInsets.fromLTRB(
+            24,
+            0,
+            24,
+            AppScaffoldPadding.tabScrollBottom(context).bottom,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 24),
               StreamBuilder<UserProfile?>(
                 stream: ProfileRepository().watchProfile(),
+                initialData: LocalDbService.instance.getUserProfile(),
                 builder: (context, snapshot) {
                   final profile = snapshot.data;
                   final name = profile?.name ?? 'Loading...';
@@ -74,7 +77,10 @@ class SettingsScreen extends StatelessWidget {
                                     : null,
                               ),
                               child: avatarUrl == null
-                                  ? const Icon(Icons.person, color: AppColors.white)
+                                  ? const Icon(
+                                      Icons.person,
+                                      color: AppColors.white,
+                                    )
                                   : null,
                             ),
                             const SizedBox(width: 16),
@@ -119,7 +125,8 @@ class SettingsScreen extends StatelessWidget {
                   _SettingsRow(
                     icon: Icons.notifications_none,
                     label: 'Notifications',
-                    onTap: () => context.push(AppRouter.notificationPreferences),
+                    onTap: () =>
+                        context.push(AppRouter.notificationPreferences),
                   ),
                   _SettingsRow(
                     icon: Icons.lock_outline,
@@ -287,11 +294,15 @@ class SettingsScreen extends StatelessWidget {
                           ),
                           title: Text(
                             'Log out?',
-                            style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+                            style: AppTextStyles.heading2.copyWith(
+                              color: AppColors.text,
+                            ),
                           ),
                           content: Text(
                             'You\'ll need to log in again.',
-                            style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                            style: AppTextStyles.body1.copyWith(
+                              color: AppColors.text,
+                            ),
                           ),
                           actions: [
                             TextButton(
@@ -363,10 +374,7 @@ class _SettingsSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const _SettingsSection({
-    required this.title,
-    required this.children,
-  });
+  const _SettingsSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -392,26 +400,23 @@ class _SettingsSection extends StatelessWidget {
             border: Border.all(color: AppColors.border, width: 1),
           ),
           child: Column(
-            children: List.generate(
-              children.length,
-              (index) {
-                final isLast = index == children.length - 1;
-                return Column(
-                  children: [
-                    children[index],
-                    if (!isLast)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 56),
-                        child: Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: AppColors.border.withValues(alpha: 0.4),
-                        ),
+            children: List.generate(children.length, (index) {
+              final isLast = index == children.length - 1;
+              return Column(
+                children: [
+                  children[index],
+                  if (!isLast)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 56),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: AppColors.border.withValues(alpha: 0.4),
                       ),
-                  ],
-                );
-              },
-            ),
+                    ),
+                ],
+              );
+            }),
           ),
         ),
       ],

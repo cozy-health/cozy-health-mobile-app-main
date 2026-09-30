@@ -140,32 +140,82 @@ class UserProfile extends HiveObject {
       notificationsMaster: notificationsMaster ?? this.notificationsMaster,
       dailyCheckinEnabled: dailyCheckinEnabled ?? this.dailyCheckinEnabled,
       dailyCheckinTime: dailyCheckinTime ?? this.dailyCheckinTime,
-      journalReminderEnabled: journalReminderEnabled ?? this.journalReminderEnabled,
-      commentsNotifications: commentsNotifications ?? this.commentsNotifications,
-      achievementsNotifications: achievementsNotifications ?? this.achievementsNotifications,
-      marketingNotifications: marketingNotifications ?? this.marketingNotifications,
+      journalReminderEnabled:
+          journalReminderEnabled ?? this.journalReminderEnabled,
+      commentsNotifications:
+          commentsNotifications ?? this.commentsNotifications,
+      achievementsNotifications:
+          achievementsNotifications ?? this.achievementsNotifications,
+      marketingNotifications:
+          marketingNotifications ?? this.marketingNotifications,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
   UserProfile copyWithField(String key, dynamic value) {
     switch (key) {
-      case 'theme': return copyWith(theme: value as String);
-      case 'accent_color': return copyWith(accentColor: value as String);
-      case 'language': return copyWith(language: value as String);
-      case 'reduce_motion': return copyWith(reduceMotion: value as bool);
-      case 'high_contrast': return copyWith(highContrast: value as bool);
-      case 'haptics_enabled': return copyWith(hapticsEnabled: value as bool);
-      case 'text_size': return copyWith(textSize: (value as num).toDouble());
-      case 'show_stats': return copyWith(showStats: value as bool);
-      case 'show_username': return copyWith(showUsername: value as bool);
-      case 'notifications_master': return copyWith(notificationsMaster: value as bool);
-      case 'daily_checkin_enabled': return copyWith(dailyCheckinEnabled: value as bool);
-      case 'daily_checkin_time': return copyWith(dailyCheckinTime: value as String);
-      case 'journal_reminder_enabled': return copyWith(journalReminderEnabled: value as bool);
-      case 'comments_notifications': return copyWith(commentsNotifications: value as bool);
-      case 'achievements_notifications': return copyWith(achievementsNotifications: value as bool);
-      case 'marketing_notifications': return copyWith(marketingNotifications: value as bool);
-      default: return this;
+      case 'theme':
+        return copyWith(theme: value as String);
+      case 'accentColor':
+        return copyWith(accentColor: value as String);
+      case 'accent_color':
+        return copyWith(accentColor: value as String);
+      case 'language':
+        return copyWith(language: value as String);
+      case 'reduceMotion':
+        return copyWith(reduceMotion: value as bool);
+      case 'reduce_motion':
+        return copyWith(reduceMotion: value as bool);
+      case 'highContrast':
+        return copyWith(highContrast: value as bool);
+      case 'high_contrast':
+        return copyWith(highContrast: value as bool);
+      case 'hapticsEnabled':
+        return copyWith(hapticsEnabled: value as bool);
+      case 'haptics_enabled':
+        return copyWith(hapticsEnabled: value as bool);
+      case 'textSize':
+        return copyWith(textSize: (value as num).toDouble());
+      case 'text_size':
+        return copyWith(textSize: (value as num).toDouble());
+      case 'showStats':
+        return copyWith(showStats: value as bool);
+      case 'show_stats':
+        return copyWith(showStats: value as bool);
+      case 'showUsername':
+        return copyWith(showUsername: value as bool);
+      case 'show_username':
+        return copyWith(showUsername: value as bool);
+      case 'notificationsMaster':
+        return copyWith(notificationsMaster: value as bool);
+      case 'notifications_master':
+        return copyWith(notificationsMaster: value as bool);
+      case 'dailyCheckinEnabled':
+        return copyWith(dailyCheckinEnabled: value as bool);
+      case 'daily_checkin_enabled':
+        return copyWith(dailyCheckinEnabled: value as bool);
+      case 'dailyCheckinTime':
+        return copyWith(dailyCheckinTime: value as String);
+      case 'daily_checkin_time':
+        return copyWith(dailyCheckinTime: value as String);
+      case 'journalReminderEnabled':
+        return copyWith(journalReminderEnabled: value as bool);
+      case 'journal_reminder_enabled':
+        return copyWith(journalReminderEnabled: value as bool);
+      case 'commentsNotifications':
+        return copyWith(commentsNotifications: value as bool);
+      case 'comments_notifications':
+        return copyWith(commentsNotifications: value as bool);
+      case 'achievementsNotifications':
+        return copyWith(achievementsNotifications: value as bool);
+      case 'achievements_notifications':
+        return copyWith(achievementsNotifications: value as bool);
+      case 'marketingNotifications':
+        return copyWith(marketingNotifications: value as bool);
+      case 'marketing_notifications':
+        return copyWith(marketingNotifications: value as bool);
+      default:
+        return this;
     }
   }
 
@@ -218,11 +268,15 @@ class UserProfile extends HiveObject {
       notificationsMaster: json['notifications_master'] as bool? ?? true,
       dailyCheckinEnabled: json['daily_checkin_enabled'] as bool? ?? true,
       dailyCheckinTime: json['daily_checkin_time'] as String? ?? '09:00',
-      journalReminderEnabled: json['journal_reminder_enabled'] as bool? ?? false,
+      journalReminderEnabled:
+          json['journal_reminder_enabled'] as bool? ?? false,
       commentsNotifications: json['comments_notifications'] as bool? ?? true,
-      achievementsNotifications: json['achievements_notifications'] as bool? ?? true,
+      achievementsNotifications:
+          json['achievements_notifications'] as bool? ?? true,
       marketingNotifications: json['marketing_notifications'] as bool? ?? false,
-      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
+      updatedAt: json['client_updated_at'] != null
+          ? DateTime.parse(json['client_updated_at'])
+          : DateTime.now(),
     );
   }
 }
@@ -286,7 +340,4 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
     writer.writeBool(obj.marketingNotifications);
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
   }
-
 }
-
-

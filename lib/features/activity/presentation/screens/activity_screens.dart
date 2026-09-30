@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_scaffold_padding.dart';
 import '../../../../utils/responsive_extensions.dart';
 
 class ActivityScreen extends StatelessWidget {
@@ -11,30 +10,29 @@ class ActivityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.background,
 
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
 
-        title: Text(
-          'Your activity',
-          style: AppTextStyles.heading2,
-        ),
+        title: Text('Your activity', style: AppTextStyles.heading2),
 
         actions: [
           IconButton(
-            icon: const Icon(
-              Icons.calendar_today,
-              color: AppColors.primary,
-            ),
+            icon: const Icon(Icons.calendar_today, color: AppColors.primary),
             onPressed: () {},
           ),
         ],
       ),
 
       body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(6.w, 0, 6.w, 112),
+        padding: EdgeInsets.fromLTRB(
+          6.w,
+          0,
+          6.w,
+          AppScaffoldPadding.tabScrollBottom(context).bottom,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -93,10 +91,7 @@ class ActivityScreen extends StatelessWidget {
                               ),
                             ),
 
-                            const Text(
-                              '😊',
-                              style: TextStyle(fontSize: 24),
-                            ),
+                            const Text('😊', style: TextStyle(fontSize: 24)),
 
                             Text(
                               'Amazing',
@@ -129,15 +124,9 @@ class ActivityScreen extends StatelessWidget {
                     spacing: 6.w,
                     runSpacing: 1.h,
                     children: [
-                      _buildLegend(
-                        'This week',
-                        AppColors.primary,
-                      ),
+                      _buildLegend('This week', AppColors.primary),
 
-                      _buildLegend(
-                        'Previous week',
-                        const Color(0xFF9BE6A6),
-                      ),
+                      _buildLegend('Previous week', const Color(0xFF9BE6A6)),
                     ],
                   ),
                 ],
@@ -147,18 +136,14 @@ class ActivityScreen extends StatelessWidget {
             5.sh,
 
             // General Insights
-            Text(
-              'General Insights',
-              style: AppTextStyles.heading2,
-            ),
+            Text('General Insights', style: AppTextStyles.heading2),
 
             3.sh,
 
             // Cozy Calendar
             _buildInsightCard(
               title: 'Cozy Calendar',
-              subtitle:
-                  'Collected from the app openings and mood check-ins',
+              subtitle: 'Collected from the app openings and mood check-ins',
               content: _buildCalendarDots(),
               onViewLog: () {},
             ),
@@ -196,17 +181,11 @@ class ActivityScreen extends StatelessWidget {
                     alignment: WrapAlignment.spaceBetween,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Text(
-                        'Common Triggers',
-                        style: AppTextStyles.heading2,
-                      ),
+                      Text('Common Triggers', style: AppTextStyles.heading2),
 
                       TextButton(
                         onPressed: () {},
-                        child: Text(
-                          'Details',
-                          style: AppTextStyles.linkText,
-                        ),
+                        child: Text('Details', style: AppTextStyles.linkText),
                       ),
                     ],
                   ),
@@ -244,10 +223,7 @@ class ActivityScreen extends StatelessWidget {
             6.sh,
 
             // Recommended
-            Text(
-              'Recommended for you',
-              style: AppTextStyles.heading2,
-            ),
+            Text('Recommended for you', style: AppTextStyles.heading2),
 
             3.sh,
 
@@ -274,15 +250,13 @@ class ActivityScreen extends StatelessWidget {
                 ),
 
                 _buildRecommendationCard(
-                  title:
-                      'The Link Between Diet, Exercise, and Mental Health',
+                  title: 'The Link Between Diet, Exercise, and Mental Health',
                   color: const Color(0xFFE0F2E9),
                   emoji: '🥗',
                 ),
 
                 _buildRecommendationCard(
-                  title:
-                      'The Role of Gratitude in Improving Mental Health',
+                  title: 'The Role of Gratitude in Improving Mental Health',
                   color: const Color(0xFFFFF4E5),
                   emoji: '🙏',
                 ),
@@ -301,9 +275,7 @@ class ActivityScreen extends StatelessWidget {
       height: double.infinity,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isActive
-            ? AppColors.primary
-            : Colors.transparent,
+        color: isActive ? AppColors.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Text(
@@ -312,12 +284,8 @@ class ActivityScreen extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: AppTextStyles.body2.copyWith(
           fontSize: 12,
-          color: isActive
-              ? AppColors.white
-              : AppColors.grey,
-          fontWeight: isActive
-              ? FontWeight.w600
-              : FontWeight.normal,
+          color: isActive ? AppColors.white : AppColors.grey,
+          fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
         ),
       ),
     );
@@ -330,18 +298,12 @@ class ActivityScreen extends StatelessWidget {
         Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
 
         2.sw,
 
-        Text(
-          label,
-          style: AppTextStyles.body2,
-        ),
+        Text(label, style: AppTextStyles.body2),
       ],
     );
   }
@@ -368,18 +330,13 @@ class ActivityScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: AppTextStyles.heading2,
-          ),
+          Text(title, style: AppTextStyles.heading2),
 
           1.sh,
 
           Text(
             subtitle,
-            style: AppTextStyles.body2.copyWith(
-              color: AppColors.grey,
-            ),
+            style: AppTextStyles.body2.copyWith(color: AppColors.grey),
           ),
 
           4.sh,
@@ -392,10 +349,7 @@ class ActivityScreen extends StatelessWidget {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: onViewLog,
-              child: Text(
-                'View Log →',
-                style: AppTextStyles.linkText,
-              ),
+              child: Text('View Log →', style: AppTextStyles.linkText),
             ),
           ),
         ],
@@ -422,8 +376,7 @@ class ActivityScreen extends StatelessWidget {
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: colors[index % colors.length]
-                .withOpacity(0.3),
+            color: colors[index % colors.length].withOpacity(0.3),
             shape: BoxShape.circle,
           ),
         ),
@@ -439,12 +392,8 @@ class ActivityScreen extends StatelessWidget {
       children: List.generate(
         7,
         (index) => Icon(
-          index < 4
-              ? Icons.check_circle
-              : Icons.circle_outlined,
-          color: index < 4
-              ? AppColors.primary
-              : AppColors.midGrey,
+          index < 4 ? Icons.check_circle : Icons.circle_outlined,
+          color: index < 4 ? AppColors.primary : AppColors.midGrey,
           size: 28,
         ),
       ),
@@ -462,28 +411,18 @@ class ActivityScreen extends StatelessWidget {
       children: [
         Expanded(
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                trigger,
-                style: AppTextStyles.body1,
-              ),
+              Text(trigger, style: AppTextStyles.body1),
 
               1.sh,
 
               LinearProgressIndicator(
-                value: double.parse(
-                      percentage.replaceAll('%', ''),
-                    ) /
-                    100,
-                backgroundColor:
-                    AppColors.lightGrey,
-                valueColor:
-                    AlwaysStoppedAnimation(color),
+                value: double.parse(percentage.replaceAll('%', '')) / 100,
+                backgroundColor: AppColors.lightGrey,
+                valueColor: AlwaysStoppedAnimation(color),
                 minHeight: 8,
-                borderRadius:
-                    BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(4),
               ),
             ],
           ),
@@ -492,21 +431,16 @@ class ActivityScreen extends StatelessWidget {
         4.sw,
 
         Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
               percentage,
-              style:
-                  AppTextStyles.heading2.copyWith(
-                fontSize: 18,
-              ),
+              style: AppTextStyles.heading2.copyWith(fontSize: 18),
             ),
 
             Text(
               impact,
-              style:
-                  AppTextStyles.body2.copyWith(
+              style: AppTextStyles.body2.copyWith(
                 color: AppColors.grey,
                 fontSize: 12,
               ),
@@ -529,20 +463,15 @@ class ActivityScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            emoji,
-            style: const TextStyle(fontSize: 32),
-          ),
+          Text(emoji, style: const TextStyle(fontSize: 32)),
 
           const Spacer(),
 
           Text(
             title,
-            style:
-                AppTextStyles.body1.copyWith(
+            style: AppTextStyles.body1.copyWith(
               fontWeight: FontWeight.w600,
               height: 1.4,
             ),
@@ -585,9 +514,7 @@ class MoodLineChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(
-    covariant CustomPainter oldDelegate,
-  ) {
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return false;
   }
 }

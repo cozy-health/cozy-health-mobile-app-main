@@ -31,10 +31,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: _screens[_currentIndex],
-      ),
+      body: SafeArea(bottom: false, child: _screens[_currentIndex]),
       floatingActionButton: Semantics(
         button: true,
         label: 'Open quick actions',
@@ -49,7 +46,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: SafeArea(
         top: false,
         child: CustomBottomNavigationBar(

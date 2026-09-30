@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_scaffold_padding.dart';
 import '../../../crisis/presentation/screens/crisis_screens.dart';
 import '../../../crisis/services/crisis_detector.dart';
 
@@ -75,32 +76,52 @@ class _AssistantScreenState extends State<AssistantScreen>
     );
     _listenToMessages();
     _historySub?.cancel();
-    _historySub = _repo.watchConversations().map((convs) => convs.map((c) => Conversation(
-      id: c.id,
-      title: c.title ?? 'New conversation',
-      createdAt: c.createdAt,
-      updatedAt: c.updatedAt,
-      messages: [],
-    )).toList()).listen((convs) {
-      if (mounted) setState(() => _history = convs);
-    });
+    _historySub = _repo
+        .watchConversations()
+        .map(
+          (convs) => convs
+              .map(
+                (c) => Conversation(
+                  id: c.id,
+                  title: c.title ?? 'New conversation',
+                  createdAt: c.createdAt,
+                  updatedAt: c.updatedAt,
+                  messages: [],
+                ),
+              )
+              .toList(),
+        )
+        .listen((convs) {
+          if (mounted) setState(() => _history = convs);
+        });
   }
 
   void _listenToMessages() {
     _messageSub?.cancel();
-    _messageSub = _repo.watchMessages(_activeConversation.id).map((msgs) => msgs.map((m) => ChatMessage(
-      id: m.id,
-      role: m.role == 'assistant' ? ChatRole.assistant : ChatRole.user,
-      text: m.content,
-      createdAt: m.createdAt,
-    )).toList()).listen((msgs) {
-      if (!mounted) return;
-      setState(() {
-        _activeConversation.messages.clear();
-        _activeConversation.messages.addAll(msgs);
-      });
-      _scrollToBottom();
-    });
+    _messageSub = _repo
+        .watchMessages(_activeConversation.id)
+        .map(
+          (msgs) => msgs
+              .map(
+                (m) => ChatMessage(
+                  id: m.id,
+                  role: m.role == 'assistant'
+                      ? ChatRole.assistant
+                      : ChatRole.user,
+                  text: m.content,
+                  createdAt: m.createdAt,
+                ),
+              )
+              .toList(),
+        )
+        .listen((msgs) {
+          if (!mounted) return;
+          setState(() {
+            _activeConversation.messages.clear();
+            _activeConversation.messages.addAll(msgs);
+          });
+          _scrollToBottom();
+        });
   }
 
   @override
@@ -155,7 +176,12 @@ class _AssistantScreenState extends State<AssistantScreen>
     ];
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        48,
+        24,
+        AppScaffoldPadding.tabScrollBottom(context).bottom,
+      ),
       children: [
         AnimatedIn(
           controller: _entranceController,
@@ -209,7 +235,12 @@ class _AssistantScreenState extends State<AssistantScreen>
   Widget _activeConversationView() {
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        18,
+        24,
+        AppScaffoldPadding.tabScrollBottom(context).bottom,
+      ),
       itemCount:
           _activeConversation.messages.length +
           (_isTyping || _isStreaming ? 1 : 0),
@@ -274,7 +305,7 @@ class _AssistantScreenState extends State<AssistantScreen>
       _activeConversation.title = _titleFrom(text);
       _repo.saveConversation(_activeConversation.toChatConversation());
     }
-    
+
     _repo.saveMessage(userMessage.toCoreMessage(_activeConversation.id));
 
     setState(() {
@@ -318,8 +349,10 @@ class _AssistantScreenState extends State<AssistantScreen>
           text: reply,
           createdAt: DateTime.now(),
         );
-        _repo.saveMessage(assistantMessage.toCoreMessage(_activeConversation.id));
-        
+        _repo.saveMessage(
+          assistantMessage.toCoreMessage(_activeConversation.id),
+        );
+
         setState(() {
           _isStreaming = false;
           _streamingText = '';
@@ -521,33 +554,3 @@ class _AssistantScreenState extends State<AssistantScreen>
     return words[0].toUpperCase() + words.substring(1);
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

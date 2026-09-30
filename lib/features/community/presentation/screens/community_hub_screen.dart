@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_scaffold_padding.dart';
 import '../widgets/post_card.dart';
 
 class CommunityHubScreen extends StatefulWidget {
@@ -12,7 +13,8 @@ class CommunityHubScreen extends StatefulWidget {
   State<CommunityHubScreen> createState() => _CommunityHubScreenState();
 }
 
-class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTickerProviderStateMixin {
+class _CommunityHubScreenState extends State<CommunityHubScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   String _selectedFilter = 'All';
 
@@ -23,7 +25,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTick
     'Relationships',
     'Self-compassion',
     'Work & Life',
-    'Grief & Loss'
+    'Grief & Loss',
   ];
 
   final List<Map<String, dynamic>> _posts = [
@@ -31,7 +33,8 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTick
       'username': 'sarahchen',
       'isAnonymous': false,
       'timeAgo': '2h',
-      'content': 'Today was hard but I wanted to share that I\'m still here. Small wins.',
+      'content':
+          'Today was hard but I wanted to share that I\'m still here. Small wins.',
       'likes': 12,
       'comments': 4,
       'isLiked': true,
@@ -41,7 +44,8 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTick
       'username': '',
       'isAnonymous': true,
       'timeAgo': '4h',
-      'content': 'I don\'t know how to say this out loud yet. But I\'m tired of pretending.',
+      'content':
+          'I don\'t know how to say this out loud yet. But I\'m tired of pretending.',
       'likes': 28,
       'comments': 9,
       'isLiked': false,
@@ -101,7 +105,10 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTick
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Community', style: AppTextStyles.heading1.copyWith(fontSize: 28)),
+                    Text(
+                      'Community',
+                      style: AppTextStyles.heading1.copyWith(fontSize: 28),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.search, color: AppColors.text),
                       onPressed: () => context.push(AppRouter.communitySearch),
@@ -137,17 +144,25 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTick
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
+                          color: isSelected
+                              ? AppColors.primary.withValues(alpha: 0.1)
+                              : AppColors.surface,
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: isSelected ? AppColors.primary : AppColors.border.withValues(alpha: 0.5),
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.border.withValues(alpha: 0.5),
                           ),
                         ),
                         child: Text(
                           filter,
                           style: AppTextStyles.body2.copyWith(
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected ? AppColors.primary : AppColors.text,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.text,
                           ),
                         ),
                       ),
@@ -160,9 +175,9 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTick
 
             // Main Content (Feed)
             Expanded(
-              child: _posts.isEmpty 
-                ? _buildEmptyState(reduceMotion)
-                : _buildFeed(reduceMotion),
+              child: _posts.isEmpty
+                  ? _buildEmptyState(reduceMotion)
+                  : _buildFeed(reduceMotion),
             ),
           ],
         ),
@@ -227,12 +242,17 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTick
   }
 
   Widget _buildFeed(bool reduceMotion) {
-    final filteredPosts = _selectedFilter == 'All' 
-        ? _posts 
+    final filteredPosts = _selectedFilter == 'All'
+        ? _posts
         : _posts.where((p) => p['topic'] == _selectedFilter).toList();
 
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        0,
+        24,
+        AppScaffoldPadding.tabScrollBottom(context).bottom,
+      ),
       children: [
         // Compose Bar
         _animatedWidget(
@@ -247,14 +267,18 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTick
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.5),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Share something...',
-                    style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                    style: AppTextStyles.body1.copyWith(
+                      color: AppColors.textMuted,
+                    ),
                   ),
                   const Icon(Icons.edit, size: 20, color: AppColors.textMuted),
                 ],
@@ -263,13 +287,16 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTick
           ),
         ),
         const SizedBox(height: 20),
-        
+
         ...List.generate(filteredPosts.length, (index) {
           final post = filteredPosts[index];
           // staggered animation for posts
           final start = 0.4 + (index * 0.1);
           final end = start + 0.5;
-          final postAnim = _createAnimation(start.clamp(0.0, 1.0), end.clamp(0.0, 1.0));
+          final postAnim = _createAnimation(
+            start.clamp(0.0, 1.0),
+            end.clamp(0.0, 1.0),
+          );
 
           return _animatedWidget(
             reduceMotion: reduceMotion,
@@ -279,10 +306,14 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTick
               padding: const EdgeInsets.only(bottom: 12),
               child: PostCard(
                 post: post,
-                onTap: () => context.push(AppRouter.postDetail, extra: {'post': post}),
+                onTap: () =>
+                    context.push(AppRouter.postDetail, extra: {'post': post}),
                 onAvatarTap: () {
                   if (!(post['isAnonymous'] as bool? ?? false)) {
-                    context.push(AppRouter.userProfile, extra: {'username': post['username']});
+                    context.push(
+                      AppRouter.userProfile,
+                      extra: {'username': post['username']},
+                    );
                   }
                 },
                 onLongPress: () {
@@ -292,7 +323,6 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> with SingleTick
             ),
           );
         }),
-        const SizedBox(height: 64),
       ],
     );
   }
