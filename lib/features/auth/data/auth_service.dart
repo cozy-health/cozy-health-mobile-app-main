@@ -1,5 +1,7 @@
 import '../../../core/constants/api_constants.dart';
-import '../../../core/network/api_client.dart';
+
+import '../../../core/api/api_client.dart';
+import '../../../core/api/response_data.dart';
 import '../../../core/storage/token_storage.dart';
 
 class AuthService {
@@ -25,13 +27,14 @@ class AuthService {
       },
     );
 
-    final token = response['access_token']?.toString();
+    final data = responseMap(response);
+    final token = data['access_token']?.toString();
 
     if (token != null && token.isNotEmpty) {
       await _tokenStorage.saveToken(token);
     }
 
-    return response;
+    return data;
   }
 
   Future<Map<String, dynamic>> register({
@@ -51,17 +54,18 @@ class AuthService {
       },
     );
 
-    final token = response['access_token']?.toString();
+    final data = responseMap(response);
+    final token = data['access_token']?.toString();
 
     if (token != null && token.isNotEmpty) {
       await _tokenStorage.saveToken(token);
     }
 
-    return response;
+    return data;
   }
 
   Future<Map<String, dynamic>> me() async {
-    return _apiClient.get(ApiConstants.me);
+    return responseMap(await _apiClient.get(ApiConstants.me));
   }
 
   Future<void> logout() async {
@@ -78,11 +82,11 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> forgotPassword(String email) async {
-    return _apiClient.post(
+    return responseMap(await _apiClient.post(
       ApiConstants.forgotPassword,
       withAuth: false,
       body: {'email': email},
-    );
+    ));
   }
 
   Future<Map<String, dynamic>> resetPassword({
@@ -90,7 +94,7 @@ class AuthService {
     required String otp,
     required String newPassword,
   }) async {
-    return _apiClient.post(
+    return responseMap(await _apiClient.post(
       ApiConstants.resetPassword,
       withAuth: false,
       body: {
@@ -98,6 +102,6 @@ class AuthService {
         'otp': otp,
         'new_password': newPassword,
       },
-    );
+    ));
   }
 }

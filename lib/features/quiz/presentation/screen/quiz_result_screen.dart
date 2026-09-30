@@ -87,7 +87,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: AppColors.text),
-          onPressed: () => context.go(AppRouter.quizSelection), // Go back to selection
+          onPressed: () => context.push(AppRouter.quizSelection), // Go back to selection
         ),
         title: Text('Results', style: AppTextStyles.heading2),
         centerTitle: true,
@@ -158,7 +158,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
               
               AppButton(
                 text: 'Done',
-                onPressed: () => context.go(AppRouter.quizSelection),
+                onPressed: () => context.push(AppRouter.quizSelection),
               ),
               const SizedBox(height: 12),
               AppButton(

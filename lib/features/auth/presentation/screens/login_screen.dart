@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:local_auth/local_auth.dart';
 
-import '../../../../core/network/api_client.dart';
+import '../../../../core/api/api_exceptions.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/api/auth_token_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../data/auth_service.dart';
@@ -120,6 +122,55 @@ class _LoginScreenState extends State<LoginScreen> {
     return message.isEmpty ? "That didn't match. Let's try again." : message;
   }
 
+  Future<void> _loginWithBiometric() async {
+    final auth = LocalAuthentication();
+
+    try {
+      final canCheck = await auth.canCheckBiometrics;
+      final isSupported = await auth.isDeviceSupported();
+
+      if (!canCheck || !isSupported) {
+        if (!mounted) return;
+        showAuthToast(
+          context,
+          type: AuthToastType.warning,
+          title: "Face ID isn't set up on this device.",
+        );
+        return;
+      }
+
+      final authenticated = await auth.authenticate(
+        localizedReason: 'Log in to Cozy Health',
+        biometricOnly: true,
+        persistAcrossBackgrounding: true,
+      );
+
+      if (!authenticated) return;
+
+      final token = await AuthTokenService.getToken();
+
+      if (token == null || token.isEmpty) {
+        if (!mounted) return;
+        showAuthToast(
+          context,
+          type: AuthToastType.warning,
+          title: 'Please log in with your password first.',
+        );
+        return;
+      }
+
+      if (mounted) context.go(AppRouter.home);
+    } catch (e) {
+      debugPrint('Biometric error: $e');
+      if (!mounted) return;
+      showAuthToast(
+        context,
+        type: AuthToastType.error,
+        title: "Face ID isn't available right now.",
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
@@ -208,12 +259,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ? 'Log in with Face ID'
               : 'Log in with fingerprint',
           isOutlined: true,
-          onPressed: () => showAuthToast(
-            context,
-            type: AuthToastType.warning,
-            title: "Biometric login isn't available yet.",
-            description: 'Use your password for now.',
-          ),
+          onPressed: _isLoading ? null : _loginWithBiometric,
         ),
       ],
     );

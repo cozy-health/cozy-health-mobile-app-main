@@ -132,6 +132,8 @@ class AppRouter {
   static const String feedback = '/feedback';
   static const String about = '/about';
   static const String legalHub = '/legal-hub';
+  static const String legalTerms = '/legal/terms';
+  static const String legalPrivacy = '/legal/privacy';
   static const String reminderTimes = '/reminder-times';
   static const String blockedUsers = '/blocked-users';
   static const String dataExportStatus = '/data-export-status';
@@ -580,6 +582,16 @@ class AppRouter {
         path: termsPolicies,
         name: 'termsPolicies',
         builder: (_, __) => const TermsPoliciesScreen(),
+      ),
+      GoRoute(
+        path: legalTerms,
+        name: 'legalTerms',
+        builder: (_, __) => const TermsPoliciesScreen(title: 'Terms'),
+      ),
+      GoRoute(
+        path: legalPrivacy,
+        name: 'legalPrivacy',
+        builder: (_, __) => const TermsPoliciesScreen(title: 'Privacy Policy'),
       ),
       GoRoute(
         path: reportProblem,

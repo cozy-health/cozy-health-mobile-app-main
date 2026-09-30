@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -368,8 +369,32 @@ class AuthLogoMark extends StatelessWidget {
   }
 }
 
-class LegalFooter extends StatelessWidget {
+class LegalFooter extends StatefulWidget {
   const LegalFooter({super.key});
+
+  @override
+  State<LegalFooter> createState() => _LegalFooterState();
+}
+
+class _LegalFooterState extends State<LegalFooter> {
+  late final TapGestureRecognizer _termsRecognizer;
+  late final TapGestureRecognizer _privacyRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()
+      ..onTap = () => context.push('/legal/terms');
+    _privacyRecognizer = TapGestureRecognizer()
+      ..onTap = () => context.push('/legal/privacy');
+  }
+
+  @override
+  void dispose() {
+    _termsRecognizer.dispose();
+    _privacyRecognizer.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -383,6 +408,7 @@ class LegalFooter extends StatelessWidget {
               color: AppColors.primary,
               decoration: TextDecoration.underline,
             ),
+            recognizer: _termsRecognizer,
           ),
           const TextSpan(text: ' and '),
           TextSpan(
@@ -391,6 +417,7 @@ class LegalFooter extends StatelessWidget {
               color: AppColors.primary,
               decoration: TextDecoration.underline,
             ),
+            recognizer: _privacyRecognizer,
           ),
         ],
       ),

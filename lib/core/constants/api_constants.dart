@@ -7,11 +7,11 @@ class ApiConstants {
   | Auth
   |--------------------------------------------------------------------------
   */
-  static const String login = '/login';
-  static const String register = '/register';
-  static const String logout = '/logout';
-  static const String forgotPassword = '/forgot-password';
-  static const String resetPassword = '/reset-password';
+  static const String login = '/auth/login';
+  static const String register = '/auth/register';
+  static const String logout = '/auth/logout';
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String resetPassword = '/auth/reset-password';
 
   /*
   |--------------------------------------------------------------------------

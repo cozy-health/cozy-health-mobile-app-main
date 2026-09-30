@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'api_exceptions.dart';
 import 'api_interceptors.dart';
 
 class ApiClient {
@@ -28,23 +29,100 @@ class ApiClient {
     ]);
   }
 
-  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) async {
-    return await _dio.get(path, queryParameters: queryParameters);
+  Future<dynamic> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? query,
+    bool withAuth = true,
+    Options? options,
+  }) async {
+    return await _request(() => _dio.get(
+      path,
+      queryParameters: queryParameters ?? query,
+      options: _options(options, withAuth),
+    ));
   }
 
-  Future<Response> post(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
-    return await _dio.post(path, data: data, queryParameters: queryParameters);
+  Future<dynamic> post(
+    String path, {
+    dynamic data,
+    dynamic body,
+    Map<String, dynamic>? queryParameters,
+    bool withAuth = true,
+    Options? options,
+  }) async {
+    return await _request(() => _dio.post(
+      path,
+      data: data ?? body,
+      queryParameters: queryParameters,
+      options: _options(options, withAuth),
+    ));
   }
 
-  Future<Response> patch(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
-    return await _dio.patch(path, data: data, queryParameters: queryParameters);
+  Future<dynamic> patch(
+    String path, {
+    dynamic data,
+    dynamic body,
+    Map<String, dynamic>? queryParameters,
+    bool withAuth = true,
+    Options? options,
+  }) async {
+    return await _request(() => _dio.patch(
+      path,
+      data: data ?? body,
+      queryParameters: queryParameters,
+      options: _options(options, withAuth),
+    ));
   }
 
-  Future<Response> put(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
-    return await _dio.put(path, data: data, queryParameters: queryParameters);
+  Future<dynamic> put(
+    String path, {
+    dynamic data,
+    dynamic body,
+    Map<String, dynamic>? queryParameters,
+    bool withAuth = true,
+    Options? options,
+  }) async {
+    return await _request(() => _dio.put(
+      path,
+      data: data ?? body,
+      queryParameters: queryParameters,
+      options: _options(options, withAuth),
+    ));
   }
 
-  Future<Response> delete(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
-    return await _dio.delete(path, data: data, queryParameters: queryParameters);
+  Future<dynamic> delete(
+    String path, {
+    dynamic data,
+    dynamic body,
+    Map<String, dynamic>? queryParameters,
+    bool withAuth = true,
+    Options? options,
+  }) async {
+    return await _request(() => _dio.delete(
+      path,
+      data: data ?? body,
+      queryParameters: queryParameters,
+      options: _options(options, withAuth),
+    ));
+  }
+
+  Options? _options(Options? options, bool withAuth) {
+    if (withAuth) return options;
+
+    final extra = Map<String, dynamic>.from(options?.extra ?? const {});
+    extra['skipAuth'] = true;
+
+    return (options ?? Options()).copyWith(extra: extra);
+  }
+
+  Future<dynamic> _request(Future<Response> Function() request) async {
+    try {
+      return await request();
+    } on DioException catch (e) {
+      final error = e.error;
+      if (error is ApiException) throw error;
+      rethrow;
+    }
   }
 }

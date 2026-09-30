@@ -1,5 +1,6 @@
 import '../../../core/constants/api_constants.dart';
-import '../../../core/network/api_client.dart';
+import '../../../core/api/api_client.dart';
+import '../../../core/api/response_data.dart';
 
 class ActivityService {
   final ApiClient _apiClient;
@@ -9,25 +10,25 @@ class ActivityService {
   }) : _apiClient = apiClient ?? ApiClient();
 
   Future<Map<String, dynamic>> getOverview() async {
-    return _apiClient.get(ApiConstants.activityOverview);
+    return responseMap(await _apiClient.get(ApiConstants.activityOverview));
   }
 
   Future<Map<String, dynamic>> getMoodChart({int days = 7}) async {
-    return _apiClient.get(
+    return responseMap(await _apiClient.get(
       ApiConstants.activityMoodChart,
       query: {'days': days},
-    );
+    ));
   }
 
   Future<Map<String, dynamic>> getCommonTriggers() async {
-    return _apiClient.get(ApiConstants.activityCommonTriggers);
+    return responseMap(await _apiClient.get(ApiConstants.activityCommonTriggers));
   }
 
   Future<Map<String, dynamic>> getJournalStats() async {
-    return _apiClient.get(ApiConstants.activityJournalStats);
+    return responseMap(await _apiClient.get(ApiConstants.activityJournalStats));
   }
 
   Future<Map<String, dynamic>> getRecommendations() async {
-    return _apiClient.get(ApiConstants.activityRecommendations);
+    return responseMap(await _apiClient.get(ApiConstants.activityRecommendations));
   }
 }

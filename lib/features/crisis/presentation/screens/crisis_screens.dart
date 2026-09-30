@@ -638,13 +638,13 @@ class CrisisDetectionOverlayScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 CrisisButton(
                   label: 'Talk to someone',
-                  onPressed: () => context.go(AppRouter.crisisHub),
+                  onPressed: () => context.push(AppRouter.crisisHub),
                 ),
                 const SizedBox(height: 12),
                 CrisisButton(
                   label: 'Try a grounding exercise',
                   outlined: true,
-                  onPressed: () => context.go(AppRouter.grounding),
+                  onPressed: () => context.push(AppRouter.grounding),
                 ),
                 const SizedBox(height: 12),
                 CrisisButton(

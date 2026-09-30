@@ -110,18 +110,25 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             children: [
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _skipToLastPage,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.grey,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    'Skip',
-                    style: AppTextStyles.body2.copyWith(
-                      color: AppColors.grey,
-                      fontWeight: FontWeight.w700,
+                child: AnimatedOpacity(
+                  opacity: _currentPage == _pages.length - 1 ? 0 : 1,
+                  duration: const Duration(milliseconds: 300),
+                  child: IgnorePointer(
+                    ignoring: _currentPage == _pages.length - 1,
+                    child: TextButton(
+                      onPressed: _skipToLastPage,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.grey,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Skip',
+                        style: AppTextStyles.body2.copyWith(
+                          color: AppColors.grey,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ),

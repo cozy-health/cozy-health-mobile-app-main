@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cozy_health/gen/assets.gen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -118,13 +120,14 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _runSequence() async {
-    final authStateFuture = _splashService.hasValidSession();
+    final hasToken = await _splashService.hasStoredSession();
+    debugPrint('APP_START: token present = $hasToken');
 
     _timeline.forward();
     _breathing.repeat(reverse: true);
 
     final results = await Future.wait([
-      authStateFuture,
+      Future.value(hasToken),
       Future.delayed(_brandMomentDuration, () => false),
     ]);
 
@@ -134,7 +137,25 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    context.go(results.first ? AppRouter.home : AppRouter.onboarding);
+    if (results.first) {
+      context.go(AppRouter.home);
+      unawaited(_validateTokenInBackground());
+    } else {
+      context.go(AppRouter.onboarding);
+    }
+  }
+
+  Future<void> _validateTokenInBackground() async {
+    final isValid = await _splashService.validateStoredSession();
+    if (isValid) return;
+
+    final context = AppRouter.navigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Session expired. Please log in again.')),
+    );
+    context.go(AppRouter.login);
   }
 
   @override

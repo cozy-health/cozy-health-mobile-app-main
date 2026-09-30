@@ -6,7 +6,12 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../utils/responsive_extensions.dart';
 
 class TermsPoliciesScreen extends StatelessWidget {
-  const TermsPoliciesScreen({super.key});
+  const TermsPoliciesScreen({
+    super.key,
+    this.title = 'Terms & Policies',
+  });
+
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +48,7 @@ class TermsPoliciesScreen extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: Text(
-                        'Terms & Policies',
+                        title,
                         style: AppTextStyles.heading1.copyWith(
                           fontSize: 24,
                           fontWeight: FontWeight.w800,

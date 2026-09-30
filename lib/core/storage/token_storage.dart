@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class TokenStorage {
@@ -7,10 +8,14 @@ class TokenStorage {
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: _tokenKey, value: token);
+    final preview = token.length > 10 ? token.substring(0, 10) : token;
+    debugPrint('LOGIN_SAVED: token = $preview');
   }
 
   Future<String?> getToken() async {
-    return _storage.read(key: _tokenKey);
+    final result = await _storage.read(key: _tokenKey);
+    debugPrint('TOKEN_READ: ${result != null}');
+    return result;
   }
 
   Future<void> clearToken() async {

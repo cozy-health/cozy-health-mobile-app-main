@@ -1,5 +1,6 @@
 import '../../../core/constants/api_constants.dart';
-import '../../../core/network/api_client.dart';
+import '../../../core/api/api_client.dart';
+import '../../../core/api/response_data.dart';
 
 class MoodService {
   final ApiClient _apiClient;
@@ -9,23 +10,29 @@ class MoodService {
   }) : _apiClient = apiClient ?? ApiClient();
 
   Future<Map<String, dynamic>> getFeelings() async {
-    return _apiClient.get(ApiConstants.feelings, withAuth: false);
+    return responseMap(await _apiClient.get(ApiConstants.feelings, withAuth: false));
   }
 
   Future<Map<String, dynamic>> getFeelingExpressions() async {
-    return _apiClient.get(ApiConstants.feelingExpressions, withAuth: false);
+    return responseMap(
+      await _apiClient.get(ApiConstants.feelingExpressions, withAuth: false),
+    );
   }
 
   Future<Map<String, dynamic>> getFeelingCauses() async {
-    return _apiClient.get(ApiConstants.feelingCauses, withAuth: false);
+    return responseMap(
+      await _apiClient.get(ApiConstants.feelingCauses, withAuth: false),
+    );
   }
 
   Future<Map<String, dynamic>> getCopingMechanisms() async {
-    return _apiClient.get(ApiConstants.copingMechanisms, withAuth: false);
+    return responseMap(
+      await _apiClient.get(ApiConstants.copingMechanisms, withAuth: false),
+    );
   }
 
   Future<Map<String, dynamic>> getTodayCheckin() async {
-    return _apiClient.get(ApiConstants.moodCheckinToday);
+    return responseMap(await _apiClient.get(ApiConstants.moodCheckinToday));
   }
 
   Future<Map<String, dynamic>> submitMoodCheckin({
@@ -35,7 +42,7 @@ class MoodService {
     required List<int> copingMechanismIds,
     String? journal,
   }) async {
-    return _apiClient.post(
+    return responseMap(await _apiClient.post(
       ApiConstants.moodCheckins,
       body: {
         'feeling_exp_id': feelingExpId,
@@ -45,6 +52,6 @@ class MoodService {
         if (journal != null && journal.trim().isNotEmpty)
           'journal': journal.trim(),
       },
-    );
+    ));
   }
 }

@@ -1,5 +1,6 @@
 import '../../../core/constants/api_constants.dart';
-import '../../../core/network/api_client.dart';
+import '../../../core/api/api_client.dart';
+import '../../../core/api/response_data.dart';
 
 class JournalService {
   final ApiClient _apiClient;
@@ -12,13 +13,13 @@ class JournalService {
     int page = 1,
     int perPage = 20,
   }) async {
-    return _apiClient.get(
+    return responseMap(await _apiClient.get(
       ApiConstants.journals,
       query: {
         'page': page,
         'per_page': perPage,
       },
-    );
+    ));
   }
 
   Future<Map<String, dynamic>> createJournal({
@@ -26,14 +27,14 @@ class JournalService {
     required String content,
     int? momentId,
   }) async {
-    return _apiClient.post(
+    return responseMap(await _apiClient.post(
       ApiConstants.journals,
       body: {
         if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
         'content': content.trim(),
         if (momentId != null) 'moment_id': momentId,
       },
-    );
+    ));
   }
 
   Future<Map<String, dynamic>> updateJournal({
@@ -41,20 +42,20 @@ class JournalService {
     String? title,
     required String content,
   }) async {
-    return _apiClient.put(
+    return responseMap(await _apiClient.put(
       '${ApiConstants.journals}/$journalId',
       body: {
         if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
         'content': content.trim(),
       },
-    );
+    ));
   }
 
   Future<Map<String, dynamic>> deleteJournal({
     required int journalId,
   }) async {
-    return _apiClient.delete(
+    return responseMap(await _apiClient.delete(
       '${ApiConstants.journals}/$journalId',
-    );
+    ));
   }
 }
