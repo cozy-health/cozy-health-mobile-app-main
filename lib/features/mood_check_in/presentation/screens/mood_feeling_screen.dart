@@ -1,12 +1,11 @@
+import 'package:cozy_health/core/widgets/app_button.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/repositories/mood_repository.dart';
-import '../../../../core/models/mood_entry.dart';
+import '../../../../utils/responsive_extensions.dart';
 
 class MoodFeelingScreen extends StatefulWidget {
   const MoodFeelingScreen({super.key});
@@ -15,1481 +14,254 @@ class MoodFeelingScreen extends StatefulWidget {
   State<MoodFeelingScreen> createState() => _MoodFeelingScreenState();
 }
 
-class _MoodFeelingScreenState extends State<MoodFeelingScreen>
-    with SingleTickerProviderStateMixin {
-  static const int _totalSteps = 9;
+class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
+  int? selectedFeelingExpId;
+  int intensity = 5;
 
-  late final AnimationController _entranceController;
-  final TextEditingController _triggerController = TextEditingController();
-  final TextEditingController _noteController = TextEditingController();
-
-  int _step = 1;
-  String? _moodLabel;
-  String? _moodEmoji;
-  int _intensity = 5;
-  final Set<String> _bodyZones = {};
-  final Set<String> _triggers = {};
-  int? _sleepQuality;
-  int _energy = 5;
-  final Set<String> _coping = {};
-  bool _isSaving = false;
-
-  final List<_MoodOption> _moods = const [
-    _MoodOption('😊', 'Good', AppColors.success, "That's lovely to hear."),
-    _MoodOption('😌', 'Calm', AppColors.primary, 'Peace looks good on you.'),
-    _MoodOption('😐', 'Okay', AppColors.textMuted, 'Thanks for being honest.'),
-    _MoodOption('😔', 'Low', AppColors.warning, "I'm here with you."),
-    _MoodOption(
-      '😰',
-      'Anxious',
-      Color(0xFFE85D3A),
-      "That sounds heavy. Let's slow down.",
+  final List<MoodCategory> moodCategories = [
+    MoodCategory(
+      title: 'Angry',
+      color: const Color(0xFFFFE5E5),
+      feelings: [
+        {'id': 1, 'emoji': '😠', 'label': 'Resentful'},
+        {'id': 2, 'emoji': '😡', 'label': 'Displaced'},
+        {'id': 3, 'emoji': '😤', 'label': 'Irritated'},
+        {'id': 4, 'emoji': '😣', 'label': 'Annoyed'},
+        {'id': 5, 'emoji': '🤬', 'label': 'Hostile'},
+        {'id': 6, 'emoji': '😠', 'label': 'Bitter'},
+        {'id': 7, 'emoji': '😡', 'label': 'Frustrated'},
+        {'id': 8, 'emoji': '😠', 'label': 'Provoked'},
+        {'id': 9, 'emoji': '😡', 'label': 'Livid'},
+        {'id': 10, 'emoji': '🤯', 'label': 'Furious'},
+        {'id': 11, 'emoji': '😤', 'label': 'Agitated'},
+        {'id': 12, 'emoji': '😠', 'label': 'Aggressive'},
+      ],
     ),
-    _MoodOption(
-      '😡',
-      'Angry',
-      AppColors.danger,
-      "That's valid. Let's work through it.",
+    MoodCategory(
+      title: 'Sad',
+      color: const Color(0xFFE5F0FF),
+      feelings: [
+        {'id': 13, 'emoji': '😢', 'label': 'Gloomy'},
+        {'id': 14, 'emoji': '💔', 'label': 'Heartbroken'},
+        {'id': 15, 'emoji': '😔', 'label': 'Lost'},
+        {'id': 16, 'emoji': '😞', 'label': 'Hopeless'},
+        {'id': 17, 'emoji': '😭', 'label': 'Miserable'},
+        {'id': 18, 'emoji': '🥺', 'label': 'Empty'},
+        {'id': 19, 'emoji': '😣', 'label': 'Frustrated'},
+        {'id': 20, 'emoji': '🥱', 'label': 'Drained'},
+        {'id': 21, 'emoji': '😩', 'label': 'Weary'},
+        {'id': 22, 'emoji': '😞', 'label': 'Disappointed'},
+        {'id': 23, 'emoji': '😔', 'label': 'Defeated'},
+        {'id': 24, 'emoji': '😢', 'label': 'Lonely'},
+      ],
+    ),
+    MoodCategory(
+      title: 'Good',
+      color: const Color(0xFFE5FFEA),
+      feelings: [
+        {'id': 25, 'emoji': '🙂', 'label': 'Content'},
+        {'id': 26, 'emoji': '😊', 'label': 'Satisfied'},
+        {'id': 27, 'emoji': '😌', 'label': 'Grateful'},
+        {'id': 28, 'emoji': '😐', 'label': 'Neutral'},
+        {'id': 29, 'emoji': '😊', 'label': 'Mildly Happy'},
+        {'id': 30, 'emoji': '👍', 'label': 'Okay'},
+        {'id': 31, 'emoji': '😊', 'label': 'Light Hearted'},
+        {'id': 32, 'emoji': '😊', 'label': 'Hopeful'},
+        {'id': 33, 'emoji': '😌', 'label': 'Relaxed'},
+        {'id': 34, 'emoji': '😊', 'label': 'Comfortable'},
+        {'id': 35, 'emoji': '😌', 'label': 'Peaceful'},
+        {'id': 36, 'emoji': '😊', 'label': 'Secure'},
+      ],
+    ),
+    MoodCategory(
+      title: 'Upset',
+      color: const Color(0xFFFFF0E5),
+      feelings: [
+        {'id': 37, 'emoji': '😟', 'label': 'Uneasy'},
+        {'id': 38, 'emoji': '😣', 'label': 'Hurt'},
+        {'id': 39, 'emoji': '😟', 'label': 'Worried'},
+        {'id': 40, 'emoji': '😢', 'label': 'Distraught'},
+        {'id': 41, 'emoji': '😫', 'label': 'Overwhelmed'},
+        {'id': 42, 'emoji': '😟', 'label': 'Insecure'},
+        {'id': 43, 'emoji': '😣', 'label': 'Stressed'},
+        {'id': 44, 'emoji': '😕', 'label': 'Doubtful'},
+        {'id': 45, 'emoji': '😟', 'label': 'Anxious'},
+        {'id': 46, 'emoji': '😕', 'label': 'Unsettled'},
+        {'id': 47, 'emoji': '😵', 'label': 'Disoriented'},
+        {'id': 48, 'emoji': '😣', 'label': 'Troubled'},
+      ],
+    ),
+    MoodCategory(
+      title: 'Spectacular',
+      color: const Color(0xFFFFF4E5),
+      feelings: [
+        {'id': 49, 'emoji': '⚡', 'label': 'Energized'},
+        {'id': 50, 'emoji': '🥳', 'label': 'Elated'},
+        {'id': 51, 'emoji': '😍', 'label': 'Blissful'},
+        {'id': 52, 'emoji': '🎉', 'label': 'Thrilled'},
+        {'id': 53, 'emoji': '🎊', 'label': 'Jubilant'},
+        {'id': 54, 'emoji': '🔥', 'label': 'Hyped'},
+        {'id': 55, 'emoji': '🌟', 'label': 'Over the moon'},
+        {'id': 56, 'emoji': '🥰', 'label': 'Overjoyed'},
+        {'id': 57, 'emoji': '😊', 'label': 'Proud'},
+        {'id': 58, 'emoji': '✨', 'label': 'Radiant'},
+        {'id': 59, 'emoji': '🌟', 'label': 'Inspired'},
+        {'id': 60, 'emoji': '🏆', 'label': 'Victorious'},
+      ],
+    ),
+    MoodCategory(
+      title: 'Happy',
+      color: const Color(0xFFE5FFEA),
+      feelings: [
+        {'id': 61, 'emoji': '😊', 'label': 'Cheerful'},
+        {'id': 62, 'emoji': '😄', 'label': 'Playful'},
+        {'id': 63, 'emoji': '😊', 'label': 'Glad'},
+        {'id': 64, 'emoji': '😊', 'label': 'Uplifted'},
+        {'id': 65, 'emoji': '😃', 'label': 'Lively'},
+        {'id': 66, 'emoji': '😊', 'label': 'Satisfied'},
+        {'id': 67, 'emoji': '🥰', 'label': 'Warm'},
+        {'id': 68, 'emoji': '😊', 'label': 'Optimistic'},
+        {'id': 69, 'emoji': '😊', 'label': 'Delighted'},
+        {'id': 70, 'emoji': '🥳', 'label': 'Joyful'},
+        {'id': 71, 'emoji': '😃', 'label': 'Excited'},
+        {'id': 72, 'emoji': '😊', 'label': 'Contented'},
+      ],
     ),
   ];
-
-  final List<String> _triggerOptions = const [
-    'Work',
-    'Family',
-    'Friends',
-    'Health',
-    'School',
-    'Money',
-    'Sleep',
-    'Relationships',
-    'Body',
-    'Weather',
-    'News',
-    'Self',
-  ];
-
-  final List<String> _bodyOptions = const [
-    'Head',
-    'Chest',
-    'Stomach',
-    'Shoulders',
-    'Arms',
-    'Legs',
-  ];
-
-  final List<_CopingOption> _copingOptions = const [
-    _CopingOption('🌬', 'Box breathing', '2 minutes', AppRouter.breathing),
-    _CopingOption(
-      '🧘',
-      '5-4-3-2-1 grounding',
-      '3 minutes',
-      AppRouter.grounding,
-    ),
-    _CopingOption('📝', 'Quick journal', '5 minutes', AppRouter.journal),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _entranceController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) => _restartEntrance());
-  }
-
-  @override
-  void dispose() {
-    _entranceController.dispose();
-    _triggerController.dispose();
-    _noteController.dispose();
-    super.dispose();
-  }
-
-  void _restartEntrance() {
-    if (!mounted) return;
-    if (MediaQuery.of(context).disableAnimations) {
-      _entranceController.value = 1;
-      return;
-    }
-    _entranceController.forward(from: 0);
-  }
-
-  void _goToStep(int step) {
-    setState(() => _step = step.clamp(1, _totalSteps));
-    _restartEntrance();
-  }
-
-  void _next() {
-    if (_step == _totalSteps) {
-      _saveEntry();
-      return;
-    }
-    _goToStep(_step + 1);
-  }
-
-  void _skip() {
-    if (_step == 3) _bodyZones.clear();
-    if (_step == 4) {
-      _triggers.clear();
-      _triggerController.clear();
-    }
-    if (_step == 5) _sleepQuality = null;
-    if (_step == 6) _energy = 5;
-    if (_step == 7) _noteController.clear();
-    if (_step == 8) _coping.clear();
-    _next();
-  }
-
-  Future<void> _saveEntry() async {
-    setState(() => _isSaving = true);
-    
-    final entry = MoodEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      mood: _moodLabel ?? 'Okay',
-      intensity: _intensity,
-      bodySensations: _bodyZones.toList(),
-      triggers: _triggers.toList(),
-      customTrigger: _triggerController.text.trim().isNotEmpty ? _triggerController.text.trim() : null,
-      sleepQuality: _sleepQuality,
-      energyLevel: _energy,
-      note: _noteController.text.trim().isNotEmpty ? _noteController.text.trim() : null,
-      copingStrategies: _coping.toList(),
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    try {
-      await MoodRepository().save(entry);
-    } catch (e) {
-      // Ignored for now - LocalDbService handles offline queueing
-    }
-
-    if (!mounted) return;
-    setState(() => _isSaving = false);
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => MoodCheckInSuccessScreen(
-          onLogAnother: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const MoodFeelingScreen()),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  bool get _canContinue => _step != 1 || _moodLabel != null;
 
   @override
   Widget build(BuildContext context) {
-    final child = switch (_step) {
-      1 => _moodSelection(),
-      2 => _intensityStep(),
-      3 => _bodyStep(),
-      4 => _triggerStep(),
-      5 => _sleepStep(),
-      6 => _energyStep(),
-      7 => _journalStep(),
-      8 => _copingStep(),
-      _ => _reviewStep(),
-    };
-
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
-      body: SafeArea(
+      backgroundColor: AppColors.white,
+      appBar: AppBar(
+        backgroundColor: AppColors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.black),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'How would you describe how you are feeling?',
+          style: AppTextStyles.heading2.copyWith(fontSize: 20),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close, color: AppColors.black),
+            onPressed: () => context.pop(),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 12),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _MoodProgressHeader(
-              step: _step,
-              totalSteps: _totalSteps,
-              onBack: _step == 1
-                  ? () => context.pop()
-                  : () => _goToStep(_step - 1),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 18),
-                child: _AnimatedStep(
-                  controller: _entranceController,
-                  child: child,
-                ),
-              ),
-            ),
-            _BottomActions(
-              showSkip: _step >= 3 && _step <= 8,
-              label: _step == _totalSteps ? 'Save Entry' : 'Continue',
-              enabled: _canContinue && !_isSaving,
-              busy: _isSaving,
-              onContinue: _next,
-              onSkip: _skip,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _moodSelection() {
-    final selected = _moods
-        .where((mood) => mood.label == _moodLabel)
-        .firstOrNull;
-
-    return Column(
-      children: [
-        const _StepIntro(
-          title: 'How are you\nfeeling right now?',
-          subtitle: "Take your time.\nThere's no wrong answer.",
-        ),
-        const SizedBox(height: 32),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _moods.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 1.3,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-          ),
-          itemBuilder: (context, index) {
-            final mood = _moods[index];
-            final isSelected = mood.label == _moodLabel;
-            return _MoodCard(
-              mood: mood,
-              selected: isSelected,
-              onTap: () {
-                HapticFeedback.lightImpact();
-                setState(() {
-                  _moodLabel = mood.label;
-                  _moodEmoji = mood.emoji;
-                });
-                SemanticsService.sendAnnouncement(
-                  View.of(context),
-                  'Mood selected: ${mood.label}. Continue button enabled.',
-                  Directionality.of(context),
-                );
-              },
-            );
-          },
-        ),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: selected == null
-              ? const SizedBox(height: 122)
-              : Padding(
-                  padding: const EdgeInsets.only(top: 26),
-                  child: _MascotMessage(message: selected.message),
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget _intensityStep() {
-    return Column(
-      children: [
-        const _StepIntro(
-          title: 'How strong is\nthis feeling?',
-          subtitle: "There's no right\nanswer. Just notice.",
-        ),
-        const SizedBox(height: 44),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          transitionBuilder: (child, animation) {
-            return ScaleTransition(
-              scale: Tween<double>(begin: .96, end: 1).animate(animation),
-              child: FadeTransition(opacity: animation, child: child),
-            );
-          },
-          child: Text(
-            '$_intensity',
-            key: ValueKey(_intensity),
-            style: AppTextStyles.heading1.copyWith(
-              fontSize: 72,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
-            ),
-          ),
-        ),
-        const SizedBox(height: 34),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Mild', style: _captionStyle()),
-            Text('Strong', style: _captionStyle()),
-          ],
-        ),
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            trackHeight: 8,
-            activeTrackColor: AppColors.primary,
-            inactiveTrackColor: AppColors.border,
-            thumbColor: AppColors.white,
-            overlayColor: AppColors.primarySoft,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14),
-          ),
-          child: Slider(
-            min: 1,
-            max: 10,
-            divisions: 9,
-            value: _intensity.toDouble(),
-            semanticFormatterCallback: (value) =>
-                'Intensity ${value.round()} of 10',
-            onChanged: (value) {
-              final next = value.round();
-              if (next != _intensity) HapticFeedback.selectionClick();
-              setState(() => _intensity = next);
-            },
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(10, (index) {
-            return Text('${index + 1}', style: _captionStyle());
-          }),
-        ),
-        const SizedBox(height: 34),
-        _MascotMessage(message: _intensityMessage),
-      ],
-    );
-  }
-
-  Widget _bodyStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _StepIntro(
-          title: 'Where do you\nfeel it?',
-          subtitle: 'Sometimes feelings\nshow up in our bodies.',
-        ),
-        const SizedBox(height: 26),
-        _BodyMap(selectedZones: _bodyZones, onToggle: _toggleBodyZone),
-        const SizedBox(height: 22),
-        Text(
-          'Or choose:',
-          style: AppTextStyles.body1.copyWith(color: AppColors.text),
-        ),
-        const SizedBox(height: 12),
-        _ChipWrap(
-          values: _bodyOptions,
-          selectedValues: _bodyZones,
-          onToggle: _toggleBodyZone,
-        ),
-      ],
-    );
-  }
-
-  Widget _triggerStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _StepIntro(
-          title: "What's been\non your mind?",
-          subtitle: 'Choose anything\nthat fits. Or skip.',
-        ),
-        const SizedBox(height: 28),
-        _ChipWrap(
-          values: _triggerOptions,
-          selectedValues: _triggers,
-          onToggle: (value) {
-            setState(() {
-              _triggers.contains(value)
-                  ? _triggers.remove(value)
-                  : _triggers.add(value);
-            });
-          },
-        ),
-        const SizedBox(height: 28),
-        Text(
-          'Or describe it yourself:',
-          style: AppTextStyles.body1.copyWith(color: AppColors.text),
-        ),
-        const SizedBox(height: 10),
-        TextField(
-          controller: _triggerController,
-          minLines: 3,
-          maxLines: 4,
-          decoration: _inputDecoration(''),
-        ),
-      ],
-    );
-  }
-
-  Widget _sleepStep() {
-    return Column(
-      children: [
-        const _StepIntro(title: 'How did you\nsleep?', subtitle: ''),
-        const SizedBox(height: 42),
-        const Text('🌙', style: TextStyle(fontSize: 54)),
-        const SizedBox(height: 38),
-        _WarmPanel(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(5, (index) {
-                  final value = index + 1;
-                  final filled = (_sleepQuality ?? 0) >= value;
-                  return Semantics(
-                    button: true,
-                    label: 'Sleep quality $value of 5',
-                    child: IconButton(
-                      onPressed: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _sleepQuality = value);
-                      },
-                      iconSize: 42,
-                      icon: Icon(
-                        filled ? Icons.star_rounded : Icons.star_border_rounded,
-                        color: filled
-                            ? AppColors.primary
-                            : AppColors.borderStrong,
-                      ),
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Poor', style: _captionStyle()),
-                  Text('Great', style: _captionStyle()),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _energyStep() {
-    return Column(
-      children: [
-        const _StepIntro(title: "How's your\nenergy?", subtitle: ''),
-        const SizedBox(height: 44),
-        const Text('🔋', style: TextStyle(fontSize: 54)),
-        const SizedBox(height: 38),
-        _WarmPanel(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Low', style: _captionStyle()),
-                  Text('High', style: _captionStyle()),
-                ],
-              ),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 8,
-                  activeTrackColor: AppColors.success,
-                  inactiveTrackColor: AppColors.border,
-                  thumbColor: AppColors.white,
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 14,
-                  ),
-                ),
-                child: Slider(
-                  min: 1,
-                  max: 10,
-                  divisions: 9,
-                  value: _energy.toDouble(),
-                  semanticFormatterCallback: (value) =>
-                      'Energy ${value.round()} of 10',
-                  onChanged: (value) => setState(() => _energy = value.round()),
-                ),
-              ),
-              Text(
-                '$_energy / 10',
-                style: AppTextStyles.heading2.copyWith(color: AppColors.text),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _journalStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _StepIntro(
-          title: 'Want to say\nmore?',
-          subtitle: 'Anything you write\nstays private.',
-        ),
-        const SizedBox(height: 28),
-        TextField(
-          controller: _noteController,
-          minLines: 8,
-          maxLines: 10,
-          maxLength: 1000,
-          textAlignVertical: TextAlignVertical.top,
-          decoration: _inputDecoration("What's on your mind?"),
-        ),
-        const SizedBox(height: 12),
-        TextButton.icon(
-          onPressed: () => context.push(AppRouter.voiceRecording),
-          icon: const Icon(Icons.mic_none_rounded),
-          label: const Text('Voice note'),
-        ),
-      ],
-    );
-  }
-
-  Widget _copingStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _StepIntro(
-          title: 'Want to try\nsomething?',
-          subtitle: 'Small things that\nmight help.',
-        ),
-        const SizedBox(height: 28),
-        for (final option in _copingOptions) ...[
-          _CopingCard(
-            option: option,
-            selected: _coping.contains(option.title),
-            onSelect: () {
-              setState(() {
-                _coping.contains(option.title)
-                    ? _coping.remove(option.title)
-                    : _coping.add(option.title);
-              });
-            },
-            onTry: () => context.push(option.route),
-          ),
-          const SizedBox(height: 10),
-        ],
-      ],
-    );
-  }
-
-  Widget _reviewStep() {
-    final rows = <_ReviewRowData>[
-      _ReviewRowData(
-        '${_moodEmoji ?? '😊'}  ${_moodLabel ?? 'Mood'}',
-        'Intensity: $_intensity',
-        1,
-      ),
-      if (_bodyZones.isNotEmpty)
-        _ReviewRowData('Body', _bodyZones.join(', '), 3),
-      if (_triggers.isNotEmpty || _triggerController.text.trim().isNotEmpty)
-        _ReviewRowData(
-          'Triggers',
-          [
-            ..._triggers,
-            if (_triggerController.text.trim().isNotEmpty)
-              _triggerController.text.trim(),
-          ].join(', '),
-          4,
-        ),
-      if (_sleepQuality != null)
-        _ReviewRowData(
-          'Sleep',
-          '${'★' * _sleepQuality!}${'☆' * (5 - _sleepQuality!)}',
-          5,
-        ),
-      _ReviewRowData('Energy', '$_energy/10', 6),
-      if (_noteController.text.trim().isNotEmpty)
-        _ReviewRowData('Note', '"${_noteController.text.trim()}"', 7),
-      if (_coping.isNotEmpty) _ReviewRowData('Coping', _coping.join(', '), 8),
-    ];
-
-    return Column(
-      children: [
-        const _StepIntro(
-          title: "Here's what\nyou logged.",
-          subtitle: 'Tap any section\nto edit.',
-        ),
-        const SizedBox(height: 28),
-        for (final row in rows) ...[
-          _ReviewRow(data: row, onEdit: () => _goToStep(row.step)),
-          const SizedBox(height: 10),
-        ],
-      ],
-    );
-  }
-
-  String get _intensityMessage {
-    if (_intensity <= 3) return 'A gentle feeling.';
-    if (_intensity <= 6) return "That's noticeable.";
-    if (_intensity <= 8) return "That's quite a lot.";
-    return "That sounds really intense. I'm here.";
-  }
-
-  void _toggleBodyZone(String zone) {
-    setState(() {
-      _bodyZones.contains(zone)
-          ? _bodyZones.remove(zone)
-          : _bodyZones.add(zone);
-    });
-  }
-
-  TextStyle _captionStyle() => AppTextStyles.body2.copyWith(
-    color: AppColors.textMuted,
-    fontSize: 13,
-    fontWeight: FontWeight.w500,
-  );
-
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textSubtle),
-      filled: true,
-      fillColor: AppColors.surfaceElevated,
-      counterStyle: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
-      contentPadding: const EdgeInsets.all(16),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: AppColors.border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-      ),
-    );
-  }
-}
-
-class MoodCheckInSuccessScreen extends StatefulWidget {
-  const MoodCheckInSuccessScreen({super.key, required this.onLogAnother});
-
-  final VoidCallback onLogAnother;
-
-  @override
-  State<MoodCheckInSuccessScreen> createState() =>
-      _MoodCheckInSuccessScreenState();
-}
-
-class _MoodCheckInSuccessScreenState extends State<MoodCheckInSuccessScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Future<void>.delayed(const Duration(seconds: 5), () {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Entry saved.')));
-      context.go(AppRouter.home);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
-    return Scaffold(
-      backgroundColor: AppColors.warmBackground,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (!reduceMotion) ...[
-                    const Positioned(top: 4, left: 80, child: _Sparkle()),
-                    const Positioned(
-                      bottom: 10,
-                      right: 70,
-                      child: _Sparkle(size: 5),
-                    ),
-                    const Positioned(
-                      top: 28,
-                      right: 102,
-                      child: _Sparkle(size: 4),
-                    ),
-                  ],
-                  Container(
-                    width: 88,
-                    height: 88,
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: .12),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: const Icon(
-                      Icons.check_rounded,
-                      color: AppColors.success,
-                      size: 52,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 34),
-              Text(
-                'Entry saved.',
-                style: AppTextStyles.heading1.copyWith(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Thanks for checking\nin with yourself.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.body1.copyWith(
-                  color: AppColors.textMuted,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 42),
-              _PrimaryButton(
-                label: 'Back to Home',
-                onPressed: () => context.go(AppRouter.home),
-              ),
-              const SizedBox(height: 12),
-              _SecondaryButton(
-                label: 'Log another',
-                onPressed: widget.onLogAnother,
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => context.go(AppRouter.home),
-                child: const Text('See past entries'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class MoodDetailViewScreen extends StatelessWidget {
-  const MoodDetailViewScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.warmBackground,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back),
-                  ),
-                  const Spacer(),
-                  TextButton(onPressed: () {}, child: const Text('Edit')),
-                ],
-              ),
-              const SizedBox(height: 18),
-              const Text('😊', style: TextStyle(fontSize: 64)),
-              Text(
-                'Good',
-                style: AppTextStyles.heading1.copyWith(fontSize: 28),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Today, 9:42 AM',
-                style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
-              ),
-              const SizedBox(height: 30),
-              const _DetailRow('Intensity: 7/10'),
-              const _DetailRow('Body: Chest, Stomach'),
-              const _DetailRow('Triggers: Work, Sleep'),
-              const _DetailRow('Sleep: ★★★★☆'),
-              const _DetailRow('Energy: 6/10'),
-              const _DetailRow('Note\n"Long day at work..."'),
-              const SizedBox(height: 18),
-              _WarmPanel(
-                child: Row(
-                  children: [
-                    const Icon(Icons.delete_outline, color: AppColors.danger),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Delete entry',
-                      style: AppTextStyles.body1.copyWith(
-                        color: AppColors.danger,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MoodProgressHeader extends StatelessWidget {
-  const _MoodProgressHeader({
-    required this.step,
-    required this.totalSteps,
-    required this.onBack,
-  });
-
-  final int step;
-  final int totalSteps;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 24, 0),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              SizedBox(
-                width: 48,
-                height: 48,
-                child: IconButton(
-                  tooltip: 'Back',
-                  onPressed: onBack,
-                  icon: const Icon(Icons.arrow_back, color: AppColors.text),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                'Step $step of $totalSteps',
-                style: AppTextStyles.body2.copyWith(
-                  color: AppColors.textMuted,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                minHeight: 4,
-                value: step / totalSteps,
-                backgroundColor: AppColors.border,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StepIntro extends StatelessWidget {
-  const _StepIntro({required this.title, required this.subtitle});
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        children: [
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.heading1.copyWith(
-              color: AppColors.text,
-              fontSize: 28,
-              fontWeight: FontWeight.w600,
-              height: 1.12,
-            ),
-          ),
-          if (subtitle.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body1.copyWith(
-                color: AppColors.textMuted,
-                height: 1.35,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _MoodCard extends StatelessWidget {
-  const _MoodCard({
-    required this.mood,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final _MoodOption mood;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: mood.label,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedScale(
-          scale: selected ? 1.02 : 1,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: selected
-                  ? AppColors.primarySubtle
-                  : AppColors.surfaceElevated,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: selected ? AppColors.primary : AppColors.border,
-                width: selected ? 2 : 1,
-              ),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: mood.color.withValues(alpha: .14),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(mood.emoji, style: const TextStyle(fontSize: 36)),
-                const SizedBox(height: 14),
-                Text(
-                  mood.label,
-                  style: AppTextStyles.body1.copyWith(
-                    color: AppColors.text,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MascotMessage extends StatelessWidget {
-  const _MascotMessage({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            color: AppColors.primarySoft,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Icon(
-            Icons.favorite_rounded,
-            color: AppColors.primary,
-            size: 30,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          '"$message"',
-          textAlign: TextAlign.center,
-          style: AppTextStyles.body2.copyWith(
-            color: AppColors.textMuted,
-            height: 1.35,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BodyMap extends StatelessWidget {
-  const _BodyMap({required this.selectedZones, required this.onToggle});
-
-  final Set<String> selectedZones;
-  final ValueChanged<String> onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WarmPanel(
-      child: Center(
-        child: SizedBox(
-          width: 220,
-          height: 320,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 106,
-                height: 260,
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.borderStrong, width: 2),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(58),
-                    bottom: Radius.circular(44),
-                  ),
-                ),
-              ),
-              _BodyZone(
-                label: 'Head',
-                top: 14,
-                selected: selectedZones.contains('Head'),
-                onTap: onToggle,
-              ),
-              _BodyZone(
-                label: 'Shoulders',
-                top: 78,
-                selected: selectedZones.contains('Shoulders'),
-                onTap: onToggle,
-              ),
-              _BodyZone(
-                label: 'Chest',
-                top: 122,
-                selected: selectedZones.contains('Chest'),
-                onTap: onToggle,
-              ),
-              _BodyZone(
-                label: 'Stomach',
-                top: 168,
-                selected: selectedZones.contains('Stomach'),
-                onTap: onToggle,
-              ),
-              _BodyZone(
-                label: 'Arms',
-                top: 212,
-                selected: selectedZones.contains('Arms'),
-                onTap: onToggle,
-              ),
-              _BodyZone(
-                label: 'Legs',
-                top: 258,
-                selected: selectedZones.contains('Legs'),
-                onTap: onToggle,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BodyZone extends StatelessWidget {
-  const _BodyZone({
-    required this.label,
-    required this.top,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final double top;
-  final bool selected;
-  final ValueChanged<String> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      top: top,
-      child: InkWell(
-        onTap: () => onTap(label),
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          width: 112,
-          height: 34,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected
-                ? AppColors.primarySubtle
-                : AppColors.surfaceElevated,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected ? AppColors.primary : AppColors.border,
-            ),
-          ),
-          child: Text(
-            label,
-            style: AppTextStyles.body2.copyWith(
-              color: selected ? AppColors.primary : AppColors.text,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ChipWrap extends StatelessWidget {
-  const _ChipWrap({
-    required this.values,
-    required this.selectedValues,
-    required this.onToggle,
-  });
-
-  final List<String> values;
-  final Set<String> selectedValues;
-  final ValueChanged<String> onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 10,
-      children: values.map((value) {
-        final selected = selectedValues.contains(value);
-        return Semantics(
-          button: true,
-          selected: selected,
-          label: value,
-          child: FilterChip(
-            label: Text(value),
-            selected: selected,
-            onSelected: (_) => onToggle(value),
-            avatar: selected ? const Icon(Icons.check_rounded, size: 16) : null,
-            backgroundColor: AppColors.surfaceElevated,
-            selectedColor: AppColors.primarySubtle,
-            checkmarkColor: AppColors.primary,
-            side: BorderSide(
-              color: selected ? AppColors.primary : AppColors.border,
-            ),
-            labelStyle: AppTextStyles.body2.copyWith(
-              color: selected ? AppColors.primary : AppColors.text,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _CopingCard extends StatelessWidget {
-  const _CopingCard({
-    required this.option,
-    required this.selected,
-    required this.onSelect,
-    required this.onTry,
-  });
-
-  final _CopingOption option;
-  final bool selected;
-  final VoidCallback onSelect;
-  final VoidCallback onTry;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WarmPanel(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Text(option.emoji, style: const TextStyle(fontSize: 26)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: InkWell(
-              onTap: onSelect,
-              child: Column(
+            ...moodCategories.map((category) {
+              return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    option.title,
-                    style: AppTextStyles.body1.copyWith(
-                      color: AppColors.text,
-                      fontWeight: FontWeight.w600,
+                  Padding(
+                    padding: EdgeInsets.only(left: 2.w, bottom: 3.h),
+                    child: Text(
+                      category.title,
+                      style: AppTextStyles.heading2.copyWith(
+                        fontSize: 18,
+                        color: AppColors.black,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    option.duration,
-                    style: AppTextStyles.body2.copyWith(
-                      color: AppColors.textMuted,
-                    ),
+                  Wrap(
+                    spacing: 3.w,
+                    runSpacing: 2.h,
+                    children: category.feelings.map((feeling) {
+                      final feelingId = feeling['id'] as int;
+                      final isSelected = selectedFeelingExpId == feelingId;
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedFeelingExpId = feelingId;
+                          });
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 4.w,
+                            vertical: 1.5.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary
+                                : category.color,
+                            borderRadius: BorderRadius.circular(30),
+                            border: isSelected
+                                ? Border.all(
+                                    color: AppColors.primary,
+                                    width: 2,
+                                  )
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                feeling['emoji'].toString(),
+                                style: const TextStyle(fontSize: 20),
+                              ),
+                              2.w.sw,
+                              Text(
+                                feeling['label'].toString(),
+                                style: AppTextStyles.body2.copyWith(
+                                  color: isSelected
+                                      ? AppColors.white
+                                      : AppColors.black,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
+                  6.sh,
                 ],
-              ),
-            ),
-          ),
-          TextButton(onPressed: onTry, child: const Text('Try')),
-          Checkbox(value: selected, onChanged: (_) => onSelect()),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReviewRow extends StatelessWidget {
-  const _ReviewRow({required this.data, required this.onEdit});
-
-  final _ReviewRowData data;
-  final VoidCallback onEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WarmPanel(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data.title,
-                  style: AppTextStyles.body1.copyWith(
-                    color: AppColors.text,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (data.subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    data.subtitle,
-                    style: AppTextStyles.body2.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          IconButton(
-            tooltip: 'Edit ${data.title}',
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined, color: AppColors.textMuted),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomActions extends StatelessWidget {
-  const _BottomActions({
-    required this.showSkip,
-    required this.label,
-    required this.enabled,
-    required this.busy,
-    required this.onContinue,
-    required this.onSkip,
-  });
-
-  final bool showSkip;
-  final String label;
-  final bool enabled;
-  final bool busy;
-  final VoidCallback onContinue;
-  final VoidCallback onSkip;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 10, 24, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _PrimaryButton(
-            label: busy ? 'Saving...' : label,
-            onPressed: enabled ? onContinue : null,
-          ),
-          if (showSkip) ...[
-            const SizedBox(height: 10),
-            TextButton(onPressed: onSkip, child: const Text('Skip')),
+              );
+            }),
+            10.sh,
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton({required this.label, required this.onPressed});
-
-  final String label;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.borderStrong,
-          foregroundColor: AppColors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Text(label),
-      ),
-    );
-  }
-}
-
-class _SecondaryButton extends StatelessWidget {
-  const _SecondaryButton({required this.label, required this.onPressed});
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.text,
-          side: const BorderSide(color: AppColors.border),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Text(label),
-      ),
-    );
-  }
-}
-
-class _WarmPanel extends StatelessWidget {
-  const _WarmPanel({
-    required this.child,
-    this.padding = const EdgeInsets.all(20),
-  });
-
-  final Widget child;
-  final EdgeInsets padding;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _AnimatedStep extends StatelessWidget {
-  const _AnimatedStep({required this.controller, required this.child});
-
-  final AnimationController controller;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    if (MediaQuery.of(context).disableAnimations) return child;
-    final animation = CurvedAnimation(
-      parent: controller,
-      curve: Curves.easeOutCubic,
-    );
-    return FadeTransition(
-      opacity: animation,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, .05),
-          end: Offset.zero,
-        ).animate(animation),
-        child: child,
-      ),
-    );
-  }
-}
-
-class _Sparkle extends StatelessWidget {
-  const _Sparkle({this.size = 7});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        color: AppColors.warmYellow,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  const _DetailRow(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: _WarmPanel(
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            text,
-            style: AppTextStyles.body1.copyWith(
-              color: AppColors.text,
-              height: 1.4,
-            ),
-          ),
         ),
       ),
+      bottomNavigationBar: selectedFeelingExpId != null
+          ? Padding(
+              padding: EdgeInsets.all(6.w),
+              child: AppButton(
+                text: 'Continue',
+                onPressed: () {
+                  context.push(
+                    AppRouter.moodReason,
+                    extra: {
+                      'feeling_exp_id': selectedFeelingExpId,
+                      'intensity': intensity,
+                    },
+                  );
+                },
+              ),
+            )
+          : null,
     );
   }
 }
 
-class _MoodOption {
-  const _MoodOption(this.emoji, this.label, this.color, this.message);
-
-  final String emoji;
-  final String label;
+class MoodCategory {
+  final String title;
   final Color color;
-  final String message;
-}
+  final List<Map<String, dynamic>> feelings;
 
-class _CopingOption {
-  const _CopingOption(this.emoji, this.title, this.duration, this.route);
-
-  final String emoji;
-  final String title;
-  final String duration;
-  final String route;
-}
-
-class _ReviewRowData {
-  const _ReviewRowData(this.title, this.subtitle, this.step);
-
-  final String title;
-  final String subtitle;
-  final int step;
+  MoodCategory({
+    required this.title,
+    required this.color,
+    required this.feelings,
+  });
 }

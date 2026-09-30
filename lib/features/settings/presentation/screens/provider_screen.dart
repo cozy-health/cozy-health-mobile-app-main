@@ -465,7 +465,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                backgroundColor: AppColors.primary.withOpacity(0.12),
                 child: const Icon(
                   Icons.medical_services_outlined,
                   color: AppColors.primary,

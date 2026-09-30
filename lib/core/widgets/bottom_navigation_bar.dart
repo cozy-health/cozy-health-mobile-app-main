@@ -17,12 +17,16 @@ class CustomBottomNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 72,
+      height: 80,
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        border: Border(
-          top: BorderSide(color: AppColors.border.withValues(alpha: .4)),
-        ),
+        color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -39,53 +43,33 @@ class CustomBottomNavigationBar extends StatelessWidget {
 
   Widget _buildNavItem(int index, String label, String assetPath) {
     final isSelected = currentIndex == index;
-
-    return Semantics(
-      button: true,
-      selected: isSelected,
-      label: label,
-      child: GestureDetector(
-        onTap: () => onTap(index),
-        child: Container(
-          width: 64,
-          padding: const EdgeInsets.symmetric(vertical: 7),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 42,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primarySoft
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    assetPath,
-                    width: 24,
-                    height: 24,
-                    colorFilter: ColorFilter.mode(
-                      isSelected ? AppColors.primary : AppColors.textMuted,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
+    
+    return GestureDetector(
+      onTap: () => onTap(index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SvgPicture.asset(
+              assetPath,
+              width: 24,
+              height: 24,
+              colorFilter: ColorFilter.mode(
+                isSelected ? AppColors.primary : AppColors.grey,
+                BlendMode.srcIn,
               ),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: AppTextStyles.body2.copyWith(
-                  color: isSelected ? AppColors.primary : AppColors.textMuted,
-                  fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                ),
-                overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: AppTextStyles.body2.copyWith(
+                color: isSelected ? AppColors.primary : AppColors.grey,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

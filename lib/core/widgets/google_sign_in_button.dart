@@ -14,24 +14,32 @@ class GoogleSignInButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(
-          color: AppColors.white,
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: AppColors.primary, width: 1.5),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.lightGrey, width: 1.5),
         ),
-        child: Center(
-          child: SvgPicture.asset(
+        backgroundColor: AppColors.white,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SvgPicture.asset(
             Assets.svg.google,
-            width: 24,
-            height: 24,
+            width: 20,
+            height: 20,
           ),
-        ),
+          const SizedBox(width: 12),
+          Text(
+            'Continue With Google',
+            style: AppTextStyles.buttonText.copyWith(
+              color: AppColors.black,
+            ),
+          ),
+        ],
       ),
     );
   }

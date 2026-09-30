@@ -20,7 +20,8 @@ class PersonalizationScreen extends StatefulWidget {
 class _PersonalizationScreenState extends State<PersonalizationScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  List<PersonalizationQuestion> get _questions => PersonalizationQuestion.questions;
+  final List<PersonalizationQuestion> _questions =
+      PersonalizationQuestion.questions;
 
   // Store answers for each question
   List<String> _selectedChallenges = [];
@@ -70,19 +71,11 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
     setState(() {
       _selectedAge = age;
     });
-    // Auto-advance with a slight delay to allow the user to see their selection
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) _nextPage();
-    });
   }
 
   void _onGenderSelect(String gender) {
     setState(() {
       _selectedGender = gender;
-    });
-    // Auto-advance with a slight delay to allow the user to see their selection
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) _nextPage();
     });
   }
 
@@ -206,11 +199,9 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
 
                         // Question widget
                         Expanded(
-                          child: question.type == PersonalizationQuestionType.challenges
-                              ? _buildQuestionWidget(question) // Do not scroll bubbles
-                              : SingleChildScrollView(
-                                  child: _buildQuestionWidget(question), // Lists can scroll
-                                ),
+                          child: SingleChildScrollView(
+                            child: _buildQuestionWidget(question),
+                          ),
                         ),
                       ],
                     ),
@@ -220,19 +211,12 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
             ),
 
             // Next button
-            Visibility(
-              visible: _questions[_currentPage].type == PersonalizationQuestionType.challenges ||
-                       _questions[_currentPage].type == PersonalizationQuestionType.goals,
-              maintainSize: true,
-              maintainAnimation: true,
-              maintainState: true,
-              child: Padding(
-                padding: EdgeInsets.all(6.w),
-                child: AppButton(
-                  text: 'Next',
-                  onPressed: _nextPage,
-                  isOutlined: false,
-                ),
+            Padding(
+              padding: EdgeInsets.all(6.w),
+              child: AppButton(
+                text: 'Next',
+                onPressed: _nextPage,
+                isOutlined: false,
               ),
             ),
           ],

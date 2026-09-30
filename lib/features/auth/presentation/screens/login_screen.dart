@@ -5,8 +5,14 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/custom_text_field.dart';
+import '../../../../core/widgets/google_sign_in_button.dart';
+
+import '../../../../utils/responsive_extensions.dart';
+import '../../../../utils/screen_util.dart';
+
 import '../../data/auth_service.dart';
-import '../widgets/auth_ui.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,31 +23,18 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
 
-  bool _stayLoggedIn = false;
-  bool _isLoading = false;
+  final TextEditingController _emailController =
+      TextEditingController();
+
+  final TextEditingController _passwordController =
+      TextEditingController();
+
   String? _emailError;
   String? _passwordError;
+  String? _generalError;
 
-  bool get _isValid =>
-      _emailController.text.trim().contains('@') &&
-      _passwordController.text.isNotEmpty;
-
-  @override
-  void initState() {
-    super.initState();
-    _emailController.addListener(_clearErrors);
-    _passwordController.addListener(_clearErrors);
-  }
-
-  void _clearErrors() {
-    setState(() {
-      _emailError = null;
-      _passwordError = null;
-    });
-  }
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -50,172 +43,305 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _handleLogin() async {
     FocusScope.of(context).unfocus();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
 
     setState(() {
-      _emailError = email.contains('@')
-          ? null
-          : "That email doesn't look quite right.";
-      _passwordError = password.isNotEmpty ? null : 'This field is required.';
+      _emailError = null;
+      _passwordError = null;
+      _generalError = null;
     });
 
-    if (_emailError != null || _passwordError != null) return;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
 
-    setState(() => _isLoading = true);
-    showAuthToast(
-      context,
-      type: AuthToastType.loading,
-      title: 'Logging you in...',
-    );
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() {
+        _emailError =
+            "Please enter a valid email address.";
+      });
+      return;
+    }
+
+    if (password.isEmpty) {
+      setState(() {
+        _passwordError =
+            "Password is required.";
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       final response = await _authService.login(
         email: email,
         password: password,
       );
+
       if (!mounted) return;
 
-      showAuthToast(
-        context,
-        type: AuthToastType.success,
-        title: 'Welcome back.',
-      );
       final user = response['user'];
-      final hasProfile = user != null && user['profile'] != null;
-      context.go(hasProfile ? AppRouter.home : AppRouter.personalization);
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      final message = _friendlyLoginError(e.message);
-      setState(() => _passwordError = message);
-      showAuthToast(context, type: AuthToastType.error, title: message);
-    } catch (_) {
-      if (!mounted) return;
-      showAuthToast(
-        context,
-        type: AuthToastType.error,
-        title: "Can't reach the server. Check your connection.",
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
 
-  String _friendlyLoginError(String message) {
-    final lower = message.toLowerCase();
-    if (lower.contains('password') || lower.contains('credential')) {
-      return "That password didn't match. Try again?";
-    }
-    if (lower.contains('not found') || lower.contains('account')) {
+      final hasProfile =
+          user != null &&
+          user['profile'] != null;
+
+      if (hasProfile) {
+        context.go(AppRouter.home);
+      } else {
+        context.go(AppRouter.personalization);
+      }
+    } on ApiException catch (e) {
       setState(() {
-        _emailError = "We couldn't find an account with that email.";
+        _generalError = e.message;
       });
-      return "We couldn't find that account.";
+    } catch (e) {
+      setState(() {
+        _generalError =
+            'Unable to login right now. Please try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
-    if (lower.contains('locked') || lower.contains('attempt')) {
-      return 'Too many attempts. Try again in 15 minutes.';
-    }
-    return message.isEmpty ? "That didn't match. Let's try again." : message;
   }
 
   @override
   Widget build(BuildContext context) {
-    return AuthScaffold(
-      title: 'Welcome back.',
-      subtitle: "It's good to see you again.",
-      footer: AuthFooterLink(
-        text: 'New here?',
-        action: 'Create an account',
-        onTap: () => context.go(AppRouter.createAccount),
+    ScreenUtil.init(context);
+
+    return Scaffold(
+      backgroundColor: AppColors.white,
+      appBar: AppBar(
+        backgroundColor: AppColors.white,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => context.pop(),
+          icon: const Icon(
+            Icons.arrow_back,
+            color: AppColors.black,
+          ),
+        ),
+        title: Text(
+          'Log In',
+          style: AppTextStyles.heading2,
+        ),
+        centerTitle: true,
       ),
-      children: [
-        AuthTextField(
-          label: 'Email',
-          error: _emailError,
-          controller: _emailController,
-          keyboardType: TextInputType.emailAddress,
-          enabled: !_isLoading,
-        ),
-        const SizedBox(height: 24),
-        AuthTextField(
-          label: 'Password',
-          error: _passwordError,
-          controller: _passwordController,
-          obscure: true,
-          enabled: !_isLoading,
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: Checkbox(
-                value: _stayLoggedIn,
-                activeColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: 6.w,
+            ),
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                2.sh,
+
+                Text(
+                  'Welcome Back',
+                  style:
+                      AppTextStyles.heading1.copyWith(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                onChanged: _isLoading
-                    ? null
-                    : (value) => setState(() => _stayLoggedIn = value ?? false),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Stay logged in',
-              style: AppTextStyles.body2.copyWith(color: AppColors.text),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: _isLoading
-                ? null
-                : () => context.push(AppRouter.forgotPassword),
-            child: Text(
-              'Forgot password?',
-              style: AppTextStyles.linkText.copyWith(
-                decoration: TextDecoration.underline,
-              ),
+
+                2.sh,
+
+                if (_generalError != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(4.w),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius:
+                          BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _generalError!,
+                      style:
+                          AppTextStyles.body2.copyWith(
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+                  3.sh,
+                ],
+
+                if (_emailError != null) ...[
+                  Text(
+                    _emailError!,
+                    style:
+                        AppTextStyles.body2.copyWith(
+                      color: Colors.red,
+                    ),
+                  ),
+                  1.sh,
+                ],
+
+                CustomTextField(
+                  hintText: 'Email Address',
+                  controller: _emailController,
+                  keyboardType:
+                      TextInputType.emailAddress,
+                  hasError: _emailError != null,
+                ),
+
+                3.sh,
+
+                if (_passwordError != null) ...[
+                  Text(
+                    _passwordError!,
+                    style:
+                        AppTextStyles.body2.copyWith(
+                      color: Colors.red,
+                    ),
+                  ),
+                  1.sh,
+                ],
+
+                CustomTextField(
+                  hintText: 'Password',
+                  isPassword: true,
+                  controller: _passwordController,
+                  hasError:
+                      _passwordError != null,
+                ),
+
+                2.sh,
+
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () {},
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize:
+                          MaterialTapTargetSize
+                              .shrinkWrap,
+                    ),
+                    child: Text(
+                      'Forgot your password ?',
+                      style:
+                          AppTextStyles.linkText
+                              .copyWith(
+                        decoration:
+                            TextDecoration
+                                .underline,
+                      ),
+                    ),
+                  ),
+                ),
+
+                4.sh,
+
+                AppButton(
+                  text: _isLoading
+                      ? 'Logging In...'
+                      : 'Log In',
+                  onPressed:
+                      _isLoading
+                          ? null
+                          : _handleLogin,
+                  isOutlined: false,
+                ),
+
+                4.sh,
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        color:
+                            AppColors.lightGrey,
+                        thickness: 1,
+                      ),
+                    ),
+                    Padding(
+                      padding:
+                          EdgeInsets.symmetric(
+                        horizontal: 4.w,
+                      ),
+                      child: Text(
+                        'or',
+                        style:
+                            AppTextStyles.body2
+                                .copyWith(
+                          color:
+                              AppColors.grey,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Divider(
+                        color:
+                            AppColors.lightGrey,
+                        thickness: 1,
+                      ),
+                    ),
+                  ],
+                ),
+
+                4.sh,
+
+                GoogleSignInButton(
+                  onPressed: () {},
+                ),
+
+                2.sh,
+
+                Center(
+                  child: TextButton(
+                    onPressed: () => context.go(
+                      AppRouter.createAccount,
+                    ),
+                    child: RichText(
+                      text: TextSpan(
+                        text:
+                            'Don\'t have an account? ',
+                        style:
+                            AppTextStyles.body1
+                                .copyWith(
+                          color:
+                              AppColors.grey,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'Sign up',
+                            style:
+                                AppTextStyles
+                                    .body1
+                                    .copyWith(
+                              color:
+                                  AppColors
+                                      .primary,
+                              fontWeight:
+                                  FontWeight
+                                      .w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                2.sh,
+              ],
             ),
           ),
         ),
-        const SizedBox(height: 32),
-        AuthPrimaryButton(
-          text: 'Log In',
-          onPressed: _isLoading || !_isValid ? null : _login,
-          isLoading: _isLoading,
-        ),
-        const SizedBox(height: 24),
-        Row(
-          children: [
-            const Expanded(child: Divider(color: AppColors.border)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text('or', style: AppTextStyles.body2),
-            ),
-            const Expanded(child: Divider(color: AppColors.border)),
-          ],
-        ),
-        const SizedBox(height: 24),
-        AuthPrimaryButton(
-          text: Theme.of(context).platform == TargetPlatform.iOS
-              ? 'Log in with Face ID'
-              : 'Log in with fingerprint',
-          isOutlined: true,
-          onPressed: () => showAuthToast(
-            context,
-            type: AuthToastType.warning,
-            title: "Biometric login isn't available yet.",
-            description: 'Use your password for now.',
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

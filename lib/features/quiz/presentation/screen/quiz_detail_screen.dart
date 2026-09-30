@@ -1,112 +1,139 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../utils/responsive_extensions.dart';
+import '../../../../gen/assets.gen.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../widgets/clinical_disclaimer_sheet.dart';
 
 class QuizDetailScreen extends StatelessWidget {
-  final Map<String, dynamic> extra;
+  final int quizId;
+  final String quizTitle;
+  final String quizType;
 
-  const QuizDetailScreen({super.key, required this.extra});
+  const QuizDetailScreen({
+    super.key,
+    required this.quizId,
+    required this.quizTitle,
+    required this.quizType,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final title = extra['title'] as String? ?? 'Quiz';
-    final type = extra['type'] as String? ?? 'wellness';
-    final isClinical = type == 'clinical';
-
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.warmBackground,
+        backgroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: const Icon(Icons.arrow_back, color: AppColors.black),
           onPressed: () => context.pop(),
         ),
+        title: Text(quizTitle, style: AppTextStyles.heading2),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (isClinical)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Text(
-                      'Clinical assessment',
-                      style: AppTextStyles.body2.copyWith(
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 6.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            4.sh,
+            Text(
+              'Assess your current emotional health and mood patterns.',
+              style: AppTextStyles.body1,
+            ),
+            3.sh,
+            Row(
+              children: [
+                _buildBadge(Icons.timer, '5 Minutes'),
+                4.sw,
+                _buildBadge(Icons.calendar_today, 'Monthly'),
+              ],
+            ),
+            5.sh,
+            Center(
+              child: Container(
+                width: double.infinity,
+                height: 220,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFF),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Center(
+                  child: Assets.png.emotionalWellbeing.image(
+                    height: 180,
+                    fit: BoxFit.contain,
                   ),
                 ),
-              const SizedBox(height: 16),
-              
-              Text(
-                title,
-                style: AppTextStyles.heading1.copyWith(fontSize: 32, color: AppColors.text),
               ),
-              const SizedBox(height: 16),
-              
-              Text(
-                isClinical
-                    ? 'This is a standard screening tool used by healthcare professionals to understand your symptoms over the last 2 weeks.'
-                    : 'Take a few minutes to reflect on how you are feeling. This helps us personalize your experience.',
-                style: AppTextStyles.body1.copyWith(color: AppColors.text, height: 1.5),
-              ),
-              const SizedBox(height: 32),
-              
-              _buildDetailRow(Icons.help_outline, isClinical ? '9 questions' : '5 questions'),
-              const SizedBox(height: 16),
-              _buildDetailRow(Icons.timer_outlined, isClinical ? 'Estimated 5 min' : 'Estimated 3 min'),
-              
-              const Spacer(),
-              
-              AppButton(
-                text: 'Start Quiz',
-                onPressed: () async {
-                  if (isClinical) {
-                    final proceed = await ClinicalDisclaimerSheet.show(context);
-                    if (proceed == true) {
-                      if (context.mounted) {
-                        context.push(AppRouter.quizTaking, extra: extra);
-                      }
-                    }
-                  } else {
-                    context.push(AppRouter.quizTaking, extra: extra);
-                  }
+            ),
+            6.sh,
+            Text(
+              'Your emotions shape your daily experiences. This quiz helps you understand your mood patterns and emotional resilience.',
+              style: AppTextStyles.body1.copyWith(height: 1.6),
+            ),
+            const Spacer(),
+            AppButton(
+              text: 'Start',
+              onPressed: () {
+                context.push(
+                  AppRouter.quizTaking,
+                  extra: {
+                    'id': quizId,
+                    'title': quizTitle,
+                    'type': quizType,
+                  },
+                );
+              },
+            ),
+            3.sh,
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  context.push(AppRouter.quizResults, extra: {
+                    'title': quizTitle,
+                    'score': 0,
+                    'total_questions': 0,
+                  });
                 },
+                child: Text(
+                  'See results',
+                  style: AppTextStyles.linkText.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-              const SizedBox(height: 32),
-            ],
-          ),
+            ),
+            6.sh,
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, color: AppColors.textMuted, size: 20),
-        const SizedBox(width: 12),
-        Text(
-          text,
-          style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
-        ),
-      ],
+  Widget _buildBadge(IconData icon, String text) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+      decoration: BoxDecoration(
+        color: AppColors.lightGrey,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: AppColors.grey),
+          2.sw,
+          Text(
+            text,
+            style: AppTextStyles.body2.copyWith(
+              color: AppColors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
