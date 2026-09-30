@@ -17,6 +17,11 @@ ci_status.json
 .swiftpm/
 migrate_working_dir/
 
+# AI agent helper scripts - should never be in lib/
+lib/**/*.php
+lib/**/*.py
+lib/update_repos.php
+
 # IntelliJ related
 *.iml
 *.ipr
