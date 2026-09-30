@@ -35,9 +35,15 @@ jobs:
           cp -R build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app Payload/
           ditto -c -k --sequesterRsrc --keepParent Payload Runner-unsigned.ipa
 
+      - name: Verify IPA exists
+        run: |
+          ls -lh Runner-unsigned.ipa
+          file Runner-unsigned.ipa
+
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-unsigned-ipa-develop
           path: Runner-unsigned.ipa
           retention-days: 30
+          if-no-files-found: error
