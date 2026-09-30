@@ -49,6 +49,8 @@ class JournalEntry extends HiveObject {
   @HiveField(14)
   final bool isDraft;
 
+  final bool isCrisisFlagged;
+
   JournalEntry({
     required this.id,
     required this.type,
@@ -65,6 +67,7 @@ class JournalEntry extends HiveObject {
     required this.createdAt,
     required this.updatedAt,
     this.isDraft = false,
+    this.isCrisisFlagged = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -74,6 +77,7 @@ class JournalEntry extends HiveObject {
       'body': body,
       'word_count': wordCount,
       'is_draft': isDraft,
+      'is_crisis_flagged': isCrisisFlagged,
       'client_created_at': createdAt.toUtc().toIso8601String(),
     };
     if (title != null) json['title'] = title;
@@ -103,6 +107,7 @@ class JournalEntry extends HiveObject {
       linkedMoodEntryId: json['linked_mood_entry_id'] as String?,
       wordCount: json['word_count'] as int? ?? 0,
       isDraft: json['is_draft'] as bool? ?? false,
+      isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
       createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
       updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
     );
@@ -131,6 +136,7 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
       createdAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
       isDraft: reader.readBool(),
+      isCrisisFlagged: false,
     );
   }
 

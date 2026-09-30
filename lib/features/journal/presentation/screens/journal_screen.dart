@@ -9,6 +9,7 @@ import '../../../crisis/presentation/screens/crisis_screens.dart';
 import '../../../crisis/services/crisis_detector.dart';
 import '../../../../core/repositories/journal_repository.dart';
 import '../../../../core/models/journal_entry.dart';
+import '../../../../core/services/local_db_service.dart';
 
 enum JournalViewState { populated, empty, loading }
 
@@ -179,19 +180,41 @@ class _JournalScreenState extends State<JournalScreen>
 
   Future<void> _saveEntry(JournalEntry entry) async {
     final signal = _crisisDetector.analyze(entry.body);
-    if (_crisisDetector.canTrigger('journal', signal)) {
-      _crisisDetector.markTriggered('journal');
-      await showCrisisSupportOverlay(context, signal: signal);
-      return;
-    }
+    final shouldShowCrisisSupport = _crisisDetector.canTrigger('journal', signal);
+    final entryToSave = shouldShowCrisisSupport
+        ? JournalEntry(
+            id: entry.id,
+            type: entry.type,
+            title: entry.title,
+            body: entry.body,
+            voiceUrl: entry.voiceUrl,
+            voiceDuration: entry.voiceDuration,
+            transcription: entry.transcription,
+            promptId: entry.promptId,
+            promptText: entry.promptText,
+            tags: entry.tags,
+            linkedMoodEntryId: entry.linkedMoodEntryId,
+            wordCount: entry.wordCount,
+            createdAt: entry.createdAt,
+            updatedAt: entry.updatedAt,
+            isDraft: entry.isDraft,
+            isCrisisFlagged: true,
+          )
+        : entry;
 
     try {
-      await _repo.save(entry);
+      await _repo.save(entryToSave);
     } catch (e) {
       // Ignored for now - LocalDbService handles offline queueing
     }
 
     if (!mounted) return;
+    if (shouldShowCrisisSupport) {
+      _crisisDetector.markTriggered('journal');
+      await showCrisisSupportOverlay(context, signal: signal);
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(entry.isDraft ? 'Draft saved.' : 'Entry saved.')),
     );
@@ -408,27 +431,45 @@ class JournalEditorScreen extends StatefulWidget {
   State<JournalEditorScreen> createState() => _JournalEditorScreenState();
 }
 
-class _JournalEditorScreenState extends State<JournalEditorScreen> {
+class _JournalEditorScreenState extends State<JournalEditorScreen>
+    with WidgetsBindingObserver {
   late final TextEditingController _controller;
   late final List<String> _tags;
+  late final String _draftId;
   Timer? _autoSaveTimer;
-  String _saveStatus = 'Draft saved now';
+  String _saveStatus = 'No draft yet';
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.existing?.body ?? '');
-    _tags = [...?widget.existing?.tags];
-    _autoSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) setState(() => _saveStatus = 'Draft saved ${_timeNow()}');
-    });
+    WidgetsBinding.instance.addObserver(this);
+    _draftId =
+        widget.existing?.id ??
+        'journal_draft_${widget.type}_${widget.prompt?.id ?? 'free'}';
+    final draft = widget.existing == null
+        ? LocalDbService.instance.getJournalDraft(_draftId)
+        : null;
+    _controller = TextEditingController(
+      text: widget.existing?.body ?? draft?.body ?? '',
+    );
+    _tags = [...(widget.existing?.tags ?? draft?.tags ?? const <String>[])];
+    if (draft != null) _saveStatus = 'Draft restored';
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _autoSaveTimer?.cancel();
     _controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      _saveDraftNow();
+    }
   }
 
   @override
@@ -460,7 +501,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen> {
                   const Spacer(),
                   TextButton(
                     onPressed: _finish,
-                    child: const Text('Save as draft'),
+                    child: const Text('Save'),
                   ),
                 ],
               ),
@@ -492,8 +533,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen> {
                       hintStyle: TextStyle(color: AppColors.textSubtle),
                       border: InputBorder.none,
                     ),
-                    onChanged: (_) =>
-                        setState(() => _saveStatus = 'Saving draft...'),
+                    onChanged: (_) => _scheduleAutoSave(),
                   ),
                 ],
               ),
@@ -535,12 +575,54 @@ class _JournalEditorScreenState extends State<JournalEditorScreen> {
     ).whenComplete(controller.dispose);
   }
 
-  void _finish() {
+  void _scheduleAutoSave() {
+    setState(() => _saveStatus = 'Saving draft...');
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(
+      const Duration(milliseconds: 500),
+      () => _saveDraftNow(),
+    );
+  }
+
+  Future<void> _saveDraftNow() async {
+    _autoSaveTimer?.cancel();
+    final body = _controller.text.trim();
+    if (body.isEmpty && _tags.isEmpty) {
+      await LocalDbService.instance.deleteJournalDraft(_draftId);
+      if (mounted) setState(() => _saveStatus = 'No draft yet');
+      return;
+    }
+
+    await LocalDbService.instance.saveJournalDraft(
+      JournalEntry(
+        id: _draftId,
+        type: widget.type,
+        title: widget.prompt?.category ?? widget.existing?.title ?? 'Journal entry',
+        body: body,
+        tags: _tags,
+        promptId: widget.prompt?.id ?? widget.existing?.promptId,
+        promptText: widget.prompt?.text ?? widget.existing?.promptText,
+        createdAt: widget.existing?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+        isDraft: true,
+        wordCount: _wordCount,
+      ),
+    );
+
+    if (mounted) setState(() => _saveStatus = 'Draft saved ${_timeNow()}');
+  }
+
+  Future<void> _finish() async {
     final body = _controller.text.trim();
     if (body.isEmpty && widget.existing == null) {
+      await LocalDbService.instance.deleteJournalDraft(_draftId);
+      if (!mounted) return;
       Navigator.pop(context);
       return;
     }
+
+    await LocalDbService.instance.deleteJournalDraft(_draftId);
+    if (!mounted) return;
 
     Navigator.pop(
       context,

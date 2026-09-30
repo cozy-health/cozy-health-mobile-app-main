@@ -7,6 +7,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/repositories/mood_repository.dart';
 import '../../../../core/models/mood_entry.dart';
+import '../../../crisis/presentation/screens/crisis_screens.dart';
+import '../../../crisis/services/crisis_detector.dart';
 
 class MoodFeelingScreen extends StatefulWidget {
   const MoodFeelingScreen({super.key});
@@ -19,6 +21,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     with SingleTickerProviderStateMixin {
   static const int _totalSteps = 9;
 
+  final CrisisDetector _crisisDetector = const CrisisDetector();
   late final AnimationController _entranceController;
   final TextEditingController _triggerController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
@@ -143,6 +146,9 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
 
   Future<void> _saveEntry() async {
     setState(() => _isSaving = true);
+    final note = _noteController.text.trim();
+    final signal = _crisisDetector.analyze(note);
+    final shouldShowCrisisSupport = _crisisDetector.canTrigger('mood', signal);
     
     final entry = MoodEntry(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -153,8 +159,9 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       customTrigger: _triggerController.text.trim().isNotEmpty ? _triggerController.text.trim() : null,
       sleepQuality: _sleepQuality,
       energyLevel: _energy,
-      note: _noteController.text.trim().isNotEmpty ? _noteController.text.trim() : null,
+      note: note.isNotEmpty ? note : null,
       copingStrategies: _coping.toList(),
+      isCrisisFlagged: shouldShowCrisisSupport,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -167,6 +174,13 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
 
     if (!mounted) return;
     setState(() => _isSaving = false);
+
+    if (shouldShowCrisisSupport) {
+      _crisisDetector.markTriggered('mood');
+      await showCrisisSupportOverlay(context, signal: signal);
+      if (!mounted) return;
+    }
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => MoodCheckInSuccessScreen(

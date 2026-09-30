@@ -46,9 +46,33 @@ class ContentRepository {
     final savedArticles = _local.getAllSavedArticles();
     final isCurrentlySaved = savedArticles.any((a) => a.articleId == articleId);
     if (isCurrentlySaved) {
-      await unsaveArticle(articleId);
+      await _local.deleteSavedArticle(articleId);
+      await _local.enqueueSync(
+        type: 'saved_article',
+        action: 'delete',
+        recordId: articleId,
+        payload: null,
+      );
     } else {
-      await saveArticle(articleId);
+      final article = SavedArticle(
+        id: 'saved_$articleId',
+        articleId: articleId,
+        articleSlug: articleData['slug'] as String?,
+        title: articleData['title'] as String? ?? '',
+        category: articleData['category'] as String?,
+        readTimeMinutes: articleData['read_time_minutes'] as int?,
+        excerpt: articleData['excerpt'] as String? ?? '',
+        imageUrl: articleData['image_url'] as String? ?? '',
+        savedAt: DateTime.now().toUtc(),
+      );
+      await _local.saveSavedArticle(article);
+      await _local.enqueueSync(
+        type: 'saved_article',
+        action: 'upsert',
+        recordId: article.articleId,
+        payload: article.toJson(),
+      );
     }
+    _local.processSyncQueue();
   }
 }

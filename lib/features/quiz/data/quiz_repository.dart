@@ -26,9 +26,7 @@ class QuizRepository {
   Future<QuizAttempt> saveAttempt(QuizAttempt attempt) async {
     await _local.saveQuizAttempt(attempt);
     await _local.enqueueSync(type: 'quiz_attempt', action: 'upsert', recordId: attempt.id, payload: attempt.toJson());
-    try {
-      await ApiClient.instance.post('/quiz-attempts', data: attempt.toJson());
-    } catch(e) {}
+    _local.processSyncQueue();
     return attempt;
   }
 }

@@ -35,14 +35,13 @@ class MoodRepository {
   }
 
   Stream<List<MoodEntry>> watchMoodEntries() async* {
-    yield _local.getAllMoodEntries().where((e) => !e.isCrisisFlagged).toList(); // Simple filter if needed, though isDeleted should be checked ideally
-    // Assuming no isDeleted on model, but standard getAll logic is fine
+    yield _local.getAllMoodEntries();
   }
 
   Future<MoodEntry> saveMoodEntry(MoodEntry entry) async {
     await _local.saveMoodEntry(entry);
     await _local.enqueueSync(type: 'mood_entry', action: 'upsert', recordId: entry.id, payload: entry.toJson());
-    _tryServerSync(entry);
+    _local.processSyncQueue();
     return entry;
   }
 
@@ -53,26 +52,8 @@ class MoodRepository {
   Future<void> deleteMoodEntry(String id) async {
     // Should ideally mark as deleted, but removing for now
     // await _local.deleteMoodEntry(id);
-    await _local.enqueueSync(type: 'mood_entry', action: 'delete', recordId: id, payload: '');
-    try {
-      await ApiClient.instance.delete('/mood-entries/$id');
-    } catch (e) {
-      debugPrint('Sync failed: $e');
-    }
-  }
-
-  Future<void> _tryServerSync(MoodEntry entry) async {
-    try {
-      await ApiClient.instance.post('/mood-entries', data: entry.toJson());
-    } on ApiNetworkException {
-    } on ApiTimeoutException {
-    } on ApiValidationException catch (e) {
-      debugPrint('Mood validation: ${e.fieldErrors}');
-    } on ApiServerException {
-    } on ApiAuthException {
-    } catch (e) {
-      debugPrint('Mood sync error: $e');
-    }
+    await _local.enqueueSync(type: 'mood_entry', action: 'delete', recordId: id, payload: null);
+    _local.processSyncQueue();
   }
 
   Future<MoodStats?> fetchStats() async {

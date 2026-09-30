@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart';
 import '../models/journal_entry.dart';
 import '../services/local_db_service.dart';
 import '../api/api_client.dart';
-import '../api/api_exceptions.dart';
 
 class JournalRepository {
   final LocalDbService _local = LocalDbService();
@@ -32,7 +30,7 @@ class JournalRepository {
   Future<JournalEntry> saveJournalEntry(JournalEntry entry) async {
     await _local.saveJournalEntry(entry);
     await _local.enqueueSync(type: 'journal_entry', action: 'upsert', recordId: entry.id, payload: entry.toJson());
-    _tryServerSync(entry);
+    _local.processSyncQueue();
     return entry;
   }
   
@@ -42,19 +40,8 @@ class JournalRepository {
   
   Future<void> deleteJournalEntry(String id) async {
     await _local.deleteJournalEntry(id);
-    await _local.enqueueSync(type: 'journal_entry', action: 'delete', recordId: id, payload: '');
-    try {
-      await ApiClient.instance.delete('/journal-entries/$id');
-    } catch (e) {
-    }
-  }
-
-  Future<void> _tryServerSync(JournalEntry entry) async {
-    try {
-      await ApiClient.instance.post('/journal-entries', data: entry.toJson());
-    } catch (e) {
-      debugPrint('Sync failed: $e');
-    }
+    await _local.enqueueSync(type: 'journal_entry', action: 'delete', recordId: id, payload: null);
+    _local.processSyncQueue();
   }
 
   /// Alias for saveJournalEntry — some UI code calls save() directly.

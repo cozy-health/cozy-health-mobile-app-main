@@ -26,9 +26,7 @@ class SafetyPlanRepository {
   Future<SafetyPlan> saveSafetyPlan(SafetyPlan plan) async {
     await _local.saveSafetyPlan(plan);
     await _local.enqueueSync(type: 'safety_plan', action: 'upsert', recordId: plan.id, payload: plan.toJson());
-    try {
-      await ApiClient.instance.put('/safety-plan', data: plan.toJson());
-    } catch(e) {}
+    _local.processSyncQueue();
     return plan;
   }
 

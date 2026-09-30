@@ -44,19 +44,20 @@ class ChatRepository {
   Future<ChatConversation> saveConversation(ChatConversation conv) async {
     await _local.saveChatConversation(conv);
     await _local.enqueueSync(type: 'chat_conversation', action: 'upsert', recordId: conv.id, payload: conv.toJson());
+    _local.processSyncQueue();
     return conv;
   }
   
   Future<void> deleteConversation(String id) async {
     await _local.deleteChatConversation(id);
-    await _local.enqueueSync(type: 'chat_conversation', action: 'delete', recordId: id, payload: {});
-    try {
-      await ApiClient.instance.delete('/conversations/$id');
-    } catch (e) {}
+    await _local.enqueueSync(type: 'chat_conversation', action: 'delete', recordId: id, payload: null);
+    _local.processSyncQueue();
   }
 
   Future<void> saveMessage(ChatMessage msg) async {
     await _local.saveChatMessage(msg);
+    await _local.enqueueSync(type: 'chat_message', action: 'upsert', recordId: msg.id, payload: msg.toJson());
+    _local.processSyncQueue();
   }
 
   Future<void> updateMessageStatus(String msgId, String status) async {
@@ -64,6 +65,8 @@ class ChatRepository {
     final msg = await _local.getChatMessage(msgId);
     if (msg != null) {
       await _local.saveChatMessage(msg); // core.ChatMessage doesn't have a settable status right now, but it's okay just to save it back.
+      await _local.enqueueSync(type: 'chat_message', action: 'upsert', recordId: msg.id, payload: msg.toJson());
+      _local.processSyncQueue();
     }
   }
 

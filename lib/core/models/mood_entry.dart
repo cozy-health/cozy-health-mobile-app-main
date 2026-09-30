@@ -67,6 +67,7 @@ class MoodEntry extends HiveObject {
     final json = <String, dynamic>{
       'id': id,
       'mood': mood,
+      'intensity': intensity,
     };
     if (energyLevel != null) json['energy_level'] = energyLevel;
     if (bodySensations != null) json['body_sensations'] = bodySensations;

@@ -32,9 +32,7 @@ class ProfileRepository {
       recordId: profile.id,
       payload: profile.toJson(),
     );
-    try {
-      await ApiClient.instance.patch('/user/profile', data: profile.toJson());
-    } catch (e) {}
+    _local.processSyncQueue();
     return profile;
   }
 
@@ -68,34 +66,6 @@ class ProfileRepository {
       recordId: profile.id,
       payload: updated.toJson(),
     );
-
-    try {
-      await ApiClient.instance.patch(
-        '/user/preferences',
-        data: {_apiKey(key): value},
-      );
-    } catch (e) {
-      debugPrint('Preference sync failed: $e');
-    }
-  }
-
-  String _apiKey(String key) {
-    return switch (key) {
-      'accentColor' => 'accent_color',
-      'reduceMotion' => 'reduce_motion',
-      'highContrast' => 'high_contrast',
-      'hapticsEnabled' => 'haptics_enabled',
-      'textSize' => 'text_size',
-      'showStats' => 'show_stats',
-      'showUsername' => 'show_username',
-      'notificationsMaster' => 'notifications_master',
-      'dailyCheckinEnabled' => 'daily_checkin_enabled',
-      'dailyCheckinTime' => 'daily_checkin_time',
-      'journalReminderEnabled' => 'journal_reminder_enabled',
-      'commentsNotifications' => 'comments_notifications',
-      'achievementsNotifications' => 'achievements_notifications',
-      'marketingNotifications' => 'marketing_notifications',
-      _ => key,
-    };
+    _local.processSyncQueue();
   }
 }

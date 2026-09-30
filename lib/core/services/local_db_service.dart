@@ -1,5 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:async';
+import 'dart:math';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../api/api_client.dart';
 import '../api/api_exceptions.dart';
@@ -23,6 +24,7 @@ class LocalDbService {
   factory LocalDbService() => _instance;
   LocalDbService._internal();
   static LocalDbService get instance => _instance;
+  bool _isProcessingSyncQueue = false;
 
   static const String moodBoxName = 'moods';
   static const String journalBoxName = 'journals';
@@ -63,8 +65,8 @@ class LocalDbService {
     await Hive.openBox<AppNotification>(appNotificationBoxName);
     await Hive.openBox<SubscriptionStatus>(subscriptionStatusBoxName);
     await Hive.openBox<String>(syncQueueBoxName);
-    Connectivity().onConnectivityChanged.listen((result) {
-      if (result != ConnectivityResult.none) {
+    Connectivity().onConnectivityChanged.listen((results) {
+      if (!results.contains(ConnectivityResult.none)) {
         processSyncQueue();
       }
     });
@@ -79,7 +81,6 @@ class LocalDbService {
 
   Future<void> saveMoodEntry(MoodEntry entry) async {
     await moodBox.put(entry.id, entry);
-    await queueSync('mood_entry', entry.id);
   }
 
   List<MoodEntry> getAllMoodEntries() {
@@ -91,11 +92,11 @@ class LocalDbService {
 
   Future<void> saveJournalEntry(JournalEntry entry) async {
     await journalBox.put(entry.id, entry);
-    await queueSync('journal_entry', entry.id);
   }
 
   List<JournalEntry> getAllJournalEntries() {
-    return journalBox.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return journalBox.values.where((entry) => !entry.isDraft).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   Stream<List<JournalEntry>> watchJournalEntries() async* {
@@ -105,7 +106,22 @@ class LocalDbService {
 
   Future<void> deleteJournalEntry(String id) async {
     await journalBox.delete(id);
-    await queueSync('delete_journal', id);
+  }
+
+  Future<void> saveJournalDraft(JournalEntry entry) async {
+    await journalBox.put(entry.id, entry);
+  }
+
+  JournalEntry? getJournalDraft(String id) {
+    final entry = journalBox.get(id);
+    return entry != null && entry.isDraft ? entry : null;
+  }
+
+  Future<void> deleteJournalDraft(String id) async {
+    final entry = journalBox.get(id);
+    if (entry != null && entry.isDraft) {
+      await journalBox.delete(id);
+    }
   }
 
   // --- Chat ---
@@ -114,12 +130,10 @@ class LocalDbService {
 
   Future<void> saveChatMessage(ChatMessage message) async {
     await chatMessageBox.put(message.id, message);
-    await queueSync('chat_message', message.id);
   }
 
   Future<void> saveChatConversation(ChatConversation conversation) async {
     await chatConversationBox.put(conversation.id, conversation);
-    await queueSync('chat_conversation', conversation.id);
   }
 
   Stream<List<ChatConversation>> watchConversations() async* {
@@ -165,7 +179,6 @@ class LocalDbService {
 
   Future<void> saveSafetyPlan(SafetyPlan plan) async {
     await safetyPlanBox.put(plan.id, plan);
-    await queueSync('safety_plan', plan.id);
   }
 
   Stream<SafetyPlan?> watchSafetyPlan() {
@@ -185,7 +198,6 @@ class LocalDbService {
 
   Future<void> saveUserProfile(UserProfile profile) async {
     await userProfileBox.put(profile.id, profile);
-    await queueSync('user_profile', profile.id);
   }
 
   Stream<UserProfile?> watchUserProfile() {
@@ -205,7 +217,6 @@ class LocalDbService {
 
   Future<void> saveQuizAttempt(QuizAttempt attempt) async {
     await quizAttemptBox.put(attempt.id, attempt);
-    await queueSync('quiz_attempt', attempt.id);
   }
 
   Stream<List<QuizAttempt>> watchQuizAttempts() async* {
@@ -224,12 +235,10 @@ class LocalDbService {
 
   Future<void> saveSavedArticle(SavedArticle article) async {
     await savedArticleBox.put(article.articleId, article);
-    await queueSync('saved_article', article.articleId);
   }
 
   Future<void> deleteSavedArticle(String articleId) async {
     await savedArticleBox.delete(articleId);
-    await queueSync('delete_saved_article', articleId);
   }
 
   Stream<List<SavedArticle>> watchSavedArticles() async* {
@@ -301,10 +310,7 @@ class LocalDbService {
   Box<String> get syncQueueBox => Hive.box<String>(syncQueueBoxName);
 
   Future<void> queueSync(String type, String id) async {
-    final key = '$type:$id';
-    if (!syncQueueBox.containsKey(key)) {
-      await syncQueueBox.put(key, id);
-    }
+    await enqueueSync(type: type, action: 'upsert', recordId: id, payload: null);
   }
 
   Future<void> enqueueSync({
@@ -313,11 +319,25 @@ class LocalDbService {
     required String recordId,
     required dynamic payload,
   }) async {
-    await queueSync(type, recordId);
+    final item = SyncItem(
+      id: const Uuid().v4(),
+      type: type,
+      action: action,
+      recordId: recordId,
+      payload: _normalizePayload(payload),
+      retryCount: 0,
+      createdAt: DateTime.now().toUtc(),
+    );
+    await syncQueueBox.put(item.id, item.toJson());
   }
 
   Future<void> removeFromQueue(String type, String id) async {
-    await syncQueueBox.delete('$type:$id');
+    for (final key in syncQueueBox.keys) {
+      final item = _syncItemFromStoredValue(key, syncQueueBox.get(key));
+      if (item != null && item.type == type && item.recordId == id) {
+        await syncQueueBox.delete(key);
+      }
+    }
   }
 
   List<String> getPendingSyncs() {
@@ -325,28 +345,143 @@ class LocalDbService {
   }
 
   Future<void> processSyncQueue() async {
-    final pendingSyncs = getPendingSyncs();
-    for (final key in pendingSyncs) {
-      final parts = key.split(':');
-      if (parts.length != 2) continue;
-      
-      final type = parts[0];
-      final id = parts[1];
+    if (_isProcessingSyncQueue) return;
+    _isProcessingSyncQueue = true;
+    try {
+      final now = DateTime.now().toUtc();
+      final dueItems = _getQueuedSyncItems()
+          .where(
+            (item) => item.nextRetryAt == null || !item.nextRetryAt!.isAfter(now),
+          )
+          .toList()
+        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-      try {
-        // In a real app, this is where we'd make API calls based on the type
-        // e.g., if (type == 'mood_entry') { await apiService.syncMood(getMood(id)); }
-        // For now, we simulate a successful API sync by just awaiting a small delay
-        await Future.delayed(const Duration(milliseconds: 100));
-        
-        // On success, remove from queue
-        await removeFromQueue(type, id);
-        print('Synced $type:$id successfully');
-      } catch (e) {
-        print('Failed to sync $type:$id : $e');
-        // It stays in the queue to be retried later
+      for (var start = 0; start < dueItems.length; start += 50) {
+        final batch = dueItems.sublist(start, min(start + 50, dueItems.length));
+        try {
+          final response = await ApiClient.instance.post(
+            '/sync/batch',
+            data: {
+              'operations': batch.map(_operationForSyncItem).toList(),
+            },
+          );
+          await _applyBatchResult(batch, response.data);
+        } on ApiAuthException {
+          return;
+        } on ApiNetworkException {
+          return;
+        } on ApiTimeoutException {
+          return;
+        } catch (error) {
+          for (final item in batch) {
+            await _scheduleRetry(item);
+          }
+        }
+      }
+    } finally {
+      _isProcessingSyncQueue = false;
+    }
+  }
+
+  List<SyncItem> _getQueuedSyncItems() {
+    return syncQueueBox.keys
+        .map((key) => _syncItemFromStoredValue(key, syncQueueBox.get(key)))
+        .whereType<SyncItem>()
+        .toList();
+  }
+
+  SyncItem? _syncItemFromStoredValue(dynamic key, String? value) {
+    if (value == null) return null;
+    try {
+      return SyncItem.fromJson(value);
+    } catch (_) {
+      final rawKey = key?.toString() ?? '';
+      final parts = rawKey.split(':');
+      if (parts.length == 2) {
+        return SyncItem(
+          id: rawKey,
+          type: parts[0],
+          action: 'upsert',
+          recordId: parts[1],
+          retryCount: 0,
+          createdAt: DateTime.now().toUtc(),
+        );
+      }
+      return null;
+    }
+  }
+
+  Map<String, dynamic> _operationForSyncItem(SyncItem item) {
+    return {
+      'client_operation_id': item.id,
+      'type': item.type,
+      'action': item.action,
+      if (item.action == 'delete' || item.payload == null) 'id': item.recordId,
+      if (item.action != 'delete' && item.payload != null) 'data': item.payload,
+    };
+  }
+
+  Future<void> _applyBatchResult(List<SyncItem> batch, dynamic data) async {
+    final results = _extractBatchResults(data);
+    if (results == null) {
+      for (final item in batch) {
+        await syncQueueBox.delete(item.id);
+      }
+      return;
+    }
+
+    for (final item in batch) {
+      final result = results[item.id] ?? results[item.recordId];
+      if (result == true) {
+        await syncQueueBox.delete(item.id);
+      } else {
+        await _scheduleRetry(item);
       }
     }
+  }
+
+  Map<String, bool>? _extractBatchResults(dynamic data) {
+    final payload = data is Map && data['data'] is Map ? data['data'] : data;
+    final rawResults = payload is Map ? payload['results'] ?? payload['operations'] : null;
+    if (rawResults is! List) return null;
+
+    return {
+      for (final result in rawResults)
+        if (result is Map)
+          (result['client_operation_id'] ?? result['id'] ?? result['record_id']).toString():
+              result['success'] == true || result['status'] == 'success',
+    };
+  }
+
+  Future<void> _scheduleRetry(SyncItem item) async {
+    final nextRetryCount = item.retryCount + 1;
+    if (nextRetryCount > 10) {
+      await syncQueueBox.delete(item.id);
+      return;
+    }
+
+    final retryAt = _nextRetryAt(nextRetryCount);
+    final updated = item.copyWith(
+      retryCount: nextRetryCount,
+      nextRetryAt: retryAt,
+    );
+    await syncQueueBox.put(updated.id, updated.toJson());
+  }
+
+  DateTime _nextRetryAt(int retryCount) {
+    final now = DateTime.now().toUtc();
+    if (retryCount <= 1) return now;
+    if (retryCount == 2) return now.add(const Duration(seconds: 30));
+    if (retryCount == 3) return now.add(const Duration(minutes: 5));
+    return now.add(const Duration(hours: 1));
+  }
+
+  Map<String, dynamic>? _normalizePayload(dynamic payload) {
+    if (payload == null) return null;
+    if (payload is Map<String, dynamic>) return payload;
+    if (payload is Map) return Map<String, dynamic>.from(payload);
+    if (payload is String && payload.isEmpty) return null;
+    return {'value': payload};
   }
 
   // --- Scoping / Logout ---
