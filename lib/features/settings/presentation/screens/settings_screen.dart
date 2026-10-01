@@ -14,14 +14,15 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerTheme.color;
+
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.warmBackground,
         elevation: 0,
         title: Text(
           'Settings',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(color: colorScheme.onSurface),
         ),
         centerTitle: false,
       ),
@@ -47,7 +48,7 @@ class SettingsScreen extends StatelessWidget {
                   final avatarUrl = profile?.avatarUrl;
 
                   return Material(
-                    color: AppColors.surface,
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
                     child: InkWell(
                       onTap: () {
@@ -58,7 +59,10 @@ class SettingsScreen extends StatelessWidget {
                         height: 88,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border, width: 1),
+                          border: Border.all(
+                            color: dividerColor ?? AppColors.border,
+                            width: 1,
+                          ),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Row(
@@ -93,13 +97,15 @@ class SettingsScreen extends StatelessWidget {
                                     name,
                                     style: AppTextStyles.body1.copyWith(
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.text,
+                                      color: colorScheme.onSurface,
                                     ),
                                   ),
                                   Text(
                                     email,
                                     style: AppTextStyles.body2.copyWith(
-                                      color: AppColors.textMuted,
+                                      color: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.color,
                                     ),
                                   ),
                                 ],
@@ -280,7 +286,7 @@ class SettingsScreen extends StatelessWidget {
 
               // Logout button
               Material(
-                color: AppColors.surface,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 child: InkWell(
                   onTap: () {
@@ -288,20 +294,20 @@ class SettingsScreen extends StatelessWidget {
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          backgroundColor: AppColors.surface,
+                          backgroundColor: colorScheme.surface,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                           title: Text(
                             'Log out?',
                             style: AppTextStyles.heading2.copyWith(
-                              color: AppColors.text,
+                              color: colorScheme.onSurface,
                             ),
                           ),
                           content: Text(
                             'You\'ll need to log in again.',
                             style: AppTextStyles.body1.copyWith(
-                              color: AppColors.text,
+                              color: colorScheme.onSurface,
                             ),
                           ),
                           actions: [
@@ -310,7 +316,7 @@ class SettingsScreen extends StatelessWidget {
                               child: Text(
                                 'Cancel',
                                 style: AppTextStyles.body1.copyWith(
-                                  color: AppColors.text,
+                                  color: colorScheme.onSurface,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -342,7 +348,10 @@ class SettingsScreen extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border, width: 1),
+                      border: Border.all(
+                        color: dividerColor ?? AppColors.border,
+                        width: 1,
+                      ),
                     ),
                     child: Text(
                       'Log out',
@@ -378,6 +387,9 @@ class _SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerTheme.color;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -388,16 +400,19 @@ class _SettingsSection extends StatelessWidget {
             style: AppTextStyles.body2.copyWith(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: AppColors.textMuted,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
               letterSpacing: 0.5,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: Border.all(
+              color: dividerColor ?? AppColors.border,
+              width: 1,
+            ),
           ),
           child: Column(
             children: List.generate(children.length, (index) {
@@ -411,7 +426,9 @@ class _SettingsSection extends StatelessWidget {
                       child: Divider(
                         height: 1,
                         thickness: 1,
-                        color: AppColors.border.withValues(alpha: 0.4),
+                        color: (dividerColor ?? AppColors.border).withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                     ),
                 ],
@@ -439,11 +456,15 @@ class _SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDanger ? AppColors.danger : AppColors.text;
-    final iconColor = isDanger ? AppColors.danger : AppColors.textMuted;
+    final color = isDanger
+        ? AppColors.danger
+        : Theme.of(context).colorScheme.onSurface;
+    final iconColor = isDanger
+        ? AppColors.danger
+        : Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textMuted;
 
     return Material(
-      color: Colors.transparent,
+      color: Theme.of(context).colorScheme.surface,
       child: InkWell(
         onTap: onTap,
         child: Container(

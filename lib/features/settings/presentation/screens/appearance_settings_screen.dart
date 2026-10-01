@@ -9,7 +9,8 @@ class AppearanceSettingsScreen extends StatefulWidget {
   const AppearanceSettingsScreen({super.key});
 
   @override
-  State<AppearanceSettingsScreen> createState() => _AppearanceSettingsScreenState();
+  State<AppearanceSettingsScreen> createState() =>
+      _AppearanceSettingsScreenState();
 }
 
 class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
@@ -27,10 +28,12 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
     if (profile != null) {
       setState(() {
         // Theme: Capitalize first letter
-        _selectedTheme = profile.theme[0].toUpperCase() + profile.theme.substring(1);
-        
+        _selectedTheme =
+            profile.theme[0].toUpperCase() + profile.theme.substring(1);
+
         // Accent Color
-        if (profile.accentColor != 'lavender' && int.tryParse(profile.accentColor) != null) {
+        if (profile.accentColor != 'lavender' &&
+            int.tryParse(profile.accentColor) != null) {
           _selectedAccent = Color(int.parse(profile.accentColor));
         }
       });
@@ -59,19 +62,20 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerTheme.color;
+
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.warmBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
         title: Text(
           'Appearance',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(color: colorScheme.onSurface),
         ),
         centerTitle: false,
       ),
@@ -86,9 +90,12 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border, width: 1),
+                  border: Border.all(
+                    color: dividerColor ?? AppColors.border,
+                    width: 1,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,7 +103,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                     Text(
                       'Live Preview',
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -121,7 +128,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                                 height: 12,
                                 width: 120,
                                 decoration: BoxDecoration(
-                                  color: AppColors.text,
+                                  color: colorScheme.onSurface,
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                               ),
@@ -130,7 +137,9 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                                 height: 8,
                                 width: 80,
                                 decoration: BoxDecoration(
-                                  color: AppColors.textMuted,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
@@ -138,7 +147,10 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: _selectedAccent,
                             borderRadius: BorderRadius.circular(16),
@@ -146,7 +158,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                           child: Text(
                             'Button',
                             style: AppTextStyles.body2.copyWith(
-                              color: AppColors.white,
+                              color: colorScheme.onPrimary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -157,79 +169,85 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               Text(
                 'Theme',
                 style: AppTextStyles.body1.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.text,
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border, width: 1),
+                  border: Border.all(
+                    color: dividerColor ?? AppColors.border,
+                    width: 1,
+                  ),
                 ),
                 child: Column(
-                  children: List.generate(
-                    _themes.length,
-                    (index) {
-                      final theme = _themes[index];
-                      final isSelected = theme == _selectedTheme;
-                      return InkWell(
-                        onTap: () => _updateTheme(theme),
-                        child: Column(
-                          children: [
-                            Semantics(
-                              selected: isSelected,
-                              label: '$theme theme',
-                              child: Container(
-                                height: 56,
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        theme,
-                                        style: AppTextStyles.body1.copyWith(
-                                          color: AppColors.text,
-                                          fontWeight: FontWeight.w400,
-                                        ),
+                  children: List.generate(_themes.length, (index) {
+                    final theme = _themes[index];
+                    final isSelected = theme == _selectedTheme;
+                    return InkWell(
+                      onTap: () => _updateTheme(theme),
+                      child: Column(
+                        children: [
+                          Semantics(
+                            selected: isSelected,
+                            label: '$theme theme',
+                            child: Container(
+                              height: 56,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      theme,
+                                      style: AppTextStyles.body1.copyWith(
+                                        color: colorScheme.onSurface,
+                                        fontWeight: FontWeight.w400,
                                       ),
                                     ),
-                                    if (isSelected)
-                                      Icon(Icons.check, color: _selectedAccent),
-                                  ],
-                                ),
+                                  ),
+                                  if (isSelected)
+                                    Icon(Icons.check, color: _selectedAccent),
+                                ],
                               ),
                             ),
-                            if (index < _themes.length - 1)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 16, right: 16),
-                                child: Divider(
-                                  height: 1,
-                                  thickness: 1,
-                                  color: AppColors.border.withValues(alpha: 0.4),
-                                ),
+                          ),
+                          if (index < _themes.length - 1)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 16,
+                                right: 16,
                               ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                              child: Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: (dividerColor ?? AppColors.border)
+                                    .withValues(alpha: 0.4),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               Text(
                 'Accent Color',
                 style: AppTextStyles.body1.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.text,
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -251,7 +269,10 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                           shape: BoxShape.circle,
                           color: color,
                           border: isSelected
-                              ? Border.all(color: AppColors.text, width: 2)
+                              ? Border.all(
+                                  color: colorScheme.onSurface,
+                                  width: 2,
+                                )
                               : null,
                         ),
                         child: isSelected
