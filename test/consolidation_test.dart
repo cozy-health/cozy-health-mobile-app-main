@@ -33,4 +33,24 @@ void main() {
 
     expect(offenders, isEmpty);
   });
+
+  test('no Material sentiment icons for moods', () {
+    final dir = Directory('lib');
+    final pattern = RegExp(r'Icons\.sentiment');
+    final offenders = <String>[];
+
+    for (final entity in dir.listSync(recursive: true)) {
+      if (entity is File && entity.path.endsWith('.dart')) {
+        if (pattern.hasMatch(entity.readAsStringSync())) {
+          offenders.add(entity.path);
+        }
+      }
+    }
+
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'Material sentiment icons found in: $offenders',
+    );
+  });
 }
