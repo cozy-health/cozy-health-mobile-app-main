@@ -72,7 +72,7 @@ class _MoodReasonScreenState extends State<MoodReasonScreen> {
         {'id': 23, 'icon': '🔊', 'label': 'Noise'},
         {'id': 24, 'icon': '😣', 'label': 'Stress'},
         {'id': 25, 'icon': '🛌', 'label': 'Restlessness'},
-        {'id': 26, 'icon': '😵', 'label': 'Sleep Paralysis'},
+        {'id': 26, 'icon': '\u{1F635}', 'label': 'Sleep Paralysis'},
         {'id': 27, 'icon': '🌃', 'label': 'Late night work/study'},
       ],
     ),
@@ -171,14 +171,12 @@ class _MoodReasonScreenState extends State<MoodReasonScreen> {
                           vertical: 1.8.h,
                         ),
                         decoration: BoxDecoration(
-                          color:
-                              isSelected ? AppColors.primary : category.color,
+                          color: isSelected
+                              ? AppColors.primary
+                              : category.color,
                           borderRadius: BorderRadius.circular(30),
                           border: isSelected
-                              ? Border.all(
-                                  color: AppColors.primary,
-                                  width: 2,
-                                )
+                              ? Border.all(color: AppColors.primary, width: 2)
                               : null,
                         ),
                         child: Row(

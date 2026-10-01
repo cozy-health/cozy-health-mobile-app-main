@@ -42,36 +42,42 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   late final List<_MoodOption> _moods = [
     _MoodOption(
       MoodEntry.moodEmojis['good']!,
+      'good',
       'Good',
       AppColors.success,
       "That's lovely to hear.",
     ),
     _MoodOption(
       MoodEntry.moodEmojis['calm']!,
+      'calm',
       'Calm',
       AppColors.primary,
       'Peace looks good on you.',
     ),
     _MoodOption(
       MoodEntry.moodEmojis['okay']!,
+      'okay',
       'Okay',
       AppColors.textMuted,
       'Thanks for being honest.',
     ),
     _MoodOption(
       MoodEntry.moodEmojis['low']!,
+      'low',
       'Low',
       AppColors.warning,
       "I'm here with you.",
     ),
     _MoodOption(
       MoodEntry.moodEmojis['anxious']!,
+      'anxious',
       'Anxious',
       Color(0xFFE85D3A),
       "That sounds heavy. Let's slow down.",
     ),
     _MoodOption(
       MoodEntry.moodEmojis['angry']!,
+      'angry',
       'Angry',
       AppColors.danger,
       "That's valid. Let's work through it.",
@@ -122,7 +128,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     );
     final entry = widget.entry;
     if (entry != null) {
-      _moodLabel = entry.mood;
+      _moodLabel = MoodEntry.normalizeMoodKey(entry.mood);
       _moodEmoji = entry.emoji;
       _intensity = entry.intensity;
       _bodyZones.addAll(entry.bodySensations ?? const []);
@@ -187,7 +193,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
 
     final entry = MoodEntry(
       id: widget.entry?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      mood: _moodLabel ?? 'Okay',
+      mood: _moodLabel ?? 'okay',
       intensity: _intensity,
       bodySensations: _bodyZones.toList(),
       triggers: _triggers.toList(),
@@ -224,6 +230,12 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   }
 
   bool get _canContinue => _step != 1 || _moodLabel != null;
+
+  String? get _selectedMoodLabel {
+    final key = _moodLabel;
+    if (key == null) return null;
+    return _moodDisplayLabel(key);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -275,9 +287,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   }
 
   Widget _moodSelection() {
-    final selected = _moods
-        .where((mood) => mood.label == _moodLabel)
-        .firstOrNull;
+    final selected = _moods.where((mood) => mood.key == _moodLabel).firstOrNull;
 
     return Column(
       children: [
@@ -298,14 +308,14 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
           ),
           itemBuilder: (context, index) {
             final mood = _moods[index];
-            final isSelected = mood.label == _moodLabel;
+            final isSelected = mood.key == _moodLabel;
             return _MoodCard(
               mood: mood,
               selected: isSelected,
               onTap: () {
                 HapticFeedback.lightImpact();
                 setState(() {
-                  _moodLabel = mood.label;
+                  _moodLabel = mood.key;
                   _moodEmoji = mood.emoji;
                 });
                 SemanticsService.sendAnnouncement(
@@ -615,7 +625,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   Widget _reviewStep() {
     final rows = <_ReviewRowData>[
       _ReviewRowData(
-        '${_moodEmoji ?? MoodEntry.moodEmojis['good']}  ${_moodLabel ?? 'Mood'}',
+        '${_moodEmoji ?? MoodEntry.moodEmojis['good']}  ${_selectedMoodLabel ?? 'Mood'}',
         'Intensity: $_intensity',
         1,
       ),
@@ -909,7 +919,8 @@ class _MoodHistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: '${entry.mood}, intensity ${entry.intensity} of 10',
+      label:
+          '${_moodDisplayLabel(entry.mood)}, intensity ${entry.intensity} of 10',
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: () => context.push(AppRouter.moodDetail, extra: entry),
@@ -924,10 +935,11 @@ class _MoodHistoryCard extends StatelessWidget {
                   color: AppColors.primarySoft,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(
-                  _moodIcon(entry.mood),
-                  color: AppColors.primary,
-                  size: 28,
+                child: Center(
+                  child: Text(
+                    entry.emoji,
+                    style: const TextStyle(fontSize: 28),
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -936,7 +948,7 @@ class _MoodHistoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      entry.mood,
+                      _moodDisplayLabel(entry.mood),
                       style: AppTextStyles.body1.copyWith(
                         color: AppColors.text,
                         fontWeight: FontWeight.w600,
@@ -1021,7 +1033,7 @@ class MoodDetailViewScreen extends StatelessWidget {
               else ...[
                 Text(moodEntry.emoji, style: const TextStyle(fontSize: 64)),
                 Text(
-                  moodEntry.mood,
+                  _moodDisplayLabel(moodEntry.mood),
                   style: AppTextStyles.heading1.copyWith(fontSize: 28),
                 ),
                 const SizedBox(height: 8),
@@ -1059,20 +1071,22 @@ class MoodDetailViewScreen extends StatelessWidget {
   }
 }
 
-IconData _moodIcon(String mood) {
-  switch (mood.toLowerCase()) {
+String _moodDisplayLabel(String mood) {
+  switch (MoodEntry.normalizeMoodKey(mood)) {
     case 'good':
-      return Icons.sentiment_very_satisfied_rounded;
+      return 'Good';
     case 'calm':
-      return Icons.self_improvement_rounded;
+      return 'Calm';
+    case 'okay':
+      return 'Okay';
     case 'low':
-      return Icons.sentiment_dissatisfied_rounded;
+      return 'Low';
     case 'anxious':
-      return Icons.sentiment_neutral_rounded;
+      return 'Anxious';
     case 'angry':
-      return Icons.sentiment_very_dissatisfied_rounded;
+      return 'Angry';
     default:
-      return Icons.sentiment_satisfied_rounded;
+      return mood.trim().isEmpty ? 'Okay' : mood.trim();
   }
 }
 
@@ -1737,9 +1751,10 @@ class _DetailRow extends StatelessWidget {
 }
 
 class _MoodOption {
-  const _MoodOption(this.emoji, this.label, this.color, this.message);
+  const _MoodOption(this.emoji, this.key, this.label, this.color, this.message);
 
   final String emoji;
+  final String key;
   final String label;
   final Color color;
   final String message;

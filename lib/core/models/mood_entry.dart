@@ -11,8 +11,10 @@ class MoodEntry extends HiveObject {
     'angry': '\u{1F621}',
   };
 
+  static String normalizeMoodKey(String raw) => raw.toLowerCase().trim();
+
   String get emoji {
-    final normalized = mood.toLowerCase().trim();
+    final normalized = normalizeMoodKey(mood);
     return moodEmojis[normalized] ?? '\u{1F610}';
   }
 
