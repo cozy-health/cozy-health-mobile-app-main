@@ -611,46 +611,64 @@ class CrisisDetectionOverlayScreen extends StatelessWidget {
         child: Center(
           child: Container(
             margin: const EdgeInsets.all(24),
-            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: AppColors.crisisSurface,
               borderRadius: BorderRadius.circular(24),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
               children: [
-                const Icon(
-                  Icons.favorite,
-                  color: AppColors.crisisWarning,
-                  size: 48,
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.favorite,
+                        color: AppColors.crisisWarning,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        "It sounds like you're going through a lot.",
+                        style: CrisisText.h2,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "You don't have to carry this alone. We're here with you.",
+                        style: CrisisText.bodyMuted,
+                      ),
+                      const SizedBox(height: 24),
+                      CrisisButton(
+                        label: 'Talk to someone',
+                        onPressed: () => context.push(AppRouter.crisisHub),
+                      ),
+                      const SizedBox(height: 12),
+                      CrisisButton(
+                        label: 'Try a grounding exercise',
+                        outlined: true,
+                        onPressed: () => context.push(AppRouter.grounding),
+                      ),
+                      const SizedBox(height: 12),
+                      _CrisisDismissButton(
+                        label: "I'm okay right now",
+                        onPressed: () => context.pop(),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  "It sounds like you're going through a lot.",
-                  style: CrisisText.h2,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  "You don't have to carry this alone. We're here with you.",
-                  style: CrisisText.bodyMuted,
-                ),
-                const SizedBox(height: 24),
-                CrisisButton(
-                  label: 'Talk to someone',
-                  onPressed: () => context.push(AppRouter.crisisHub),
-                ),
-                const SizedBox(height: 12),
-                CrisisButton(
-                  label: 'Try a grounding exercise',
-                  outlined: true,
-                  onPressed: () => context.push(AppRouter.grounding),
-                ),
-                const SizedBox(height: 12),
-                CrisisButton(
-                  label: "I'm okay right now",
-                  textOnly: true,
-                  onPressed: () => context.pop(),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      size: 24,
+                      color: AppColors.crisisTextMuted,
+                    ),
+                    onPressed: () => context.pop(),
+                    tooltip: 'Close',
+                  ),
                 ),
               ],
             ),
@@ -670,61 +688,82 @@ Future<void> showCrisisSupportOverlay(
   return showDialog<void>(
     context: context,
     barrierDismissible: true,
+    barrierLabel: 'Dismiss',
     builder: (dialogContext) {
       return Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.all(24),
         child: Container(
-          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: AppColors.crisisSurface,
             borderRadius: BorderRadius.circular(24),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              const Icon(
-                Icons.favorite,
-                color: AppColors.crisisWarning,
-                size: 48,
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.favorite,
+                      color: AppColors.crisisWarning,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      isSoft
+                          ? 'That sounds heavy.'
+                          : "It sounds like you're going through a lot.",
+                      style: CrisisText.h2,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      isSoft
+                          ? 'Want to talk to someone, or try a grounding exercise?'
+                          : "You don't have to carry this alone. We're here with you.",
+                      style: CrisisText.bodyMuted,
+                    ),
+                    const SizedBox(height: 24),
+                    CrisisButton(
+                      label: 'Talk to someone',
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        context.push(AppRouter.crisisHub);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    CrisisButton(
+                      label: isSoft
+                          ? 'Try grounding'
+                          : 'Try a grounding exercise',
+                      outlined: true,
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        context.push(AppRouter.grounding);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _CrisisDismissButton(
+                      label: isSoft ? "I'm okay" : "I'm okay right now",
+                      onPressed: () => Navigator.pop(dialogContext),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
-              Text(
-                isSoft
-                    ? 'That sounds heavy.'
-                    : "It sounds like you're going through a lot.",
-                style: CrisisText.h2,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                isSoft
-                    ? 'Want to talk to someone, or try a grounding exercise?'
-                    : "You don't have to carry this alone. We're here with you.",
-                style: CrisisText.bodyMuted,
-              ),
-              const SizedBox(height: 24),
-              CrisisButton(
-                label: 'Talk to someone',
-                onPressed: () {
-                  Navigator.pop(dialogContext);
-                  context.push(AppRouter.crisisHub);
-                },
-              ),
-              const SizedBox(height: 12),
-              CrisisButton(
-                label: isSoft ? 'Try grounding' : 'Try a grounding exercise',
-                outlined: true,
-                onPressed: () {
-                  Navigator.pop(dialogContext);
-                  context.push(AppRouter.grounding);
-                },
-              ),
-              const SizedBox(height: 12),
-              CrisisButton(
-                label: isSoft ? "I'm okay" : "I'm okay right now",
-                textOnly: true,
-                onPressed: () => Navigator.pop(dialogContext),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.close,
+                    size: 24,
+                    color: AppColors.crisisTextMuted,
+                  ),
+                  onPressed: () => Navigator.pop(dialogContext),
+                  tooltip: 'Close',
+                ),
               ),
             ],
           ),
@@ -732,6 +771,32 @@ Future<void> showCrisisSupportOverlay(
       );
     },
   );
+}
+
+class _CrisisDismissButton extends StatelessWidget {
+  const _CrisisDismissButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.crisisText,
+          side: const BorderSide(color: AppColors.crisisSubtle),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: Text(label, style: CrisisText.button),
+      ),
+    );
+  }
 }
 
 class EmergencyContactScreen extends StatelessWidget {
