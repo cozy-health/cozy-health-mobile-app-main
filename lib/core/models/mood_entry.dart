@@ -123,6 +123,7 @@ class MoodEntryAdapter extends TypeAdapter<MoodEntry> {
       copingHelped: reader.readString(),
       createdAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
+      isCrisisFlagged: reader.availableBytes > 0 ? reader.readBool() : false,
     );
   }
 
@@ -141,6 +142,7 @@ class MoodEntryAdapter extends TypeAdapter<MoodEntry> {
     writer.writeString(obj.copingHelped ?? '');
     writer.writeInt(obj.createdAt.millisecondsSinceEpoch);
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
+    writer.writeBool(obj.isCrisisFlagged);
   }
 
 

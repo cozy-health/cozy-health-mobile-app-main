@@ -49,6 +49,7 @@ class JournalEntry extends HiveObject {
   @HiveField(14)
   final bool isDraft;
 
+  @HiveField(15)
   final bool isCrisisFlagged;
 
   JournalEntry({
@@ -136,7 +137,7 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
       createdAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
       isDraft: reader.readBool(),
-      isCrisisFlagged: false,
+      isCrisisFlagged: reader.availableBytes > 0 ? reader.readBool() : false,
     );
   }
 
@@ -157,6 +158,7 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
     writer.writeInt(obj.createdAt.millisecondsSinceEpoch);
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
     writer.writeBool(obj.isDraft);
+    writer.writeBool(obj.isCrisisFlagged);
   }
 
 

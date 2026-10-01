@@ -176,8 +176,7 @@ class _HomeScreenState extends State<HomeScreen>
                       _SectionHeader(
                         title: 'This week',
                         action: 'See all',
-                        onAction: () =>
-                            _pushPage(context, const MoodHistoryScreen()),
+                        onAction: () => context.push(AppRouter.moodHistory),
                       ),
                       const SizedBox(height: 12),
                       _AnimatedIn(
@@ -191,7 +190,11 @@ class _HomeScreenState extends State<HomeScreen>
                         child: _MoodChart(compact: entries.length < 3),
                       ),
                       const SizedBox(height: 32),
-                      const _SectionHeader(title: 'Recent entries'),
+                      _SectionHeader(
+                        title: 'Recent entries',
+                        action: 'See all',
+                        onAction: () => context.push(AppRouter.moodHistory),
+                      ),
                       const SizedBox(height: 12),
                       if (recentEntries.isEmpty)
                         const _EmptyCard(
@@ -699,13 +702,13 @@ class _EntryCard extends StatelessWidget {
   final MoodEntry entry;
 
   String _getEmojiForMood(String mood) {
-    if (mood == 'Good') return '😊';
-    if (mood == 'Calm') return '😌';
-    if (mood == 'Okay') return '😐';
-    if (mood == 'Low') return '😔';
-    if (mood == 'Anxious') return '😰';
-    if (mood == 'Angry') return '😡';
-    return '😊';
+    if (mood == 'Good') return '\u{1F60A}';
+    if (mood == 'Calm') return '\u{1F60C}';
+    if (mood == 'Okay') return '\u{1F610}';
+    if (mood == 'Low') return '\u{1F614}';
+    if (mood == 'Anxious') return '\u{1F630}';
+    if (mood == 'Angry') return '\u{1F621}';
+    return '\u{1F60A}';
   }
 
   String _formatTime(DateTime time) {
@@ -723,39 +726,43 @@ class _EntryCard extends StatelessWidget {
     return Semantics(
       button: true,
       label: '${entry.mood}, ${_formatTime(entry.createdAt)}',
-      child: _WarmCard(
-        color: AppColors.surfaceElevated,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Text(
-              _getEmojiForMood(entry.mood),
-              style: const TextStyle(fontSize: 24),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    entry.mood,
-                    style: AppTextStyles.body1.copyWith(
-                      color: AppColors.text,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatTime(entry.createdAt),
-                    style: AppTextStyles.body2.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
+      child: InkWell(
+        onTap: () => context.push(AppRouter.moodDetail, extra: entry),
+        borderRadius: BorderRadius.circular(16),
+        child: _WarmCard(
+          color: AppColors.surfaceElevated,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Text(
+                _getEmojiForMood(entry.mood),
+                style: const TextStyle(fontSize: 24),
               ),
-            ),
-            const Icon(Icons.chevron_right, color: AppColors.textMuted),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.mood,
+                      style: AppTextStyles.body1.copyWith(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatTime(entry.createdAt),
+                      style: AppTextStyles.body2.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+            ],
+          ),
         ),
       ),
     );
