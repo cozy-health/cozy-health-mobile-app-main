@@ -421,7 +421,9 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
         const SizedBox(height: 22),
         Text(
           'Or choose:',
-          style: AppTextStyles.body1.copyWith(color: AppColors.text),
+          style: AppTextStyles.body1.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 12),
         _ChipWrap(
@@ -456,7 +458,9 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
         const SizedBox(height: 28),
         Text(
           'Or describe it yourself:',
-          style: AppTextStyles.body1.copyWith(color: AppColors.text),
+          style: AppTextStyles.body1.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 10),
         TextField(
@@ -557,7 +561,9 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
               ),
               Text(
                 '$_energy / 10',
-                style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+                style: AppTextStyles.heading2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ],
           ),
@@ -683,7 +689,9 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   }
 
   TextStyle _captionStyle() => AppTextStyles.body2.copyWith(
-    color: AppColors.textMuted,
+    color: Theme.of(context).brightness == Brightness.dark
+        ? AppColors.textMutedDark
+        : AppColors.textMutedLight,
     fontSize: 13,
     fontWeight: FontWeight.w500,
   );
@@ -691,10 +699,18 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textSubtle),
+      hintStyle: AppTextStyles.body1.copyWith(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.textSubtleDark
+            : AppColors.textSubtleLight,
+      ),
       filled: true,
       fillColor: AppColors.surfaceElevated,
-      counterStyle: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+      counterStyle: AppTextStyles.body2.copyWith(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.textMutedDark
+            : AppColors.textMutedLight,
+      ),
       contentPadding: const EdgeInsets.all(16),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -782,7 +798,9 @@ class _MoodCheckInSuccessScreenState extends State<MoodCheckInSuccessScreen> {
                 'Thanks for checking\nin with yourself.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.body1.copyWith(
-                  color: AppColors.textMuted,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
                   height: 1.4,
                 ),
               ),
@@ -835,14 +853,17 @@ class MoodHistoryScreen extends StatelessWidget {
                           context.go(AppRouter.home);
                         }
                       },
-                      icon: const Icon(Icons.arrow_back, color: AppColors.text),
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         'Mood history',
                         style: AppTextStyles.heading2.copyWith(
-                          color: AppColors.text,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -866,7 +887,7 @@ class MoodHistoryScreen extends StatelessWidget {
                         Text(
                           'No mood entries yet',
                           style: AppTextStyles.heading2.copyWith(
-                            color: AppColors.text,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -874,7 +895,10 @@ class MoodHistoryScreen extends StatelessWidget {
                           'Your saved check-ins will appear here.',
                           textAlign: TextAlign.center,
                           style: AppTextStyles.body2.copyWith(
-                            color: AppColors.textMuted,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textMutedDark
+                                : AppColors.textMutedLight,
                           ),
                         ),
                         const SizedBox(height: 18),
@@ -889,7 +913,9 @@ class MoodHistoryScreen extends StatelessWidget {
                   Text(
                     '${entries.length} ${entries.length == 1 ? 'entry' : 'entries'}',
                     style: AppTextStyles.body2.copyWith(
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -947,7 +973,7 @@ class _MoodHistoryCard extends StatelessWidget {
                     Text(
                       _moodDisplayLabel(entry.mood),
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -955,7 +981,9 @@ class _MoodHistoryCard extends StatelessWidget {
                     Text(
                       _formatMoodDate(entry.createdAt),
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
                       ),
                     ),
                     if ((entry.note ?? '').isNotEmpty) ...[
@@ -965,7 +993,9 @@ class _MoodHistoryCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.body2.copyWith(
-                          color: AppColors.textMuted,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
                         ),
                       ),
                     ],
@@ -975,12 +1005,17 @@ class _MoodHistoryCard extends StatelessWidget {
               Text(
                 '${entry.intensity}/10',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+              ),
             ],
           ),
         ),
@@ -1023,7 +1058,9 @@ class MoodDetailViewScreen extends StatelessWidget {
                 _WarmPanel(
                   child: Text(
                     'Mood entry not found.',
-                    style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 )
               else ...[
@@ -1036,7 +1073,9 @@ class MoodDetailViewScreen extends StatelessWidget {
                 Text(
                   _formatMoodDate(moodEntry.createdAt),
                   style: AppTextStyles.body2.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -1127,14 +1166,19 @@ class _MoodProgressHeader extends StatelessWidget {
                 child: IconButton(
                   tooltip: 'Back',
                   onPressed: onBack,
-                  icon: const Icon(Icons.arrow_back, color: AppColors.text),
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
               const Spacer(),
               Text(
                 'Step $step of $totalSteps',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.textMuted,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -1174,7 +1218,7 @@ class _StepIntro extends StatelessWidget {
             title,
             textAlign: TextAlign.center,
             style: AppTextStyles.heading1.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 28,
               fontWeight: FontWeight.w600,
               height: 1.12,
@@ -1186,7 +1230,9 @@ class _StepIntro extends StatelessWidget {
               subtitle,
               textAlign: TextAlign.center,
               style: AppTextStyles.body1.copyWith(
-                color: AppColors.textMuted,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
                 height: 1.35,
               ),
             ),
@@ -1250,7 +1296,7 @@ class _MoodCard extends StatelessWidget {
                 Text(
                   mood.label,
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1290,7 +1336,9 @@ class _MascotMessage extends StatelessWidget {
           '"$message"',
           textAlign: TextAlign.center,
           style: AppTextStyles.body2.copyWith(
-            color: AppColors.textMuted,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textMutedDark
+                : AppColors.textMutedLight,
             height: 1.35,
           ),
         ),
@@ -1407,7 +1455,9 @@ class _BodyZone extends StatelessWidget {
           child: Text(
             label,
             style: AppTextStyles.body2.copyWith(
-              color: selected ? AppColors.primary : AppColors.text,
+              color: selected
+                  ? AppColors.primary
+                  : Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -1498,7 +1548,7 @@ class _CopingCard extends StatelessWidget {
                   Text(
                     option.title,
                     style: AppTextStyles.body1.copyWith(
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1506,7 +1556,9 @@ class _CopingCard extends StatelessWidget {
                   Text(
                     option.duration,
                     style: AppTextStyles.body2.copyWith(
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
                     ),
                   ),
                 ],
@@ -1540,7 +1592,7 @@ class _ReviewRow extends StatelessWidget {
                 Text(
                   data.title,
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1549,7 +1601,9 @@ class _ReviewRow extends StatelessWidget {
                   Text(
                     data.subtitle,
                     style: AppTextStyles.body2.copyWith(
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
                     ),
                   ),
                 ],
@@ -1559,7 +1613,12 @@ class _ReviewRow extends StatelessWidget {
           IconButton(
             tooltip: 'Edit ${data.title}',
             onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined, color: AppColors.textMuted),
+            icon: Icon(
+              Icons.edit_outlined,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
           ),
         ],
       ),
@@ -1647,7 +1706,7 @@ class _SecondaryButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.text,
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
           side: const BorderSide(color: AppColors.border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -1745,7 +1804,7 @@ class _DetailRow extends StatelessWidget {
           child: Text(
             text,
             style: AppTextStyles.body1.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.4,
             ),
           ),

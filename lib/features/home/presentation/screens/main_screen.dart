@@ -31,33 +31,35 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const assistantTabIndex = 2;
+
     return Scaffold(
+      extendBody: true,
       body: SafeArea(bottom: false, child: _screens[_currentIndex]),
-      floatingActionButton: Semantics(
-        button: true,
-        label: 'Open quick actions',
-        child: GestureDetector(
-          onLongPress: () => context.push(AppRouter.crisisHub),
-          child: FloatingActionButton(
-            heroTag: 'quick-actions',
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.white,
-            onPressed: () => _showQuickActionsSheet(context),
-            child: const Icon(Icons.add),
-          ),
-        ),
-      ),
+      floatingActionButton: _currentIndex == assistantTabIndex
+          ? null
+          : Semantics(
+              button: true,
+              label: 'Open quick actions',
+              child: GestureDetector(
+                onLongPress: () => context.push(AppRouter.crisisHub),
+                child: FloatingActionButton(
+                  heroTag: 'quick-actions',
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.white,
+                  onPressed: () => _showQuickActionsSheet(context),
+                  child: const Icon(Icons.add),
+                ),
+              ),
+            ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: CustomBottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-        ),
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
       ),
     );
   }
@@ -102,7 +104,7 @@ class _MainScreenState extends State<MainScreen> {
                   Text(
                     'What would you\nlike to do?',
                     style: AppTextStyles.heading2.copyWith(
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       height: 1.15,
@@ -158,7 +160,9 @@ class _MainScreenState extends State<MainScreen> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.text,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface,
                         side: BorderSide(
                           color:
                               Theme.of(context).dividerTheme.color ??

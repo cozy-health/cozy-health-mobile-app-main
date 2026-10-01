@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'core/routing/app_router.dart';
 import 'core/services/local_db_service.dart';
 import 'core/models/user_profile.dart';
@@ -30,6 +31,22 @@ class CozyHealthApp extends StatelessWidget {
           darkTheme: AppTheme.dark,
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            SystemChrome.setSystemUIOverlayStyle(
+              SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: isDark
+                    ? Brightness.light
+                    : Brightness.dark,
+                statusBarBrightness: isDark
+                    ? Brightness.dark
+                    : Brightness.light,
+                systemNavigationBarColor: Colors.transparent,
+                systemNavigationBarIconBrightness: isDark
+                    ? Brightness.light
+                    : Brightness.dark,
+              ),
+            );
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(
                 textScaler: TextScaler.linear(textScaleFactor),

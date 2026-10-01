@@ -111,10 +111,14 @@ class SettingsScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const Icon(
+                            Icon(
                               Icons.chevron_right,
                               size: 20,
-                              color: AppColors.textSubtle,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? AppColors.textSubtleDark
+                                  : AppColors.textSubtleLight,
                             ),
                           ],
                         ),
@@ -368,7 +372,11 @@ class SettingsScreen extends StatelessWidget {
               Text(
                 'Version 1.0.0 (build 42)',
                 textAlign: TextAlign.center,
-                style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body2.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
+                ),
               ),
               const SizedBox(height: 48),
             ],
@@ -486,7 +494,11 @@ class _SettingsRow extends StatelessWidget {
               Icon(
                 Icons.chevron_right,
                 size: 20,
-                color: isDanger ? AppColors.danger : AppColors.textSubtle,
+                color: isDanger
+                    ? AppColors.danger
+                    : Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textSubtleDark
+                    : AppColors.textSubtleLight,
               ),
             ],
           ),

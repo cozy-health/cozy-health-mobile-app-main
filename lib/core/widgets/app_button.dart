@@ -46,35 +46,37 @@ class AppButton extends StatelessWidget {
                       ),
                     )
                   : trailingIcon != null
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              text,
-                              style: AppTextStyles.buttonText.copyWith(
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              trailingIcon,
-                              size: 18,
-                              color: AppColors.primary,
-                            ),
-                          ],
-                        )
-                      : Text(
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
                           text,
                           style: AppTextStyles.buttonText.copyWith(
                             color: AppColors.primary,
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        Icon(trailingIcon, size: 18, color: AppColors.primary),
+                      ],
+                    )
+                  : Text(
+                      text,
+                      style: AppTextStyles.buttonText.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
             )
           : ElevatedButton(
               onPressed: isLoading ? null : onPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.white,
+                disabledBackgroundColor: Theme.of(
+                  context,
+                ).disabledColor.withValues(alpha: 0.2),
+                disabledForegroundColor: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.4),
                 padding: padding ?? const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -91,19 +93,15 @@ class AppButton extends StatelessWidget {
                       ),
                     )
                   : trailingIcon != null
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(text, style: AppTextStyles.buttonText),
-                            const SizedBox(width: 8),
-                            Icon(
-                              trailingIcon,
-                              size: 18,
-                              color: AppColors.white,
-                            ),
-                          ],
-                        )
-                      : Text(text, style: AppTextStyles.buttonText),
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(text, style: AppTextStyles.buttonText),
+                        const SizedBox(width: 8),
+                        Icon(trailingIcon, size: 18, color: AppColors.white),
+                      ],
+                    )
+                  : Text(text, style: AppTextStyles.buttonText),
             ),
     );
   }

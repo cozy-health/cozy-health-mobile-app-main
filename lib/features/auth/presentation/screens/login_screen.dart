@@ -200,6 +200,11 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Checkbox(
                 value: _stayLoggedIn,
                 activeColor: AppColors.primary,
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.outline,
+                  width: 1.5,
+                ),
+                fillColor: WidgetStateProperty.all(Colors.transparent),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -211,7 +216,9 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(width: 10),
             Text(
               'Stay logged in',
-              style: AppTextStyles.body2.copyWith(color: AppColors.text),
+              style: AppTextStyles.body2.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ],
         ),

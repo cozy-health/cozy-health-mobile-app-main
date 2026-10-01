@@ -19,7 +19,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController bioController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  
+
   bool _hasChanges = false;
   UserProfile? _currentProfile;
 
@@ -59,9 +59,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile updated')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Profile updated')));
     context.pop();
   }
 
@@ -73,7 +73,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         actions: [
@@ -82,7 +85,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: Text(
               'Save',
               style: AppTextStyles.body1.copyWith(
-                color: _hasChanges ? AppColors.primary : AppColors.textSubtle,
+                color: _hasChanges
+                    ? AppColors.primary
+                    : Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.4),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -111,13 +118,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             color: AppColors.midGrey,
                             image: _currentProfile?.avatarUrl != null
                                 ? DecorationImage(
-                                    image: NetworkImage(_currentProfile!.avatarUrl!),
+                                    image: NetworkImage(
+                                      _currentProfile!.avatarUrl!,
+                                    ),
                                     fit: BoxFit.cover,
                                   )
                                 : null,
                           ),
                           child: _currentProfile?.avatarUrl == null
-                              ? const Icon(Icons.person, color: AppColors.white, size: 48)
+                              ? const Icon(
+                                  Icons.person,
+                                  color: AppColors.white,
+                                  size: 48,
+                                )
                               : null,
                         ),
                         Positioned.fill(
@@ -131,7 +144,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.black.withValues(alpha: 0.4),
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.4),
                                 ),
                                 child: const Icon(
                                   Icons.edit,
@@ -158,14 +172,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               _FormField(
                 label: 'Name',
                 controller: nameController,
                 onChanged: _onChanged,
               ),
               const SizedBox(height: 24),
-              
+
               _FormField(
                 label: 'Username',
                 controller: usernameController,
@@ -173,7 +187,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 onChanged: _onChanged,
               ),
               const SizedBox(height: 24),
-              
+
               _FormField(
                 label: 'Bio',
                 controller: bioController,
@@ -186,12 +200,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     '${bioController.text.length} / 150',
-                    style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               _FormField(
                 label: 'Email',
                 controller: emailController,
@@ -199,7 +217,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 enabled: false,
               ),
               const SizedBox(height: 48),
-              
+
               AppButton(
                 text: 'Save Changes',
                 onPressed: _hasChanges ? _saveChanges : null,
@@ -238,7 +256,7 @@ class _FormField extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.body2.copyWith(
-            color: AppColors.text,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -249,12 +267,19 @@ class _FormField extends StatelessWidget {
           enabled: enabled,
           onChanged: onChanged,
           style: AppTextStyles.body1.copyWith(
-            color: enabled ? AppColors.text : AppColors.textMuted,
+            color: enabled
+                ? Theme.of(context).colorScheme.onSurface
+                : Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textMutedDark
+                : AppColors.textMutedLight,
           ),
           decoration: InputDecoration(
             filled: true,
-            fillColor: enabled ? AppColors.surface : AppColors.lightGrey,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            fillColor: Theme.of(context).colorScheme.surface,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.border),
@@ -277,7 +302,11 @@ class _FormField extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             helperText!,
-            style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+            style: AppTextStyles.body2.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
           ),
         ],
       ],

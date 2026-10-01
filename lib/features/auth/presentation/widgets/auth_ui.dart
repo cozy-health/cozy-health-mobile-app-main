@@ -190,7 +190,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
             keyboardType: widget.keyboardType,
             obscureText: widget.obscure && _obscure,
             onChanged: widget.onChanged,
-            style: AppTextStyles.body1.copyWith(color: AppColors.text),
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             decoration: InputDecoration(
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
@@ -202,7 +204,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
                       onPressed: () => setState(() => _obscure = !_obscure),
                       icon: Icon(
                         _obscure ? Icons.visibility_off : Icons.visibility,
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
                         size: 20,
                       ),
                     )
@@ -245,7 +249,10 @@ class InlineMessage extends StatelessWidget {
       AuthMessageType.error => AppColors.danger,
       AuthMessageType.success => AppColors.success,
       AuthMessageType.warning => AppColors.warning,
-      AuthMessageType.hint => AppColors.textSubtle,
+      AuthMessageType.hint =>
+        Theme.of(context).brightness == Brightness.dark
+            ? AppColors.textSubtleDark
+            : AppColors.textSubtleLight,
     };
     final icon = switch (type) {
       AuthMessageType.error => Icons.close,
@@ -337,7 +344,11 @@ class PasswordStrengthBar extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Use 8+ characters with a mix of letters and numbers.',
-          style: AppTextStyles.body2.copyWith(color: AppColors.textSubtle),
+          style: AppTextStyles.body2.copyWith(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textSubtleDark
+                : AppColors.textSubtleLight,
+          ),
         ),
       ],
     );
@@ -427,7 +438,9 @@ class _LegalFooterState extends State<LegalFooter> {
       ),
       textAlign: TextAlign.center,
       style: AppTextStyles.body2.copyWith(
-        color: AppColors.textSubtle,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.textSubtleDark
+            : AppColors.textSubtleLight,
         fontWeight: FontWeight.w500,
         height: 1.4,
       ),
@@ -502,7 +515,7 @@ void showAuthToast(
                   Text(
                     title,
                     style: AppTextStyles.body1.copyWith(
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -511,7 +524,9 @@ void showAuthToast(
                     Text(
                       description,
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
                       ),
                     ),
                   ],
@@ -562,7 +577,11 @@ class AuthFooterLink extends StatelessWidget {
           ],
         ),
         textAlign: TextAlign.center,
-        style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+        style: AppTextStyles.body2.copyWith(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.textMutedDark
+              : AppColors.textMutedLight,
+        ),
       ),
     );
   }

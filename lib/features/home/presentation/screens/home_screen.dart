@@ -307,14 +307,16 @@ class _Header extends StatelessWidget {
                   Text(
                     greeting,
                     style: AppTextStyles.body1.copyWith(
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '$name.',
                     style: AppTextStyles.heading1.copyWith(
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -334,9 +336,9 @@ class _Header extends StatelessWidget {
                   return Stack(
                     children: [
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.notifications_outlined,
-                          color: AppColors.text,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         onPressed: () => context.push(AppRouter.notifications),
                       ),
@@ -431,7 +433,7 @@ class _MoodHeroState extends State<_MoodHero>
                 ? 'You logged: ${MoodEntry.moodEmojis['good']} Good.\nWant to add a note?'
                 : 'How are you feeling\nright now?',
             style: AppTextStyles.heading1.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.18,
               fontWeight: FontWeight.w600,
             ),
@@ -501,7 +503,9 @@ class _FirstTimeHero extends StatelessWidget {
             "Let's start with how\nyou're feeling today.",
             textAlign: TextAlign.center,
             style: AppTextStyles.body1.copyWith(
-              color: AppColors.textMuted,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
               height: 1.35,
             ),
           ),
@@ -593,7 +597,7 @@ class _StatCard extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 96),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isEmpty
@@ -611,7 +615,11 @@ class _StatCard extends StatelessWidget {
               Text(
                 title,
                 style: AppTextStyles.heading2.copyWith(
-                  color: isEmpty ? AppColors.textMuted : AppColors.text,
+                  color: isEmpty
+                      ? Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight
+                      : Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                   height: 1.1,
                 ),
@@ -621,7 +629,9 @@ class _StatCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AppTextStyles.body2.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                   ),
                 ),
               ],
@@ -693,7 +703,10 @@ class _MoodChart extends StatelessWidget {
                         child: Text(
                           day,
                           style: AppTextStyles.body2.copyWith(
-                            color: AppColors.textMuted,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textMutedDark
+                                : AppColors.textMutedLight,
                           ),
                         ),
                       ),
@@ -755,7 +768,7 @@ class _EntryCard extends StatelessWidget {
                     Text(
                       entry.mood,
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -763,13 +776,20 @@ class _EntryCard extends StatelessWidget {
                     Text(
                       _formatTime(entry.createdAt),
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+              ),
             ],
           ),
         ),
@@ -818,7 +838,7 @@ class _AffirmationCard extends StatelessWidget {
                   child: Text(
                     text,
                     style: AppTextStyles.body1.copyWith(
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                       height: 1.35,
                       fontWeight: FontWeight.w600,
                     ),
@@ -919,7 +939,7 @@ class _InfoCard extends StatelessWidget {
                 Text(
                   title,
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -927,7 +947,9 @@ class _InfoCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AppTextStyles.body2.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                   ),
                 ),
               ],
@@ -958,7 +980,7 @@ class _OfflineBanner extends StatelessWidget {
             child: Text(
               "You're offline. Showing your last data.",
               style: AppTextStyles.body2.copyWith(
-                color: AppColors.text,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -966,7 +988,12 @@ class _OfflineBanner extends StatelessWidget {
           IconButton(
             tooltip: 'Re-check connection',
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh, color: AppColors.textMuted),
+            icon: Icon(
+              Icons.refresh,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
           ),
         ],
       ),
@@ -1041,10 +1068,12 @@ class _HomeErrorView extends StatelessWidget {
                     color: AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.cloud_off_rounded,
                     size: 44,
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                   ),
                 ),
                 const SizedBox(height: 28),
@@ -1060,7 +1089,9 @@ class _HomeErrorView extends StatelessWidget {
                   'Check your connection\nand try again.',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                     height: 1.4,
                   ),
                 ),
@@ -1125,14 +1156,18 @@ class StreakDetailScreen extends StatelessWidget {
                 ),
                 Text(
                   'day streak',
-                  style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+                  style: AppTextStyles.heading2.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 Text(
                   "You've logged your\nmood 7 days in a row.\nKeep it going.",
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                     height: 1.35,
                   ),
                 ),
@@ -1160,7 +1195,9 @@ class StreakDetailScreen extends StatelessWidget {
           const SizedBox(height: 28),
           Text(
             'Milestones',
-            style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 12),
           const _MilestoneCard(text: '7-day streak', value: 'Achieved!'),
@@ -1198,7 +1235,9 @@ class InsightsScreen extends StatelessWidget {
                   'You felt calmer\nthan last week.',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                     height: 1.35,
                   ),
                 ),
@@ -1214,7 +1253,7 @@ class InsightsScreen extends StatelessWidget {
                 Text(
                   'Mood trend',
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1244,26 +1283,34 @@ class InsightsScreen extends StatelessWidget {
           const SizedBox(height: 28),
           Text(
             'What helped',
-            style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             '• Breathing (4 times)\n• Journaling (2 times)',
             style: AppTextStyles.body1.copyWith(
-              color: AppColors.textMuted,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
               height: 1.5,
             ),
           ),
           const SizedBox(height: 24),
           Text(
             'Gentle note',
-            style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             "You logged 12 entries this week. That's a lot of self-awareness.",
             style: AppTextStyles.body1.copyWith(
-              color: AppColors.textMuted,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
               height: 1.5,
             ),
           ),
@@ -1299,7 +1346,7 @@ class _DetailScaffold extends StatelessWidget {
                       title,
                       textAlign: TextAlign.right,
                       style: AppTextStyles.heading2.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -1333,13 +1380,17 @@ class _MilestoneCard extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: AppTextStyles.body1.copyWith(color: AppColors.text),
+              style: AppTextStyles.body1.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
           Text(
             value,
             style: AppTextStyles.body2.copyWith(
-              color: AppColors.textMuted,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1364,12 +1415,18 @@ class _BreakdownCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+            style: AppTextStyles.body2.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
           ),
           const SizedBox(height: 10),
           Text(
             value,
-            style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ],
       ),
@@ -1423,7 +1480,7 @@ class _SectionHeader extends StatelessWidget {
           child: Text(
             title,
             style: AppTextStyles.heading2.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1464,7 +1521,7 @@ class _EmptyCard extends StatelessWidget {
                 Text(
                   title,
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1472,7 +1529,9 @@ class _EmptyCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AppTextStyles.body2.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                     height: 1.3,
                   ),
                 ),

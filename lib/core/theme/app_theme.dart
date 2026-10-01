@@ -60,6 +60,9 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.surfaceLight,
+      labelStyle: const TextStyle(color: AppColors.textLight),
+      hintStyle: TextStyle(color: AppColors.textLight.withValues(alpha: 0.5)),
+      floatingLabelStyle: const TextStyle(color: AppColors.primary),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.borderLight),
@@ -131,6 +134,9 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.surfaceDark,
+      labelStyle: const TextStyle(color: AppColors.textDark),
+      hintStyle: TextStyle(color: AppColors.textDark.withValues(alpha: 0.5)),
+      floatingLabelStyle: const TextStyle(color: AppColors.primary),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.borderDark),
