@@ -12,13 +12,31 @@ void main() async {
   runApp(const CozyHealthApp());
 }
 
-class CozyHealthApp extends StatelessWidget {
+class CozyHealthApp extends StatefulWidget {
   const CozyHealthApp({super.key});
+
+  @override
+  State<CozyHealthApp> createState() => _CozyHealthAppState();
+}
+
+class _CozyHealthAppState extends State<CozyHealthApp> {
+  late final ProfileRepository _profileRepository;
+  late final Stream<UserProfile?> _profileStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileRepository = ProfileRepository();
+    _profileStream = _profileRepository.watchProfile();
+  }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<UserProfile?>(
-      stream: ProfileRepository().watchProfile(),
+      stream: _profileStream,
+      initialData: LocalDbService.instance.isUserProfileBoxOpen
+          ? LocalDbService.instance.getUserProfile()
+          : null,
       builder: (context, snapshot) {
         final profile = snapshot.data;
         final themeMode = _themeModeFromString(profile?.theme ?? 'system');
@@ -31,16 +49,15 @@ class CozyHealthApp extends StatelessWidget {
           darkTheme: AppTheme.dark,
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
-            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final brightness = Theme.of(context).brightness;
+            final isDark = brightness == Brightness.dark;
             SystemChrome.setSystemUIOverlayStyle(
               SystemUiOverlayStyle(
                 statusBarColor: Colors.transparent,
                 statusBarIconBrightness: isDark
                     ? Brightness.light
                     : Brightness.dark,
-                statusBarBrightness: isDark
-                    ? Brightness.dark
-                    : Brightness.light,
+                statusBarBrightness: brightness,
                 systemNavigationBarColor: Colors.transparent,
                 systemNavigationBarIconBrightness: isDark
                     ? Brightness.light

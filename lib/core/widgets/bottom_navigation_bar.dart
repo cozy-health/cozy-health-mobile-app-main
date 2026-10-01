@@ -20,7 +20,6 @@ class CustomBottomNavigationBar extends StatelessWidget {
     final dividerColor = Theme.of(context).dividerTheme.color;
 
     return Container(
-      height: 72,
       decoration: BoxDecoration(
         color: navTheme.backgroundColor,
         border: Border(
@@ -29,15 +28,22 @@ class CustomBottomNavigationBar extends StatelessWidget {
           ),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(context, 0, 'Home', Assets.svg.home),
-          _buildNavItem(context, 1, 'Activity', Assets.svg.activity),
-          _buildNavItem(context, 2, 'Assistant', Assets.svg.assistant),
-          _buildNavItem(context, 3, 'Community', Assets.svg.community),
-          _buildNavItem(context, 4, 'Settings', Assets.svg.settings),
-        ],
+      child: SafeArea(
+        top: false,
+        bottom: true,
+        child: SizedBox(
+          height: 72,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(context, 0, 'Home', Assets.svg.home),
+              _buildNavItem(context, 1, 'Activity', Assets.svg.activity),
+              _buildNavItem(context, 2, 'Assistant', Assets.svg.assistant),
+              _buildNavItem(context, 3, 'Community', Assets.svg.community),
+              _buildNavItem(context, 4, 'Settings', Assets.svg.settings),
+            ],
+          ),
+        ),
       ),
     );
   }

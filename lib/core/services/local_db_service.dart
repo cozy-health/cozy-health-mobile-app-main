@@ -212,6 +212,8 @@ class LocalDbService {
   Box<UserProfile> get userProfileBox =>
       Hive.box<UserProfile>(userProfileBoxName);
 
+  bool get isUserProfileBoxOpen => Hive.isBoxOpen(userProfileBoxName);
+
   Future<void> saveUserProfile(UserProfile profile) async {
     await userProfileBox.put(profile.id, profile);
   }
