@@ -72,7 +72,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       MoodEntry.moodEmojis['anxious']!,
       'anxious',
       'Anxious',
-      Color(0xFFE85D3A),
+      AppColors.warmOrange,
       "That sounds heavy. Let's slow down.",
     ),
     _MoodOption(
@@ -252,7 +252,6 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     };
 
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -733,7 +732,6 @@ class _MoodCheckInSuccessScreenState extends State<MoodCheckInSuccessScreen> {
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.of(context).disableAnimations;
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -817,7 +815,6 @@ class MoodHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       body: SafeArea(
         child: StreamBuilder<List<MoodEntry>>(
           stream: MoodRepository().watchMoodEntries(),
@@ -1001,7 +998,6 @@ class MoodDetailViewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final moodEntry = entry;
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
@@ -1151,7 +1147,8 @@ class _MoodProgressHeader extends StatelessWidget {
               child: LinearProgressIndicator(
                 minHeight: 4,
                 value: step / totalSteps,
-                backgroundColor: AppColors.border,
+                backgroundColor:
+                    Theme.of(context).dividerTheme.color ?? AppColors.border,
                 color: AppColors.primary,
               ),
             ),
@@ -1432,6 +1429,9 @@ class _ChipWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerTheme.color;
+
     return Wrap(
       spacing: 8,
       runSpacing: 10,
@@ -1446,14 +1446,16 @@ class _ChipWrap extends StatelessWidget {
             selected: selected,
             onSelected: (_) => onToggle(value),
             avatar: selected ? const Icon(Icons.check_rounded, size: 16) : null,
-            backgroundColor: AppColors.surfaceElevated,
+            backgroundColor: colorScheme.surface,
             selectedColor: AppColors.primarySubtle,
             checkmarkColor: AppColors.primary,
             side: BorderSide(
-              color: selected ? AppColors.primary : AppColors.border,
+              color: selected
+                  ? AppColors.primary
+                  : dividerColor ?? AppColors.border,
             ),
             labelStyle: AppTextStyles.body2.copyWith(
-              color: selected ? AppColors.primary : AppColors.text,
+              color: selected ? AppColors.primary : colorScheme.onSurface,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             ),
             shape: RoundedRectangleBorder(
@@ -1668,13 +1670,16 @@ class _WarmPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerTheme.color;
+
     return Container(
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: dividerColor ?? AppColors.border),
       ),
       child: child,
     );
