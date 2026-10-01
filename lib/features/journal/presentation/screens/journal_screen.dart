@@ -32,8 +32,6 @@ class _JournalScreenState extends State<JournalScreen>
   String _dateRange = 'All time';
   final JournalRepository _repo = JournalRepository();
 
-
-
   @override
   void initState() {
     super.initState();
@@ -63,17 +61,13 @@ class _JournalScreenState extends State<JournalScreen>
     }
 
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       appBar: Navigator.of(context).canPop()
           ? AppBar(
-              backgroundColor: AppColors.warmBackground,
               elevation: 0,
-              leading: const BackButton(color: AppColors.text),
+              leading: const BackButton(),
               title: Text(
                 'Journal',
-                style: AppTextStyles.heading2.copyWith(
-                  color: AppColors.text,
-                ),
+                style: AppTextStyles.heading2.copyWith(color: AppColors.text),
               ),
             )
           : null,
@@ -81,7 +75,8 @@ class _JournalScreenState extends State<JournalScreen>
         child: StreamBuilder<List<JournalEntry>>(
           stream: _repo.watchJournalEntries(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData) {
               return const _JournalLoading();
             }
 
@@ -97,26 +92,37 @@ class _JournalScreenState extends State<JournalScreen>
             }
 
             return RefreshIndicator(
-              onRefresh: () async => Future<void>.delayed(const Duration(milliseconds: 450)),
+              onRefresh: () async =>
+                  Future<void>.delayed(const Duration(milliseconds: 450)),
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
                 children: [
                   _AnimatedIn(
                     controller: _entranceController,
                     interval: const Interval(0, .3, curve: Curves.easeOutCubic),
-                    child: _JournalHeader(onSearch: () => _openSearch(allEntries)),
+                    child: _JournalHeader(
+                      onSearch: () => _openSearch(allEntries),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   _AnimatedIn(
                     controller: _entranceController,
-                    interval: const Interval(.12, .5, curve: Curves.easeOutCubic),
+                    interval: const Interval(
+                      .12,
+                      .5,
+                      curve: Curves.easeOutCubic,
+                    ),
                     yOffset: 16,
                     child: _NewEntryHero(onTap: _showEntryTypePicker),
                   ),
                   const SizedBox(height: 24),
                   _AnimatedIn(
                     controller: _entranceController,
-                    interval: const Interval(.25, .62, curve: Curves.easeOutCubic),
+                    interval: const Interval(
+                      .25,
+                      .62,
+                      curve: Curves.easeOutCubic,
+                    ),
                     yOffset: 12,
                     child: _FilterChips(
                       selected: _filter,
@@ -134,10 +140,15 @@ class _JournalScreenState extends State<JournalScreen>
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
-                      children: _activeTags.map((tag) => Chip(
-                        label: Text('#$tag'),
-                        onDeleted: () => setState(() => _activeTags.remove(tag)),
-                      )).toList(),
+                      children: _activeTags
+                          .map(
+                            (tag) => Chip(
+                              label: Text('#$tag'),
+                              onDeleted: () =>
+                                  setState(() => _activeTags.remove(tag)),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ],
                   const SizedBox(height: 32),
@@ -183,8 +194,12 @@ class _JournalScreenState extends State<JournalScreen>
       final tagMatches =
           _activeTags.isEmpty || (entry.tags ?? []).any(_activeTags.contains);
       final dateMatches = switch (_dateRange) {
-        'Last 7 days' => entry.createdAt.isAfter(DateTime.now().subtract(const Duration(days: 7))),
-        'Last 30 days' => entry.createdAt.isAfter(DateTime.now().subtract(const Duration(days: 30))),
+        'Last 7 days' => entry.createdAt.isAfter(
+          DateTime.now().subtract(const Duration(days: 7)),
+        ),
+        'Last 30 days' => entry.createdAt.isAfter(
+          DateTime.now().subtract(const Duration(days: 30)),
+        ),
         _ => true,
       };
       return typeMatches && tagMatches && dateMatches;
@@ -193,7 +208,10 @@ class _JournalScreenState extends State<JournalScreen>
 
   Future<void> _saveEntry(JournalEntry entry) async {
     final signal = _crisisDetector.analyze(entry.body);
-    final shouldShowCrisisSupport = _crisisDetector.canTrigger('journal', signal);
+    final shouldShowCrisisSupport = _crisisDetector.canTrigger(
+      'journal',
+      signal,
+    );
     final entryToSave = shouldShowCrisisSupport
         ? JournalEntry(
             id: entry.id,
@@ -289,8 +307,8 @@ class _JournalScreenState extends State<JournalScreen>
   void _showEntryTypePicker() {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: .32),
+      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor,
+      barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: .32),
       builder: (context) => _EntryTypePicker(
         onFree: () {
           Navigator.pop(context);
@@ -373,7 +391,7 @@ class _JournalScreenState extends State<JournalScreen>
         onAdd: () async {
           final tag = controller.text.trim().replaceAll('#', '');
           if (tag.isEmpty) return;
-          
+
           final updatedEntry = JournalEntry(
             id: entry.id,
             type: entry.type,
@@ -391,11 +409,11 @@ class _JournalScreenState extends State<JournalScreen>
             updatedAt: DateTime.now(),
             isDraft: entry.isDraft,
           );
-          
+
           try {
             await _repo.save(updatedEntry);
           } catch (_) {}
-          
+
           HapticFeedback.selectionClick();
           if (mounted) Navigator.pop(context);
         },
@@ -420,11 +438,9 @@ class _JournalScreenState extends State<JournalScreen>
       await _repo.deleteJournalEntry(entry.id);
     } catch (e) {}
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Entry deleted.'),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Entry deleted.')));
   }
 }
 
@@ -465,9 +481,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
         ? LocalDbService.instance.getJournalDraft(_draftId)
         : null;
     _showDraftPrompt = _availableDraft != null;
-    _controller = TextEditingController(
-      text: widget.existing?.body ?? '',
-    );
+    _controller = TextEditingController(text: widget.existing?.body ?? '');
     _tags = [...(widget.existing?.tags ?? const <String>[])];
     if (_availableDraft != null) _saveStatus = 'Draft available';
   }
@@ -501,7 +515,6 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
               ));
 
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -515,10 +528,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                     icon: const Icon(Icons.arrow_back, color: AppColors.text),
                   ),
                   const Spacer(),
-                  TextButton(
-                    onPressed: _finish,
-                    child: const Text('Save'),
-                  ),
+                  TextButton(onPressed: _finish, child: const Text('Save')),
                 ],
               ),
             ),
@@ -644,7 +654,10 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
       JournalEntry(
         id: _draftId,
         type: widget.type,
-        title: widget.prompt?.category ?? widget.existing?.title ?? 'Journal entry',
+        title:
+            widget.prompt?.category ??
+            widget.existing?.title ??
+            'Journal entry',
         body: body,
         tags: _tags,
         promptId: widget.prompt?.id ?? widget.existing?.promptId,
@@ -1309,6 +1322,8 @@ class _FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerTheme.color;
     final chips = ['All', 'Free', 'Guided', 'Voice', 'Tags'];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -1323,12 +1338,14 @@ class _FilterChips extends StatelessWidget {
               selected: isSelected,
               onSelected: (_) => onChanged(chip),
               selectedColor: AppColors.primarySubtle,
-              backgroundColor: AppColors.surfaceElevated,
+              backgroundColor: colorScheme.surface,
               side: BorderSide(
-                color: isSelected ? AppColors.primary : AppColors.border,
+                color: isSelected
+                    ? AppColors.primary
+                    : dividerColor ?? AppColors.border,
               ),
               labelStyle: AppTextStyles.body2.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.text,
+                color: isSelected ? AppColors.primary : colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1438,8 +1455,7 @@ class _JournalEntryCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              if (entry.type == 'guided' &&
-                  entry.body.isNotEmpty) ...[
+              if (entry.type == 'guided' && entry.body.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
                   '"${entry.body}"',
@@ -1506,10 +1522,7 @@ class _DraftRestoreCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _SecondaryButton(
-                  label: 'Discard',
-                  onPressed: onDiscard,
-                ),
+                child: _SecondaryButton(label: 'Discard', onPressed: onDiscard),
               ),
             ],
           ),
@@ -1585,7 +1598,6 @@ class _JournalLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
@@ -1740,6 +1752,8 @@ class _PromptCategories extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerTheme.color;
     const categories = [
       'All',
       'Gratitude',
@@ -1758,9 +1772,11 @@ class _PromptCategories extends StatelessWidget {
           selected: active,
           onSelected: (_) => onChanged(category),
           selectedColor: AppColors.primarySubtle,
-          backgroundColor: AppColors.surfaceElevated,
+          backgroundColor: colorScheme.surface,
           side: BorderSide(
-            color: active ? AppColors.primary : AppColors.border,
+            color: active
+                ? AppColors.primary
+                : dividerColor ?? AppColors.border,
           ),
         );
       }).toList(),
@@ -2267,7 +2283,6 @@ class _JournalSubScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -2300,15 +2315,18 @@ class _BottomSheetFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerTheme.color;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: dividerColor ?? AppColors.border),
           ),
           child: child,
         ),
@@ -2431,27 +2449,32 @@ class _DashedAction extends StatelessWidget {
 class _WarmPanel extends StatelessWidget {
   const _WarmPanel({
     required this.child,
-    this.color = AppColors.surfaceElevated,
+    this.color,
     this.borderColor,
     this.padding = const EdgeInsets.all(20),
     this.radius = 16,
   });
 
   final Widget child;
-  final Color color;
+  final Color? color;
   final Color? borderColor;
   final EdgeInsets padding;
   final double radius;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerTheme.color;
+
     return Container(
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? colorScheme.surface,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: borderColor ?? AppColors.border),
+        border: Border.all(
+          color: borderColor ?? dividerColor ?? AppColors.border,
+        ),
       ),
       child: child,
     );
