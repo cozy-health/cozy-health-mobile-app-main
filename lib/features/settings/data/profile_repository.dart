@@ -2,13 +2,14 @@ import 'package:flutter/foundation.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/constants/api_constants.dart';
 
 class ProfileRepository {
   final LocalDbService _local = LocalDbService();
 
   Future<UserProfile?> fetchProfile() async {
     try {
-      final response = await ApiClient.instance.get('/user/profile');
+      final response = await ApiClient.instance.get(ApiConstants.me);
       if (response.data['data'] != null) {
         final profile = UserProfile.fromJson(response.data['data']);
         await _local.saveUserProfile(profile);
