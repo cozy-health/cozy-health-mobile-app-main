@@ -35,90 +35,98 @@ class ApiConstants {
   |--------------------------------------------------------------------------
   */
   static const String subscription = '/subscription';
-  static const String subscriptionPackages =
-      '/subscription/packages';
+  static const String subscriptionPackages = '/subscription/packages';
 
-  static const String subscriptionActivate =
-      '/subscription/activate';
+  static const String subscriptionActivate = '/subscription/activate';
 
-  static const String subscriptionCancel =
-      '/subscription/cancel';
+  static const String subscriptionCancel = '/subscription/cancel';
 
   /*
   |--------------------------------------------------------------------------
   | Mood Check-ins
   |--------------------------------------------------------------------------
   */
-  static const String moodCheckins =
-      '/mood-checkins';
+  static const String moodCheckins = '/mood-checkins';
 
-  static const String moodCheckinToday =
-      '/mood-checkins/today';
+  static const String moodEntries = '/mood-entries';
+
+  static const String moodCheckinToday = '/mood-checkins/today';
 
   /*
   |--------------------------------------------------------------------------
   | Mood Lookup Data
   |--------------------------------------------------------------------------
   */
-  static const String feelings =
-      '/feelings';
+  static const String feelings = '/feelings';
 
-  static const String feelingExpressions =
-      '/feeling-expressions';
+  static const String feelingExpressions = '/feeling-expressions';
 
-  static const String feelingCauses =
-      '/feeling-causes';
+  static const String feelingCauses = '/feeling-causes';
 
-  static const String copingMechanisms =
-      '/coping-mechanisms';
+  static const String copingMechanisms = '/coping-mechanisms';
 
   /*
   |--------------------------------------------------------------------------
   | Journals
   |--------------------------------------------------------------------------
   */
-  static const String journals =
-      '/journals';
+  static const String journals = '/journals';
+
+  static const String journalEntries = '/journal-entries';
 
   /*
   |--------------------------------------------------------------------------
   | Quizzes
   |--------------------------------------------------------------------------
   */
-  static const String quizzes =
-      '/quizzes';
+  static const String quizzes = '/quizzes';
 
-  static const String quizResults =
-      '/quiz-results';
+  static const String quizResults = '/quiz-results';
+
+  static const String quizAttempts = '/quiz-attempts';
+
+  /*
+  |--------------------------------------------------------------------------
+  | Assistant
+  |--------------------------------------------------------------------------
+  */
+  static const String conversations = '/conversations';
+
+  /*
+  |--------------------------------------------------------------------------
+  | Content
+  |--------------------------------------------------------------------------
+  */
+  static const String savedContent = '/content/saved';
+
+  /*
+  |--------------------------------------------------------------------------
+  | Crisis
+  |--------------------------------------------------------------------------
+  */
+  static const String safetyPlan = '/safety-plan';
 
   /*
   |--------------------------------------------------------------------------
   | Activity
   |--------------------------------------------------------------------------
   */
-  static const String activityOverview =
-      '/activity/overview';
+  static const String activityOverview = '/activity/overview';
 
-  static const String activityMoodChart =
-      '/activity/mood-chart';
+  static const String activityMoodChart = '/activity/mood-chart';
 
-  static const String activityCommonTriggers =
-      '/activity/common-triggers';
+  static const String activityCommonTriggers = '/activity/common-triggers';
 
-  static const String activityJournalStats =
-      '/activity/journal-stats';
+  static const String activityJournalStats = '/activity/journal-stats';
 
-  static const String activityRecommendations =
-      '/activity/recommendations';
+  static const String activityRecommendations = '/activity/recommendations';
 
   /*
   |--------------------------------------------------------------------------
   | Notifications
   |--------------------------------------------------------------------------
   */
-  static const String notifications =
-      '/notifications';
+  static const String notifications = '/notifications';
 
-  static const String notificationUnreadCount =
-      '/notifications/unread-count';
+  static const String notificationUnreadCount = '/notifications/unread-count';
 }

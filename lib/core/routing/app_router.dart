@@ -144,7 +144,7 @@ class AppRouter {
 
   static const String notifications = '/notifications';
   static const String notificationDetail = '/notification-detail';
-  
+
   static const String insights = '/insights';
   static const String insightsMoodTrend = '/insights/mood-trend';
   static const String insightsTriggers = '/insights/triggers';
@@ -168,14 +168,14 @@ class AppRouter {
   static const String quizResults = '/quiz-results';
   static const String quizHistory = '/quiz-history';
   static const String quizResultDetail = '/quiz-result-detail';
-  
+
   static const String contentHome = '/content';
   static const String categoryDetail = '/category-detail';
   static const String articleDetail = '/article-detail';
   static const String savedArticles = '/saved-articles';
   static const String contentSearch = '/content-search';
   static const String dailyAffirmation = '/daily-affirmation';
-  
+
   static const String communityHub = '/community';
   static const String createPost = '/community/create-post';
   static const String postDetail = '/community/post-detail';
@@ -188,7 +188,7 @@ class AppRouter {
   static const String communitySearch = '/community/search';
   static const String featuredPosts = '/community/featured';
   static const String topics = '/community/topics';
-  
+
   static const String copingMechanisms = '/coping-mechanisms';
   static const String crisisHub = '/crisis';
   static const String crisisOverlay = '/crisis-overlay';
@@ -205,7 +205,6 @@ class AppRouter {
     if (extra is Map<String, dynamic>) return extra;
     return {};
   }
-
 
   static final GoRouter router = GoRouter(
     navigatorKey: navigatorKey,
@@ -302,7 +301,9 @@ class AppRouter {
       GoRoute(
         path: moodFeeling,
         name: 'moodFeeling',
-        builder: (_, __) => const MoodFeelingScreen(),
+        builder: (_, state) => MoodFeelingScreen(
+          entry: state.extra is MoodEntry ? state.extra as MoodEntry : null,
+        ),
       ),
       GoRoute(
         path: moodReason,
@@ -362,9 +363,7 @@ class AppRouter {
       GoRoute(
         path: quizResults,
         name: 'quizResults',
-        builder: (_, state) => QuizResultScreen(
-          extra: _extraMap(state),
-        ),
+        builder: (_, state) => QuizResultScreen(extra: _extraMap(state)),
       ),
       GoRoute(
         path: quizHistory,
@@ -374,9 +373,7 @@ class AppRouter {
       GoRoute(
         path: quizResultDetail,
         name: 'quizResultDetail',
-        builder: (_, state) => QuizResultDetailScreen(
-          extra: _extraMap(state),
-        ),
+        builder: (_, state) => QuizResultDetailScreen(extra: _extraMap(state)),
       ),
       GoRoute(
         path: copingMechanisms,
@@ -440,17 +437,13 @@ class AppRouter {
         path: quizDetail,
         name: 'quizDetail',
         builder: (_, state) {
-          return QuizDetailScreen(
-            extra: _extraMap(state),
-          );
+          return QuizDetailScreen(extra: _extraMap(state));
         },
       ),
       GoRoute(
         path: quizTaking,
         name: 'quizTaking',
-        builder: (_, state) => QuizTakingScreen(
-          extra: _extraMap(state),
-        ),
+        builder: (_, state) => QuizTakingScreen(extra: _extraMap(state)),
       ),
       GoRoute(
         path: contentHome,
@@ -460,16 +453,12 @@ class AppRouter {
       GoRoute(
         path: categoryDetail,
         name: 'categoryDetail',
-        builder: (_, state) => CategoryDetailScreen(
-          extra: _extraMap(state),
-        ),
+        builder: (_, state) => CategoryDetailScreen(extra: _extraMap(state)),
       ),
       GoRoute(
         path: articleDetail,
         name: 'articleDetail',
-        builder: (_, state) => ArticleDetailScreen(
-          extra: _extraMap(state),
-        ),
+        builder: (_, state) => ArticleDetailScreen(extra: _extraMap(state)),
       ),
       GoRoute(
         path: savedArticles,
@@ -506,9 +495,7 @@ class AppRouter {
       GoRoute(
         path: userProfile,
         name: 'userProfile',
-        builder: (_, state) => UserProfileScreen(
-          extra: _extraMap(state),
-        ),
+        builder: (_, state) => UserProfileScreen(extra: _extraMap(state)),
       ),
       GoRoute(
         path: followList,
@@ -528,9 +515,7 @@ class AppRouter {
       GoRoute(
         path: directMessages,
         name: 'directMessages',
-        builder: (_, state) => DirectMessagesScreen(
-          extra: _extraMap(state),
-        ),
+        builder: (_, state) => DirectMessagesScreen(extra: _extraMap(state)),
       ),
       GoRoute(
         path: messageRequests,
@@ -746,4 +731,3 @@ class AppRouter {
     ],
   );
 }
-

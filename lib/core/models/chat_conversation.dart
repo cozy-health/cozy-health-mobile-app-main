@@ -1,7 +1,5 @@
 import 'package:hive/hive.dart';
 
-
-
 @HiveType(typeId: 4)
 class ChatConversation extends HiveObject {
   @HiveField(0)
@@ -43,19 +41,25 @@ class ChatConversation extends HiveObject {
       'is_archived': isArchived,
       'client_updated_at': updatedAt.toUtc().toIso8601String(),
     };
-    if (lastMessagePreview != null) json['last_message_preview'] = lastMessagePreview;
+    if (lastMessagePreview != null) {
+      json['last_message_preview'] = lastMessagePreview;
+    }
     return json;
   }
 
   factory ChatConversation.fromJson(Map<String, dynamic> json) {
     return ChatConversation(
-      id: json['id'] as String,
-      title: json['title'] as String,
+      id: json['id'].toString(),
+      title: json['title']?.toString(),
       lastMessagePreview: json['last_message_preview'] as String?,
       messageCount: json['message_count'] as int? ?? 0,
       isArchived: json['is_archived'] as bool? ?? false,
-      createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
-      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
+      createdAt: json['client_created_at'] != null
+          ? DateTime.parse(json['client_created_at'])
+          : DateTime.now(),
+      updatedAt: json['client_updated_at'] != null
+          ? DateTime.parse(json['client_updated_at'])
+          : DateTime.now(),
     );
   }
 }
@@ -87,8 +91,4 @@ class ChatConversationAdapter extends TypeAdapter<ChatConversation> {
     writer.writeInt(obj.createdAt.millisecondsSinceEpoch);
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
   }
-
-
-
-
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/models/mood_entry.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_scaffold_padding.dart';
@@ -91,7 +92,10 @@ class ActivityScreen extends StatelessWidget {
                               ),
                             ),
 
-                            const Text('😊', style: TextStyle(fontSize: 24)),
+                            Text(
+                              MoodEntry.moodEmojis['good'] ?? '',
+                              style: const TextStyle(fontSize: 24),
+                            ),
 
                             Text(
                               'Amazing',

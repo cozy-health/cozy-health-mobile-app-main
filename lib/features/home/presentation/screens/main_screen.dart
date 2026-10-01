@@ -4,6 +4,7 @@ import 'package:cozy_health/features/community/presentation/screens/community_hu
 import 'package:cozy_health/features/settings/presentation/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/models/mood_entry.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -112,7 +113,7 @@ class _MainScreenState extends State<MainScreen> {
                     childAspectRatio: 1.16,
                     children: [
                       _QuickActionTile(
-                        icon: '😊',
+                        icon: MoodEntry.moodEmojis['good'] ?? '',
                         label: 'Log mood',
                         onTap: () {
                           Navigator.of(context).pop();

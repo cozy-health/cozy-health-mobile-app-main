@@ -51,21 +51,25 @@ class QuizAttempt extends HiveObject {
       'is_crisis_flagged': isCrisisFlagged,
       'completed_at': completedAt.toUtc().toIso8601String(),
     };
-    if (interpretation != null) json['interpretation'] = interpretation;
+    json['interpretation'] = interpretation;
     return json;
   }
 
   factory QuizAttempt.fromJson(Map<String, dynamic> json) {
     return QuizAttempt(
-      id: json['id'] as String,
-      quizId: json['quiz_id'] as String? ?? json['quiz_slug'] as String,
-      quizSlug: json['quiz_slug'] as String,
-      quizTitle: json['quiz_title'] as String,
-      answers: (json['answers'] as List<dynamic>?)?.map((e) => e as int).toList() ?? [],
-      score: json['score'] as int,
+      id: json['id'].toString(),
+      quizId: json['quiz_id']?.toString() ?? json['quiz_slug'].toString(),
+      quizSlug: json['quiz_slug']?.toString() ?? '',
+      quizTitle: json['quiz_title']?.toString() ?? '',
+      answers:
+          (json['answers'] as List<dynamic>?)?.map((e) => e as int).toList() ??
+          [],
+      score: json['score'] as int? ?? 0,
       interpretation: json['interpretation'] as String? ?? '',
       isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
-      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : DateTime.now(),
+      completedAt: json['completed_at'] != null
+          ? DateTime.parse(json['completed_at'])
+          : DateTime.now(),
     );
   }
 }
@@ -116,8 +120,4 @@ class QuizAttemptAdapter extends TypeAdapter<QuizAttempt> {
       ..writeByte(8)
       ..write(obj.completedAt);
   }
-
-
-
-
 }

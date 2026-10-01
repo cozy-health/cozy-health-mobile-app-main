@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../constants/api_constants.dart';
 import 'api_exceptions.dart';
 import 'api_interceptors.dart';
 
@@ -11,16 +12,18 @@ class ApiClient {
   }
 
   ApiClient._internal() {
-    _dio = Dio(BaseOptions(
-      baseUrl: 'https://cozy-health-api-production.up.railway.app/api/v1',
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 30),
-      sendTimeout: const Duration(seconds: 30),
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: ApiConstants.baseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(seconds: 30),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
 
     _dio.interceptors.addAll([
       AuthInterceptor(),
@@ -36,11 +39,13 @@ class ApiClient {
     bool withAuth = true,
     Options? options,
   }) async {
-    return await _request(() => _dio.get(
-      path,
-      queryParameters: queryParameters ?? query,
-      options: _options(options, withAuth),
-    ));
+    return await _request(
+      () => _dio.get(
+        path,
+        queryParameters: queryParameters ?? query,
+        options: _options(options, withAuth),
+      ),
+    );
   }
 
   Future<dynamic> post(
@@ -51,12 +56,14 @@ class ApiClient {
     bool withAuth = true,
     Options? options,
   }) async {
-    return await _request(() => _dio.post(
-      path,
-      data: data ?? body,
-      queryParameters: queryParameters,
-      options: _options(options, withAuth),
-    ));
+    return await _request(
+      () => _dio.post(
+        path,
+        data: data ?? body,
+        queryParameters: queryParameters,
+        options: _options(options, withAuth),
+      ),
+    );
   }
 
   Future<dynamic> patch(
@@ -67,12 +74,14 @@ class ApiClient {
     bool withAuth = true,
     Options? options,
   }) async {
-    return await _request(() => _dio.patch(
-      path,
-      data: data ?? body,
-      queryParameters: queryParameters,
-      options: _options(options, withAuth),
-    ));
+    return await _request(
+      () => _dio.patch(
+        path,
+        data: data ?? body,
+        queryParameters: queryParameters,
+        options: _options(options, withAuth),
+      ),
+    );
   }
 
   Future<dynamic> put(
@@ -83,12 +92,14 @@ class ApiClient {
     bool withAuth = true,
     Options? options,
   }) async {
-    return await _request(() => _dio.put(
-      path,
-      data: data ?? body,
-      queryParameters: queryParameters,
-      options: _options(options, withAuth),
-    ));
+    return await _request(
+      () => _dio.put(
+        path,
+        data: data ?? body,
+        queryParameters: queryParameters,
+        options: _options(options, withAuth),
+      ),
+    );
   }
 
   Future<dynamic> delete(
@@ -99,12 +110,14 @@ class ApiClient {
     bool withAuth = true,
     Options? options,
   }) async {
-    return await _request(() => _dio.delete(
-      path,
-      data: data ?? body,
-      queryParameters: queryParameters,
-      options: _options(options, withAuth),
-    ));
+    return await _request(
+      () => _dio.delete(
+        path,
+        data: data ?? body,
+        queryParameters: queryParameters,
+        options: _options(options, withAuth),
+      ),
+    );
   }
 
   Options? _options(Options? options, bool withAuth) {

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/user_data_fetcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/splash_service.dart';
 import '../widgets/breathing_glow.dart';
@@ -139,6 +140,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (results.first) {
       context.go(AppRouter.home);
+      unawaited(_syncUserDataInBackground());
       unawaited(_validateTokenInBackground());
     } else {
       context.go(AppRouter.onboarding);
@@ -156,6 +158,11 @@ class _SplashScreenState extends State<SplashScreen>
       const SnackBar(content: Text('Session expired. Please log in again.')),
     );
     context.go(AppRouter.login);
+  }
+
+  Future<void> _syncUserDataInBackground() async {
+    await UserDataFetcher().fetchAll();
+    debugPrint('Background data sync complete');
   }
 
   @override

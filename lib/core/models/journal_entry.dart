@@ -1,7 +1,5 @@
 import 'package:hive/hive.dart';
 
-
-
 @HiveType(typeId: 2)
 class JournalEntry extends HiveObject {
   @HiveField(0)
@@ -88,29 +86,37 @@ class JournalEntry extends HiveObject {
     if (promptId != null) json['prompt_id'] = promptId;
     if (promptText != null) json['prompt_text'] = promptText;
     if (tags != null) json['tags'] = tags;
-    if (linkedMoodEntryId != null) json['linked_mood_entry_id'] = linkedMoodEntryId;
+    if (linkedMoodEntryId != null) {
+      json['linked_mood_entry_id'] = linkedMoodEntryId;
+    }
     json['client_updated_at'] = updatedAt.toUtc().toIso8601String();
     return json;
   }
 
   factory JournalEntry.fromJson(Map<String, dynamic> json) {
     return JournalEntry(
-      id: json['id'] as String,
+      id: json['id'].toString(),
       type: json['type'] as String? ?? 'free',
       title: json['title'] as String?,
       body: json['body'] as String? ?? '',
       voiceUrl: json['voice_url'] as String?,
       voiceDuration: json['voice_duration'] as int?,
       transcription: json['transcription'] as String?,
-      promptId: json['prompt_id'] as String?,
+      promptId: json['prompt_id']?.toString(),
       promptText: json['prompt_text'] as String?,
-      tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      linkedMoodEntryId: json['linked_mood_entry_id'] as String?,
+      tags:
+          (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+          [],
+      linkedMoodEntryId: json['linked_mood_entry_id']?.toString(),
       wordCount: json['word_count'] as int? ?? 0,
       isDraft: json['is_draft'] as bool? ?? false,
       isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
-      createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
-      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
+      createdAt: json['client_created_at'] != null
+          ? DateTime.parse(json['client_created_at'])
+          : DateTime.now(),
+      updatedAt: json['client_updated_at'] != null
+          ? DateTime.parse(json['client_updated_at'])
+          : DateTime.now(),
     );
   }
 }
@@ -160,8 +166,4 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
     writer.writeBool(obj.isDraft);
     writer.writeBool(obj.isCrisisFlagged);
   }
-
-
-
-
 }

@@ -53,15 +53,17 @@ class SavedArticle extends HiveObject {
 
   factory SavedArticle.fromJson(Map<String, dynamic> json) {
     return SavedArticle(
-      id: json['id'] as String,
-      articleId: json['article_id'] as String,
-      articleSlug: json['article_slug'] as String?,
-      title: json['title'] as String,
-      category: json['category'] as String?,
+      id: json['id'].toString(),
+      articleId: json['article_id']?.toString() ?? json['id'].toString(),
+      articleSlug: json['article_slug']?.toString(),
+      title: json['title']?.toString() ?? '',
+      category: json['category']?.toString(),
       readTimeMinutes: json['read_time_minutes'] as int?,
       excerpt: json['excerpt'] as String? ?? '',
       imageUrl: json['image_url'] as String? ?? '',
-      savedAt: json['saved_at'] != null ? DateTime.parse(json['saved_at']) : DateTime.now(),
+      savedAt: json['saved_at'] != null
+          ? DateTime.parse(json['saved_at'])
+          : DateTime.now(),
     );
   }
 }
@@ -103,8 +105,4 @@ class SavedArticleAdapter extends TypeAdapter<SavedArticle> {
       ..writeByte(5)
       ..write(obj.savedAt);
   }
-
-
-
-
 }

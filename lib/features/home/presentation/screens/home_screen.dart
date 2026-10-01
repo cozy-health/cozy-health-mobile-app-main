@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/local_db_service.dart';
+import '../../../../core/services/user_data_fetcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_scaffold_padding.dart';
@@ -86,6 +87,14 @@ class _HomeScreenState extends State<HomeScreen>
 
             final entries = snapshot.data ?? [];
             final isEmpty = entries.isEmpty;
+            final allMoods = LocalDbService.instance.getAllMoodEntries();
+            final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+            final moodsThisWeek = allMoods.where((entry) {
+              return entry.createdAt.toLocal().isAfter(weekAgo);
+            }).toList();
+            debugPrint(
+              'Home thisWeek: total=${allMoods.length} thisWeek=${moodsThisWeek.length}',
+            );
 
             // Determine state dynamically
             final dynamicState = isEmpty
@@ -112,144 +121,148 @@ class _HomeScreenState extends State<HomeScreen>
             return Semantics(
               label:
                   'Home dashboard loaded. $streak day streak. ${recentEntries.length} recent entries.',
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  24,
-                  16,
-                  24,
-                  AppScaffoldPadding.tabScrollBottom(context).bottom,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (dynamicState == HomeDashboardState.offline) ...[
-                      _OfflineBanner(onRetry: () {}),
-                      const SizedBox(height: 16),
-                    ],
-                    _AnimatedIn(
-                      controller: _entranceController,
-                      interval: const Interval(
-                        0,
-                        .35,
-                        curve: Curves.easeOutCubic,
-                      ),
-                      child: const _Header(),
-                    ),
-                    const SizedBox(height: 24),
-                    if (dynamicState == HomeDashboardState.firstTime)
+              child: RefreshIndicator(
+                onRefresh: () => UserDataFetcher().fetchAll(),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    24,
+                    16,
+                    24,
+                    AppScaffoldPadding.tabScrollBottom(context).bottom,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (dynamicState == HomeDashboardState.offline) ...[
+                        _OfflineBanner(onRetry: () {}),
+                        const SizedBox(height: 16),
+                      ],
                       _AnimatedIn(
                         controller: _entranceController,
                         interval: const Interval(
-                          .14,
-                          .58,
+                          0,
+                          .35,
                           curve: Curves.easeOutCubic,
                         ),
-                        yOffset: 16,
-                        child: const _FirstTimeHero(),
-                      )
-                    else
-                      _AnimatedIn(
-                        controller: _entranceController,
-                        interval: const Interval(
-                          .14,
-                          .58,
-                          curve: Curves.easeOutCubic,
-                        ),
-                        yOffset: 16,
-                        child: _MoodHero(hasMoodToday: hasMoodToday),
+                        child: const _Header(),
                       ),
-                    const SizedBox(height: 16),
-                    _AnimatedIn(
-                      controller: _entranceController,
-                      interval: const Interval(
-                        .28,
-                        .68,
-                        curve: Curves.easeOutCubic,
-                      ),
-                      yOffset: 12,
-                      child: _StatsRow(isEmpty: isEmpty, streak: streak),
-                    ),
-                    const SizedBox(height: 32),
-                    if (dynamicState == HomeDashboardState.firstTime)
-                      _FirstTimeInfo(controller: _entranceController)
-                    else ...[
-                      _SectionHeader(
-                        title: 'This week',
-                        action: 'See all',
-                        onAction: () => context.push(AppRouter.moodHistory),
-                      ),
-                      const SizedBox(height: 12),
-                      _AnimatedIn(
-                        controller: _entranceController,
-                        interval: const Interval(
-                          .48,
-                          .86,
-                          curve: Curves.easeOutCubic,
-                        ),
-                        yOffset: 10,
-                        child: _MoodChart(compact: entries.length < 3),
-                      ),
-                      const SizedBox(height: 32),
-                      _SectionHeader(
-                        title: 'Recent entries',
-                        action: 'See all',
-                        onAction: () => context.push(AppRouter.moodHistory),
-                      ),
-                      const SizedBox(height: 12),
-                      if (recentEntries.isEmpty)
-                        const _EmptyCard(
-                          icon: Icons.edit_note,
-                          title: 'Your first entry will show here',
-                          subtitle: 'Notes stay private and easy to revisit.',
+                      const SizedBox(height: 24),
+                      if (dynamicState == HomeDashboardState.firstTime)
+                        _AnimatedIn(
+                          controller: _entranceController,
+                          interval: const Interval(
+                            .14,
+                            .58,
+                            curve: Curves.easeOutCubic,
+                          ),
+                          yOffset: 16,
+                          child: const _FirstTimeHero(),
                         )
                       else
-                        ...recentEntries.asMap().entries.map(
-                          (entry) => Padding(
-                            padding: EdgeInsets.only(
-                              bottom: entry.key == recentEntries.length - 1
-                                  ? 0
-                                  : 8,
-                            ),
-                            child: _AnimatedIn(
-                              controller: _entranceController,
-                              interval: Interval(
-                                .64 + (entry.key * .07),
-                                1,
-                                curve: Curves.easeOutCubic,
+                        _AnimatedIn(
+                          controller: _entranceController,
+                          interval: const Interval(
+                            .14,
+                            .58,
+                            curve: Curves.easeOutCubic,
+                          ),
+                          yOffset: 16,
+                          child: _MoodHero(hasMoodToday: hasMoodToday),
+                        ),
+                      const SizedBox(height: 16),
+                      _AnimatedIn(
+                        controller: _entranceController,
+                        interval: const Interval(
+                          .28,
+                          .68,
+                          curve: Curves.easeOutCubic,
+                        ),
+                        yOffset: 12,
+                        child: _StatsRow(isEmpty: isEmpty, streak: streak),
+                      ),
+                      const SizedBox(height: 32),
+                      if (dynamicState == HomeDashboardState.firstTime)
+                        _FirstTimeInfo(controller: _entranceController)
+                      else ...[
+                        _SectionHeader(
+                          title: 'This week',
+                          action: 'See all',
+                          onAction: () => context.push(AppRouter.moodHistory),
+                        ),
+                        const SizedBox(height: 12),
+                        _AnimatedIn(
+                          controller: _entranceController,
+                          interval: const Interval(
+                            .48,
+                            .86,
+                            curve: Curves.easeOutCubic,
+                          ),
+                          yOffset: 10,
+                          child: _MoodChart(entries: moodsThisWeek),
+                        ),
+                        const SizedBox(height: 32),
+                        _SectionHeader(
+                          title: 'Recent entries',
+                          action: 'See all',
+                          onAction: () => context.push(AppRouter.moodHistory),
+                        ),
+                        const SizedBox(height: 12),
+                        if (recentEntries.isEmpty)
+                          const _EmptyCard(
+                            icon: Icons.edit_note,
+                            title: 'Your first entry will show here',
+                            subtitle: 'Notes stay private and easy to revisit.',
+                          )
+                        else
+                          ...recentEntries.asMap().entries.map(
+                            (entry) => Padding(
+                              padding: EdgeInsets.only(
+                                bottom: entry.key == recentEntries.length - 1
+                                    ? 0
+                                    : 8,
                               ),
-                              yOffset: 12,
-                              child: _EntryCard(entry: entry.value),
+                              child: _AnimatedIn(
+                                controller: _entranceController,
+                                interval: Interval(
+                                  .64 + (entry.key * .07),
+                                  1,
+                                  curve: Curves.easeOutCubic,
+                                ),
+                                yOffset: 12,
+                                child: _EntryCard(entry: entry.value),
+                              ),
                             ),
                           ),
+                      ],
+                      const SizedBox(height: 24),
+                      _AnimatedIn(
+                        controller: _entranceController,
+                        interval: const Interval(
+                          .82,
+                          1,
+                          curve: Curves.easeOutCubic,
                         ),
+                        yOffset: 12,
+                        child: _AffirmationCard(
+                          text: _affirmations[_affirmationIndex],
+                          index: _affirmationIndex,
+                          count: _affirmations.length,
+                          onSwipe: (direction) {
+                            setState(() {
+                              _affirmationIndex =
+                                  (_affirmationIndex + direction) %
+                                  _affirmations.length;
+                              if (_affirmationIndex < 0) {
+                                _affirmationIndex = _affirmations.length - 1;
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                     ],
-                    const SizedBox(height: 24),
-                    _AnimatedIn(
-                      controller: _entranceController,
-                      interval: const Interval(
-                        .82,
-                        1,
-                        curve: Curves.easeOutCubic,
-                      ),
-                      yOffset: 12,
-                      child: _AffirmationCard(
-                        text: _affirmations[_affirmationIndex],
-                        index: _affirmationIndex,
-                        count: _affirmations.length,
-                        onSwipe: (direction) {
-                          setState(() {
-                            _affirmationIndex =
-                                (_affirmationIndex + direction) %
-                                _affirmations.length;
-                            if (_affirmationIndex < 0) {
-                              _affirmationIndex = _affirmations.length - 1;
-                            }
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                  ),
                 ),
               ),
             );
@@ -416,7 +429,7 @@ class _MoodHeroState extends State<_MoodHero>
         children: [
           Text(
             widget.hasMoodToday
-                ? 'You logged: 😊 Good.\nWant to add a note?'
+                ? 'You logged: ${MoodEntry.moodEmojis['good']} Good.\nWant to add a note?'
                 : 'How are you feeling\nright now?',
             style: AppTextStyles.heading1.copyWith(
               color: AppColors.text,
@@ -540,7 +553,7 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _StatCard(
-            icon: '😊',
+            icon: MoodEntry.moodEmojis['good'] ?? '',
             title: isEmpty ? 'No moods\nthis week' : 'Good',
             subtitle: isEmpty ? '' : 'This week',
             isEmpty: isEmpty,
@@ -622,13 +635,13 @@ class _StatCard extends StatelessWidget {
 }
 
 class _MoodChart extends StatelessWidget {
-  const _MoodChart({required this.compact});
+  const _MoodChart({required this.entries});
 
-  final bool compact;
+  final List<MoodEntry> entries;
 
   @override
   Widget build(BuildContext context) {
-    if (compact) {
+    if (entries.length < 3) {
       return const _EmptyCard(
         icon: Icons.show_chart,
         title: 'Log 3 moods to see trends',
@@ -636,7 +649,7 @@ class _MoodChart extends StatelessWidget {
       );
     }
 
-    const values = [36.0, 52.0, 76.0, 92.0, 70.0, 48.0, 34.0];
+    final values = _weeklyValues(entries);
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     return GestureDetector(
@@ -694,22 +707,22 @@ class _MoodChart extends StatelessWidget {
       ),
     );
   }
+
+  List<double> _weeklyValues(List<MoodEntry> entries) {
+    final values = List<double>.filled(7, 0);
+    for (final entry in entries) {
+      final local = entry.createdAt.toLocal();
+      values[local.weekday - 1] = (entry.intensity.clamp(1, 10) * 10)
+          .toDouble();
+    }
+    return values.map((value) => value == 0 ? 12.0 : value).toList();
+  }
 }
 
 class _EntryCard extends StatelessWidget {
   const _EntryCard({required this.entry});
 
   final MoodEntry entry;
-
-  String _getEmojiForMood(String mood) {
-    if (mood == 'Good') return '\u{1F60A}';
-    if (mood == 'Calm') return '\u{1F60C}';
-    if (mood == 'Okay') return '\u{1F610}';
-    if (mood == 'Low') return '\u{1F614}';
-    if (mood == 'Anxious') return '\u{1F630}';
-    if (mood == 'Angry') return '\u{1F621}';
-    return '\u{1F60A}';
-  }
 
   String _formatTime(DateTime time) {
     final now = DateTime.now();
@@ -734,10 +747,7 @@ class _EntryCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              Text(
-                _getEmojiForMood(entry.mood),
-                style: const TextStyle(fontSize: 24),
-              ),
+              Text(entry.emoji, style: const TextStyle(fontSize: 24)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -1087,15 +1097,15 @@ class MoodHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const moods = {
-      3: '😊',
-      5: '😐',
-      8: '😊',
-      11: '😔',
-      16: '😊',
-      17: '😊',
-      22: '😊',
-      24: '😐',
+    final moods = {
+      3: MoodEntry.moodEmojis['good'],
+      5: MoodEntry.moodEmojis['okay'],
+      8: MoodEntry.moodEmojis['good'],
+      11: MoodEntry.moodEmojis['low'],
+      16: MoodEntry.moodEmojis['good'],
+      17: MoodEntry.moodEmojis['good'],
+      22: MoodEntry.moodEmojis['good'],
+      24: MoodEntry.moodEmojis['okay'],
     };
 
     return _DetailScaffold(
@@ -1187,14 +1197,14 @@ class MoodHistoryScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '😊 Good   😐 Okay   😔 Low',
+            "${MoodEntry.moodEmojis['good']} Good   ${MoodEntry.moodEmojis['okay']} Okay   ${MoodEntry.moodEmojis['low']} Low",
             style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
           ),
           const SizedBox(height: 24),
           _WarmCard(
             color: AppColors.surfaceElevated,
             child: Text(
-              '12 entries\nMost common: 😊 Good\nStreak: 4 days',
+              "12 entries\nMost common: ${MoodEntry.moodEmojis['good']} Good\nStreak: 4 days",
               style: AppTextStyles.body1.copyWith(
                 color: AppColors.text,
                 height: 1.6,
@@ -1342,9 +1352,12 @@ class InsightsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Row(
-            children: const [
+            children: [
               Expanded(
-                child: _BreakdownCard(title: 'Most common', value: '😊 Good'),
+                child: _BreakdownCard(
+                  title: 'Most common',
+                  value: "${MoodEntry.moodEmojis['good']} Good",
+                ),
               ),
               SizedBox(width: 12),
               Expanded(

@@ -1,9 +1,21 @@
 import 'package:hive/hive.dart';
 
-
-
 @HiveType(typeId: 1)
 class MoodEntry extends HiveObject {
+  static const Map<String, String> moodEmojis = {
+    'good': '\u{1F60A}',
+    'calm': '\u{1F60C}',
+    'okay': '\u{1F610}',
+    'low': '\u{1F614}',
+    'anxious': '\u{1F630}',
+    'angry': '\u{1F621}',
+  };
+
+  String get emoji {
+    final normalized = mood.toLowerCase().trim();
+    return moodEmojis[normalized] ?? '\u{1F610}';
+  }
+
   @HiveField(0)
   final String id;
 
@@ -79,26 +91,36 @@ class MoodEntry extends HiveObject {
     if (copingHelped != null) json['coping_helped'] = copingHelped;
     json['is_crisis_flagged'] = isCrisisFlagged;
     json['client_created_at'] = createdAt.toUtc().toIso8601String();
-    if (updatedAt != null) json['client_updated_at'] = updatedAt!.toUtc().toIso8601String();
+    json['client_updated_at'] = updatedAt.toUtc().toIso8601String();
     return json;
   }
 
   factory MoodEntry.fromJson(Map<String, dynamic> json) {
     return MoodEntry(
-      id: json['id'] as String,
-      mood: json['mood'] as String,
+      id: json['id'].toString(),
+      mood: json['mood']?.toString() ?? 'okay',
       intensity: json['intensity'] as int? ?? 5,
       energyLevel: json['energy_level'] as int?,
-      bodySensations: (json['body_sensations'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      triggers: (json['triggers'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      bodySensations: (json['body_sensations'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      triggers: (json['triggers'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       customTrigger: json['custom_trigger'] as String?,
       sleepQuality: json['sleep_quality'] as int?,
       note: json['note'] as String?,
-      copingStrategies: (json['coping_strategies'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      copingStrategies: (json['coping_strategies'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       copingHelped: json['coping_helped'] as String?,
       isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
-      createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
-      updatedAt: json['client_updated_at'] != null ? DateTime.parse(json['client_updated_at']) : DateTime.now(),
+      createdAt: json['client_created_at'] != null
+          ? DateTime.parse(json['client_created_at'])
+          : DateTime.now(),
+      updatedAt: json['client_updated_at'] != null
+          ? DateTime.parse(json['client_updated_at'])
+          : DateTime.now(),
     );
   }
 }
@@ -144,8 +166,4 @@ class MoodEntryAdapter extends TypeAdapter<MoodEntry> {
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
     writer.writeBool(obj.isCrisisFlagged);
   }
-
-
-
-
 }

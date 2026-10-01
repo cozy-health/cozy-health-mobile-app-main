@@ -79,15 +79,19 @@ class AppNotification extends HiveObject {
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
     return AppNotification(
-      id: json['id'] as String,
-      type: json['type'] as String,
-      title: json['title'] as String,
-      body: json['body'] as String,
+      id: json['id'].toString(),
+      type: json['type']?.toString() ?? 'general',
+      title: json['title']?.toString() ?? '',
+      body: json['body']?.toString() ?? '',
       deepLink: json['deep_link'] as String?,
-      payload: json['data'] != null ? Map<String, dynamic>.from(json['data'] as Map) : null,
+      payload: json['data'] != null
+          ? Map<String, dynamic>.from(json['data'] as Map)
+          : null,
       read: json['is_read'] as bool? ?? false,
       readAt: json['read_at'] != null ? DateTime.parse(json['read_at']) : null,
-      createdAt: json['client_created_at'] != null ? DateTime.parse(json['client_created_at']) : DateTime.now(),
+      createdAt: json['client_created_at'] != null
+          ? DateTime.parse(json['client_created_at'])
+          : DateTime.now(),
     );
   }
 }
@@ -132,8 +136,4 @@ class AppNotificationAdapter extends TypeAdapter<AppNotification> {
       ..writeByte(6)
       ..write(obj.createdAt);
   }
-
-
-
-
 }

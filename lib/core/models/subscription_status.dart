@@ -47,16 +47,20 @@ class SubscriptionStatus extends HiveObject {
       'plan': tier,
       'status': isActive ? 'active' : 'inactive',
     };
-    if (expiresAt != null) json['expires_at'] = expiresAt!.toUtc().toIso8601String();
+    if (expiresAt != null) {
+      json['expires_at'] = expiresAt!.toUtc().toIso8601String();
+    }
     return json;
   }
 
   factory SubscriptionStatus.fromJson(Map<String, dynamic> json) {
     return SubscriptionStatus(
-      id: json['id'] as String,
+      id: json['id']?.toString() ?? 'subscription',
       isActive: json['status'] == 'active',
       tier: json['plan'] as String? ?? 'free',
-      expiresAt: json['expires_at'] != null ? DateTime.parse(json['expires_at']) : null,
+      expiresAt: json['expires_at'] != null
+          ? DateTime.parse(json['expires_at'])
+          : null,
       cancelAtPeriodEnd: false,
     );
   }
@@ -96,8 +100,4 @@ class SubscriptionStatusAdapter extends TypeAdapter<SubscriptionStatus> {
       ..writeByte(4)
       ..write(obj.cancelAtPeriodEnd);
   }
-
-
-
-
 }

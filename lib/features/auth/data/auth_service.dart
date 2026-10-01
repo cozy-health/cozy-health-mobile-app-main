@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../../core/constants/api_constants.dart';
@@ -6,6 +8,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/api/response_data.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/services/local_db_service.dart';
+import '../../../core/services/user_data_fetcher.dart';
 import '../../../core/storage/token_storage.dart';
 
 class AuthService {
@@ -34,6 +37,7 @@ class AuthService {
     }
     await _cacheUserProfile(data['user']);
     await _fetchAndCacheProfile();
+    _syncUserDataInBackground();
 
     return data;
   }
@@ -65,6 +69,7 @@ class AuthService {
     }
     await _cacheUserProfile(data['user']);
     await _fetchAndCacheProfile();
+    _syncUserDataInBackground();
 
     return data;
   }
@@ -159,5 +164,13 @@ class AuthService {
     } catch (e) {
       debugPrint('Profile fetch after auth failed: $e');
     }
+  }
+
+  void _syncUserDataInBackground() {
+    unawaited(
+      UserDataFetcher().fetchAll().then((_) {
+        debugPrint('Background data sync complete');
+      }),
+    );
   }
 }

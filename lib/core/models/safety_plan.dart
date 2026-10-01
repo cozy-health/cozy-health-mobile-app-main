@@ -1,7 +1,5 @@
 import 'package:hive/hive.dart';
 
-
-
 @HiveType(typeId: 5)
 class SafetyPlan extends HiveObject {
   @HiveField(0)
@@ -98,15 +96,29 @@ class SafetyPlan extends HiveObject {
 
   factory SafetyPlan.fromJson(Map<String, dynamic> json) {
     return SafetyPlan(
-      id: json['id'] as String,
-      warningSigns: (json['warning_signs'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      copingStrategies: (json['coping_strategies'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      distractions: (json['distractions'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      peopleToCall: (json['people'] as List<dynamic>?)?.map((e) => Map<String, String>.from(e)).toList(),
-      professionals: (json['professionals'] as List<dynamic>?)?.map((e) => Map<String, String>.from(e)).toList(),
-      environmentSteps: (json['environment_steps'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      id: json['id']?.toString() ?? 'safety-plan',
+      warningSigns: (json['warning_signs'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      copingStrategies: (json['coping_strategies'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      distractions: (json['distractions'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      peopleToCall: (json['people'] as List<dynamic>?)
+          ?.map((e) => Map<String, String>.from(e))
+          .toList(),
+      professionals: (json['professionals'] as List<dynamic>?)
+          ?.map((e) => Map<String, String>.from(e))
+          .toList(),
+      environmentSteps: (json['environment_steps'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       isComplete: json['is_complete'] as bool? ?? false,
-      lastUpdatedAt: json['last_updated_at'] != null ? DateTime.parse(json['last_updated_at']) : DateTime.now(),
+      lastUpdatedAt: json['last_updated_at'] != null
+          ? DateTime.parse(json['last_updated_at'])
+          : DateTime.now(),
       currentStep: json['current_step'] as int? ?? 0,
     );
   }
@@ -117,7 +129,11 @@ class PlanContact {
   final String phone;
   final String? relationship;
 
-  const PlanContact({required this.name, required this.phone, this.relationship});
+  const PlanContact({
+    required this.name,
+    required this.phone,
+    this.relationship,
+  });
 
   Map<String, String> toMap() {
     final m = {'name': name, 'phone': phone};
@@ -145,8 +161,14 @@ class SafetyPlanAdapter extends TypeAdapter<SafetyPlan> {
       warningSigns: reader.readList().cast<String>(),
       copingStrategies: reader.readList().cast<String>(),
       distractions: reader.readList().cast<String>(),
-      peopleToCall: reader.readList().map((e) => Map<String, String>.from(e as Map)).toList(),
-      professionals: reader.readList().map((e) => Map<String, String>.from(e as Map)).toList(),
+      peopleToCall: reader
+          .readList()
+          .map((e) => Map<String, String>.from(e as Map))
+          .toList(),
+      professionals: reader
+          .readList()
+          .map((e) => Map<String, String>.from(e as Map))
+          .toList(),
       environmentSteps: reader.readList().cast<String>(),
       isComplete: reader.readBool(),
       lastUpdatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
@@ -165,8 +187,4 @@ class SafetyPlanAdapter extends TypeAdapter<SafetyPlan> {
     writer.writeBool(obj.isComplete);
     writer.writeInt(obj.lastUpdatedAt.millisecondsSinceEpoch);
   }
-
-
-
-
 }

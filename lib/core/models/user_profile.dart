@@ -250,12 +250,12 @@ class UserProfile extends HiveObject {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      username: json['username'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
-      bio: json['bio'] as String?,
+      id: json['id'].toString(),
+      name: json['name']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      username: json['username']?.toString(),
+      avatarUrl: json['avatar_url']?.toString(),
+      bio: json['bio']?.toString(),
       theme: json['theme'] as String? ?? 'system',
       accentColor: json['accent_color'] as String? ?? '#0460D8',
       language: json['language'] as String? ?? 'en',

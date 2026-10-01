@@ -40,7 +40,7 @@ class LocalDbService {
 
   Future<void> init() async {
     await Hive.initFlutter();
-    
+
     // Register Adapters
     Hive.registerAdapter(MoodEntryAdapter());
     Hive.registerAdapter(JournalEntryAdapter());
@@ -84,7 +84,13 @@ class LocalDbService {
   }
 
   List<MoodEntry> getAllMoodEntries() {
-    return moodBox.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return moodBox.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  Stream<List<MoodEntry>> watchMoodEntries() async* {
+    yield getAllMoodEntries();
+    yield* moodBox.watch().map((_) => getAllMoodEntries());
   }
 
   // --- Journals ---
@@ -125,8 +131,10 @@ class LocalDbService {
   }
 
   // --- Chat ---
-  Box<ChatMessage> get chatMessageBox => Hive.box<ChatMessage>(chatMessageBoxName);
-  Box<ChatConversation> get chatConversationBox => Hive.box<ChatConversation>(chatConversationBoxName);
+  Box<ChatMessage> get chatMessageBox =>
+      Hive.box<ChatMessage>(chatMessageBoxName);
+  Box<ChatConversation> get chatConversationBox =>
+      Hive.box<ChatConversation>(chatConversationBoxName);
 
   Future<void> saveChatMessage(ChatMessage message) async {
     await chatMessageBox.put(message.id, message);
@@ -141,10 +149,12 @@ class LocalDbService {
     yield* chatConversationBox.watch().map((_) => getAllConversations());
   }
 
-  Stream<List<ChatConversation>> watchChatConversations() => watchConversations();
+  Stream<List<ChatConversation>> watchChatConversations() =>
+      watchConversations();
 
   List<ChatConversation> getAllConversations() {
-    return chatConversationBox.values.toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return chatConversationBox.values.toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
   }
 
   List<ChatConversation> getAllChatConversations() => getAllConversations();
@@ -160,13 +170,18 @@ class LocalDbService {
 
   Stream<List<ChatMessage>> watchMessages(String conversationId) async* {
     yield getMessagesForConversation(conversationId);
-    yield* chatMessageBox.watch().map((_) => getMessagesForConversation(conversationId));
+    yield* chatMessageBox.watch().map(
+      (_) => getMessagesForConversation(conversationId),
+    );
   }
 
-  Stream<List<ChatMessage>> watchChatMessages(String conversationId) => watchMessages(conversationId);
+  Stream<List<ChatMessage>> watchChatMessages(String conversationId) =>
+      watchMessages(conversationId);
 
   List<ChatMessage> getMessagesForConversation(String conversationId) {
-    return chatMessageBox.values.where((m) => m.conversationId == conversationId).toList()
+    return chatMessageBox.values
+        .where((m) => m.conversationId == conversationId)
+        .toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
   }
 
@@ -194,7 +209,8 @@ class LocalDbService {
   }
 
   // --- User Profile ---
-  Box<UserProfile> get userProfileBox => Hive.box<UserProfile>(userProfileBoxName);
+  Box<UserProfile> get userProfileBox =>
+      Hive.box<UserProfile>(userProfileBoxName);
 
   Future<void> saveUserProfile(UserProfile profile) async {
     await userProfileBox.put(profile.id, profile);
@@ -213,25 +229,33 @@ class LocalDbService {
   }
 
   // --- Quizzes ---
-  Box<QuizAttempt> get quizAttemptBox => Hive.box<QuizAttempt>(quizAttemptBoxName);
+  Box<QuizAttempt> get quizAttemptBox =>
+      Hive.box<QuizAttempt>(quizAttemptBoxName);
 
   Future<void> saveQuizAttempt(QuizAttempt attempt) async {
     await quizAttemptBox.put(attempt.id, attempt);
   }
 
   Stream<List<QuizAttempt>> watchQuizAttempts() async* {
-    yield quizAttemptBox.values.toList()..sort((a, b) => b.completedAt.compareTo(a.completedAt));
-    yield* quizAttemptBox.watch().map((_) => quizAttemptBox.values.toList()..sort((a, b) => b.completedAt.compareTo(a.completedAt)));
+    yield quizAttemptBox.values.toList()
+      ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
+    yield* quizAttemptBox.watch().map(
+      (_) =>
+          quizAttemptBox.values.toList()
+            ..sort((a, b) => b.completedAt.compareTo(a.completedAt)),
+    );
   }
 
   List<QuizAttempt> getQuizAttempts() {
-    return quizAttemptBox.values.toList()..sort((a, b) => b.completedAt.compareTo(a.completedAt));
+    return quizAttemptBox.values.toList()
+      ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
   }
 
   List<QuizAttempt> getAllQuizAttempts() => getQuizAttempts();
 
   // --- Saved Articles ---
-  Box<SavedArticle> get savedArticleBox => Hive.box<SavedArticle>(savedArticleBoxName);
+  Box<SavedArticle> get savedArticleBox =>
+      Hive.box<SavedArticle>(savedArticleBoxName);
 
   Future<void> saveSavedArticle(SavedArticle article) async {
     await savedArticleBox.put(article.articleId, article);
@@ -242,8 +266,13 @@ class LocalDbService {
   }
 
   Stream<List<SavedArticle>> watchSavedArticles() async* {
-    yield savedArticleBox.values.toList()..sort((a, b) => b.savedAt.compareTo(a.savedAt));
-    yield* savedArticleBox.watch().map((_) => savedArticleBox.values.toList()..sort((a, b) => b.savedAt.compareTo(a.savedAt)));
+    yield savedArticleBox.values.toList()
+      ..sort((a, b) => b.savedAt.compareTo(a.savedAt));
+    yield* savedArticleBox.watch().map(
+      (_) =>
+          savedArticleBox.values.toList()
+            ..sort((a, b) => b.savedAt.compareTo(a.savedAt)),
+    );
   }
 
   SavedArticle? getSavedArticle(String articleId) {
@@ -251,11 +280,13 @@ class LocalDbService {
   }
 
   List<SavedArticle> getAllSavedArticles() {
-    return savedArticleBox.values.toList()..sort((a, b) => b.savedAt.compareTo(a.savedAt));
+    return savedArticleBox.values.toList()
+      ..sort((a, b) => b.savedAt.compareTo(a.savedAt));
   }
 
   // --- Notifications ---
-  Box<AppNotification> get appNotificationBox => Hive.box<AppNotification>(appNotificationBoxName);
+  Box<AppNotification> get appNotificationBox =>
+      Hive.box<AppNotification>(appNotificationBoxName);
 
   Future<void> saveNotification(AppNotification notif) async {
     await appNotificationBox.put(notif.id, notif);
@@ -266,12 +297,18 @@ class LocalDbService {
   }
 
   Stream<List<AppNotification>> watchNotifications() async* {
-    yield appNotificationBox.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    yield* appNotificationBox.watch().map((_) => appNotificationBox.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+    yield appNotificationBox.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    yield* appNotificationBox.watch().map(
+      (_) =>
+          appNotificationBox.values.toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
+    );
   }
 
   List<AppNotification> getNotifications() {
-    return appNotificationBox.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return appNotificationBox.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   Future<void> saveAppNotification(AppNotification n) async {
@@ -279,7 +316,8 @@ class LocalDbService {
   }
 
   List<AppNotification> getAllAppNotifications() {
-    return appNotificationBox.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return appNotificationBox.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   Stream<List<AppNotification>> watchAppNotifications() async* {
@@ -292,14 +330,17 @@ class LocalDbService {
   }
 
   // --- Subscription ---
-  Box<SubscriptionStatus> get subscriptionStatusBox => Hive.box<SubscriptionStatus>(subscriptionStatusBoxName);
+  Box<SubscriptionStatus> get subscriptionStatusBox =>
+      Hive.box<SubscriptionStatus>(subscriptionStatusBoxName);
 
   Future<void> saveSubscriptionStatus(SubscriptionStatus status) async {
     await subscriptionStatusBox.put(status.id, status);
   }
 
   Stream<SubscriptionStatus?> watchSubscriptionStatus() {
-    return subscriptionStatusBox.watch().map((_) => subscriptionStatusBox.values.firstOrNull);
+    return subscriptionStatusBox.watch().map(
+      (_) => subscriptionStatusBox.values.firstOrNull,
+    );
   }
 
   SubscriptionStatus? getSubscriptionStatus() {
@@ -310,7 +351,12 @@ class LocalDbService {
   Box<String> get syncQueueBox => Hive.box<String>(syncQueueBoxName);
 
   Future<void> queueSync(String type, String id) async {
-    await enqueueSync(type: type, action: 'upsert', recordId: id, payload: null);
+    await enqueueSync(
+      type: type,
+      action: 'upsert',
+      recordId: id,
+      payload: null,
+    );
   }
 
   Future<void> enqueueSync({
@@ -349,21 +395,21 @@ class LocalDbService {
     _isProcessingSyncQueue = true;
     try {
       final now = DateTime.now().toUtc();
-      final dueItems = _getQueuedSyncItems()
-          .where(
-            (item) => item.nextRetryAt == null || !item.nextRetryAt!.isAfter(now),
-          )
-          .toList()
-        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      final dueItems =
+          _getQueuedSyncItems()
+              .where(
+                (item) =>
+                    item.nextRetryAt == null || !item.nextRetryAt!.isAfter(now),
+              )
+              .toList()
+            ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
       for (var start = 0; start < dueItems.length; start += 50) {
         final batch = dueItems.sublist(start, min(start + 50, dueItems.length));
         try {
           final response = await ApiClient.instance.post(
             '/sync/batch',
-            data: {
-              'operations': batch.map(_operationForSyncItem).toList(),
-            },
+            data: {'operations': batch.map(_operationForSyncItem).toList()},
           );
           await _applyBatchResult(batch, response.data);
         } on ApiAuthException {
@@ -442,13 +488,16 @@ class LocalDbService {
 
   Map<String, bool>? _extractBatchResults(dynamic data) {
     final payload = data is Map && data['data'] is Map ? data['data'] : data;
-    final rawResults = payload is Map ? payload['results'] ?? payload['operations'] : null;
+    final rawResults = payload is Map
+        ? payload['results'] ?? payload['operations']
+        : null;
     if (rawResults is! List) return null;
 
     return {
       for (final result in rawResults)
         if (result is Map)
-          (result['client_operation_id'] ?? result['id'] ?? result['record_id']).toString():
+          (result['client_operation_id'] ?? result['id'] ?? result['record_id'])
+                  .toString():
               result['success'] == true || result['status'] == 'success',
     };
   }
@@ -499,4 +548,3 @@ class LocalDbService {
     await syncQueueBox.clear();
   }
 }
-

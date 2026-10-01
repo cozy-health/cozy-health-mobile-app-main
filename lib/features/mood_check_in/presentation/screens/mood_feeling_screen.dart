@@ -11,7 +11,9 @@ import '../../../crisis/presentation/screens/crisis_screens.dart';
 import '../../../crisis/services/crisis_detector.dart';
 
 class MoodFeelingScreen extends StatefulWidget {
-  const MoodFeelingScreen({super.key});
+  const MoodFeelingScreen({super.key, this.entry});
+
+  final MoodEntry? entry;
 
   @override
   State<MoodFeelingScreen> createState() => _MoodFeelingScreenState();
@@ -37,19 +39,39 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   final Set<String> _coping = {};
   bool _isSaving = false;
 
-  final List<_MoodOption> _moods = const [
-    _MoodOption('😊', 'Good', AppColors.success, "That's lovely to hear."),
-    _MoodOption('😌', 'Calm', AppColors.primary, 'Peace looks good on you.'),
-    _MoodOption('😐', 'Okay', AppColors.textMuted, 'Thanks for being honest.'),
-    _MoodOption('😔', 'Low', AppColors.warning, "I'm here with you."),
+  late final List<_MoodOption> _moods = [
     _MoodOption(
-      '😰',
+      MoodEntry.moodEmojis['good']!,
+      'Good',
+      AppColors.success,
+      "That's lovely to hear.",
+    ),
+    _MoodOption(
+      MoodEntry.moodEmojis['calm']!,
+      'Calm',
+      AppColors.primary,
+      'Peace looks good on you.',
+    ),
+    _MoodOption(
+      MoodEntry.moodEmojis['okay']!,
+      'Okay',
+      AppColors.textMuted,
+      'Thanks for being honest.',
+    ),
+    _MoodOption(
+      MoodEntry.moodEmojis['low']!,
+      'Low',
+      AppColors.warning,
+      "I'm here with you.",
+    ),
+    _MoodOption(
+      MoodEntry.moodEmojis['anxious']!,
       'Anxious',
       Color(0xFFE85D3A),
       "That sounds heavy. Let's slow down.",
     ),
     _MoodOption(
-      '😡',
+      MoodEntry.moodEmojis['angry']!,
       'Angry',
       AppColors.danger,
       "That's valid. Let's work through it.",
@@ -98,6 +120,19 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
+    final entry = widget.entry;
+    if (entry != null) {
+      _moodLabel = entry.mood;
+      _moodEmoji = entry.emoji;
+      _intensity = entry.intensity;
+      _bodyZones.addAll(entry.bodySensations ?? const []);
+      _triggers.addAll(entry.triggers ?? const []);
+      _triggerController.text = entry.customTrigger ?? '';
+      _sleepQuality = entry.sleepQuality;
+      _energy = entry.energyLevel ?? 5;
+      _noteController.text = entry.note ?? '';
+      _coping.addAll(entry.copingStrategies ?? const []);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _restartEntrance());
   }
 
@@ -149,20 +184,22 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     final note = _noteController.text.trim();
     final signal = _crisisDetector.analyze(note);
     final shouldShowCrisisSupport = _crisisDetector.canTrigger('mood', signal);
-    
+
     final entry = MoodEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: widget.entry?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       mood: _moodLabel ?? 'Okay',
       intensity: _intensity,
       bodySensations: _bodyZones.toList(),
       triggers: _triggers.toList(),
-      customTrigger: _triggerController.text.trim().isNotEmpty ? _triggerController.text.trim() : null,
+      customTrigger: _triggerController.text.trim().isNotEmpty
+          ? _triggerController.text.trim()
+          : null,
       sleepQuality: _sleepQuality,
       energyLevel: _energy,
       note: note.isNotEmpty ? note : null,
       copingStrategies: _coping.toList(),
       isCrisisFlagged: shouldShowCrisisSupport,
-      createdAt: DateTime.now(),
+      createdAt: widget.entry?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
     );
 
@@ -182,9 +219,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     }
 
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => const MoodCheckInSuccessScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const MoodCheckInSuccessScreen()),
     );
   }
 
@@ -580,7 +615,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   Widget _reviewStep() {
     final rows = <_ReviewRowData>[
       _ReviewRowData(
-        '${_moodEmoji ?? '😊'}  ${_moodLabel ?? 'Mood'}',
+        '${_moodEmoji ?? MoodEntry.moodEmojis['good']}  ${_moodLabel ?? 'Mood'}',
         'Intensity: $_intensity',
         1,
       ),
@@ -967,6 +1002,12 @@ class MoodDetailViewScreen extends StatelessWidget {
                     icon: const Icon(Icons.arrow_back),
                   ),
                   const Spacer(),
+                  if (moodEntry != null)
+                    TextButton(
+                      onPressed: () =>
+                          context.push(AppRouter.moodFeeling, extra: moodEntry),
+                      child: const Text('Edit'),
+                    ),
                 ],
               ),
               const SizedBox(height: 18),
@@ -974,17 +1015,11 @@ class MoodDetailViewScreen extends StatelessWidget {
                 _WarmPanel(
                   child: Text(
                     'Mood entry not found.',
-                    style: AppTextStyles.body1.copyWith(
-                      color: AppColors.text,
-                    ),
+                    style: AppTextStyles.body1.copyWith(color: AppColors.text),
                   ),
                 )
               else ...[
-                Icon(
-                  _moodIcon(moodEntry.mood),
-                  size: 64,
-                  color: AppColors.primary,
-                ),
+                Text(moodEntry.emoji, style: const TextStyle(fontSize: 64)),
                 Text(
                   moodEntry.mood,
                   style: AppTextStyles.heading1.copyWith(fontSize: 28),
@@ -1045,7 +1080,9 @@ String _formatMoodDate(DateTime date) {
   final local = date.toLocal();
   final now = DateTime.now();
   final sameDay =
-      local.year == now.year && local.month == now.month && local.day == now.day;
+      local.year == now.year &&
+      local.month == now.month &&
+      local.day == now.day;
   final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
   final minute = local.minute.toString().padLeft(2, '0');
   final period = local.hour >= 12 ? 'PM' : 'AM';
