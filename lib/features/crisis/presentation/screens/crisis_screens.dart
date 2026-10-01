@@ -14,6 +14,18 @@ import '../../services/safety_plan_storage.dart';
 
 const CrisisLauncher _crisisLauncher = CrisisLauncher();
 
+bool _isDark(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color _crisisBg(BuildContext context) =>
+    _isDark(context) ? AppColors.crisisBgDark : AppColors.crisisBg;
+
+Color _crisisSurface(BuildContext context) =>
+    _isDark(context) ? AppColors.crisisSurfaceDark : AppColors.crisisSurface;
+
+Color _crisisSubtle(BuildContext context) =>
+    _isDark(context) ? AppColors.crisisSubtleDark : AppColors.crisisSubtle;
+
 class CrisisShell extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -35,7 +47,7 @@ class CrisisShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.crisisBg,
+      backgroundColor: _crisisBg(context),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: padding,
@@ -606,13 +618,15 @@ class CrisisDetectionOverlayScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.black.withValues(alpha: 0.45),
+      backgroundColor: Theme.of(
+        context,
+      ).colorScheme.scrim.withValues(alpha: 0.45),
       body: SafeArea(
         child: Center(
           child: Container(
             margin: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.crisisSurface,
+              color: _crisisSurface(context),
               borderRadius: BorderRadius.circular(24),
             ),
             child: Stack(
@@ -788,7 +802,7 @@ class _CrisisDismissButton extends StatelessWidget {
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.crisisText,
-          side: const BorderSide(color: AppColors.crisisSubtle),
+          side: BorderSide(color: _crisisSubtle(context)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -983,8 +997,18 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
         ..addAll(_keysForStep(0, saved.warningSigns ?? []))
         ..addAll(_keysForStep(1, saved.copingStrategies ?? []))
         ..addAll(_keysForStep(2, saved.distractions ?? []))
-        ..addAll(_keysForStep(3, (saved.peopleToCall ?? []).map((item) => item['name']!)))
-        ..addAll(_keysForStep(4, (saved.professionals ?? []).map((item) => item['name']!)))
+        ..addAll(
+          _keysForStep(
+            3,
+            (saved.peopleToCall ?? []).map((item) => item['name']!),
+          ),
+        )
+        ..addAll(
+          _keysForStep(
+            4,
+            (saved.professionals ?? []).map((item) => item['name']!),
+          ),
+        )
         ..addAll(_keysForStep(5, saved.environmentSteps ?? []));
       _loaded = true;
     });
@@ -1128,9 +1152,9 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
-      return const Scaffold(
-        backgroundColor: AppColors.crisisBg,
-        body: Center(
+      return Scaffold(
+        backgroundColor: _crisisBg(context),
+        body: const Center(
           child: CircularProgressIndicator(color: AppColors.crisisPrimary),
         ),
       );
@@ -1173,7 +1197,7 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
           child: LinearProgressIndicator(
             value: (_step + 1) / 6,
             minHeight: 8,
-            backgroundColor: AppColors.crisisSubtle,
+            backgroundColor: _crisisSubtle(context),
             color: AppColors.crisisPrimary,
           ),
         ),
@@ -1346,9 +1370,9 @@ class PersistedSafetyPlanViewScreen extends StatelessWidget {
       builder: (context, snapshot) {
         final plan = snapshot.data;
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            backgroundColor: AppColors.crisisBg,
-            body: Center(
+          return Scaffold(
+            backgroundColor: _crisisBg(context),
+            body: const Center(
               child: CircularProgressIndicator(color: AppColors.crisisPrimary),
             ),
           );
