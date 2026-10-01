@@ -793,7 +793,14 @@ class _CrisisDismissButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        child: Text(label, style: CrisisText.button),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: AppColors.text,
+          ),
+        ),
       ),
     );
   }
