@@ -31,8 +31,9 @@ class AuthScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -44,7 +45,7 @@ class AuthScaffold extends StatelessWidget {
                 IconButton(
                   onPressed: () => context.pop(),
                   icon: const Icon(Icons.arrow_back),
-                  color: AppColors.text,
+                  color: colorScheme.onSurface,
                   padding: EdgeInsets.zero,
                   alignment: Alignment.centerLeft,
                   constraints: const BoxConstraints(
@@ -58,7 +59,7 @@ class AuthScaffold extends StatelessWidget {
               Text(
                 title,
                 style: AppTextStyles.heading1.copyWith(
-                  color: AppColors.text,
+                  color: colorScheme.onSurface,
                   fontSize: 28,
                   fontWeight: FontWeight.w600,
                   height: 1.3,
@@ -69,7 +70,7 @@ class AuthScaffold extends StatelessWidget {
               Text(
                 subtitle,
                 style: AppTextStyles.body1.copyWith(
-                  color: AppColors.textMuted,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                   height: 1.5,
                 ),
               ),
@@ -133,6 +134,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final hasError = widget.error != null;
     final hasSuccess = widget.success != null && !hasError;
     final borderColor = hasError
@@ -153,7 +155,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
         AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 200),
           style: AppTextStyles.body2.copyWith(
-            color: _focusNode.hasFocus ? AppColors.text : AppColors.textMuted,
+            color: _focusNode.hasFocus
+                ? colorScheme.onSurface
+                : Theme.of(context).textTheme.bodyMedium?.color,
             fontWeight: FontWeight.w500,
           ),
           child: Text(widget.label),
@@ -163,7 +167,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
           duration: const Duration(milliseconds: 200),
           height: 56,
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: borderColor,
@@ -472,12 +476,14 @@ void showAuthToast(
       content: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: color.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: AppColors.black.withValues(alpha: 0.12),
+              color: Theme.of(
+                context,
+              ).colorScheme.shadow.withValues(alpha: 0.12),
               blurRadius: 24,
               offset: const Offset(0, 12),
             ),
