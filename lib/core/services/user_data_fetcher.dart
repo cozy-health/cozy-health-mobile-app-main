@@ -49,6 +49,28 @@ class UserDataFetcher {
         await _local.saveMoodEntry(entry);
       }
 
+      final hiveEntries = _local.getAllMoodEntries();
+      final apiIds = entries.map((entry) => entry.id).toSet();
+      final hiveIds = hiveEntries.map((entry) => entry.id).toSet();
+      final missingIds = apiIds.difference(hiveIds).toList();
+      debugPrint(
+        'MOODS SYNC COUNTS: api=${entries.length} '
+        'apiUnique=${apiIds.length} hiveAfterWrite=${hiveEntries.length}',
+      );
+      if (missingIds.isNotEmpty || apiIds.length != entries.length) {
+        debugPrint(
+          'MOODS SYNC DIVERGENCE: duplicateApiIds=${entries.length - apiIds.length} '
+          'missingInHive=${missingIds.length} missingIds=$missingIds',
+        );
+      }
+      assert(() {
+        if (missingIds.isNotEmpty) {
+          debugPrint(
+            'MOODS SYNC ASSERTION: ${missingIds.length} fetched moods were not saved to Hive.',
+          );
+        }
+        return true;
+      }());
       debugPrint('Fetched ${entries.length} moods from backend');
     } catch (e) {
       debugPrint('Fetch moods failed: $e');
