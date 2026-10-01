@@ -75,7 +75,6 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       body: SafeArea(
         child: StreamBuilder<List<MoodEntry>>(
           stream: _moodRepo.watchMoodEntries(),
@@ -1028,7 +1027,6 @@ class _HomeErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -1284,7 +1282,6 @@ class _DetailScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),

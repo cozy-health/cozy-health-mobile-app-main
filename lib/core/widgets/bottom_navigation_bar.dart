@@ -16,29 +16,43 @@ class CustomBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final navTheme = Theme.of(context).bottomNavigationBarTheme;
+    final dividerColor = Theme.of(context).dividerTheme.color;
+
     return Container(
       height: 72,
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+        color: navTheme.backgroundColor,
         border: Border(
-          top: BorderSide(color: AppColors.border.withValues(alpha: .4)),
+          top: BorderSide(
+            color: (dividerColor ?? AppColors.border).withValues(alpha: .4),
+          ),
         ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(0, 'Home', Assets.svg.home),
-          _buildNavItem(1, 'Activity', Assets.svg.activity),
-          _buildNavItem(2, 'Assistant', Assets.svg.assistant),
-          _buildNavItem(3, 'Community', Assets.svg.community),
-          _buildNavItem(4, 'Settings', Assets.svg.settings),
+          _buildNavItem(context, 0, 'Home', Assets.svg.home),
+          _buildNavItem(context, 1, 'Activity', Assets.svg.activity),
+          _buildNavItem(context, 2, 'Assistant', Assets.svg.assistant),
+          _buildNavItem(context, 3, 'Community', Assets.svg.community),
+          _buildNavItem(context, 4, 'Settings', Assets.svg.settings),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(int index, String label, String assetPath) {
+  Widget _buildNavItem(
+    BuildContext context,
+    int index,
+    String label,
+    String assetPath,
+  ) {
     final isSelected = currentIndex == index;
+    final navTheme = Theme.of(context).bottomNavigationBarTheme;
+    final selectedColor = navTheme.selectedItemColor ?? AppColors.primary;
+    final unselectedColor =
+        navTheme.unselectedItemColor ?? Theme.of(context).colorScheme.onSurface;
 
     return Semantics(
       button: true,
@@ -57,9 +71,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
                 width: 42,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primarySoft
-                      : Colors.transparent,
+                  color: isSelected ? AppColors.primarySoft : null,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Center(
@@ -68,7 +80,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
                     width: 24,
                     height: 24,
                     colorFilter: ColorFilter.mode(
-                      isSelected ? AppColors.primary : AppColors.textMuted,
+                      isSelected ? selectedColor : unselectedColor,
                       BlendMode.srcIn,
                     ),
                   ),
@@ -78,7 +90,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
               Text(
                 label,
                 style: AppTextStyles.body2.copyWith(
-                  color: isSelected ? AppColors.primary : AppColors.textMuted,
+                  color: isSelected ? selectedColor : unselectedColor,
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),

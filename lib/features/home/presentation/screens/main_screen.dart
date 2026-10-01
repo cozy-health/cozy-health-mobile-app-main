@@ -66,18 +66,23 @@ class _MainScreenState extends State<MainScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: .32),
+      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor,
+      barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: .32),
       builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.surfaceElevated,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(
+                  color:
+                      Theme.of(context).dividerTheme.color ?? AppColors.border,
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -154,7 +159,11 @@ class _MainScreenState extends State<MainScreen> {
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.text,
-                        side: const BorderSide(color: AppColors.border),
+                        side: BorderSide(
+                          color:
+                              Theme.of(context).dividerTheme.color ??
+                              AppColors.border,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -185,6 +194,8 @@ class _QuickActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Semantics(
       button: true,
       label: label,
@@ -193,9 +204,11 @@ class _QuickActionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(
+              color: Theme.of(context).dividerTheme.color ?? AppColors.border,
+            ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -205,7 +218,7 @@ class _QuickActionTile extends StatelessWidget {
               Text(
                 label,
                 style: AppTextStyles.body1.copyWith(
-                  color: AppColors.text,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
