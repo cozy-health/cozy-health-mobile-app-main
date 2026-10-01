@@ -57,7 +57,7 @@ class _ContentHomeScreenState extends State<ContentHomeScreen> with SingleTicker
     final savedAnim = _createAnimation(0.83, 1.0);
 
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),

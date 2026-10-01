@@ -123,9 +123,9 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
     ScreenUtil.init(context);
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         leading: _currentPage > 0
             ? IconButton(

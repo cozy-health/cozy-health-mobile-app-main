@@ -173,7 +173,7 @@ class _CongratulationsScreenState extends State<CongratulationsScreen>
     });
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
         children: [
           // ── Background (full-screen) ──────────────────────────────────

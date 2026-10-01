@@ -33,7 +33,7 @@ class _PreparingCozyScreenState extends State<PreparingCozyScreen> {
     ScreenUtil.init(context);
     
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Center(
           child: Padding(

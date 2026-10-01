@@ -141,7 +141,7 @@ class _AssistantScreenState extends State<AssistantScreen>
     final hasMessages = _activeConversation.messages.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [

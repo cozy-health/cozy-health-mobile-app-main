@@ -58,9 +58,9 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTick
     final section2Anim = _createAnimation(0.93, 1.0);
 
     return Scaffold(
-      backgroundColor: AppColors.warmBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.warmBackground,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.text),
