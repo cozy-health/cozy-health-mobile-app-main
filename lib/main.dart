@@ -34,19 +34,19 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
   Widget build(BuildContext context) {
     return StreamBuilder<UserProfile?>(
       stream: _profileStream,
-      initialData: LocalDbService.instance.isUserProfileBoxOpen
-          ? LocalDbService.instance.getUserProfile()
-          : null,
       builder: (context, snapshot) {
         final profile = snapshot.data;
         final themeMode = _themeModeFromString(profile?.theme ?? 'system');
         final textScaleFactor = profile?.textSize ?? 1.0;
+        final accent = _accentColorFromString(profile?.accentColor);
+        final lightTheme = _themeWithAccent(AppTheme.light, accent);
+        final darkTheme = _themeWithAccent(AppTheme.dark, accent);
 
         return MaterialApp.router(
           title: 'Cozy Health',
           themeMode: themeMode,
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
+          theme: lightTheme,
+          darkTheme: darkTheme,
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
             final brightness = Theme.of(context).brightness;
@@ -87,5 +87,33 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
       default:
         return ThemeMode.system;
     }
+  }
+
+  ThemeData _themeWithAccent(ThemeData theme, Color accent) {
+    return theme.copyWith(
+      colorScheme: theme.colorScheme.copyWith(primary: accent),
+      floatingActionButtonTheme: theme.floatingActionButtonTheme.copyWith(
+        backgroundColor: accent,
+      ),
+      progressIndicatorTheme: theme.progressIndicatorTheme.copyWith(
+        color: accent,
+      ),
+    );
+  }
+
+  Color _accentColorFromString(String? value) {
+    final raw = value?.trim();
+    if (raw == null || raw.isEmpty || raw == 'lavender') {
+      return const Color(0xFF0460D8);
+    }
+
+    if (raw.startsWith('#') && raw.length == 7) {
+      return Color(int.parse('FF${raw.substring(1)}', radix: 16));
+    }
+
+    final parsed = int.tryParse(raw);
+    if (parsed != null) return Color(parsed);
+
+    return const Color(0xFF0460D8);
   }
 }

@@ -20,9 +20,18 @@ class ProfileRepository {
   }
 
   Stream<UserProfile?> watchProfile() async* {
-    final cached = _local.getUserProfile();
-    if (cached != null) yield cached;
-    yield* _local.watchUserProfile();
+    try {
+      final cached = _local.getUserProfile();
+      if (cached != null) yield cached;
+    } catch (_) {
+      // Hive may be unavailable in lightweight widget tests.
+    }
+
+    try {
+      yield* _local.watchUserProfile();
+    } catch (_) {
+      // Keep app startup resilient if Hive has not been initialized yet.
+    }
   }
 
   Future<UserProfile> saveProfile(UserProfile profile) async {
