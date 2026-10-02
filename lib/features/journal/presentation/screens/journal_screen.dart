@@ -64,10 +64,12 @@ class _JournalScreenState extends State<JournalScreen>
       appBar: Navigator.of(context).canPop()
           ? AppBar(
               elevation: 0,
-              leading: const BackButton(),
+              leading: BackButton(),
               title: Text(
                 'Journal',
-                style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+                style: AppTextStyles.heading2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             )
           : null,
@@ -104,7 +106,7 @@ class _JournalScreenState extends State<JournalScreen>
                       onSearch: () => _openSearch(allEntries),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   _AnimatedIn(
                     controller: _entranceController,
                     interval: const Interval(
@@ -115,7 +117,7 @@ class _JournalScreenState extends State<JournalScreen>
                     yOffset: 16,
                     child: _NewEntryHero(onTap: _showEntryTypePicker),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   _AnimatedIn(
                     controller: _entranceController,
                     interval: const Interval(
@@ -137,7 +139,7 @@ class _JournalScreenState extends State<JournalScreen>
                     ),
                   ),
                   if (_activeTags.isNotEmpty) ...[
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       children: _activeTags
@@ -151,7 +153,7 @@ class _JournalScreenState extends State<JournalScreen>
                           .toList(),
                     ),
                   ],
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
                   if (entries.isEmpty)
                     _NoMatches(filter: _filter)
                   else ...[
@@ -164,7 +166,7 @@ class _JournalScreenState extends State<JournalScreen>
                       onMore: _showEntryMenu,
                     ),
                     if (entries.length > 3) ...[
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32),
                       _EntrySection(
                         title: 'Earlier',
                         entries: entries.skip(3).toList(),
@@ -525,10 +527,13 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                   IconButton(
                     tooltip: 'Back',
                     onPressed: _finish,
-                    icon: const Icon(Icons.arrow_back, color: AppColors.text),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   const Spacer(),
-                  TextButton(onPressed: _finish, child: const Text('Save')),
+                  TextButton(onPressed: _finish, child: Text('Save')),
                 ],
               ),
             ),
@@ -538,33 +543,37 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                 children: [
                   Text(_dateStamp(), style: _captionStyle()),
                   if (prompt != null) ...[
-                    const SizedBox(height: 18),
+                    SizedBox(height: 18),
                     _PromptPinnedCard(prompt: prompt),
                   ],
                   if (_showDraftPrompt && _availableDraft != null) ...[
-                    const SizedBox(height: 18),
+                    SizedBox(height: 18),
                     _DraftRestoreCard(
                       draft: _availableDraft!,
                       onResume: _resumeDraft,
                       onDiscard: () => _discardDraft(),
                     ),
                   ],
-                  const SizedBox(height: 18),
+                  SizedBox(height: 18),
                   TextField(
                     controller: _controller,
                     autofocus: true,
                     minLines: 12,
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Georgia',
                       fontSize: 18,
                       height: 1.6,
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Start writing...',
-                      hintStyle: TextStyle(color: AppColors.textSubtle),
+                      hintStyle: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textSubtleDark
+                            : AppColors.textSubtleLight,
+                      ),
                       border: InputBorder.none,
                     ),
                     onChanged: (_) => _scheduleAutoSave(),
@@ -760,18 +769,18 @@ class _GuidedPromptsScreenState extends State<GuidedPromptsScreen> {
             title: 'Need inspiration?',
             subtitle: 'Pick a prompt.\nOr write your own.',
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           _PromptCategories(
             selected: _category,
             onChanged: (value) => setState(() => _category = value),
           ),
-          const SizedBox(height: 26),
+          SizedBox(height: 26),
           for (final prompt in prompts) ...[
             _PromptCard(
               prompt: prompt,
               onUse: () => Navigator.pop(context, prompt),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
           ],
           _DashedAction(
             label: 'Write your own prompt',
@@ -835,7 +844,7 @@ class _JournalVoiceRecordingScreenState
     if (_hasRecording) return _playbackView();
 
     return _JournalSubScaffold(
-      action: TextButton(onPressed: _cancel, child: const Text('Cancel')),
+      action: TextButton(onPressed: _cancel, child: Text('Cancel')),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -862,7 +871,7 @@ class _JournalVoiceRecordingScreenState
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             Text(
               _formatDuration(_seconds),
               style: AppTextStyles.heading1.copyWith(
@@ -870,19 +879,19 @@ class _JournalVoiceRecordingScreenState
                 color: AppColors.primary,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               _isRecording ? 'Recording...' : 'Tap to start',
               style: _captionStyle(),
             ),
-            const SizedBox(height: 34),
+            SizedBox(height: 34),
             _Waveform(active: _isRecording),
             const Spacer(),
             _PrimaryButton(
               label: _isRecording ? 'Tap to stop' : 'Start recording',
               onPressed: _toggleRecording,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _SecondaryButton(label: 'Cancel', onPressed: _cancel),
           ],
         ),
@@ -892,11 +901,11 @@ class _JournalVoiceRecordingScreenState
 
   Widget _playbackView() {
     return _JournalSubScaffold(
-      action: TextButton(onPressed: _rerecord, child: const Text('Re-record')),
+      action: TextButton(onPressed: _rerecord, child: Text('Re-record')),
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          const SizedBox(height: 50),
+          SizedBox(height: 50),
           Center(
             child: GestureDetector(
               onTap: () => setState(() => _isPlaying = !_isPlaying),
@@ -915,7 +924,7 @@ class _JournalVoiceRecordingScreenState
               ),
             ),
           ),
-          const SizedBox(height: 26),
+          SizedBox(height: 26),
           Center(
             child: Text(
               _formatDuration(_seconds),
@@ -925,24 +934,23 @@ class _JournalVoiceRecordingScreenState
               ),
             ),
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           _Waveform(
             active: _isPlaying,
             caption: '0:14 / ${_formatDuration(_seconds)}',
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           _TagRow(tags: const [], onAddTag: () {}),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _WarmPanel(
             child: ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(
-                Icons.edit_note_rounded,
-                color: AppColors.primary,
-              ),
+              leading: Icon(Icons.edit_note_rounded, color: AppColors.primary),
               title: Text(
                 'Transcribe (optional)',
-                style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               onTap: () {
                 setState(() {
@@ -957,24 +965,26 @@ class _JournalVoiceRecordingScreenState
             ),
           ),
           if (_showTranscription) ...[
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Text(
               'Transcription',
-              style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+              style: AppTextStyles.heading2.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextField(
               controller: _transcriptionController,
               minLines: 6,
               maxLines: 8,
               decoration: _inputDecoration(''),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text('AI-generated. Edit as needed.', style: _captionStyle()),
           ],
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           _PrimaryButton(label: 'Save entry', onPressed: _saveVoice),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
@@ -1099,17 +1109,17 @@ class _JournalSearchScreenState extends State<JournalSearchScreen> {
             autofocus: true,
             decoration: _inputDecoration(
               'Search journal...',
-            ).copyWith(prefixIcon: const Icon(Icons.search_rounded)),
+            ).copyWith(prefixIcon: Icon(Icons.search_rounded)),
             onChanged: (value) => setState(() => _query = value),
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           if (_query.isEmpty) ...[
             _SearchSection(
               title: 'Recent searches',
               chips: const ['work', 'anxiety', 'gratitude'],
               onTap: _setQuery,
             ),
-            const SizedBox(height: 28),
+            SizedBox(height: 28),
             _SearchSection(
               title: 'Popular tags',
               chips: const [
@@ -1125,7 +1135,11 @@ class _JournalSearchScreenState extends State<JournalSearchScreen> {
           ] else if (results.isEmpty)
             Text(
               "No entries match '$_query'",
-              style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+              style: AppTextStyles.body1.copyWith(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+              ),
             )
           else
             for (final entry in results) ...[
@@ -1134,7 +1148,7 @@ class _JournalSearchScreenState extends State<JournalSearchScreen> {
                 onTap: () => widget.onOpen(entry),
                 onMore: () {},
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
             ],
         ],
       ),
@@ -1159,49 +1173,50 @@ class JournalEntryDetailScreen extends StatelessWidget {
       action: IconButton(
         tooltip: 'More',
         onPressed: () => _showMenu(context),
-        icon: const Icon(Icons.more_horiz),
+        icon: Icon(Icons.more_horiz),
       ),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
         children: [
           Text(_detailDate(entry.createdAt), style: _captionStyle()),
-          const SizedBox(height: 34),
+          SizedBox(height: 34),
           if (entry.body.isNotEmpty)
             Text(
               entry.body,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Georgia',
                 fontSize: 18,
                 height: 1.6,
-                color: AppColors.text,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             )
           else
             Text(
               '🎤 Voice note · ${_formatDuration(entry.voiceDuration ?? 0)}',
-              style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+              style: AppTextStyles.heading2.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           _TagRow(tags: entry.tags ?? [], onAddTag: () {}),
           if (entry.type == 'voice') ...[
-            const SizedBox(height: 18),
+            SizedBox(height: 18),
             _WarmPanel(
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.play_arrow_rounded,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 12),
+                  Icon(Icons.play_arrow_rounded, color: AppColors.primary),
+                  SizedBox(width: 12),
                   Text(
                     'Voice note · ${_formatDuration(entry.voiceDuration ?? 0)}',
-                    style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ],
               ),
             ),
           ],
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
           Text(
             'Last edited ${_detailDate(entry.updatedAt)}',
             style: _captionStyle(),
@@ -1249,7 +1264,7 @@ class _JournalHeader extends StatelessWidget {
           child: Text(
             'Journal',
             style: AppTextStyles.heading1.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 28,
               fontWeight: FontWeight.w600,
             ),
@@ -1258,7 +1273,10 @@ class _JournalHeader extends StatelessWidget {
         IconButton(
           tooltip: 'Search journal',
           onPressed: onSearch,
-          icon: const Icon(Icons.search_rounded, color: AppColors.text),
+          icon: Icon(
+            Icons.search_rounded,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
       ],
     );
@@ -1285,17 +1303,13 @@ class _NewEntryHero extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           child: Row(
             children: [
-              const Icon(
-                Icons.edit_note_rounded,
-                color: AppColors.primary,
-                size: 30,
-              ),
-              const SizedBox(width: 14),
+              Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 30),
+              SizedBox(width: 14),
               Expanded(
                 child: Text(
                   "What's on your mind?",
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1381,9 +1395,11 @@ class _EntrySection extends StatelessWidget {
       children: [
         Text(
           title,
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         for (var i = 0; i < entries.length; i++) ...[
           _AnimatedIn(
             controller: controller,
@@ -1399,7 +1415,7 @@ class _EntrySection extends StatelessWidget {
               onMore: () => onMore(entries[i]),
             ),
           ),
-          if (i != entries.length - 1) const SizedBox(height: 12),
+          if (i != entries.length - 1) SizedBox(height: 12),
         ],
       ],
     );
@@ -1441,33 +1457,39 @@ class _JournalEntryCard extends StatelessWidget {
                   IconButton(
                     tooltip: 'More options',
                     onPressed: onMore,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.more_horiz,
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               Text(
                 entry.cardTitle,
-                style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               if (entry.type == 'guided' && entry.body.isNotEmpty) ...[
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Text(
                   '"${entry.body}"',
                   style: AppTextStyles.body2.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
               if (entry.tags != null && entry.tags!.isNotEmpty) ...[
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 _TagRow(tags: entry.tags!, onAddTag: () {}, compact: true),
               ],
             ],
@@ -1503,24 +1525,28 @@ class _DraftRestoreCard extends StatelessWidget {
           Text(
             'You have a draft from $time.',
             style: AppTextStyles.body1.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             draft.body.isEmpty ? 'Tags saved without body text.' : draft.body,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+            style: AppTextStyles.body2.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           Row(
             children: [
               Expanded(
                 child: _PrimaryButton(label: 'Resume', onPressed: onResume),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(
                 child: _SecondaryButton(label: 'Discard', onPressed: onDiscard),
               ),
@@ -1549,7 +1575,7 @@ class _JournalEmptyState extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
       children: [
         _JournalHeader(onSearch: () {}),
-        const SizedBox(height: 54),
+        SizedBox(height: 54),
         Center(
           child: Container(
             width: 160,
@@ -1558,29 +1584,29 @@ class _JournalEmptyState extends StatelessWidget {
               color: AppColors.primarySoft,
               borderRadius: BorderRadius.circular(32),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.menu_book_rounded,
               size: 70,
               color: AppColors.primary,
             ),
           ),
         ),
-        const SizedBox(height: 30),
+        SizedBox(height: 30),
         const _CenteredIntro(
           title: 'A private space\nfor you.',
           subtitle:
               'Write freely, reflect, or just\nempty your mind.\nNo one else sees this.',
         ),
-        const SizedBox(height: 36),
+        SizedBox(height: 36),
         _PrimaryButton(label: '✎  Write an entry', onPressed: onFree),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _EntryActionButton(
           icon: '💡',
           title: 'Need inspiration?',
           subtitle: 'Try a guided prompt',
           onTap: onGuided,
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _EntryActionButton(
           icon: '🎤',
           title: 'Record a voice note',
@@ -1656,30 +1682,32 @@ class _EntryTypePicker extends StatelessWidget {
         children: [
           Text(
             'What kind of entry?',
-            style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           _EntryActionButton(
             icon: '✎',
             title: 'Free write',
             subtitle: 'Just start',
             onTap: onFree,
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           _EntryActionButton(
             icon: '💡',
             title: 'Guided prompt',
             subtitle: 'Need a nudge?',
             onTap: onGuided,
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           _EntryActionButton(
             icon: '🎤',
             title: 'Voice note',
             subtitle: 'Speak instead',
             onTap: onVoice,
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           _SecondaryButton(
             label: 'Cancel',
             onPressed: () => Navigator.pop(context),
@@ -1712,8 +1740,8 @@ class _EntryActionButton extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 24)),
-            const SizedBox(width: 12),
+            Text(icon, style: TextStyle(fontSize: 24)),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1721,16 +1749,18 @@ class _EntryActionButton extends StatelessWidget {
                   Text(
                     title,
                     style: AppTextStyles.body1.copyWith(
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   if (subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 3),
+                    SizedBox(height: 3),
                     Text(
                       subtitle,
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
                       ),
                     ),
                   ],
@@ -1799,11 +1829,11 @@ class _PromptCard extends StatelessWidget {
           Text(
             '"${prompt.text}"',
             style: AppTextStyles.body1.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.4,
             ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -1812,7 +1842,7 @@ class _PromptCard extends StatelessWidget {
                   style: AppTextStyles.body2.copyWith(color: AppColors.primary),
                 ),
               ),
-              TextButton(onPressed: onUse, child: const Text('Use →')),
+              TextButton(onPressed: onUse, child: Text('Use →')),
             ],
           ),
         ],
@@ -1841,11 +1871,11 @@ class _PromptPinnedCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Text(
             '"${prompt.text}"',
             style: AppTextStyles.body1.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.4,
             ),
           ),
@@ -1887,17 +1917,19 @@ class _FilterSheetState extends State<_FilterSheet> {
         children: [
           Text(
             'Filter',
-            style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Text(
             'Tags',
             style: AppTextStyles.body1.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -1913,11 +1945,11 @@ class _FilterSheetState extends State<_FilterSheet> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Text(
             'Date range',
             style: AppTextStyles.body1.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1937,23 +1969,23 @@ class _FilterSheetState extends State<_FilterSheet> {
                           ? AppColors.primary
                           : AppColors.textMuted,
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Text(
                       range,
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           _PrimaryButton(
             label: 'Apply filters',
             onPressed: () => widget.onApply(_tags, _dateRange),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           _SecondaryButton(label: 'Clear all', onPressed: widget.onClear),
         ],
       ),
@@ -2019,14 +2051,20 @@ class _DeleteConfirmation extends StatelessWidget {
           children: [
             Text(
               'Delete this entry?',
-              style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+              style: AppTextStyles.heading2.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             Text(
               "This can't be undone.",
-              style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+              style: AppTextStyles.body1.copyWith(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+              ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -2040,10 +2078,10 @@ class _DeleteConfirmation extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Delete'),
+                child: Text('Delete'),
               ),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             _SecondaryButton(
               label: 'Cancel',
               onPressed: () => Navigator.pop(context),
@@ -2063,14 +2101,14 @@ class _DiscardRecordingDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Discard recording?'),
-      content: const Text('This recording has not been saved.'),
+      title: Text('Discard recording?'),
+      content: Text('This recording has not been saved.'),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text('Cancel'),
         ),
-        TextButton(onPressed: onDiscard, child: const Text('Discard')),
+        TextButton(onPressed: onDiscard, child: Text('Discard')),
       ],
     );
   }
@@ -2095,15 +2133,17 @@ class _AddTagSheet extends StatelessWidget {
           children: [
             Text(
               'Add tag',
-              style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+              style: AppTextStyles.heading2.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             TextField(
               controller: controller,
               autofocus: true,
               decoration: _inputDecoration('#tag'),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             _PrimaryButton(label: 'Add tag', onPressed: onAdd),
           ],
         ),
@@ -2130,9 +2170,11 @@ class _SearchSection extends StatelessWidget {
       children: [
         Text(
           title,
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -2183,8 +2225,7 @@ class _TagRow extends StatelessWidget {
               ),
             ),
           ),
-        if (!compact)
-          ActionChip(label: const Text('+ Add tag'), onPressed: onAddTag),
+        if (!compact) ActionChip(label: Text('+ Add tag'), onPressed: onAddTag),
       ],
     );
   }
@@ -2214,7 +2255,7 @@ class _EditorFooter extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             child: _TagRow(tags: tags, onAddTag: onAddTag),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           _WarmPanel(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
@@ -2265,7 +2306,7 @@ class _Waveform extends StatelessWidget {
             ),
           ),
           if (caption != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(caption!, style: _captionStyle()),
           ],
         ],
@@ -2293,7 +2334,10 @@ class _JournalSubScaffold extends StatelessWidget {
                   IconButton(
                     tooltip: 'Back',
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: AppColors.text),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   const Spacer(),
                   if (action != null) action!,
@@ -2377,18 +2421,20 @@ class _CenteredIntro extends StatelessWidget {
           title,
           textAlign: TextAlign.center,
           style: AppTextStyles.heading1.copyWith(
-            color: AppColors.text,
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 28,
             fontWeight: FontWeight.w600,
             height: 1.15,
           ),
         ),
-        const SizedBox(height: 14),
+        SizedBox(height: 14),
         Text(
           subtitle,
           textAlign: TextAlign.center,
           style: AppTextStyles.body1.copyWith(
-            color: AppColors.textMuted,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textMutedDark
+                : AppColors.textMutedLight,
             height: 1.4,
           ),
         ),
@@ -2407,7 +2453,11 @@ class _NoMatches extends StatelessWidget {
     return _WarmPanel(
       child: Text(
         filter == 'All' ? 'No entries yet.' : 'No entries match this filter.',
-        style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+        style: AppTextStyles.body1.copyWith(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.textMutedDark
+              : AppColors.textMutedLight,
+        ),
       ),
     );
   }
@@ -2437,7 +2487,7 @@ class _DashedAction extends StatelessWidget {
         child: Text(
           '+ $label',
           style: AppTextStyles.body1.copyWith(
-            color: AppColors.text,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -2522,8 +2572,8 @@ class _SecondaryButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.text,
-          side: const BorderSide(color: AppColors.border),
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
+          side: BorderSide(color: Theme.of(context).dividerColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -2646,11 +2696,11 @@ InputDecoration _inputDecoration(String hint) {
     contentPadding: const EdgeInsets.all(16),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.border),
+      borderSide: BorderSide(color: AppColors.border),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+      borderSide: BorderSide(color: AppColors.primary, width: 1.5),
     ),
   );
 }

@@ -24,13 +24,10 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.black),
+          icon: Icon(Icons.arrow_back, color: AppColors.black),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          'Voice Journal',
-          style: AppTextStyles.heading2,
-        ),
+        title: Text('Voice Journal', style: AppTextStyles.heading2),
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 6.w),
@@ -108,7 +105,9 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                     height: 32,
                     decoration: BoxDecoration(
                       color: isRecording ? Colors.red : AppColors.primary,
-                      borderRadius: isRecording ? BorderRadius.circular(4) : BorderRadius.circular(20),
+                      borderRadius: isRecording
+                          ? BorderRadius.circular(4)
+                          : BorderRadius.circular(20),
                     ),
                   ),
                 ),
@@ -127,7 +126,7 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                       // Cancel recording
                       context.pop();
                     },
-                    icon: const Icon(Icons.close, color: Colors.red),
+                    icon: Icon(Icons.close, color: Colors.red),
                     label: Text(
                       'Cancel',
                       style: AppTextStyles.body1.copyWith(color: Colors.red),
@@ -139,10 +138,12 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                       // Save and go back
                       context.pop();
                     },
-                    icon: const Icon(Icons.check, color: AppColors.primary),
+                    icon: Icon(Icons.check, color: AppColors.primary),
                     label: Text(
                       'Save Recording',
-                      style: AppTextStyles.body1.copyWith(color: AppColors.primary),
+                      style: AppTextStyles.body1.copyWith(
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
               ],
