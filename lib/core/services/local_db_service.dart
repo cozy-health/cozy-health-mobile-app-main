@@ -218,8 +218,19 @@ class LocalDbService {
     await userProfileBox.put(profile.id, profile);
   }
 
-  Stream<UserProfile?> watchUserProfile() {
-    return userProfileBox.watch().map((_) => userProfileBox.values.firstOrNull);
+  Stream<UserProfile?> watchUserProfile() async* {
+    UserProfile? readFresh() {
+      final key = userProfileBox.keys.firstOrNull;
+      if (key == null) return null;
+      final stored = userProfileBox.get(key);
+      if (stored == null) return null;
+      return UserProfile.fromJson(stored.toJson());
+    }
+
+    yield readFresh();
+    await for (final _ in userProfileBox.watch()) {
+      yield readFresh();
+    }
   }
 
   UserProfile? getUserProfile() {
