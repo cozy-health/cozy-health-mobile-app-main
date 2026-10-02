@@ -6,8 +6,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/api/api_client.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/local_db_service.dart';
 import '../../../../core/services/user_data_fetcher.dart';
+import '../../../../core/storage/token_storage.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/splash_service.dart';
 import '../widgets/breathing_glow.dart';
@@ -138,26 +142,23 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    if (results.first) {
+    if (!results.first) {
+      context.go(AppRouter.welcome);
+      return;
+    }
+
+    try {
+      await ApiClient.instance.get(ApiConstants.me);
+      if (!mounted) return;
       context.go(AppRouter.home);
       unawaited(_syncUserDataInBackground());
-      unawaited(_validateTokenInBackground());
-    } else {
-      context.go(AppRouter.onboarding);
+    } catch (e) {
+      debugPrint('Stored session validation failed: $e');
+      await TokenStorage().clearToken();
+      await LocalDbService.instance.clearAllUserData();
+      if (!mounted) return;
+      context.go(AppRouter.welcome);
     }
-  }
-
-  Future<void> _validateTokenInBackground() async {
-    final isValid = await _splashService.validateStoredSession();
-    if (isValid) return;
-
-    final context = AppRouter.navigatorKey.currentContext;
-    if (context == null || !context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Session expired. Please log in again.')),
-    );
-    context.go(AppRouter.login);
   }
 
   Future<void> _syncUserDataInBackground() async {

@@ -82,8 +82,11 @@ class AuthService {
   Future<void> logout() async {
     try {
       await _apiClient.post(ApiConstants.logout);
+    } catch (e) {
+      debugPrint('Logout API failed: $e');
     } finally {
       await _tokenStorage.clearToken();
+      await LocalDbService.instance.clearAllUserData();
     }
   }
 

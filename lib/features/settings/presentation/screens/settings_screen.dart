@@ -7,6 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/models/user_profile.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../../../core/widgets/app_scaffold_padding.dart';
+import '../../../auth/data/auth_service.dart';
 import '../../data/profile_repository.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -325,9 +326,9 @@ class SettingsScreen extends StatelessWidget {
                             TextButton(
                               onPressed: () async {
                                 Navigator.of(context).pop();
-                                await LocalDbService().clearAllUserData();
+                                await AuthService().logout();
                                 if (context.mounted) {
-                                  context.go(AppRouter.login);
+                                  context.go(AppRouter.welcome);
                                 }
                               },
                               child: Text(
