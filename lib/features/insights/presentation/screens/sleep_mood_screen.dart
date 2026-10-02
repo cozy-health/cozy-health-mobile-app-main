@@ -12,7 +12,8 @@ class SleepMoodScreen extends StatefulWidget {
   State<SleepMoodScreen> createState() => _SleepMoodScreenState();
 }
 
-class _SleepMoodScreenState extends State<SleepMoodScreen> with SingleTickerProviderStateMixin {
+class _SleepMoodScreenState extends State<SleepMoodScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _chartAnimation;
 
@@ -44,7 +45,10 @@ class _SleepMoodScreenState extends State<SleepMoodScreen> with SingleTickerProv
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text('Sleep & mood', style: AppTextStyles.heading2),
@@ -60,30 +64,73 @@ class _SleepMoodScreenState extends State<SleepMoodScreen> with SingleTickerProv
                 icon: '💤',
                 title: 'Better sleep tends to\nmean better mood for you.',
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               ChartContainer(
                 title: 'Sleep & Mood Correlation',
-                accessibleLabel: 'Chart showing correlation between sleep and mood over 7 days',
+                accessibleLabel:
+                    'Chart showing correlation between sleep and mood over 7 days',
                 tableColumns: const [
                   DataColumn(label: Text('Day')),
                   DataColumn(label: Text('Sleep')),
                   DataColumn(label: Text('Mood')),
                 ],
                 tableRows: const [
-                  DataRow(cells: [DataCell(Text('M')), DataCell(Text('5')), DataCell(Text('4'))]),
-                  DataRow(cells: [DataCell(Text('T')), DataCell(Text('6')), DataCell(Text('5'))]),
-                  DataRow(cells: [DataCell(Text('W')), DataCell(Text('6.5')), DataCell(Text('6'))]),
-                  DataRow(cells: [DataCell(Text('T')), DataCell(Text('8')), DataCell(Text('8'))]),
-                  DataRow(cells: [DataCell(Text('F')), DataCell(Text('7.5')), DataCell(Text('7'))]),
-                  DataRow(cells: [DataCell(Text('S')), DataCell(Text('7')), DataCell(Text('6'))]),
-                  DataRow(cells: [DataCell(Text('S')), DataCell(Text('8')), DataCell(Text('7'))]),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('M')),
+                      DataCell(Text('5')),
+                      DataCell(Text('4')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('T')),
+                      DataCell(Text('6')),
+                      DataCell(Text('5')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('W')),
+                      DataCell(Text('6.5')),
+                      DataCell(Text('6')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('T')),
+                      DataCell(Text('8')),
+                      DataCell(Text('8')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('F')),
+                      DataCell(Text('7.5')),
+                      DataCell(Text('7')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('S')),
+                      DataCell(Text('7')),
+                      DataCell(Text('6')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('S')),
+                      DataCell(Text('8')),
+                      DataCell(Text('7')),
+                    ],
+                  ),
                 ],
                 legend: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _buildLegendItem('Sleep', const Color(0xFFA78BC7), true),
-                    const SizedBox(width: 24),
+                    SizedBox(width: 24),
                     _buildLegendItem('Mood', AppColors.primary, false),
                   ],
                 ),
@@ -94,34 +141,42 @@ class _SleepMoodScreenState extends State<SleepMoodScreen> with SingleTickerProv
                   },
                 ),
               ),
-              
-              const SizedBox(height: 32),
-              
+
+              SizedBox(height: 32),
+
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('What we noticed', style: AppTextStyles.heading2),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Text(
                       'On nights when you slept well, your mood the next day was 2.3 points higher on average.',
-                      style: AppTextStyles.body1.copyWith(color: AppColors.text, height: 1.5),
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.5,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Text(
                       'You slept well 4 nights this week.',
-                      style: AppTextStyles.body1.copyWith(color: AppColors.text, height: 1.5),
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.5,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 64),
+              SizedBox(height: 64),
             ],
           ),
         ),
@@ -146,8 +201,15 @@ class _SleepMoodScreenState extends State<SleepMoodScreen> with SingleTickerProv
                 )
               : null,
         ),
-        const SizedBox(width: 8),
-        Text(label, style: AppTextStyles.body2.copyWith(color: AppColors.textMuted)),
+        SizedBox(width: 8),
+        Text(
+          label,
+          style: AppTextStyles.body2.copyWith(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textMutedDark
+                : AppColors.textMutedLight,
+          ),
+        ),
       ],
     );
   }
@@ -165,14 +227,16 @@ class _SleepMoodScreenState extends State<SleepMoodScreen> with SingleTickerProv
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
             return Text(
               day,
               style: AppTextStyles.body2.copyWith(
-                color: AppColors.textSubtle,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textSubtleDark
+                    : AppColors.textSubtleLight,
                 fontSize: 12,
               ),
             );
@@ -215,7 +279,12 @@ class _DualLineChartPainter extends CustomPainter {
     _drawMoodLine(canvas, size, maxData, pointWidth);
   }
 
-  void _drawSleepLine(Canvas canvas, Size size, double maxData, double pointWidth) {
+  void _drawSleepLine(
+    Canvas canvas,
+    Size size,
+    double maxData,
+    double pointWidth,
+  ) {
     final path = Path();
     path.moveTo(0, size.height - (sleepData[0] / maxData) * size.height);
 
@@ -228,10 +297,14 @@ class _DualLineChartPainter extends CustomPainter {
         path.lineTo(x, y);
       } else {
         final prevProgress = (i - 1) / (sleepData.length - 1);
-        final segmentProgress = (animationValue - prevProgress) / (currentProgress - prevProgress);
+        final segmentProgress =
+            (animationValue - prevProgress) / (currentProgress - prevProgress);
         final prevX = (i - 1) * pointWidth;
         final prevY = size.height - (sleepData[i - 1] / maxData) * size.height;
-        path.lineTo(prevX + (x - prevX) * segmentProgress, prevY + (y - prevY) * segmentProgress);
+        path.lineTo(
+          prevX + (x - prevX) * segmentProgress,
+          prevY + (y - prevY) * segmentProgress,
+        );
         break;
       }
     }
@@ -241,7 +314,7 @@ class _DualLineChartPainter extends CustomPainter {
     double dashWidth = 5.0;
     double dashSpace = 5.0;
     double distance = 0.0;
-    
+
     for (final pathMetric in path.computeMetrics()) {
       while (distance < pathMetric.length) {
         dashPath.addPath(
@@ -258,11 +331,16 @@ class _DualLineChartPainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;
-      
+
     canvas.drawPath(dashPath, sleepPaint);
   }
 
-  void _drawMoodLine(Canvas canvas, Size size, double maxData, double pointWidth) {
+  void _drawMoodLine(
+    Canvas canvas,
+    Size size,
+    double maxData,
+    double pointWidth,
+  ) {
     final path = Path();
     path.moveTo(0, size.height - (moodData[0] / maxData) * size.height);
 
@@ -275,10 +353,14 @@ class _DualLineChartPainter extends CustomPainter {
         path.lineTo(x, y);
       } else {
         final prevProgress = (i - 1) / (moodData.length - 1);
-        final segmentProgress = (animationValue - prevProgress) / (currentProgress - prevProgress);
+        final segmentProgress =
+            (animationValue - prevProgress) / (currentProgress - prevProgress);
         final prevX = (i - 1) * pointWidth;
         final prevY = size.height - (moodData[i - 1] / maxData) * size.height;
-        path.lineTo(prevX + (x - prevX) * segmentProgress, prevY + (y - prevY) * segmentProgress);
+        path.lineTo(
+          prevX + (x - prevX) * segmentProgress,
+          prevY + (y - prevY) * segmentProgress,
+        );
         break;
       }
     }
@@ -298,7 +380,7 @@ class _DualLineChartPainter extends CustomPainter {
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;
-      
+
     canvas.drawPath(path, moodPaint);
   }
 

@@ -15,7 +15,7 @@ class MonthlyReportScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => context.pop(),
         ),
         title: Text('Monthly report', style: AppTextStyles.heading2),
@@ -32,7 +32,7 @@ class MonthlyReportScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.chevron_left, color: AppColors.text),
+                    icon: Icon(Icons.chevron_left, color: AppColors.text),
                     onPressed: () {},
                   ),
                   Text(
@@ -43,55 +43,69 @@ class MonthlyReportScreen extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                    icon: Icon(Icons.chevron_right, color: AppColors.textMuted),
                     onPressed: () {},
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              
+              SizedBox(height: 24),
+
               Text(
                 'October was\na steady month.',
-                style: AppTextStyles.heading1.copyWith(fontSize: 24, color: AppColors.text, height: 1.2),
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 24,
+                  color: AppColors.text,
+                  height: 1.2,
+                ),
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               // Stats
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildStatRow('28', 'entries'),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     _buildStatRow('6.1', 'avg mood'),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     _buildStatRow('7.2', 'avg sleep'),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     _buildStatRow('4-day', 'longest streak'),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              
+              SizedBox(height: 24),
+
               // Full width chart
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Mood trend over the month', style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.w600, color: AppColors.text)),
-                    const SizedBox(height: 16),
+                    Text(
+                      'Mood trend over the month',
+                      style: AppTextStyles.body1.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    SizedBox(height: 16),
                     SizedBox(
                       height: 120,
                       child: CustomPaint(
@@ -102,46 +116,72 @@ class MonthlyReportScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              
+              SizedBox(height: 24),
+
               // Top Triggers
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Top triggers', style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.w600, color: AppColors.text)),
-                    const SizedBox(height: 8),
-                    Text('Work, Sleep, Family', style: AppTextStyles.body1.copyWith(color: AppColors.textMuted)),
+                    Text(
+                      'Top triggers',
+                      style: AppTextStyles.body1.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Work, Sleep, Family',
+                      style: AppTextStyles.body1.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              
+              SizedBox(height: 24),
+
               // What helped
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('What helped', style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.w600, color: AppColors.text)),
-                    const SizedBox(height: 8),
-                    Text('Journaling, Movement', style: AppTextStyles.body1.copyWith(color: AppColors.textMuted)),
+                    Text(
+                      'What helped',
+                      style: AppTextStyles.body1.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Journaling, Movement',
+                      style: AppTextStyles.body1.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               AppButton(
                 text: 'Export for provider',
                 trailingIcon: Icons.description_outlined,
@@ -149,7 +189,7 @@ class MonthlyReportScreen extends StatelessWidget {
                   // Trigger export
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               AppButton(
                 text: 'Download PDF',
                 trailingIcon: Icons.download_outlined,
@@ -158,7 +198,7 @@ class MonthlyReportScreen extends StatelessWidget {
                   // Trigger download
                 },
               ),
-              const SizedBox(height: 64),
+              SizedBox(height: 64),
             ],
           ),
         ),
@@ -176,7 +216,7 @@ class MonthlyReportScreen extends StatelessWidget {
             color: AppColors.text,
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Text(
           label,
           style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
@@ -191,13 +231,38 @@ class _MonthlyAreaChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // Mock monthly data (about 30 points)
     final List<double> data = [
-      5, 6, 6, 7, 5, 4, 6, 
-      7, 8, 8, 7, 6, 5, 5, 
-      6, 7, 7, 8, 9, 8, 7, 
-      6, 5, 6, 7, 8, 8, 7, 
-      6, 7
+      5,
+      6,
+      6,
+      7,
+      5,
+      4,
+      6,
+      7,
+      8,
+      8,
+      7,
+      6,
+      5,
+      5,
+      6,
+      7,
+      7,
+      8,
+      9,
+      8,
+      7,
+      6,
+      5,
+      6,
+      7,
+      8,
+      8,
+      7,
+      6,
+      7,
     ];
-    
+
     final double maxData = 10;
     final double pointWidth = size.width / (data.length - 1);
 

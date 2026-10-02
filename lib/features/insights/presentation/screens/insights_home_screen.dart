@@ -13,10 +13,11 @@ class InsightsHomeScreen extends StatefulWidget {
   State<InsightsHomeScreen> createState() => _InsightsHomeScreenState();
 }
 
-class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTickerProviderStateMixin {
+class _InsightsHomeScreenState extends State<InsightsHomeScreen>
+    with SingleTickerProviderStateMixin {
   // We'll use a staggered animation for the elements
   late AnimationController _controller;
-  
+
   @override
   void initState() {
     super.initState();
@@ -26,7 +27,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTick
     );
     _controller.forward();
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
@@ -63,7 +64,10 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTick
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text('Insights', style: AppTextStyles.heading2),
@@ -78,29 +82,45 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTick
               FadeTransition(
                 opacity: headerAnim,
                 child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(headerAnim),
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.2),
+                    end: Offset.zero,
+                  ).animate(headerAnim),
                   child: Text(
                     'This week',
-                    style: AppTextStyles.heading1.copyWith(fontSize: 24, color: AppColors.text),
+                    style: AppTextStyles.heading1.copyWith(
+                      fontSize: 24,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               FadeTransition(
                 opacity: subtextAnim,
                 child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(subtextAnim),
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.2),
+                    end: Offset.zero,
+                  ).animate(subtextAnim),
                   child: Text(
                     'You felt calmer than last week.',
-                    style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               FadeTransition(
                 opacity: heroCardAnim,
                 child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(heroCardAnim),
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.1),
+                    end: Offset.zero,
+                  ).animate(heroCardAnim),
                   child: const InsightCard(
                     icon: '🌿',
                     title: 'Your best day was\nThursday.',
@@ -108,56 +128,55 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTick
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               FadeTransition(
                 opacity: statsAnim,
                 child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(statsAnim),
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.1),
+                    end: Offset.zero,
+                  ).animate(statsAnim),
                   child: Row(
                     children: [
                       const Expanded(
-                        child: StatCard(
-                          value: '7',
-                          label: 'Entries',
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: StatCard(
-                          value: '6.2',
-                          label: 'Avg mood',
-                          backgroundColor: AppColors.primary.withValues(alpha: 0.05),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              FadeTransition(
-                opacity: statsAnim,
-                child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(statsAnim),
-                  child: const Row(
-                    children: [
-                      Expanded(
-                        child: StatCard(
-                          value: 'Work',
-                          label: 'Top trigger',
-                        ),
+                        child: StatCard(value: '7', label: 'Entries'),
                       ),
                       SizedBox(width: 12),
                       Expanded(
                         child: StatCard(
-                          value: '7.5',
-                          label: 'Avg sleep',
+                          value: '6.2',
+                          label: 'Avg mood',
+                          backgroundColor: AppColors.primary.withValues(
+                            alpha: 0.05,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 12),
+              FadeTransition(
+                opacity: statsAnim,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.1),
+                    end: Offset.zero,
+                  ).animate(statsAnim),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: StatCard(value: 'Work', label: 'Top trigger'),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: StatCard(value: '7.5', label: 'Avg sleep'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 32),
               FadeTransition(
                 opacity: section1Anim,
                 child: Row(
@@ -165,58 +184,71 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTick
                   children: [
                     Text('Mood trend', style: AppTextStyles.heading2),
                     TextButton(
-                      onPressed: () => context.push(AppRouter.insightsMoodTrend), // To be added
+                      onPressed: () => context.push(
+                        AppRouter.insightsMoodTrend,
+                      ), // To be added
                       child: Text(
                         'See all',
-                        style: AppTextStyles.body2.copyWith(color: AppColors.primary),
+                        style: AppTextStyles.body2.copyWith(
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               FadeTransition(
                 opacity: chartAnim,
                 child: GestureDetector(
-                  onTap: () => context.push(AppRouter.insightsMoodTrend), // To be added
+                  onTap: () =>
+                      context.push(AppRouter.insightsMoodTrend), // To be added
                   child: _buildMiniChart(),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               FadeTransition(
                 opacity: section2Anim,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('What\'s affecting your mood', style: AppTextStyles.heading2),
+                    Text(
+                      'What\'s affecting your mood',
+                      style: AppTextStyles.heading2,
+                    ),
                     TextButton(
-                      onPressed: () => context.push(AppRouter.insightsTriggers), // To be added
+                      onPressed: () => context.push(
+                        AppRouter.insightsTriggers,
+                      ), // To be added
                       child: Text(
                         'See all',
-                        style: AppTextStyles.body2.copyWith(color: AppColors.primary),
+                        style: AppTextStyles.body2.copyWith(
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               FadeTransition(
                 opacity: section2Anim,
                 child: Column(
                   children: [
                     _buildMiniTrigger('Work', '4 times', 0.8),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildMiniTrigger('Sleep', '3 times', 0.6),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               // Monthly Report button (Bonus)
               FadeTransition(
                 opacity: section2Anim,
                 child: Center(
                   child: TextButton(
-                    onPressed: () => context.push(AppRouter.insightsMonthlyReport),
+                    onPressed: () =>
+                        context.push(AppRouter.insightsMonthlyReport),
                     child: Text(
                       'View Monthly Report',
                       style: AppTextStyles.body1.copyWith(
@@ -227,7 +259,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTick
                   ),
                 ),
               ),
-              const SizedBox(height: 64),
+              SizedBox(height: 64),
             ],
           ),
         ),
@@ -240,7 +272,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTick
       height: 120,
       padding: const EdgeInsets.only(top: 24, left: 16, right: 16, bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
       ),
@@ -256,14 +288,16 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTick
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
               return Text(
                 day,
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.textSubtle,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textSubtleDark
+                      : AppColors.textSubtleLight,
                   fontSize: 12,
                 ),
               );
@@ -278,14 +312,20 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTick
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
-          Text(title, style: AppTextStyles.body1.copyWith(color: AppColors.text, fontWeight: FontWeight.w500)),
-          const SizedBox(width: 16),
+          Text(
+            title,
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(width: 16),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -308,10 +348,14 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen> with SingleTick
               },
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Text(
             frequency,
-            style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+            style: AppTextStyles.body2.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
           ),
         ],
       ),
@@ -356,14 +400,15 @@ class _MiniAreaChartPainter extends CustomPainter {
       } else {
         // Interpolate last point
         final prevProgress = (i - 1) / (data.length - 1);
-        final segmentProgress = (animationValue - prevProgress) / (currentProgress - prevProgress);
-        
+        final segmentProgress =
+            (animationValue - prevProgress) / (currentProgress - prevProgress);
+
         final prevX = (i - 1) * pointWidth;
         final prevY = size.height - (data[i - 1] / maxData) * size.height;
-        
+
         final interpX = prevX + (x - prevX) * segmentProgress;
         final interpY = prevY + (y - prevY) * segmentProgress;
-        
+
         path.lineTo(interpX, interpY);
         areaPath.lineTo(interpX, interpY);
         break;
@@ -381,10 +426,7 @@ class _MiniAreaChartPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            color.withValues(alpha: 0.2),
-            color.withValues(alpha: 0.0),
-          ],
+          colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.0)],
         ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
         ..style = PaintingStyle.fill;
       canvas.drawPath(areaPath, paint);

@@ -14,7 +14,10 @@ class TriggersAnalysisScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text('Triggers', style: AppTextStyles.heading2),
@@ -28,10 +31,14 @@ class TriggersAnalysisScreen extends StatelessWidget {
             children: [
               Text(
                 'What\'s been\naffecting your mood?',
-                style: AppTextStyles.heading1.copyWith(fontSize: 24, color: AppColors.text, height: 1.2),
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 24,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  height: 1.2,
+                ),
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               _buildTriggerRow(
                 context,
                 title: 'Work',
@@ -41,7 +48,7 @@ class TriggersAnalysisScreen extends StatelessWidget {
                 comparison: 'Lower than your usual.',
                 barColor: const Color(0xFFE85D3A), // warmOrange
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _buildTriggerRow(
                 context,
                 title: 'Sleep',
@@ -51,7 +58,7 @@ class TriggersAnalysisScreen extends StatelessWidget {
                 comparison: 'Lower than your usual.',
                 barColor: const Color(0xFFE85D3A), // warmOrange
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _buildTriggerRow(
                 context,
                 title: 'Family',
@@ -59,9 +66,11 @@ class TriggersAnalysisScreen extends StatelessWidget {
                 maxFrequency: 4,
                 avgMood: 5.5,
                 comparison: 'About your usual.',
-                barColor: AppColors.textMuted,
+                barColor: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _buildTriggerRow(
                 context,
                 title: 'Friends',
@@ -71,15 +80,19 @@ class TriggersAnalysisScreen extends StatelessWidget {
                 comparison: 'Higher than your usual.',
                 barColor: const Color(0xFF2D9E54), // warmGreen
               ),
-              
-              const SizedBox(height: 48),
-              
+
+              SizedBox(height: 48),
+
               Text(
                 'These aren\'t causes. Just patterns worth noticing.',
-                style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body2.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 64),
+              SizedBox(height: 64),
             ],
           ),
         ),
@@ -104,7 +117,7 @@ class TriggersAnalysisScreen extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
           ),
@@ -114,11 +127,24 @@ class TriggersAnalysisScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(title, style: AppTextStyles.body1.copyWith(color: AppColors.text, fontWeight: FontWeight.w600)),
-                  Text('${frequency}x', style: AppTextStyles.body2.copyWith(color: AppColors.textMuted)),
+                  Text(
+                    title,
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '${frequency}x',
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
                   return Container(
@@ -139,16 +165,20 @@ class TriggersAnalysisScreen extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 'Average mood: $avgMood',
-                style: AppTextStyles.body2.copyWith(color: AppColors.text),
+                style: AppTextStyles.body2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 comparison,
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.textMuted,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
                   fontStyle: FontStyle.italic,
                   fontSize: 13,
                 ),

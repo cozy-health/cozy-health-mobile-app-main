@@ -12,7 +12,8 @@ class ActivityMoodScreen extends StatefulWidget {
   State<ActivityMoodScreen> createState() => _ActivityMoodScreenState();
 }
 
-class _ActivityMoodScreenState extends State<ActivityMoodScreen> with SingleTickerProviderStateMixin {
+class _ActivityMoodScreenState extends State<ActivityMoodScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _chartAnimation;
 
@@ -44,7 +45,10 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen> with SingleTick
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text('Activity & mood', style: AppTextStyles.heading2),
@@ -60,30 +64,73 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen> with SingleTick
                 icon: '📓',
                 title: 'Journaling tends to lift\nyour mood.',
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               ChartContainer(
                 title: 'Activity & Mood Correlation',
-                accessibleLabel: 'Chart showing correlation between journaling activity and mood over 7 days',
+                accessibleLabel:
+                    'Chart showing correlation between journaling activity and mood over 7 days',
                 tableColumns: const [
                   DataColumn(label: Text('Day')),
                   DataColumn(label: Text('Activity')),
                   DataColumn(label: Text('Mood')),
                 ],
                 tableRows: const [
-                  DataRow(cells: [DataCell(Text('M')), DataCell(Text('0')), DataCell(Text('4'))]),
-                  DataRow(cells: [DataCell(Text('T')), DataCell(Text('0')), DataCell(Text('5'))]),
-                  DataRow(cells: [DataCell(Text('W')), DataCell(Text('1')), DataCell(Text('6'))]),
-                  DataRow(cells: [DataCell(Text('T')), DataCell(Text('1')), DataCell(Text('8'))]),
-                  DataRow(cells: [DataCell(Text('F')), DataCell(Text('1')), DataCell(Text('7'))]),
-                  DataRow(cells: [DataCell(Text('S')), DataCell(Text('0')), DataCell(Text('6'))]),
-                  DataRow(cells: [DataCell(Text('S')), DataCell(Text('1')), DataCell(Text('7'))]),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('M')),
+                      DataCell(Text('0')),
+                      DataCell(Text('4')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('T')),
+                      DataCell(Text('0')),
+                      DataCell(Text('5')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('W')),
+                      DataCell(Text('1')),
+                      DataCell(Text('6')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('T')),
+                      DataCell(Text('1')),
+                      DataCell(Text('8')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('F')),
+                      DataCell(Text('1')),
+                      DataCell(Text('7')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('S')),
+                      DataCell(Text('0')),
+                      DataCell(Text('6')),
+                    ],
+                  ),
+                  DataRow(
+                    cells: [
+                      DataCell(Text('S')),
+                      DataCell(Text('1')),
+                      DataCell(Text('7')),
+                    ],
+                  ),
                 ],
                 legend: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _buildLegendItem('Activity', const Color(0xFFE85D3A), true),
-                    const SizedBox(width: 24),
+                    SizedBox(width: 24),
                     _buildLegendItem('Mood', AppColors.primary, false),
                   ],
                 ),
@@ -94,34 +141,42 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen> with SingleTick
                   },
                 ),
               ),
-              
-              const SizedBox(height: 32),
-              
+
+              SizedBox(height: 32),
+
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('What we noticed', style: AppTextStyles.heading2),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Text(
                       'On days you journaled, your mood was 1.8 points higher on average.',
-                      style: AppTextStyles.body1.copyWith(color: AppColors.text, height: 1.5),
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.5,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Text(
                       'You journaled 4 times this week.',
-                      style: AppTextStyles.body1.copyWith(color: AppColors.text, height: 1.5),
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.5,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 64),
+              SizedBox(height: 64),
             ],
           ),
         ),
@@ -146,8 +201,15 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen> with SingleTick
                 )
               : null,
         ),
-        const SizedBox(width: 8),
-        Text(label, style: AppTextStyles.body2.copyWith(color: AppColors.textMuted)),
+        SizedBox(width: 8),
+        Text(
+          label,
+          style: AppTextStyles.body2.copyWith(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textMutedDark
+                : AppColors.textMutedLight,
+          ),
+        ),
       ],
     );
   }
@@ -165,14 +227,16 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen> with SingleTick
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
             return Text(
               day,
               style: AppTextStyles.body2.copyWith(
-                color: AppColors.textSubtle,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textSubtleDark
+                    : AppColors.textSubtleLight,
                 fontSize: 12,
               ),
             );
@@ -215,7 +279,12 @@ class _DualLineChartPainter extends CustomPainter {
     _drawMoodLine(canvas, size, maxData, pointWidth);
   }
 
-  void _drawActivityLine(Canvas canvas, Size size, double maxData, double pointWidth) {
+  void _drawActivityLine(
+    Canvas canvas,
+    Size size,
+    double maxData,
+    double pointWidth,
+  ) {
     final path = Path();
     path.moveTo(0, size.height - (activityData[0] / maxData) * size.height);
 
@@ -228,10 +297,15 @@ class _DualLineChartPainter extends CustomPainter {
         path.lineTo(x, y);
       } else {
         final prevProgress = (i - 1) / (activityData.length - 1);
-        final segmentProgress = (animationValue - prevProgress) / (currentProgress - prevProgress);
+        final segmentProgress =
+            (animationValue - prevProgress) / (currentProgress - prevProgress);
         final prevX = (i - 1) * pointWidth;
-        final prevY = size.height - (activityData[i - 1] / maxData) * size.height;
-        path.lineTo(prevX + (x - prevX) * segmentProgress, prevY + (y - prevY) * segmentProgress);
+        final prevY =
+            size.height - (activityData[i - 1] / maxData) * size.height;
+        path.lineTo(
+          prevX + (x - prevX) * segmentProgress,
+          prevY + (y - prevY) * segmentProgress,
+        );
         break;
       }
     }
@@ -241,7 +315,7 @@ class _DualLineChartPainter extends CustomPainter {
     double dashWidth = 5.0;
     double dashSpace = 5.0;
     double distance = 0.0;
-    
+
     for (final pathMetric in path.computeMetrics()) {
       while (distance < pathMetric.length) {
         dashPath.addPath(
@@ -258,11 +332,16 @@ class _DualLineChartPainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;
-      
+
     canvas.drawPath(dashPath, activityPaint);
   }
 
-  void _drawMoodLine(Canvas canvas, Size size, double maxData, double pointWidth) {
+  void _drawMoodLine(
+    Canvas canvas,
+    Size size,
+    double maxData,
+    double pointWidth,
+  ) {
     final path = Path();
     path.moveTo(0, size.height - (moodData[0] / maxData) * size.height);
 
@@ -275,10 +354,14 @@ class _DualLineChartPainter extends CustomPainter {
         path.lineTo(x, y);
       } else {
         final prevProgress = (i - 1) / (moodData.length - 1);
-        final segmentProgress = (animationValue - prevProgress) / (currentProgress - prevProgress);
+        final segmentProgress =
+            (animationValue - prevProgress) / (currentProgress - prevProgress);
         final prevX = (i - 1) * pointWidth;
         final prevY = size.height - (moodData[i - 1] / maxData) * size.height;
-        path.lineTo(prevX + (x - prevX) * segmentProgress, prevY + (y - prevY) * segmentProgress);
+        path.lineTo(
+          prevX + (x - prevX) * segmentProgress,
+          prevY + (y - prevY) * segmentProgress,
+        );
         break;
       }
     }
@@ -298,7 +381,7 @@ class _DualLineChartPainter extends CustomPainter {
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;
-      
+
     canvas.drawPath(path, moodPaint);
   }
 

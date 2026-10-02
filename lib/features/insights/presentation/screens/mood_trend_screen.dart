@@ -11,9 +11,10 @@ class MoodTrendScreen extends StatefulWidget {
   State<MoodTrendScreen> createState() => _MoodTrendScreenState();
 }
 
-class _MoodTrendScreenState extends State<MoodTrendScreen> with SingleTickerProviderStateMixin {
+class _MoodTrendScreenState extends State<MoodTrendScreen>
+    with SingleTickerProviderStateMixin {
   String _selectedRange = '7 days';
-  
+
   late AnimationController _controller;
   late Animation<double> _chartAnimation;
 
@@ -54,7 +55,10 @@ class _MoodTrendScreenState extends State<MoodTrendScreen> with SingleTickerProv
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text('Mood trend', style: AppTextStyles.heading2),
@@ -71,9 +75,11 @@ class _MoodTrendScreenState extends State<MoodTrendScreen> with SingleTickerProv
                 height: 48,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Row(
                   children: ['7 days', '30 days', '90 days'].map((range) {
@@ -83,15 +89,21 @@ class _MoodTrendScreenState extends State<MoodTrendScreen> with SingleTickerProv
                         onTap: () => _changeRange(range),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primary : Colors.transparent,
+                            color: isSelected
+                                ? AppColors.primary
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           alignment: Alignment.center,
                           child: Text(
                             range,
                             style: AppTextStyles.body2.copyWith(
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                              color: isSelected ? AppColors.white : AppColors.text,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.white
+                                  : AppColors.text,
                             ),
                           ),
                         ),
@@ -100,8 +112,8 @@ class _MoodTrendScreenState extends State<MoodTrendScreen> with SingleTickerProv
                   }).toList(),
                 ),
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               // Chart
               ChartContainer(
                 title: 'Mood trend ($_selectedRange)',
@@ -111,13 +123,27 @@ class _MoodTrendScreenState extends State<MoodTrendScreen> with SingleTickerProv
                   DataColumn(label: Text('Mood')),
                 ],
                 tableRows: const [
-                  DataRow(cells: [DataCell(Text('Monday')), DataCell(Text('4'))]),
-                  DataRow(cells: [DataCell(Text('Tuesday')), DataCell(Text('5'))]),
-                  DataRow(cells: [DataCell(Text('Wednesday')), DataCell(Text('6'))]),
-                  DataRow(cells: [DataCell(Text('Thursday')), DataCell(Text('8'))]),
-                  DataRow(cells: [DataCell(Text('Friday')), DataCell(Text('7'))]),
-                  DataRow(cells: [DataCell(Text('Saturday')), DataCell(Text('6'))]),
-                  DataRow(cells: [DataCell(Text('Sunday')), DataCell(Text('7'))]),
+                  DataRow(
+                    cells: [DataCell(Text('Monday')), DataCell(Text('4'))],
+                  ),
+                  DataRow(
+                    cells: [DataCell(Text('Tuesday')), DataCell(Text('5'))],
+                  ),
+                  DataRow(
+                    cells: [DataCell(Text('Wednesday')), DataCell(Text('6'))],
+                  ),
+                  DataRow(
+                    cells: [DataCell(Text('Thursday')), DataCell(Text('8'))],
+                  ),
+                  DataRow(
+                    cells: [DataCell(Text('Friday')), DataCell(Text('7'))],
+                  ),
+                  DataRow(
+                    cells: [DataCell(Text('Saturday')), DataCell(Text('6'))],
+                  ),
+                  DataRow(
+                    cells: [DataCell(Text('Sunday')), DataCell(Text('7'))],
+                  ),
                 ],
                 chart: AnimatedBuilder(
                   animation: _chartAnimation,
@@ -126,15 +152,17 @@ class _MoodTrendScreenState extends State<MoodTrendScreen> with SingleTickerProv
                   },
                 ),
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               // Summary Card
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,24 +171,26 @@ class _MoodTrendScreenState extends State<MoodTrendScreen> with SingleTickerProv
                       _selectedRange == '7 days' ? 'This week' : 'This period',
                       style: AppTextStyles.heading2,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     _buildSummaryRow('Average:', '6.2 / 10'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildSummaryRow('Highest:', '8 on Thursday'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildSummaryRow('Lowest:', '4 on Monday'),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     Text(
                       'You had more calm moments toward the end of the week.',
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
                         height: 1.5,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 64),
+              SizedBox(height: 64),
             ],
           ),
         ),
@@ -174,15 +204,17 @@ class _MoodTrendScreenState extends State<MoodTrendScreen> with SingleTickerProv
         Text(
           label,
           style: AppTextStyles.body1.copyWith(
-            color: AppColors.text,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Text(
           value,
           style: AppTextStyles.body1.copyWith(
-            color: AppColors.textMuted,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textMutedDark
+                : AppColors.textMutedLight,
           ),
         ),
       ],
@@ -201,14 +233,16 @@ class _MoodTrendScreenState extends State<MoodTrendScreen> with SingleTickerProv
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
             return Text(
               day,
               style: AppTextStyles.body2.copyWith(
-                color: AppColors.textSubtle,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textSubtleDark
+                    : AppColors.textSubtleLight,
                 fontSize: 12,
               ),
             );
@@ -223,10 +257,7 @@ class _MoodAreaChartPainter extends CustomPainter {
   final List<double> data;
   final double animationValue;
 
-  _MoodAreaChartPainter({
-    required this.data,
-    required this.animationValue,
-  });
+  _MoodAreaChartPainter({required this.data, required this.animationValue});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -254,14 +285,15 @@ class _MoodAreaChartPainter extends CustomPainter {
       } else {
         // Interpolate last point
         final prevProgress = (i - 1) / (data.length - 1);
-        final segmentProgress = (animationValue - prevProgress) / (currentProgress - prevProgress);
-        
+        final segmentProgress =
+            (animationValue - prevProgress) / (currentProgress - prevProgress);
+
         final prevX = (i - 1) * pointWidth;
         final prevY = size.height - (data[i - 1] / maxData) * size.height;
-        
+
         final interpX = prevX + (x - prevX) * segmentProgress;
         final interpY = prevY + (y - prevY) * segmentProgress;
-        
+
         path.lineTo(interpX, interpY);
         areaPath.lineTo(interpX, interpY);
         break;
@@ -279,7 +311,7 @@ class _MoodAreaChartPainter extends CustomPainter {
         ..color = AppColors.border.withValues(alpha: 0.5)
         ..strokeWidth = 1
         ..style = PaintingStyle.stroke;
-        
+
       for (int i = 1; i < 5; i++) {
         final y = size.height * (i / 5);
         canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
@@ -315,7 +347,7 @@ class _MoodAreaChartPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeJoin = StrokeJoin.round;
       canvas.drawPath(path, linePaint);
-      
+
       // Draw points
       if (animationValue == 1.0) {
         final pointPaint = Paint()
@@ -325,7 +357,7 @@ class _MoodAreaChartPainter extends CustomPainter {
           ..color = AppColors.primary
           ..strokeWidth = 2
           ..style = PaintingStyle.stroke;
-          
+
         for (int i = 0; i < data.length; i++) {
           final x = i * pointWidth;
           final y = size.height - (data[i] / maxData) * size.height;
@@ -338,7 +370,7 @@ class _MoodAreaChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MoodAreaChartPainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue || 
-           oldDelegate.data != data;
+    return oldDelegate.animationValue != animationValue ||
+        oldDelegate.data != data;
   }
 }
