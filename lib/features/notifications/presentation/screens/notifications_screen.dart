@@ -19,9 +19,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void _markAllAsRead() async {
     await NotificationRepository().markAllAsRead();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All caught up')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('All caught up')));
     }
   }
 
@@ -46,7 +46,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         actions: [
@@ -71,7 +74,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                 ),
               );
-            }
+            },
           ),
         ],
       ),
@@ -85,7 +88,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             final items = snapshot.data ?? [];
             if (items.isEmpty) return _buildEmptyState();
             return _buildList(items);
-          }
+          },
         ),
       ),
     );
@@ -105,7 +108,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.notifications_none,
                 size: 64,
                 color: AppColors.primary,
@@ -114,13 +117,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             const SizedBox(height: 32),
             Text(
               'You\'re all caught up.',
-              style: AppTextStyles.heading2.copyWith(fontSize: 24, color: AppColors.text),
+              style: AppTextStyles.heading2.copyWith(
+                fontSize: 24,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               'When something happens, we\'ll let you know here.',
-              style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+              style: AppTextStyles.body1.copyWith(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -137,7 +147,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Icon(Icons.arrow_forward, size: 20, color: AppColors.primary),
+                  Icon(Icons.arrow_forward, size: 20, color: AppColors.primary),
                 ],
               ),
             ),
@@ -182,7 +192,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               padding: const EdgeInsets.only(bottom: 24),
               child: Text(
                 'Notifications',
-                style: AppTextStyles.heading1.copyWith(fontSize: 28, color: AppColors.text),
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 28,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             );
           }
@@ -196,13 +209,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             children: [
               Text(
                 dateGroup,
-                style: AppTextStyles.heading2.copyWith(fontSize: 20, color: AppColors.text),
+                style: AppTextStyles.heading2.copyWith(
+                  fontSize: 20,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               const SizedBox(height: 16),
-              ...items.map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _buildNotificationCard(item),
-                  )),
+              ...items.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _buildNotificationCard(item),
+                ),
+              ),
               const SizedBox(height: 24),
             ],
           );
@@ -232,7 +250,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
-        child: const Icon(Icons.delete_outline, color: AppColors.white),
+        child: Icon(Icons.delete_outline, color: AppColors.white),
       ),
       child: GestureDetector(
         onTap: () async {
@@ -247,7 +265,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           // Context menu (simulated with a bottom sheet for now)
           showModalBottomSheet(
             context: context,
-            backgroundColor: AppColors.surface,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
@@ -257,16 +275,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.check, color: AppColors.text),
-                      title: Text('Mark as read', style: AppTextStyles.body1.copyWith(color: AppColors.text)),
+                      leading: Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      title: Text(
+                        'Mark as read',
+                        style: AppTextStyles.body1.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                       onTap: () async {
                         await NotificationRepository().markAsRead(item.id);
                         if (mounted) context.pop();
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.delete_outline, color: AppColors.danger),
-                      title: Text('Delete', style: AppTextStyles.body1.copyWith(color: AppColors.danger)),
+                      leading: Icon(
+                        Icons.delete_outline,
+                        color: AppColors.danger,
+                      ),
+                      title: Text(
+                        'Delete',
+                        style: AppTextStyles.body1.copyWith(
+                          color: AppColors.danger,
+                        ),
+                      ),
                       onTap: () {
                         context.pop();
                         _deleteNotification(item);
@@ -281,16 +315,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Container(
           constraints: const BoxConstraints(minHeight: 72),
           decoration: BoxDecoration(
-            color: item.read ? AppColors.surface : AppColors.primary.withValues(alpha: 0.04),
+            color: item.read
+                ? AppColors.surface
+                : AppColors.primary.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(12),
             border: Border(
               left: BorderSide(
                 color: item.read ? Colors.transparent : AppColors.primary,
                 width: 3,
               ),
-              top: BorderSide(color: AppColors.border, width: item.read ? 1 : 0),
-              right: BorderSide(color: AppColors.border, width: item.read ? 1 : 0),
-              bottom: BorderSide(color: AppColors.border, width: item.read ? 1 : 0),
+              top: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: item.read ? 1 : 0,
+              ),
+              right: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: item.read ? 1 : 0,
+              ),
+              bottom: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: item.read ? 1 : 0,
+              ),
             ),
           ),
           padding: const EdgeInsets.all(16),
@@ -299,7 +344,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(icon, style: const TextStyle(fontSize: 24)),
+                  Text(icon, style: TextStyle(fontSize: 24)),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -308,14 +353,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         Text(
                           item.title,
                           style: AppTextStyles.body1.copyWith(
-                            color: AppColors.text,
-                            fontWeight: item.read ? FontWeight.w500 : FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: item.read
+                                ? FontWeight.w500
+                                : FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           item.body,
-                          style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                          style: AppTextStyles.body2.copyWith(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textMutedDark
+                                : AppColors.textMutedLight,
+                          ),
                         ),
                       ],
                     ),
@@ -323,7 +375,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   const SizedBox(width: 16),
                   Text(
                     time,
-                    style: AppTextStyles.body2.copyWith(color: AppColors.textSubtle, fontSize: 12),
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textSubtleDark
+                          : AppColors.textSubtleLight,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),

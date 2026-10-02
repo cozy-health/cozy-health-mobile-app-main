@@ -15,7 +15,10 @@ class NotificationDetailScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
       ),
@@ -26,7 +29,7 @@ class NotificationDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 32),
-              
+
               // Centered Illustration/Icon
               Center(
                 child: Container(
@@ -37,27 +40,35 @@ class NotificationDetailScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: const Text('🏆', style: TextStyle(fontSize: 64)),
+                  child: Text('🏆', style: TextStyle(fontSize: 64)),
                 ),
               ),
               const SizedBox(height: 48),
-              
+
               // Title
               Text(
                 '7-day streak!',
-                style: AppTextStyles.heading1.copyWith(fontSize: 28, color: AppColors.text),
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 28,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              
+
               // Body
               Text(
                 'You\'ve logged your mood 7 days in a row.\nThat\'s real dedication to yourself.',
-                style: AppTextStyles.body1.copyWith(color: AppColors.textMuted, height: 1.6),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
+                  height: 1.6,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 64),
-              
+
               // Actions
               AppButton(
                 text: 'View in Achievements',
