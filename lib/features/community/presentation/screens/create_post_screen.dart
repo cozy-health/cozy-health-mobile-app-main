@@ -53,7 +53,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     if (_textController.text.toLowerCase().contains('harm')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Your post is being reviewed. It may take a moment to appear.'),
+          content: Text(
+            'Your post is being reviewed. It may take a moment to appear.',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -84,7 +86,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           onPressed: () => context.pop(),
           child: Text(
             'Cancel',
-            style: AppTextStyles.body1.copyWith(color: AppColors.text),
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ),
         leadingWidth: 80,
@@ -96,14 +100,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 disabledBackgroundColor: AppColors.border,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 elevation: 0,
               ),
               child: _isPublishing
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : Text(
                       'Post',
@@ -133,7 +142,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 );
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Container(
@@ -156,13 +168,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _visibility == PostVisibility.anonymous ? 'Anonymous' : '@sarahchen',
+                            _visibility == PostVisibility.anonymous
+                                ? 'Anonymous'
+                                : '@sarahchen',
                             style: AppTextStyles.body1.copyWith(
                               fontWeight: FontWeight.w500,
                               fontStyle: _visibility == PostVisibility.anonymous
@@ -176,15 +190,27 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                 _visibility == PostVisibility.public
                                     ? 'Posting publicly'
                                     : _visibility == PostVisibility.followers
-                                        ? 'Followers only'
-                                        : 'Posting anonymously',
+                                    ? 'Followers only'
+                                    : 'Posting anonymously',
                                 style: AppTextStyles.body2.copyWith(
-                                  color: AppColors.textMuted,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.textMutedDark
+                                      : AppColors.textMutedLight,
                                   fontSize: 13,
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textMuted),
+                              SizedBox(width: 4),
+                              Icon(
+                                Icons.keyboard_arrow_down,
+                                size: 16,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? AppColors.textMutedDark
+                                    : AppColors.textMutedLight,
+                              ),
                             ],
                           ),
                         ],
@@ -205,18 +231,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   decoration: InputDecoration(
                     hintText: 'What\'s on your mind?',
                     hintStyle: AppTextStyles.body1.copyWith(
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
                       fontFamily: 'Georgia', // Serif font
                       fontSize: 18,
                     ),
                     border: InputBorder.none,
                   ),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Georgia',
                     fontSize: 18,
                     fontWeight: FontWeight.w400,
                     height: 1.6,
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -226,8 +254,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                border: Border(top: BorderSide(color: AppColors.border.withValues(alpha: 0.5))),
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.5),
+                  ),
+                ),
               ),
               child: Column(
                 children: [
@@ -243,27 +277,33 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(_selectedTopic, style: AppTextStyles.body1),
-                        const Icon(Icons.keyboard_arrow_down, color: AppColors.text),
+                        Icon(
+                          Icons.keyboard_arrow_down,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  
+                  SizedBox(height: 16),
+
                   // Attach Image
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.image_outlined, color: AppColors.text),
-                          const SizedBox(width: 12),
+                          Icon(
+                            Icons.image_outlined,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          SizedBox(width: 12),
                           Text('Add image', style: AppTextStyles.body1),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  
+                  SizedBox(height: 16),
+
                   // Guidelines Reminder
                   GestureDetector(
                     onTap: () => context.push(AppRouter.communityGuidelines),
@@ -272,25 +312,37 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.warning.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+                        border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
-                          const SizedBox(width: 12),
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: AppColors.warning,
+                            size: 20,
+                          ),
+                          SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               'Community guidelines\nBe kind. Be honest. Be safe.',
-                              style: AppTextStyles.body2.copyWith(color: AppColors.warning),
+                              style: AppTextStyles.body2.copyWith(
+                                color: AppColors.warning,
+                              ),
                             ),
                           ),
-                          const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.warning),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 14,
+                            color: AppColors.warning,
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  
+                  SizedBox(height: 16),
+
                   // Character Count
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -301,9 +353,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           color: isOverLimit
                               ? AppColors.danger
                               : isWarning
-                                  ? AppColors.warning
-                                  : AppColors.textMuted,
-                          fontWeight: isWarning ? FontWeight.w600 : FontWeight.w400,
+                              ? AppColors.warning
+                              : AppColors.textMuted,
+                          fontWeight: isWarning
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                         ),
                       ),
                     ],

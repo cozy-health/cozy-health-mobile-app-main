@@ -18,14 +18,15 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   bool _isFollowing = false;
-  
+
   // Mock recent posts
   final List<Map<String, dynamic>> _recentPosts = [
     {
       'username': 'sarahchen',
       'isAnonymous': false,
       'timeAgo': '2h',
-      'content': 'Today was hard but I wanted to share that I\'m still here. Small wins.',
+      'content':
+          'Today was hard but I wanted to share that I\'m still here. Small wins.',
       'likes': 12,
       'comments': 4,
       'isLiked': true,
@@ -38,8 +39,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -47,23 +48,35 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.link, color: AppColors.text),
-              title: const Text('Copy link'),
+              leading: Icon(
+                Icons.link,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              title: Text('Copy link'),
               onTap: () => Navigator.pop(context),
             ),
             ListTile(
-              leading: const Icon(Icons.notifications_off_outlined, color: AppColors.text),
-              title: const Text('Mute (hide posts)'),
+              leading: Icon(
+                Icons.notifications_off_outlined,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              title: Text('Mute (hide posts)'),
               onTap: () => Navigator.pop(context),
             ),
             ListTile(
-              leading: const Icon(Icons.block, color: AppColors.text),
-              title: const Text('Block user'),
+              leading: Icon(
+                Icons.block,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              title: Text('Block user'),
               onTap: () => Navigator.pop(context),
             ),
             ListTile(
-              leading: const Icon(Icons.flag_outlined, color: AppColors.danger),
-              title: Text('Report user', style: AppTextStyles.body1.copyWith(color: AppColors.danger)),
+              leading: Icon(Icons.flag_outlined, color: AppColors.danger),
+              title: Text(
+                'Report user',
+                style: AppTextStyles.body1.copyWith(color: AppColors.danger),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 ReportSheet.show(
@@ -94,12 +107,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz, color: AppColors.text),
+            icon: Icon(
+              Icons.more_horiz,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             onPressed: _showContextMenu,
           ),
         ],
@@ -129,22 +148,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              
+              SizedBox(height: 16),
+
               // Name & Join Date
               Text(
                 '@$username',
                 style: AppTextStyles.heading1.copyWith(fontSize: 28),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 'Joined March 2026',
-                style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body2.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
-              
+              SizedBox(height: 16),
+
               // Bio
               Text(
                 '"Trying to be kinder to myself."',
@@ -153,19 +176,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               // Stats
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildStatCard('42', 'Posts'),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   _buildStatCard('28', 'Followers'),
                 ],
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               // Actions
               Row(
                 children: [
@@ -180,41 +203,54 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Container(
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: AppColors.border.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.chat_bubble_outline, color: AppColors.text),
+                      icon: Icon(
+                        Icons.chat_bubble_outline,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       onPressed: () {
-                        context.push(AppRouter.directMessages, extra: {'username': username});
+                        context.push(
+                          AppRouter.directMessages,
+                          extra: {'username': username},
+                        );
                       },
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 48),
-              
+              SizedBox(height: 48),
+
               // Recent Posts
               Text('Recent posts', style: AppTextStyles.heading2),
-              const SizedBox(height: 16),
-              
-              ..._recentPosts.map((post) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: PostCard(
-                  post: post,
-                  onTap: () => context.push(AppRouter.postDetail, extra: {'post': post}),
-                  onAvatarTap: () {},
-                  onLongPress: () {},
+              SizedBox(height: 16),
+
+              ..._recentPosts.map(
+                (post) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: PostCard(
+                    post: post,
+                    onTap: () => context.push(
+                      AppRouter.postDetail,
+                      extra: {'post': post},
+                    ),
+                    onAvatarTap: () {},
+                    onLongPress: () {},
+                  ),
                 ),
-              )),
-              
-              const SizedBox(height: 64),
+              ),
+
+              SizedBox(height: 64),
             ],
           ),
         ),
@@ -227,15 +263,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       width: 100,
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
           Text(count, style: AppTextStyles.heading2),
-          const SizedBox(height: 4),
-          Text(label, style: AppTextStyles.body2.copyWith(color: AppColors.textMuted)),
+          SizedBox(height: 4),
+          Text(
+            label,
+            style: AppTextStyles.body2.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
+          ),
         ],
       ),
     );

@@ -110,14 +110,17 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                       style: AppTextStyles.heading1.copyWith(fontSize: 28),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.search, color: AppColors.text),
+                      icon: Icon(
+                        Icons.search,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       onPressed: () => context.push(AppRouter.communitySearch),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Filter Chips
             SizedBox(
@@ -130,7 +133,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   scrollDirection: Axis.horizontal,
                   itemCount: _filters.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  separatorBuilder: (_, __) => SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     final filter = _filters[index];
                     final isSelected = _selectedFilter == filter;
@@ -171,7 +174,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Main Content (Feed)
             Expanded(
@@ -199,22 +202,26 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.border),
                 ),
                 alignment: Alignment.center,
-                child: const Text('👋', style: TextStyle(fontSize: 48)),
+                child: Text('👋', style: TextStyle(fontSize: 48)),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text('It\'s quiet here.', style: AppTextStyles.heading2),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'Be the first to share.\nOr just read for now — that\'s welcome too.',
-                style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               GestureDetector(
                 onTap: () => context.push(AppRouter.createPost),
                 child: Container(
@@ -265,7 +272,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
                   color: AppColors.border.withValues(alpha: 0.5),
@@ -277,16 +284,24 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                   Text(
                     'Share something...',
                     style: AppTextStyles.body1.copyWith(
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
                     ),
                   ),
-                  const Icon(Icons.edit, size: 20, color: AppColors.textMuted),
+                  Icon(
+                    Icons.edit,
+                    size: 20,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
+                  ),
                 ],
               ),
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
 
         ...List.generate(filteredPosts.length, (index) {
           final post = filteredPosts[index];

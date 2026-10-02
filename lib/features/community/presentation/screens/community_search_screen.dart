@@ -10,7 +10,8 @@ class CommunitySearchScreen extends StatefulWidget {
   State<CommunitySearchScreen> createState() => _CommunitySearchScreenState();
 }
 
-class _CommunitySearchScreenState extends State<CommunitySearchScreen> with SingleTickerProviderStateMixin {
+class _CommunitySearchScreenState extends State<CommunitySearchScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   late TabController _tabController;
@@ -40,7 +41,10 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> with Sing
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
       ),
@@ -53,21 +57,34 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> with Sing
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.search, color: AppColors.textMuted, size: 20),
-                    const SizedBox(width: 12),
+                    Icon(
+                      Icons.search,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                      size: 20,
+                    ),
+                    SizedBox(width: 12),
                     Expanded(
                       child: TextField(
                         controller: _searchController,
                         focusNode: _focusNode,
                         decoration: InputDecoration(
                           hintText: 'Search community...',
-                          hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                          hintStyle: AppTextStyles.body1.copyWith(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textMutedDark
+                                : AppColors.textMutedLight,
+                          ),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
@@ -82,11 +99,14 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> with Sing
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             TabBar(
               controller: _tabController,
               labelColor: AppColors.primary,
-              unselectedLabelColor: AppColors.textMuted,
+              unselectedLabelColor:
+                  Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
               indicatorColor: AppColors.primary,
               tabs: const [
                 Tab(text: 'Posts'),
@@ -114,7 +134,11 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> with Sing
     return Center(
       child: Text(
         message,
-        style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+        style: AppTextStyles.body1.copyWith(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.textMutedDark
+              : AppColors.textMutedLight,
+        ),
       ),
     );
   }

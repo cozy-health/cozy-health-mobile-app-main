@@ -16,21 +16,13 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
   final TextEditingController _messageController = TextEditingController();
 
   final List<Map<String, dynamic>> _messages = [
-    {
-      'isMine': false,
-      'content': 'Hi! How are you doing?',
-      'time': '2h ago',
-    },
+    {'isMine': false, 'content': 'Hi! How are you doing?', 'time': '2h ago'},
     {
       'isMine': true,
       'content': 'I\'m doing okay. Thanks for asking. How are you?',
       'time': '1h ago',
     },
-    {
-      'isMine': false,
-      'content': 'Hanging in there.',
-      'time': '45m ago',
-    },
+    {'isMine': false, 'content': 'Hanging in there.', 'time': '45m ago'},
   ];
 
   @override
@@ -57,8 +49,8 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -66,13 +58,19 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.block, color: AppColors.text),
-              title: const Text('Block user'),
+              leading: Icon(
+                Icons.block,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              title: Text('Block user'),
               onTap: () => Navigator.pop(context),
             ),
             ListTile(
-              leading: const Icon(Icons.flag_outlined, color: AppColors.danger),
-              title: Text('Report conversation', style: AppTextStyles.body1.copyWith(color: AppColors.danger)),
+              leading: Icon(Icons.flag_outlined, color: AppColors.danger),
+              title: Text(
+                'Report conversation',
+                style: AppTextStyles.body1.copyWith(color: AppColors.danger),
+              ),
               onTap: () => Navigator.pop(context),
             ),
           ],
@@ -91,14 +89,20 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text('@$username', style: AppTextStyles.heading3),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz, color: AppColors.text),
+            icon: Icon(
+              Icons.more_horiz,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             onPressed: _showContextMenu,
           ),
         ],
@@ -113,18 +117,24 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
                 itemBuilder: (context, index) {
                   final message = _messages[index];
                   final isMine = message['isMine'] as bool;
-                  
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 24),
                     child: Column(
-                      crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      crossAxisAlignment: isMine
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
                       children: [
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isMine ? AppColors.primary : AppColors.surface,
+                            color: isMine
+                                ? AppColors.primary
+                                : AppColors.surface,
                             borderRadius: BorderRadius.circular(16),
-                            border: isMine ? null : Border.all(color: AppColors.border),
+                            border: isMine
+                                ? null
+                                : Border.all(color: AppColors.border),
                           ),
                           constraints: BoxConstraints(
                             maxWidth: MediaQuery.of(context).size.width * 0.75,
@@ -136,10 +146,16 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           message['time'],
-                          style: AppTextStyles.body2.copyWith(color: AppColors.textMuted, fontSize: 12),
+                          style: AppTextStyles.body2.copyWith(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textMutedDark
+                                : AppColors.textMutedLight,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
@@ -147,13 +163,19 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
                 },
               ),
             ),
-            
+
             // Input Bar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                border: Border(top: BorderSide(color: AppColors.border.withValues(alpha: 0.5))),
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.5),
+                  ),
+                ),
               ),
               child: Row(
                 children: [
@@ -162,7 +184,11 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
                       controller: _messageController,
                       decoration: InputDecoration(
                         hintText: 'Message...',
-                        hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                        hintStyle: AppTextStyles.body1.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
+                        ),
                         border: InputBorder.none,
                         isDense: true,
                       ),
@@ -170,7 +196,7 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.arrow_upward, color: AppColors.primary),
+                    icon: Icon(Icons.arrow_upward, color: AppColors.primary),
                     onPressed: _sendMessage,
                   ),
                 ],

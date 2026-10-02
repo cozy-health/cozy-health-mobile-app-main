@@ -15,7 +15,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => context.pop(),
         ),
         title: Text('Guidelines', style: AppTextStyles.heading3),
@@ -45,35 +45,68 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                   style: AppTextStyles.heading1.copyWith(fontSize: 28),
                 ),
               ),
-              const SizedBox(height: 32),
-              
-              _buildGuideline('💛', 'Be kind.', 'Everyone here is going through something. Assume good intent. Speak to people the way you\'d want to be spoken to on your hardest day.'),
-              _buildGuideline('🤝', 'Be honest.', 'Share what\'s real for you. You don\'t have to perform wellness or hide struggle. Both are welcome.'),
-              _buildGuideline('🛡', 'Be safe.', 'Don\'t encourage harm — to yourself or others. If you\'re in crisis, we have support for you. If someone else is, help them find it.'),
-              _buildGuideline('🔒', 'Be private.', 'What\'s shared here stays here. Don\'t screenshot, share, or repost. Don\'t share anyone\'s personal information.'),
-              _buildGuideline('📍', 'Be here.', 'This isn\'t a place to sell, promote, recruit, or recruit for anything. It\'s a place to be human with other humans.'),
-              _buildGuideline('🎁', 'Be generous.', 'If you have the energy, support someone. A kind reply goes further than you think.'),
-              _buildGuideline('⏳', 'Be patient.', 'Moderators are human. Reports take time to process. We get to them.'),
-              
-              const SizedBox(height: 32),
-              const Divider(color: AppColors.border),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
+              _buildGuideline(
+                '💛',
+                'Be kind.',
+                'Everyone here is going through something. Assume good intent. Speak to people the way you\'d want to be spoken to on your hardest day.',
+              ),
+              _buildGuideline(
+                '🤝',
+                'Be honest.',
+                'Share what\'s real for you. You don\'t have to perform wellness or hide struggle. Both are welcome.',
+              ),
+              _buildGuideline(
+                '🛡',
+                'Be safe.',
+                'Don\'t encourage harm — to yourself or others. If you\'re in crisis, we have support for you. If someone else is, help them find it.',
+              ),
+              _buildGuideline(
+                '🔒',
+                'Be private.',
+                'What\'s shared here stays here. Don\'t screenshot, share, or repost. Don\'t share anyone\'s personal information.',
+              ),
+              _buildGuideline(
+                '📍',
+                'Be here.',
+                'This isn\'t a place to sell, promote, recruit, or recruit for anything. It\'s a place to be human with other humans.',
+              ),
+              _buildGuideline(
+                '🎁',
+                'Be generous.',
+                'If you have the energy, support someone. A kind reply goes further than you think.',
+              ),
+              _buildGuideline(
+                '⏳',
+                'Be patient.',
+                'Moderators are human. Reports take time to process. We get to them.',
+              ),
+
+              SizedBox(height: 32),
+              Divider(color: AppColors.border),
+              SizedBox(height: 32),
+
               Text('What gets you removed', style: AppTextStyles.heading2),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _buildBullet('Harassment, hate speech, or threats'),
-              _buildBullet('Content that encourages self-harm or eating disorders'),
+              _buildBullet(
+                'Content that encourages self-harm or eating disorders',
+              ),
               _buildBullet('Sharing someone\'s private information'),
               _buildBullet('Spam, scams, or promotional content'),
               _buildBullet('Sexual content involving minors'),
               _buildBullet('Impersonation'),
-              
-              const SizedBox(height: 32),
-              const Divider(color: AppColors.border),
-              const SizedBox(height: 32),
-              
-              Text('What happens if you\'re reported', style: AppTextStyles.heading2),
-              const SizedBox(height: 16),
+
+              SizedBox(height: 32),
+              Divider(color: AppColors.border),
+              SizedBox(height: 32),
+
+              Text(
+                'What happens if you\'re reported',
+                style: AppTextStyles.heading2,
+              ),
+              SizedBox(height: 16),
               Text(
                 'We look at every report. Depending on what we find:\n\n'
                 '• A warning and reminder of guidelines\n'
@@ -82,19 +115,19 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                 'You can appeal any decision by emailing appeals@cozyhealth.app.',
                 style: AppTextStyles.body1.copyWith(height: 1.5),
               ),
-              
-              const SizedBox(height: 32),
-              const Divider(color: AppColors.border),
-              const SizedBox(height: 32),
-              
+
+              SizedBox(height: 32),
+              Divider(color: AppColors.border),
+              SizedBox(height: 32),
+
               Text('If you\'re in crisis', style: AppTextStyles.heading2),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 'Posting about it is okay. We care. And we\'ll also send you resources. You don\'t have to go through this alone.',
                 style: AppTextStyles.body1.copyWith(height: 1.5),
               ),
-              const SizedBox(height: 24),
-              
+              SizedBox(height: 24),
+
               GestureDetector(
                 onTap: () => context.push(AppRouter.crisisHub),
                 child: Container(
@@ -114,13 +147,17 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.primary),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
                     ],
                   ),
                 ),
               ),
-              
-              const SizedBox(height: 64),
+
+              SizedBox(height: 64),
             ],
           ),
         ),
@@ -142,15 +179,18 @@ class CommunityGuidelinesScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(icon, style: const TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
+              Text(icon, style: TextStyle(fontSize: 24)),
+              SizedBox(width: 12),
               Text(title, style: AppTextStyles.heading3),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text(
             body,
-            style: AppTextStyles.body1.copyWith(height: 1.5, color: AppColors.text),
+            style: AppTextStyles.body1.copyWith(
+              height: 1.5,
+              color: AppColors.text,
+            ),
           ),
         ],
       ),
@@ -163,11 +203,14 @@ class CommunityGuidelinesScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('• ', style: TextStyle(fontSize: 18, color: AppColors.text)),
+          Text('• ', style: TextStyle(fontSize: 18, color: AppColors.text)),
           Expanded(
             child: Text(
               text,
-              style: AppTextStyles.body1.copyWith(height: 1.5, color: AppColors.text),
+              style: AppTextStyles.body1.copyWith(
+                height: 1.5,
+                color: AppColors.text,
+              ),
             ),
           ),
         ],

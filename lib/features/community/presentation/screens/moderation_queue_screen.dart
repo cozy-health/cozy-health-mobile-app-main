@@ -10,7 +10,8 @@ class ModerationQueueScreen extends StatefulWidget {
   State<ModerationQueueScreen> createState() => _ModerationQueueScreenState();
 }
 
-class _ModerationQueueScreenState extends State<ModerationQueueScreen> with SingleTickerProviderStateMixin {
+class _ModerationQueueScreenState extends State<ModerationQueueScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -33,7 +34,10 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> with Sing
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text('Moderation', style: AppTextStyles.heading3),
@@ -41,7 +45,9 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> with Sing
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textMuted,
+          unselectedLabelColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.textMutedDark
+              : AppColors.textMutedLight,
           indicatorColor: AppColors.primary,
           tabs: const [
             Tab(text: 'Open (2)'),
@@ -68,7 +74,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> with Sing
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       children: [
         _buildReportedPostCard(),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         _buildReportedUserCard(),
       ],
     );
@@ -78,7 +84,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> with Sing
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -87,43 +93,52 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> with Sing
         children: [
           Row(
             children: [
-              const Icon(Icons.flag, color: AppColors.danger, size: 20),
-              const SizedBox(width: 8),
-              Text('Reported Post', style: AppTextStyles.body1.copyWith(color: AppColors.danger, fontWeight: FontWeight.w600)),
+              Icon(Icons.flag, color: AppColors.danger, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Reported Post',
+                style: AppTextStyles.body1.copyWith(
+                  color: AppColors.danger,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text(
             '"I am so tired of everything..."',
             style: AppTextStyles.body1.copyWith(fontStyle: FontStyle.italic),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text('Reported by 2 users', style: AppTextStyles.body2),
           Text('Reasons: Encourages harm', style: AppTextStyles.body2),
-          Text('Posted 4h ago', style: AppTextStyles.body2.copyWith(color: AppColors.textMuted)),
-          const SizedBox(height: 16),
+          Text(
+            'Posted 4h ago',
+            style: AppTextStyles.body2.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
+          ),
+          SizedBox(height: 16),
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  child: const Text('Hide'),
-                ),
+                child: OutlinedButton(onPressed: () {}, child: Text('Hide')),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  child: const Text('Dismiss'),
-                ),
+                child: OutlinedButton(onPressed: () {}, child: Text('Dismiss')),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           OutlinedButton(
             onPressed: () {},
-            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-            child: const Text('Warn Author'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+            ),
+            child: Text('Warn Author'),
           ),
         ],
       ),
@@ -134,7 +149,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> with Sing
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -143,31 +158,37 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> with Sing
         children: [
           Row(
             children: [
-              const Icon(Icons.person_off, color: AppColors.warning, size: 20),
-              const SizedBox(width: 8),
-              Text('Reported User', style: AppTextStyles.body1.copyWith(color: AppColors.warning, fontWeight: FontWeight.w600)),
+              Icon(Icons.person_off, color: AppColors.warning, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Reported User',
+                style: AppTextStyles.body1.copyWith(
+                  color: AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text('@username', style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
+          SizedBox(height: 12),
+          Text(
+            '@username',
+            style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.w600),
+          ),
+          SizedBox(height: 8),
           Text('Reported by 1 user', style: AppTextStyles.body2),
           Text('Reasons: Harassment', style: AppTextStyles.body2),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {},
-                  child: const Text('View Profile'),
+                  child: Text('View Profile'),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  child: const Text('Dismiss'),
-                ),
+                child: OutlinedButton(onPressed: () {}, child: Text('Dismiss')),
               ),
             ],
           ),
@@ -180,7 +201,11 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> with Sing
     return Center(
       child: Text(
         message,
-        style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+        style: AppTextStyles.body1.copyWith(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.textMutedDark
+              : AppColors.textMutedLight,
+        ),
       ),
     );
   }

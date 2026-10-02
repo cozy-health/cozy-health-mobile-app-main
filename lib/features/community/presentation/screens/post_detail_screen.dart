@@ -57,8 +57,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -66,19 +66,28 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.link, color: AppColors.text),
-              title: const Text('Copy link'),
+              leading: Icon(
+                Icons.link,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              title: Text('Copy link'),
               onTap: () => Navigator.pop(context),
             ),
             if (!(widget.post['isAnonymous'] as bool? ?? false))
               ListTile(
-                leading: const Icon(Icons.block, color: AppColors.text),
-                title: const Text('Block user'),
+                leading: Icon(
+                  Icons.block,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                title: Text('Block user'),
                 onTap: () => Navigator.pop(context),
               ),
             ListTile(
-              leading: const Icon(Icons.flag_outlined, color: AppColors.danger),
-              title: Text('Report', style: AppTextStyles.body1.copyWith(color: AppColors.danger)),
+              leading: Icon(Icons.flag_outlined, color: AppColors.danger),
+              title: Text(
+                'Report',
+                style: AppTextStyles.body1.copyWith(color: AppColors.danger),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 ReportSheet.show(
@@ -102,7 +111,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isAnonymous = widget.post['isAnonymous'] as bool? ?? false;
-    final username = isAnonymous ? 'Anonymous' : (widget.post['username'] as String? ?? 'user');
+    final username = isAnonymous
+        ? 'Anonymous'
+        : (widget.post['username'] as String? ?? 'user');
     final timeAgo = widget.post['timeAgo'] as String? ?? 'Just now';
     final content = widget.post['content'] as String? ?? '';
     final likes = widget.post['likes'] as int? ?? 0;
@@ -114,12 +125,18 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz, color: AppColors.text),
+            icon: Icon(
+              Icons.more_horiz,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             onPressed: _showContextMenu,
           ),
         ],
@@ -129,7 +146,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -140,19 +160,25 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: isAnonymous ? AppColors.border : AppColors.primary.withValues(alpha: 0.1),
+                            color: isAnonymous
+                                ? AppColors.border
+                                : AppColors.primary.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            isAnonymous ? '?' : username.substring(0, 1).toUpperCase(),
+                            isAnonymous
+                                ? '?'
+                                : username.substring(0, 1).toUpperCase(),
                             style: AppTextStyles.body1.copyWith(
-                              color: isAnonymous ? AppColors.textMuted : AppColors.primary,
+                              color: isAnonymous
+                                  ? AppColors.textMuted
+                                  : AppColors.primary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,90 +187,119 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 isAnonymous ? 'Anonymous' : '@$username',
                                 style: AppTextStyles.body1.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  fontStyle: isAnonymous ? FontStyle.italic : FontStyle.normal,
+                                  fontStyle: isAnonymous
+                                      ? FontStyle.italic
+                                      : FontStyle.normal,
                                 ),
                               ),
                               Text(
                                 timeAgo,
-                                style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                                style: AppTextStyles.body2.copyWith(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.textMutedDark
+                                      : AppColors.textMutedLight,
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    
+                    SizedBox(height: 24),
+
                     // Body
                     Text(
                       content,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Georgia',
                         fontSize: 18,
                         fontWeight: FontWeight.w400,
                         height: 1.6,
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    
+                    SizedBox(height: 32),
+
                     // Reactions
                     Row(
                       children: [
                         _buildReactionCard(
-                          icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                          icon: isLiked
+                              ? Icons.favorite
+                              : Icons.favorite_border,
                           count: likes,
-                          color: isLiked ? AppColors.danger : AppColors.textMuted,
+                          color: isLiked
+                              ? AppColors.danger
+                              : AppColors.textMuted,
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         _buildReactionCard(
-                          icon: Icons.sign_language, // using generic icon for support/pray
+                          icon: Icons
+                              .sign_language, // using generic icon for support/pray
                           count: 3,
-                          color: AppColors.textMuted,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         _buildReactionCard(
-                          icon: Icons.emoji_emotions_outlined, // using generic icon for flex/strength
+                          icon: Icons
+                              .emoji_emotions_outlined, // using generic icon for flex/strength
                           count: 2,
-                          color: AppColors.textMuted,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 32),
-                    const Divider(color: AppColors.border),
-                    const SizedBox(height: 24),
-                    
+                    SizedBox(height: 32),
+                    Divider(color: Theme.of(context).dividerColor),
+                    SizedBox(height: 24),
+
                     // Comments Header
-                    Text('Comments (${_comments.length})', style: AppTextStyles.heading2),
-                    const SizedBox(height: 16),
-                    
+                    Text(
+                      'Comments (${_comments.length})',
+                      style: AppTextStyles.heading2,
+                    ),
+                    SizedBox(height: 16),
+
                     // Comments List
-                    ..._comments.map((comment) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: CommentCard(
-                        comment: comment,
-                        onReplyTap: () {
-                          _commentFocusNode.requestFocus();
-                          final username = comment['username'] as String?;
-                          if (username != null && username.isNotEmpty) {
-                            _commentController.text = '@$username ';
-                          }
-                        },
-                        onAvatarTap: () {},
-                        onLongPress: () {},
+                    ..._comments.map(
+                      (comment) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: CommentCard(
+                          comment: comment,
+                          onReplyTap: () {
+                            _commentFocusNode.requestFocus();
+                            final username = comment['username'] as String?;
+                            if (username != null && username.isNotEmpty) {
+                              _commentController.text = '@$username ';
+                            }
+                          },
+                          onAvatarTap: () {},
+                          onLongPress: () {},
+                        ),
                       ),
-                    )),
+                    ),
                   ],
                 ),
               ),
             ),
-            
+
             // Comment Input
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                border: Border(top: BorderSide(color: AppColors.border.withValues(alpha: 0.5))),
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.5),
+                  ),
+                ),
               ),
               child: Row(
                 children: [
@@ -256,23 +311,33 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
-                    child: Text('S', style: AppTextStyles.body2.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                    child: Text(
+                      'S',
+                      style: AppTextStyles.body2.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: TextField(
                       controller: _commentController,
                       focusNode: _commentFocusNode,
                       decoration: InputDecoration(
                         hintText: 'Add a comment...',
-                        hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                        hintStyle: AppTextStyles.body1.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
+                        ),
                         border: InputBorder.none,
                         isDense: true,
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.arrow_upward, color: AppColors.primary),
+                    icon: Icon(Icons.arrow_upward, color: AppColors.primary),
                     onPressed: () {
                       if (_commentController.text.isNotEmpty) {
                         _commentController.clear();
@@ -292,18 +357,22 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  Widget _buildReactionCard({required IconData icon, required int count, required Color color}) {
+  Widget _buildReactionCard({
+    required IconData icon,
+    required int count,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
           Icon(icon, size: 20, color: color),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Text(
             count.toString(),
             style: AppTextStyles.body2.copyWith(

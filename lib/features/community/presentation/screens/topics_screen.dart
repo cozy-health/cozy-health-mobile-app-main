@@ -25,7 +25,10 @@ class TopicsScreen extends StatelessWidget {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text('Topics', style: AppTextStyles.heading3),
@@ -35,7 +38,7 @@ class TopicsScreen extends StatelessWidget {
         child: ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           itemCount: _topics.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (_, __) => SizedBox(height: 12),
           itemBuilder: (context, index) {
             final topic = _topics[index];
             return GestureDetector(
@@ -47,26 +50,43 @@ class TopicsScreen extends StatelessWidget {
                 height: 80,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Text(topic['icon'], style: const TextStyle(fontSize: 28)),
-                    const SizedBox(width: 16),
+                    Text(topic['icon'], style: TextStyle(fontSize: 28)),
+                    SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(topic['title'], style: AppTextStyles.heading3),
-                          const SizedBox(height: 2),
-                          Text('${topic['posts']} posts', style: AppTextStyles.body2.copyWith(color: AppColors.textMuted)),
+                          SizedBox(height: 2),
+                          Text(
+                            '${topic['posts']} posts',
+                            style: AppTextStyles.body2.copyWith(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? AppColors.textMutedDark
+                                  : AppColors.textMutedLight,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textMuted),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
                   ],
                 ),
               ),

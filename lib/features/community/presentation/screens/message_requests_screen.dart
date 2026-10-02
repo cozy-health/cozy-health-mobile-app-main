@@ -12,21 +12,16 @@ class MessageRequestsScreen extends StatefulWidget {
 
 class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
   final List<Map<String, dynamic>> _requests = [
-    {
-      'username': 'mike',
-      'preview': 'Hi, I saw your post and...',
-    }
+    {'username': 'mike', 'preview': 'Hi, I saw your post and...'},
   ];
 
   void _removeRequest(int index, String action) {
     setState(() {
       _requests.removeAt(index);
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Request $action.'),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Request $action.')));
   }
 
   @override
@@ -37,15 +32,16 @@ class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text('Requests', style: AppTextStyles.heading3),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: _requests.isEmpty ? _buildEmpty() : _buildList(),
-      ),
+      body: SafeArea(child: _requests.isEmpty ? _buildEmpty() : _buildList()),
     );
   }
 
@@ -53,7 +49,11 @@ class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
     return Center(
       child: Text(
         'No message requests.',
-        style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+        style: AppTextStyles.body1.copyWith(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.textMutedDark
+              : AppColors.textMutedLight,
+        ),
       ),
     );
   }
@@ -65,11 +65,11 @@ class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
       itemBuilder: (context, index) {
         final request = _requests[index];
         final username = request['username'] as String;
-        
+
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border),
           ),
@@ -88,19 +88,29 @@ class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
                     alignment: Alignment.center,
                     child: Text(
                       username.substring(0, 1).toUpperCase(),
-                      style: AppTextStyles.body1.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+                      style: AppTextStyles.body1.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Text('@$username', style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.w600)),
+                  SizedBox(width: 12),
+                  Text(
+                    '@$username',
+                    style: AppTextStyles.body1.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 '"${request['preview']}"',
-                style: AppTextStyles.body1.copyWith(fontStyle: FontStyle.italic),
+                style: AppTextStyles.body1.copyWith(
+                  fontStyle: FontStyle.italic,
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -109,20 +119,40 @@ class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      child: Text('Accept', style: AppTextStyles.body2.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                      child: Text(
+                        'Accept',
+                        style: AppTextStyles.body2.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => _removeRequest(index, 'declined'),
                       style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        side: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        side: BorderSide(
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withValues(alpha: 0.5),
+                        ),
                       ),
-                      child: Text('Decline', style: AppTextStyles.body2.copyWith(color: AppColors.text, fontWeight: FontWeight.w600)),
+                      child: Text(
+                        'Decline',
+                        style: AppTextStyles.body2.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                 ],

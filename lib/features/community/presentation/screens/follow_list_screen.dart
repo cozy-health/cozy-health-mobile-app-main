@@ -12,7 +12,8 @@ class FollowListScreen extends StatefulWidget {
   State<FollowListScreen> createState() => _FollowListScreenState();
 }
 
-class _FollowListScreenState extends State<FollowListScreen> with SingleTickerProviderStateMixin {
+class _FollowListScreenState extends State<FollowListScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   final List<Map<String, dynamic>> _following = [
@@ -21,11 +22,7 @@ class _FollowListScreenState extends State<FollowListScreen> with SingleTickerPr
       'bio': 'Trying to be kinder to myself.',
       'isFollowing': true,
     },
-    {
-      'username': 'jordan',
-      'bio': 'One day at a time.',
-      'isFollowing': true,
-    },
+    {'username': 'jordan', 'bio': 'One day at a time.', 'isFollowing': true},
   ];
 
   final List<Map<String, dynamic>> _followers = [
@@ -34,11 +31,7 @@ class _FollowListScreenState extends State<FollowListScreen> with SingleTickerPr
       'bio': 'Trying to be kinder to myself.',
       'isFollowing': true,
     },
-    {
-      'username': 'mike',
-      'bio': '',
-      'isFollowing': false,
-    },
+    {'username': 'mike', 'bio': '', 'isFollowing': false},
   ];
 
   @override
@@ -61,13 +54,18 @@ class _FollowListScreenState extends State<FollowListScreen> with SingleTickerPr
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textMuted,
+          unselectedLabelColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.textMutedDark
+              : AppColors.textMutedLight,
           indicatorColor: AppColors.primary,
           tabs: [
             Tab(text: 'Following (${_following.length})'),
@@ -94,7 +92,11 @@ class _FollowListScreenState extends State<FollowListScreen> with SingleTickerPr
           padding: const EdgeInsets.all(32),
           child: Text(
             emptyMessage,
-            style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -108,7 +110,10 @@ class _FollowListScreenState extends State<FollowListScreen> with SingleTickerPr
         final user = list[index];
         return UserRow(
           user: user,
-          onTap: () => context.push(AppRouter.userProfile, extra: {'username': user['username']}),
+          onTap: () => context.push(
+            AppRouter.userProfile,
+            extra: {'username': user['username']},
+          ),
           onFollowToggle: () {
             setState(() {
               user['isFollowing'] = !(user['isFollowing'] as bool);
