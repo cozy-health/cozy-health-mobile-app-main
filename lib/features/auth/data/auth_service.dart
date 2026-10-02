@@ -10,6 +10,7 @@ import '../../../core/models/user_profile.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/services/user_data_fetcher.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../settings/data/profile_repository.dart';
 
 class AuthService {
   final ApiClient _apiClient;
@@ -36,7 +37,7 @@ class AuthService {
       await _tokenStorage.saveToken(token);
     }
     await _cacheUserProfile(data['user']);
-    await _fetchAndCacheProfile();
+    await ProfileRepository().fetchProfile();
     _syncUserDataInBackground();
 
     return data;
@@ -68,7 +69,7 @@ class AuthService {
       await _tokenStorage.saveToken(token);
     }
     await _cacheUserProfile(data['user']);
-    await _fetchAndCacheProfile();
+    await ProfileRepository().fetchProfile();
     _syncUserDataInBackground();
 
     return data;
@@ -147,23 +148,6 @@ class AuthService {
             DateTime.now(),
       ),
     );
-  }
-
-  Future<void> _fetchAndCacheProfile() async {
-    try {
-      final response = await ApiClient.instance.get(ApiConstants.me);
-      final data = responseMap(response);
-      final profileData = data['data'];
-
-      if (profileData is Map) {
-        final profile = UserProfile.fromJson(
-          Map<String, dynamic>.from(profileData),
-        );
-        await LocalDbService.instance.saveUserProfile(profile);
-      }
-    } catch (e) {
-      debugPrint('Profile fetch after auth failed: $e');
-    }
   }
 
   void _syncUserDataInBackground() {

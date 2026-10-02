@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/api/api_client.dart';
@@ -64,8 +64,17 @@ class ProfileRepository {
   }
 
   Future<void> updateField(String key, dynamic value) async {
-    final profile = _local.getUserProfile();
-    if (profile == null) return;
+    var profile = _local.getUserProfile();
+
+    if (profile == null) {
+      profile = UserProfile(
+        id: const Uuid().v4(),
+        name: '',
+        email: '',
+        updatedAt: DateTime.now(),
+      );
+      await _local.saveUserProfile(profile);
+    }
 
     final updated = profile.copyWithField(key, value);
     await _local.saveUserProfile(updated);
@@ -76,6 +85,6 @@ class ProfileRepository {
       recordId: profile.id,
       payload: updated.toJson(),
     );
-    _local.processSyncQueue();
+    Future.microtask(() => _local.processSyncQueue());
   }
 }
