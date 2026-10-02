@@ -25,19 +25,19 @@ class _PhoneSettingsScreenState extends State<PhoneSettingsScreen> {
 
   Future<void> _sendCode() async {
     if (_phoneController.text.isEmpty) return;
-    
+
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(seconds: 1)); // Mock network
     if (!mounted) return;
-    
+
     setState(() {
       _isLoading = false;
       _isSent = true;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Verification code sent')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Verification code sent')));
   }
 
   @override
@@ -48,13 +48,18 @@ class _PhoneSettingsScreenState extends State<PhoneSettingsScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
         title: Text(
           'Phone Settings',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: false,
       ),
@@ -64,34 +69,46 @@ class _PhoneSettingsScreenState extends State<PhoneSettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text(
                 'Current Phone',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.border, width: 1),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.phone_outlined, color: AppColors.textMuted),
-                    const SizedBox(width: 12),
+                    Icon(
+                      Icons.phone_outlined,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         '+1 (555) 123-4567',
-                        style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                        style: AppTextStyles.body1.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
+                        ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -108,70 +125,99 @@ class _PhoneSettingsScreenState extends State<PhoneSettingsScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               if (_isSent) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.sms_outlined, color: AppColors.primary, size: 32),
-                      const SizedBox(height: 12),
+                      Icon(
+                        Icons.sms_outlined,
+                        color: AppColors.primary,
+                        size: 32,
+                      ),
+                      SizedBox(height: 12),
                       Text(
                         'Check your messages',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.body1.copyWith(
-                          color: AppColors.text,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Text(
                         'We sent a verification code to $_selectedCountryCode ${_phoneController.text}.',
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.body2.copyWith(color: AppColors.text),
+                        style: AppTextStyles.body2.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       Semantics(
                         label: 'Verification Code Input',
                         child: TextField(
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
-                          style: AppTextStyles.heading2.copyWith(color: AppColors.text, letterSpacing: 8),
+                          style: AppTextStyles.heading2.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            letterSpacing: 8,
+                          ),
                           maxLength: 6,
                           decoration: InputDecoration(
                             hintText: '000000',
-                            hintStyle: AppTextStyles.heading2.copyWith(color: AppColors.textMuted.withValues(alpha: 0.5), letterSpacing: 8),
+                            hintStyle: AppTextStyles.heading2.copyWith(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? AppColors.textMutedDark
+                                  : AppColors.textMutedLight.withValues(
+                                      alpha: 0.5,
+                                    ),
+                              letterSpacing: 8,
+                            ),
                             filled: true,
-                            fillColor: AppColors.surface,
+                            fillColor: Theme.of(context).colorScheme.surface,
                             counterText: '',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).dividerColor,
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).dividerColor,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.primary),
+                              borderSide: BorderSide(color: AppColors.primary),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       AppButton(
                         text: 'Verify Code',
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Phone number verified!')),
+                            const SnackBar(
+                              content: Text('Phone number verified!'),
+                            ),
                           );
                           context.pop();
                         },
@@ -183,26 +229,39 @@ class _PhoneSettingsScreenState extends State<PhoneSettingsScreen> {
                 Text(
                   'New Phone Number',
                   style: AppTextStyles.body2.copyWith(
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.border),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _selectedCountryCode,
-                          icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textSubtle),
-                          style: AppTextStyles.body1.copyWith(color: AppColors.text),
-                          items: ['+1', '+44', '+61', '+91'].map((String value) {
+                          icon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textSubtleDark
+                                : AppColors.textSubtleLight,
+                          ),
+                          style: AppTextStyles.body1.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          items: ['+1', '+44', '+61', '+91'].map((
+                            String value,
+                          ) {
                             return DropdownMenuItem<String>(
                               value: value,
                               child: Text(value),
@@ -216,31 +275,46 @@ class _PhoneSettingsScreenState extends State<PhoneSettingsScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Semantics(
                         label: 'New Phone Input',
                         child: TextField(
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
-                          style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                          style: AppTextStyles.body1.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                           decoration: InputDecoration(
                             hintText: '555-123-4567',
-                            hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                            hintStyle: AppTextStyles.body1.copyWith(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? AppColors.textMutedDark
+                                  : AppColors.textMutedLight,
+                            ),
                             filled: true,
-                            fillColor: AppColors.surface,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            fillColor: Theme.of(context).colorScheme.surface,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).dividerColor,
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).dividerColor,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.primary),
+                              borderSide: BorderSide(color: AppColors.primary),
                             ),
                           ),
                         ),
@@ -248,13 +322,13 @@ class _PhoneSettingsScreenState extends State<PhoneSettingsScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 AppButton(
                   text: _isLoading ? 'Sending...' : 'Send Code',
                   onPressed: _isLoading ? null : _sendCode,
                 ),
               ],
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),

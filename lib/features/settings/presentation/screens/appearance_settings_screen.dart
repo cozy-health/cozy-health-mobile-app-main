@@ -69,7 +69,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
@@ -85,7 +85,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               // Live Preview Card
               Container(
                 padding: const EdgeInsets.all(16),
@@ -107,7 +107,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Row(
                       children: [
                         Container(
@@ -119,7 +119,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                           ),
                           child: Icon(Icons.check, color: _selectedAccent),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,7 +132,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               Container(
                                 height: 8,
                                 width: 80,
@@ -168,7 +168,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               Text(
                 'Theme',
@@ -178,7 +178,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                   color: colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
@@ -240,7 +240,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                   }),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               Text(
                 'Accent Color',
@@ -250,7 +250,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                   color: colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Wrap(
                 spacing: 16,
                 runSpacing: 16,
@@ -276,14 +276,14 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                               : null,
                         ),
                         child: isSelected
-                            ? const Icon(Icons.check, color: AppColors.white)
+                            ? Icon(Icons.check, color: AppColors.white)
                             : null,
                       ),
                     ),
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),

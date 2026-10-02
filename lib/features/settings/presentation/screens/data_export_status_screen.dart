@@ -25,7 +25,10 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
@@ -38,18 +41,23 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
             children: [
               Text(
                 'Data export status',
-                style: AppTextStyles.heading1.copyWith(fontSize: 28, color: AppColors.text),
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 28,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 'View the status of your requested data export.',
-                style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
+                ),
               ),
-              const SizedBox(height: 48),
-              
-              Expanded(
-                child: _buildStateContent(),
-              ),
+              SizedBox(height: 48),
+
+              Expanded(child: _buildStateContent()),
             ],
           ),
         ),
@@ -64,19 +72,32 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.folder_open, size: 64, color: AppColors.textSubtle),
-              const SizedBox(height: 24),
+              Icon(
+                Icons.folder_open,
+                size: 64,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textSubtleDark
+                    : AppColors.textSubtleLight,
+              ),
+              SizedBox(height: 24),
               Text(
                 'No active export',
-                style: AppTextStyles.heading2.copyWith(fontSize: 24, color: AppColors.text),
+                style: AppTextStyles.heading2.copyWith(
+                  fontSize: 24,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 'You haven\'t requested a data export yet.',
                 textAlign: TextAlign.center,
-                style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
+                ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               AppButton(
                 text: 'Request Data Export',
                 onPressed: () {
@@ -85,41 +106,50 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
                   setState(() => _currentState = ExportState.preparing);
                 },
               ),
-              const SizedBox(height: 64),
+              SizedBox(height: 64),
             ],
           ),
         );
-      
+
       case ExportState.preparing:
         return Center(
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(color: AppColors.border),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 48,
                   height: 48,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 Text(
                   'Preparing your data',
-                  style: AppTextStyles.heading2.copyWith(fontSize: 20, color: AppColors.text),
+                  style: AppTextStyles.heading2.copyWith(
+                    fontSize: 20,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
                   'This usually takes up to 24 hours. We\'ll email you when it\'s ready.',
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
+                  ),
                 ),
               ],
             ),
@@ -133,7 +163,9 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -145,30 +177,45 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
                     color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check, size: 32, color: AppColors.white),
+                  child: Icon(Icons.check, size: 32, color: AppColors.white),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 Text(
                   'Your data is ready',
-                  style: AppTextStyles.heading2.copyWith(fontSize: 20, color: AppColors.text),
+                  style: AppTextStyles.heading2.copyWith(
+                    fontSize: 20,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   'Requested on Oct 1, 2026',
-                  style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                  style: AppTextStyles.body2.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
                   'This link will expire in 7 days for your security.',
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                  style: AppTextStyles.body2.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
+                  ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 AppButton(
                   text: 'Download Data (ZIP)',
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Downloading file... Check your Downloads folder.')),
+                      const SnackBar(
+                        content: Text(
+                          'Downloading file... Check your Downloads folder.',
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -184,24 +231,31 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
             decoration: BoxDecoration(
               color: AppColors.danger.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.danger.withValues(alpha: 0.3),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, size: 64, color: AppColors.danger),
-                const SizedBox(height: 24),
+                Icon(Icons.error_outline, size: 64, color: AppColors.danger),
+                SizedBox(height: 24),
                 Text(
                   'Export failed',
-                  style: AppTextStyles.heading2.copyWith(fontSize: 20, color: AppColors.text),
+                  style: AppTextStyles.heading2.copyWith(
+                    fontSize: 20,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
                   'Something went wrong while preparing your data export. Please try again.',
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 AppButton(
                   text: 'Retry Export',
                   onPressed: () {

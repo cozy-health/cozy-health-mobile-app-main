@@ -53,13 +53,18 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
         title: Text(
           'Change Password',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: false,
       ),
@@ -69,20 +74,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _FormField(
                 label: 'Current Password',
                 controller: _currentController,
                 obscureText: true,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _FormField(
                 label: 'New Password',
                 controller: _newController,
                 obscureText: true,
                 onChanged: _onNewPasswordChanged,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               // Strength bar
               Row(
                 children: [
@@ -93,33 +98,39 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(
                         _strength < 0.3
                             ? AppColors.danger
-                            : (_strength < 0.7 ? Colors.orange : AppColors.primary),
+                            : (_strength < 0.7
+                                  ? Colors.orange
+                                  : AppColors.primary),
                       ),
                       minHeight: 6,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Text(
                     _strength < 0.3
                         ? 'Weak'
                         : (_strength < 0.7 ? 'Fair' : 'Strong'),
-                    style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _FormField(
                 label: 'Confirm New Password',
                 controller: _confirmController,
                 obscureText: true,
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
               AppButton(
                 text: _isLoading ? 'Saving...' : 'Save Password',
                 onPressed: _isLoading ? null : _save,
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),
@@ -149,33 +160,38 @@ class _FormField extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.body2.copyWith(
-            color: AppColors.text,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Semantics(
           label: label,
           child: TextField(
             controller: controller,
             obscureText: obscureText,
             onChanged: onChanged,
-            style: AppTextStyles.body1.copyWith(color: AppColors.text),
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             decoration: InputDecoration(
               filled: true,
-              fillColor: AppColors.surface,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              fillColor: Theme.of(context).colorScheme.surface,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: Theme.of(context).dividerColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: Theme.of(context).dividerColor),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.primary),
+                borderSide: BorderSide(color: AppColors.primary),
               ),
             ),
           ),

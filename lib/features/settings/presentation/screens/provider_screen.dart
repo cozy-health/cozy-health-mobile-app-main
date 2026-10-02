@@ -109,9 +109,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Verification code sent to therapist.'),
-        ),
+        const SnackBar(content: Text('Verification code sent to therapist.')),
       );
     } on ApiException catch (e) {
       setState(() {
@@ -158,9 +156,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Provider verified successfully.'),
-        ),
+        const SnackBar(content: Text('Provider verified successfully.')),
       );
     } on ApiException catch (e) {
       setState(() {
@@ -199,9 +195,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Provider removed successfully.'),
-        ),
+        const SnackBar(content: Text('Provider removed successfully.')),
       );
     } on ApiException catch (e) {
       setState(() {
@@ -233,7 +227,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 5.w),
           child: _loading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,8 +251,8 @@ class _ProviderScreenState extends State<ProviderScreen> {
                         _hasProvider
                             ? 'Your therapist is connected to your account.'
                             : _hasPendingProvider
-                                ? 'A verification code has been sent. Enter the code to complete connection.'
-                                : 'Add your personal therapist by entering their email address.',
+                            ? 'A verification code has been sent. Enter the code to complete connection.'
+                            : 'Add your personal therapist by entering their email address.',
                         style: AppTextStyles.body1.copyWith(
                           color: AppColors.grey,
                           height: 1.4,
@@ -308,16 +302,10 @@ class _ProviderScreenState extends State<ProviderScreen> {
           onTap: () => context.pop(),
           child: Row(
             children: [
-              const Icon(
-                Icons.chevron_left,
-                size: 22,
-                color: AppColors.darkGrey,
-              ),
+              Icon(Icons.chevron_left, size: 22, color: AppColors.darkGrey),
               Text(
                 'Back',
-                style: AppTextStyles.body2.copyWith(
-                  color: AppColors.grey,
-                ),
+                style: AppTextStyles.body2.copyWith(color: AppColors.grey),
               ),
             ],
           ),
@@ -344,10 +332,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _label('Therapist Name'),
-        _inputField(
-          controller: nameController,
-          hintText: 'Dr Sarah Johnson',
-        ),
+        _inputField(controller: nameController, hintText: 'Dr Sarah Johnson'),
 
         2.sh,
 
@@ -405,9 +390,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
               1.sh,
               Text(
                 email,
-                style: AppTextStyles.body2.copyWith(
-                  color: AppColors.grey,
-                ),
+                style: AppTextStyles.body2.copyWith(color: AppColors.grey),
               ),
               1.sh,
               Text(
@@ -424,10 +407,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
         3.sh,
 
         _label('Verification Code'),
-        _inputField(
-          controller: codeController,
-          hintText: 'Enter code',
-        ),
+        _inputField(controller: codeController, hintText: 'Enter code'),
 
         4.sh,
 
@@ -466,7 +446,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                child: const Icon(
+                child: Icon(
                   Icons.medical_services_outlined,
                   color: AppColors.primary,
                 ),
@@ -548,32 +528,20 @@ class _ProviderScreenState extends State<ProviderScreen> {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      style: AppTextStyles.body1.copyWith(
-        color: AppColors.black,
-        fontSize: 14,
-      ),
+      style: AppTextStyles.body1.copyWith(color: AppColors.black, fontSize: 14),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: AppTextStyles.body2.copyWith(
-          color: AppColors.grey,
-        ),
+        hintStyle: AppTextStyles.body2.copyWith(color: AppColors.grey),
         filled: true,
         fillColor: AppColors.white,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 4.w,
-          vertical: 1.8.h,
-        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.8.h),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: Color(0xFFE1E4EA),
-          ),
+          borderSide: BorderSide(color: Color(0xFFE1E4EA)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.primary,
-          ),
+          borderSide: BorderSide(color: AppColors.primary),
         ),
       ),
     );

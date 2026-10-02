@@ -39,7 +39,10 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
       ),
@@ -49,7 +52,7 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 'Delete Account',
                 style: AppTextStyles.heading2.copyWith(
@@ -58,67 +61,82 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
                   color: AppColors.danger,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text(
                 'This action cannot be undone.',
                 style: AppTextStyles.body1.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 'If you delete your account:',
-                style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               const _BulletPoint('Your profile will be deleted'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               const _BulletPoint('Your entries will be deleted'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               const _BulletPoint('Your subscription will end'),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text(
                 'Consider exporting your data first.',
-                style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               AppButton(
                 text: 'Export My Data',
                 onPressed: () => context.push(AppRouter.dataExport),
-                // Needs to be styled as secondary, but standard AppButton might not have a secondary mode here. 
+                // Needs to be styled as secondary, but standard AppButton might not have a secondary mode here.
                 // So I will customize it inline or use a different button style if possible.
                 // Assuming default is primary.
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
               Text(
                 'To confirm deletion, type DELETE below:',
-                style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               TextField(
                 controller: _confirmController,
                 onChanged: _onConfirmChanged,
-                style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: AppColors.surface,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  fillColor: Theme.of(context).colorScheme.surface,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.danger),
+                    borderSide: BorderSide(color: AppColors.danger),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               // Delete button (Custom styled to be red)
               InkWell(
                 onTap: _canDelete
@@ -147,7 +165,7 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),
@@ -166,17 +184,19 @@ class _BulletPoint extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
+        Padding(
           padding: EdgeInsets.only(top: 8, right: 12),
           child: CircleAvatar(
             radius: 3,
-            backgroundColor: AppColors.text,
+            backgroundColor: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         Expanded(
           child: Text(
             text,
-            style: AppTextStyles.body1.copyWith(color: AppColors.text),
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ),
       ],

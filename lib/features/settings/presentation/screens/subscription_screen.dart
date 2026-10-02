@@ -16,7 +16,6 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,13 +24,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
         title: Text(
           'Subscription',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: false,
         actions: [
@@ -43,20 +47,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           stream: SubscriptionRepository().watchStatus(),
           builder: (context, snapshot) {
             final status = snapshot.data;
-            final isPro = status?.isActive == true && status?.cancelAtPeriodEnd == false;
-            
+            final isPro =
+                status?.isActive == true && status?.cancelAtPeriodEnd == false;
+
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   isPro ? _buildProState(status!) : _buildFreeState(),
-                  const SizedBox(height: 48),
+                  SizedBox(height: 48),
                 ],
               ),
             );
-          }
+          },
         ),
       ),
     );
@@ -69,15 +74,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         Text(
           'Current Plan',
           style: AppTextStyles.body2.copyWith(
-            color: AppColors.text,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border, width: 1),
           ),
@@ -89,9 +94,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   color: AppColors.warmBackground,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.favorite_border, color: AppColors.text, size: 28),
+                child: Icon(
+                  Icons.favorite_border,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  size: 28,
+                ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,14 +108,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     Text(
                       'Cozy Free',
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       'Basic journaling and mood tracking',
-                      style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                      style: AppTextStyles.body2.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
                     ),
                   ],
                 ),
@@ -114,7 +127,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -137,11 +150,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   Expanded(
                     child: Text(
                       'Cozy Pro',
-                      style: AppTextStyles.heading2.copyWith(fontSize: 24, color: AppColors.text),
+                      style: AppTextStyles.heading2.copyWith(
+                        fontSize: 24,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primary,
                       borderRadius: BorderRadius.circular(16),
@@ -157,33 +176,40 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     '\$7.99',
-                    style: AppTextStyles.heading1.copyWith(fontSize: 36, color: AppColors.text),
+                    style: AppTextStyles.heading1.copyWith(
+                      fontSize: 36,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Text(
                       '/month',
-                      style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildFeatureRow('Unlimited AI therapy conversations'),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _buildFeatureRow('Detailed mood analytics and trends'),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _buildFeatureRow('Priority customer support'),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _buildFeatureRow('Data export and backup'),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               AppButton(
                 text: 'Start Free Trial',
                 onPressed: () async {
@@ -195,11 +221,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   }
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 '7 days free, then \$7.99/month. Cancel anytime.',
                 textAlign: TextAlign.center,
-                style: AppTextStyles.body2.copyWith(color: AppColors.textMuted, fontSize: 12),
+                style: AppTextStyles.body2.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -209,27 +240,30 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildProState(SubscriptionStatus status) {
-    final renewText = status.expiresAt != null 
-        ? 'Renews on ${DateFormat('MMM d, yyyy').format(status.expiresAt!)}' 
+    final renewText = status.expiresAt != null
+        ? 'Renews on ${DateFormat('MMM d, yyyy').format(status.expiresAt!)}'
         : 'Active Subscription';
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'Current Plan',
           style: AppTextStyles.body2.copyWith(
-            color: AppColors.text,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.5),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: AppColors.primary.withValues(alpha: 0.05),
@@ -246,9 +280,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.star, color: AppColors.primary, size: 28),
+                child: Icon(Icons.star, color: AppColors.primary, size: 28),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,14 +290,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     Text(
                       'Cozy Pro',
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       renewText,
-                      style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                      style: AppTextStyles.body2.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
                     ),
                   ],
                 ),
@@ -271,10 +309,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border, width: 1),
           ),
@@ -287,7 +325,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                ),
               ),
               _SettingsRow(
                 icon: Icons.receipt_long_outlined,
@@ -296,7 +338,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                ),
               ),
               _SettingsRow(
                 icon: Icons.restore,
@@ -305,7 +351,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                ),
               ),
               _SettingsRow(
                 icon: Icons.cancel_outlined,
@@ -324,12 +374,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.check_circle, color: AppColors.primary, size: 20),
-        const SizedBox(width: 12),
+        Icon(Icons.check_circle, color: AppColors.primary, size: 20),
+        SizedBox(width: 12),
         Expanded(
           child: Text(
             text,
-            style: AppTextStyles.body1.copyWith(color: AppColors.text),
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ),
       ],
@@ -363,7 +415,7 @@ class _SettingsRow extends StatelessWidget {
           child: Row(
             children: [
               Icon(icon, color: color, size: 24),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Text(
                   label,
@@ -373,7 +425,13 @@ class _SettingsRow extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(Icons.chevron_right, color: AppColors.textMuted, size: 24),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+                size: 24,
+              ),
             ],
           ),
         ),

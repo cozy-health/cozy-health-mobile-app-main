@@ -18,9 +18,9 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
 
   void _saveReminder() {
     final formattedTime = _selectedTime.format(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Reminder set for $formattedTime.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Reminder set for $formattedTime.')));
     context.pop();
   }
 
@@ -32,7 +32,10 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
@@ -49,20 +52,28 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                   children: [
                     Text(
                       'Reminder time',
-                      style: AppTextStyles.heading1.copyWith(fontSize: 28, color: AppColors.text),
+                      style: AppTextStyles.heading1.copyWith(
+                        fontSize: 28,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Text(
                       'When would you like Cozy Health to gently remind you to check in?',
-                      style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
                     ),
-                    const SizedBox(height: 48),
-                    
+                    SizedBox(height: 48),
+
                     // Native-like Time Picker Button
                     Center(
                       child: Semantics(
                         button: true,
-                        label: 'Select time, current is ${_selectedTime.format(context)}',
+                        label:
+                            'Select time, current is ${_selectedTime.format(context)}',
                         child: InkWell(
                           onTap: () async {
                             final TimeOfDay? time = await showTimePicker(
@@ -72,13 +83,17 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                                 return Theme(
                                   data: Theme.of(context).copyWith(
                                     colorScheme: const ColorScheme.light(
-                                      primary: AppColors.primary, // header background color
-                                      onPrimary: AppColors.white, // header text color
-                                      onSurface: AppColors.text, // body text color
+                                      primary: AppColors
+                                          .primary, // header background color
+                                      onPrimary:
+                                          AppColors.white, // header text color
+                                      onSurface:
+                                          AppColors.text, // body text color
                                     ),
                                     textButtonTheme: TextButtonThemeData(
                                       style: TextButton.styleFrom(
-                                        foregroundColor: AppColors.primary, // button text color
+                                        foregroundColor: AppColors
+                                            .primary, // button text color
                                       ),
                                     ),
                                   ),
@@ -94,11 +109,17 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                           },
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppColors.border, width: 2),
+                              border: Border.all(
+                                color: AppColors.border,
+                                width: 2,
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -110,24 +131,28 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                                     color: AppColors.primary,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                const Icon(Icons.edit, color: AppColors.primary, size: 24),
+                                SizedBox(width: 12),
+                                Icon(
+                                  Icons.edit,
+                                  color: AppColors.primary,
+                                  size: 24,
+                                ),
                               ],
                             ),
                           ),
                         ),
                       ),
                     ),
-                    
-                    const SizedBox(height: 64),
+
+                    SizedBox(height: 64),
                     Text(
                       'Repeat on',
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: List.generate(_days.length, (index) {
@@ -147,9 +172,13 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                               height: 44,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isSelected ? AppColors.primary : AppColors.surface,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.surface,
                                 border: Border.all(
-                                  color: isSelected ? AppColors.primary : AppColors.border,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : AppColors.border,
                                   width: 1,
                                 ),
                               ),
@@ -157,8 +186,12 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                                 child: Text(
                                   _days[index],
                                   style: AppTextStyles.body1.copyWith(
-                                    color: isSelected ? AppColors.white : AppColors.textSubtle,
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                    color: isSelected
+                                        ? AppColors.white
+                                        : AppColors.textSubtle,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
                                   ),
                                 ),
                               ),
@@ -167,17 +200,14 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                         );
                       }),
                     ),
-                    const SizedBox(height: 48),
+                    SizedBox(height: 48),
                   ],
                 ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.all(24),
-              child: AppButton(
-                text: 'Save',
-                onPressed: _saveReminder,
-              ),
+              child: AppButton(text: 'Save', onPressed: _saveReminder),
             ),
           ],
         ),

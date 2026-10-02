@@ -43,12 +43,17 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
 
   void _onLanguageSelected(String lang) {
     setState(() => _selectedLanguage = lang);
-    final key = _languageMap.entries.firstWhere((e) => e.value == lang, orElse: () => const MapEntry('en', 'English')).key;
+    final key = _languageMap.entries
+        .firstWhere(
+          (e) => e.value == lang,
+          orElse: () => const MapEntry('en', 'English'),
+        )
+        .key;
     ProfileRepository().updateField('language', key);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Language changed to $lang')),
-    );
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Language changed to $lang')));
   }
 
   @override
@@ -59,13 +64,18 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
         title: Text(
           'Language',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: false,
       ),
@@ -75,63 +85,69 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border, width: 1),
                 ),
                 child: Column(
-                  children: List.generate(
-                    _languages.length,
-                    (index) {
-                      final lang = _languages[index];
-                      final isSelected = lang == _selectedLanguage;
-                      return InkWell(
-                        onTap: () => _onLanguageSelected(lang),
-                        child: Column(
-                          children: [
-                            Semantics(
-                              selected: isSelected,
-                              label: lang,
-                              child: Container(
-                                height: 56,
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        lang,
-                                        style: AppTextStyles.body1.copyWith(
-                                          color: AppColors.text,
-                                          fontWeight: FontWeight.w400,
-                                        ),
+                  children: List.generate(_languages.length, (index) {
+                    final lang = _languages[index];
+                    final isSelected = lang == _selectedLanguage;
+                    return InkWell(
+                      onTap: () => _onLanguageSelected(lang),
+                      child: Column(
+                        children: [
+                          Semantics(
+                            selected: isSelected,
+                            label: lang,
+                            child: Container(
+                              height: 56,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      lang,
+                                      style: AppTextStyles.body1.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
+                                        fontWeight: FontWeight.w400,
                                       ),
                                     ),
-                                    if (isSelected)
-                                      const Icon(Icons.check, color: AppColors.primary),
-                                  ],
-                                ),
+                                  ),
+                                  if (isSelected)
+                                    Icon(Icons.check, color: AppColors.primary),
+                                ],
                               ),
                             ),
-                            if (index < _languages.length - 1)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 16, right: 16),
-                                child: Divider(
-                                  height: 1,
-                                  thickness: 1,
-                                  color: AppColors.border.withValues(alpha: 0.4),
-                                ),
+                          ),
+                          if (index < _languages.length - 1)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 16,
+                                right: 16,
                               ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                              child: Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: Theme.of(
+                                  context,
+                                ).dividerColor.withValues(alpha: 0.4),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
                 ),
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),

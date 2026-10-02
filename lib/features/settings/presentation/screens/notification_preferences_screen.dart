@@ -11,10 +11,12 @@ class NotificationPreferencesScreen extends StatefulWidget {
   const NotificationPreferencesScreen({super.key});
 
   @override
-  State<NotificationPreferencesScreen> createState() => _NotificationPreferencesScreenState();
+  State<NotificationPreferencesScreen> createState() =>
+      _NotificationPreferencesScreenState();
 }
 
-class _NotificationPreferencesScreenState extends State<NotificationPreferencesScreen> {
+class _NotificationPreferencesScreenState
+    extends State<NotificationPreferencesScreen> {
   bool _masterAllow = true;
   bool _dailyCheckIn = true;
   bool _journalReminder = true;
@@ -90,12 +92,17 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'Notifications',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: false,
       ),
@@ -105,8 +112,8 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
-              
+              SizedBox(height: 24),
+
               _SettingsSection(
                 title: 'Master',
                 children: [
@@ -117,8 +124,8 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               _SettingsSection(
                 title: 'Reminders',
                 children: [
@@ -134,9 +141,18 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
                         children: [
                           Text(
                             'Time: ${_formatTime(_dailyCheckinTime)}',
-                            style: AppTextStyles.body2.copyWith(color: AppColors.text),
+                            style: AppTextStyles.body2.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
-                          const Icon(Icons.chevron_right, size: 20, color: AppColors.textSubtle),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 20,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textSubtleDark
+                                : AppColors.textSubtleLight,
+                          ),
                         ],
                       ),
                     ),
@@ -149,8 +165,8 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               _SettingsSection(
                 title: 'Community',
                 children: [
@@ -166,8 +182,8 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               _SettingsSection(
                 title: 'App',
                 children: [
@@ -188,7 +204,7 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
                   ),
                 ],
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),
@@ -201,10 +217,7 @@ class _SettingsSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const _SettingsSection({
-    required this.title,
-    required this.children,
-  });
+  const _SettingsSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -218,37 +231,36 @@ class _SettingsSection extends StatelessWidget {
             style: AppTextStyles.body1.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border, width: 1),
           ),
           child: Column(
-            children: List.generate(
-              children.length,
-              (index) {
-                final isLast = index == children.length - 1;
-                return Column(
-                  children: [
-                    children[index],
-                    if (!isLast)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16, right: 16),
-                        child: Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: AppColors.border.withValues(alpha: 0.4),
-                        ),
+            children: List.generate(children.length, (index) {
+              final isLast = index == children.length - 1;
+              return Column(
+                children: [
+                  children[index],
+                  if (!isLast)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, right: 16),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.4),
                       ),
-                  ],
-                );
-              },
-            ),
+                    ),
+                ],
+              );
+            }),
           ),
         ),
       ],
@@ -290,27 +302,26 @@ class _SettingsToggleRow extends StatelessWidget {
                     Text(
                       label,
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
                     if (description != null) ...[
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         description!,
                         style: AppTextStyles.body2.copyWith(
-                          color: AppColors.textMuted,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
                         ),
                       ),
                     ],
-                    if (trailing != null) ...[
-                      const SizedBox(height: 8),
-                      trailing!,
-                    ]
+                    if (trailing != null) ...[SizedBox(height: 8), trailing!],
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               CupertinoSwitch(
                 value: value,
                 onChanged: onChanged,

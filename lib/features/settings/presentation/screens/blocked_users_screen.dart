@@ -12,22 +12,32 @@ class BlockedUsersScreen extends StatefulWidget {
 
 class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
   // Mock data
-  final List<String> _blockedUsers = ['toxic_user99', 'spam_bot_2026', 'unwanted_contact'];
+  final List<String> _blockedUsers = [
+    'toxic_user99',
+    'spam_bot_2026',
+    'unwanted_contact',
+  ];
 
   void _unblockUser(String username) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             'Unblock @$username?',
-            style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           content: Text(
             'They will be able to see your public profile and interact with you again.',
-            style: AppTextStyles.body1.copyWith(color: AppColors.text),
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           actions: [
             TextButton(
@@ -35,7 +45,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
               child: Text(
                 'Cancel',
                 style: AppTextStyles.body1.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -72,7 +82,10 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
@@ -85,23 +98,28 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 'Blocked users',
-                style: AppTextStyles.heading1.copyWith(fontSize: 28, color: AppColors.text),
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 28,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 'These users cannot see your profile or interact with you.',
-                style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
+                ),
               ),
             ),
-            const SizedBox(height: 32),
-            
+            SizedBox(height: 32),
+
             Expanded(
-              child: _blockedUsers.isEmpty
-                  ? _buildEmptyState()
-                  : _buildList(),
+              child: _blockedUsers.isEmpty ? _buildEmptyState() : _buildList(),
             ),
           ],
         ),
@@ -116,19 +134,32 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.shield_outlined, size: 64, color: AppColors.textSubtle),
-            const SizedBox(height: 24),
+            Icon(
+              Icons.shield_outlined,
+              size: 64,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textSubtleDark
+                  : AppColors.textSubtleLight,
+            ),
+            SizedBox(height: 24),
             Text(
               'No blocked users',
-              style: AppTextStyles.heading2.copyWith(fontSize: 24, color: AppColors.text),
+              style: AppTextStyles.heading2.copyWith(
+                fontSize: 24,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
               'You\'re all caught up.',
               textAlign: TextAlign.center,
-              style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+              style: AppTextStyles.body1.copyWith(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+              ),
             ),
-            const SizedBox(height: 64), // Offset slightly visually
+            SizedBox(height: 64), // Offset slightly visually
           ],
         ),
       ),
@@ -144,7 +175,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border, width: 1),
           ),
@@ -163,12 +194,12 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     '@$username',
                     style: AppTextStyles.body1.copyWith(
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -176,9 +207,17 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
                 TextButton(
                   onPressed: () => _unblockUser(username),
                   style: TextButton.styleFrom(
-                    foregroundColor: AppColors.textMuted,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    foregroundColor:
+                        Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                   ),
                   child: Text(
                     'Unblock',

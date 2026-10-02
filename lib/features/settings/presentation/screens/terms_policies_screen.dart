@@ -6,10 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../utils/responsive_extensions.dart';
 
 class TermsPoliciesScreen extends StatelessWidget {
-  const TermsPoliciesScreen({
-    super.key,
-    this.title = 'Terms & Policies',
-  });
+  const TermsPoliciesScreen({super.key, this.title = 'Terms & Policies'});
 
   final String title;
 
@@ -31,7 +28,7 @@ class TermsPoliciesScreen extends StatelessWidget {
                     onTap: () => context.pop(),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.chevron_left,
                           size: 22,
                           color: AppColors.darkGrey,

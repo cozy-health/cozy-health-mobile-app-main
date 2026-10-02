@@ -29,11 +29,13 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(seconds: 1)); // Mock network
     if (!mounted) return;
-    
+
     setState(() => _isLoading = false);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Report submitted. Thanks for helping us improve.')),
+      const SnackBar(
+        content: Text('Report submitted. Thanks for helping us improve.'),
+      ),
     );
     context.pop();
   }
@@ -46,7 +48,10 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
@@ -59,32 +64,47 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
             children: [
               Text(
                 'Report a problem',
-                style: AppTextStyles.heading1.copyWith(fontSize: 28, color: AppColors.text),
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 28,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               Text(
                 'What\'s happening?',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.border),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedCategory,
-                    icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textSubtle),
+                    icon: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textSubtleDark
+                          : AppColors.textSubtleLight,
+                    ),
                     isExpanded: true,
-                    style: AppTextStyles.body1.copyWith(color: AppColors.text),
-                    items: ['Bug', 'Suggestion', 'Crash', 'Other'].map((String value) {
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    items: ['Bug', 'Suggestion', 'Crash', 'Other'].map((
+                      String value,
+                    ) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value),
@@ -98,59 +118,69 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                   ),
                 ),
               ),
-              
-              const SizedBox(height: 24),
+
+              SizedBox(height: 24),
               Text(
                 'Describe the issue',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Semantics(
                 label: 'Issue description input',
                 child: TextField(
                   controller: _descController,
                   maxLines: 5,
                   onChanged: (_) => setState(() {}),
-                  style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Please provide as much detail as possible...',
-                    hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                    hintStyle: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
                     filled: true,
-                    fillColor: AppColors.surface,
+                    fillColor: Theme.of(context).colorScheme.surface,
                     contentPadding: const EdgeInsets.all(16),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary),
+                      borderSide: BorderSide(color: AppColors.primary),
                     ),
                   ),
                 ),
               ),
-              
-              const SizedBox(height: 24),
+
+              SizedBox(height: 24),
               Text(
                 'Screenshot (optional)',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               if (_hasImage)
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -163,17 +193,24 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                           color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.image, color: AppColors.primary),
+                        child: Icon(Icons.image, color: AppColors.primary),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16),
                       Expanded(
                         child: Text(
                           'screenshot_123.jpg',
-                          style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                          style: AppTextStyles.body1.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: AppColors.textSubtle),
+                        icon: Icon(
+                          Icons.close,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textSubtleDark
+                              : AppColors.textSubtleLight,
+                        ),
                         onPressed: () => setState(() => _hasImage = false),
                       ),
                     ],
@@ -186,15 +223,18 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                   child: Container(
                     height: 80,
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.camera_alt_outlined, color: AppColors.primary),
-                          const SizedBox(height: 4),
+                          Icon(
+                            Icons.camera_alt_outlined,
+                            color: AppColors.primary,
+                          ),
+                          SizedBox(height: 4),
                           Text(
                             'Add image',
                             style: AppTextStyles.body2.copyWith(
@@ -207,40 +247,63 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                     ),
                   ),
                 ),
-                
-              const SizedBox(height: 32),
+
+              SizedBox(height: 32),
               Text(
                 'App info',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.border, width: 1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('v1.0.0 (build 42)', style: AppTextStyles.body1.copyWith(color: AppColors.textMuted)),
-                    const SizedBox(height: 4),
-                    Text('iPhone 14 Pro', style: AppTextStyles.body1.copyWith(color: AppColors.textMuted)),
-                    const SizedBox(height: 4),
-                    Text('iOS 17.5', style: AppTextStyles.body1.copyWith(color: AppColors.textMuted)),
+                    Text(
+                      'v1.0.0 (build 42)',
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'iPhone 14 Pro',
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'iOS 17.5',
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               AppButton(
                 text: _isLoading ? 'Submitting...' : 'Submit',
-                onPressed: _descController.text.trim().isEmpty || _isLoading ? null : _submit,
+                onPressed: _descController.text.trim().isEmpty || _isLoading
+                    ? null
+                    : _submit,
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),

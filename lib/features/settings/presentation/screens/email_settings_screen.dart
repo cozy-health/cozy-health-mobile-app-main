@@ -24,19 +24,19 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
 
   Future<void> _sendVerification() async {
     if (_emailController.text.isEmpty) return;
-    
+
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(seconds: 1)); // Mock network
     if (!mounted) return;
-    
+
     setState(() {
       _isLoading = false;
       _isSent = true;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Verification email sent')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Verification email sent')));
   }
 
   @override
@@ -47,13 +47,18 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
         title: Text(
           'Email Settings',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: false,
       ),
@@ -63,34 +68,46 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text(
                 'Current Email',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.border, width: 1),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.email_outlined, color: AppColors.textMuted),
-                    const SizedBox(width: 12),
+                    Icon(
+                      Icons.email_outlined,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'user@example.com',
-                        style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                        style: AppTextStyles.body1.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
+                        ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -107,33 +124,41 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               if (_isSent) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.mark_email_read, color: AppColors.primary, size: 32),
-                      const SizedBox(height: 12),
+                      Icon(
+                        Icons.mark_email_read,
+                        color: AppColors.primary,
+                        size: 32,
+                      ),
+                      SizedBox(height: 12),
                       Text(
                         'Check your inbox to confirm.',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.body1.copyWith(
-                          color: AppColors.text,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Text(
                         'We sent a verification link to ${_emailController.text}.',
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.body2.copyWith(color: AppColors.text),
+                        style: AppTextStyles.body2.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                     ],
                   ),
@@ -142,50 +167,67 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
                 Text(
                   'New Email',
                   style: AppTextStyles.body2.copyWith(
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Semantics(
                   label: 'New Email Input',
                   child: TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Enter new email address',
-                      hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                      hintStyle: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
                       filled: true,
-                      fillColor: AppColors.surface,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      fillColor: Theme.of(context).colorScheme.surface,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.border),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.border),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.primary),
+                        borderSide: BorderSide(color: AppColors.primary),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
                   'Your old email will be notified of this change for security purposes.',
-                  style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                  style: AppTextStyles.body2.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
+                  ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 AppButton(
                   text: _isLoading ? 'Sending...' : 'Send Verification',
                   onPressed: _isLoading ? null : _sendVerification,
                 ),
               ],
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),

@@ -13,7 +13,12 @@ class DownloadMyDataScreen extends StatefulWidget {
 
 class _DownloadMyDataScreenState extends State<DownloadMyDataScreen> {
   String _selectedRange = 'Last 30 days';
-  final List<String> _ranges = ['Last 7 days', 'Last 30 days', 'Last 90 days', 'Custom'];
+  final List<String> _ranges = [
+    'Last 7 days',
+    'Last 30 days',
+    'Last 90 days',
+    'Custom',
+  ];
 
   bool _includeMood = true;
   bool _includeJournal = true;
@@ -26,7 +31,7 @@ class _DownloadMyDataScreenState extends State<DownloadMyDataScreen> {
     // Mock generation time
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    
+
     setState(() => _isGenerating = false);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('PDF ready. Check your Downloads.')),
@@ -42,7 +47,10 @@ class _DownloadMyDataScreenState extends State<DownloadMyDataScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
@@ -58,36 +66,54 @@ class _DownloadMyDataScreenState extends State<DownloadMyDataScreen> {
                   children: [
                     Text(
                       'Download my data',
-                      style: AppTextStyles.heading1.copyWith(fontSize: 28, color: AppColors.text),
+                      style: AppTextStyles.heading1.copyWith(
+                        fontSize: 28,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Text(
                       'Generate a PDF summary of your data to share with your healthcare provider or keep for yourself.',
-                      style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
                     ),
-                    const SizedBox(height: 32),
-                    
+                    SizedBox(height: 32),
+
                     Text(
                       'Date range',
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.border),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _selectedRange,
-                          icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textSubtle),
+                          icon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textSubtleDark
+                                : AppColors.textSubtleLight,
+                          ),
                           isExpanded: true,
-                          style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                          style: AppTextStyles.body1.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                           items: _ranges.map((String value) {
                             return DropdownMenuItem<String>(
                               value: value,
@@ -102,19 +128,19 @@ class _DownloadMyDataScreenState extends State<DownloadMyDataScreen> {
                         ),
                       ),
                     ),
-                    
-                    const SizedBox(height: 32),
+
+                    SizedBox(height: 32),
                     Text(
                       'Include',
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Container(
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.border),
                       ),
@@ -123,30 +149,45 @@ class _DownloadMyDataScreenState extends State<DownloadMyDataScreen> {
                           _CheckboxRow(
                             label: 'Mood entries',
                             value: _includeMood,
-                            onChanged: (val) => setState(() => _includeMood = val ?? false),
+                            onChanged: (val) =>
+                                setState(() => _includeMood = val ?? false),
                           ),
                           Padding(
                             padding: const EdgeInsets.only(left: 16, right: 16),
-                            child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                            child: Divider(
+                              height: 1,
+                              thickness: 1,
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withValues(alpha: 0.4),
+                            ),
                           ),
                           _CheckboxRow(
                             label: 'Journal entries',
                             value: _includeJournal,
-                            onChanged: (val) => setState(() => _includeJournal = val ?? false),
+                            onChanged: (val) =>
+                                setState(() => _includeJournal = val ?? false),
                           ),
                           Padding(
                             padding: const EdgeInsets.only(left: 16, right: 16),
-                            child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                            child: Divider(
+                              height: 1,
+                              thickness: 1,
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withValues(alpha: 0.4),
+                            ),
                           ),
                           _CheckboxRow(
                             label: 'AI conversations',
                             value: _includeAi,
-                            onChanged: (val) => setState(() => _includeAi = val ?? false),
+                            onChanged: (val) =>
+                                setState(() => _includeAi = val ?? false),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 48),
+                    SizedBox(height: 48),
                   ],
                 ),
               ),
@@ -155,7 +196,9 @@ class _DownloadMyDataScreenState extends State<DownloadMyDataScreen> {
               padding: const EdgeInsets.all(24),
               child: AppButton(
                 text: _isGenerating ? 'Generating...' : 'Generate PDF',
-                onPressed: _isGenerating || (!_includeMood && !_includeJournal && !_includeAi)
+                onPressed:
+                    _isGenerating ||
+                        (!_includeMood && !_includeJournal && !_includeAi)
                     ? null
                     : _generatePdf,
               ),
@@ -192,7 +235,7 @@ class _CheckboxRow extends StatelessWidget {
                 child: Text(
                   label,
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -201,8 +244,15 @@ class _CheckboxRow extends StatelessWidget {
                 value: value,
                 onChanged: onChanged,
                 activeColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                side: BorderSide(color: AppColors.textSubtle.withValues(alpha: 0.5), width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                side: BorderSide(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textSubtleDark
+                      : AppColors.textSubtleLight.withValues(alpha: 0.5),
+                  width: 1.5,
+                ),
               ),
             ],
           ),

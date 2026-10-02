@@ -23,9 +23,9 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
       _showDisconnectConfirmation(app);
     } else {
       setState(() => _connectedStates[app] = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Connected to $app')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Connected to $app')));
     }
   }
 
@@ -34,17 +34,21 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: AppColors.surface,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           title: Text(
             'Disconnect $app?',
-            style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           content: Text(
             'Cozy Health will no longer be able to sync data with $app.',
-            style: AppTextStyles.body1.copyWith(color: AppColors.text),
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           actions: [
             TextButton(
@@ -52,7 +56,7 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
               child: Text(
                 'Cancel',
                 style: AppTextStyles.body1.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -87,13 +91,18 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
         title: Text(
           'Connected Apps',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: false,
       ),
@@ -103,20 +112,20 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text(
                 'Health & Fitness',
                 style: AppTextStyles.body1.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border, width: 1),
                 ),
@@ -127,48 +136,69 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
                       description: 'Sync steps, sleep, and heart rate data.',
                       icon: Icons.monitor_heart, // Mock icon
                       isConnected: _connectedStates['Apple Health']!,
-                      onTap: () => _toggleConnection('Apple Health', _connectedStates['Apple Health']!),
+                      onTap: () => _toggleConnection(
+                        'Apple Health',
+                        _connectedStates['Apple Health']!,
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 16, right: 16),
-                      child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.4),
+                      ),
                     ),
                     _AppRow(
                       name: 'Google Fit',
                       description: 'Sync steps, sleep, and activity data.',
                       icon: Icons.fitness_center,
                       isConnected: _connectedStates['Google Fit']!,
-                      onTap: () => _toggleConnection('Google Fit', _connectedStates['Google Fit']!),
+                      onTap: () => _toggleConnection(
+                        'Google Fit',
+                        _connectedStates['Google Fit']!,
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 16, right: 16),
-                      child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.4),
+                      ),
                     ),
                     _AppRow(
                       name: 'Fitbit',
                       description: 'Sync sleep and activity data.',
                       icon: Icons.watch,
                       isConnected: _connectedStates['Fitbit']!,
-                      onTap: () => _toggleConnection('Fitbit', _connectedStates['Fitbit']!),
+                      onTap: () => _toggleConnection(
+                        'Fitbit',
+                        _connectedStates['Fitbit']!,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               Text(
                 'Productivity',
                 style: AppTextStyles.body1.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border, width: 1),
                 ),
@@ -176,15 +206,19 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
                   children: [
                     _AppRow(
                       name: 'Google Calendar',
-                      description: 'Sync journal reminders and therapy sessions.',
+                      description:
+                          'Sync journal reminders and therapy sessions.',
                       icon: Icons.calendar_month,
                       isConnected: _connectedStates['Google Calendar']!,
-                      onTap: () => _toggleConnection('Google Calendar', _connectedStates['Google Calendar']!),
+                      onTap: () => _toggleConnection(
+                        'Google Calendar',
+                        _connectedStates['Google Calendar']!,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),
@@ -221,9 +255,13 @@ class _AppRow extends StatelessWidget {
               color: AppColors.warmBackground,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.text, size: 28),
+            child: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.onSurface,
+              size: 28,
+            ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,14 +272,17 @@ class _AppRow extends StatelessWidget {
                       child: Text(
                         name,
                         style: AppTextStyles.body1.copyWith(
-                          color: AppColors.text,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                     if (isConnected)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
@@ -249,8 +290,12 @@ class _AppRow extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.check, color: AppColors.primary, size: 12),
-                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.check,
+                              color: AppColors.primary,
+                              size: 12,
+                            ),
+                            SizedBox(width: 4),
                             Text(
                               'Connected',
                               style: AppTextStyles.body2.copyWith(
@@ -264,21 +309,32 @@ class _AppRow extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   description,
-                  style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                  style: AppTextStyles.body2.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 InkWell(
                   onTap: onTap,
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      color: isConnected ? AppColors.warmBackground : AppColors.text,
+                      color: isConnected
+                          ? AppColors.warmBackground
+                          : AppColors.text,
                       borderRadius: BorderRadius.circular(8),
-                      border: isConnected ? Border.all(color: AppColors.border) : null,
+                      border: isConnected
+                          ? Border.all(color: AppColors.border)
+                          : null,
                     ),
                     child: Text(
                       isConnected ? 'Disconnect' : 'Connect',

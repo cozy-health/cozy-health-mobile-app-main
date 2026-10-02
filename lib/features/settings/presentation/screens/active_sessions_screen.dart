@@ -42,18 +42,18 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
     setState(() {
       _sessions.removeWhere((s) => !s['isCurrent']);
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('All other sessions revoked')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('All other sessions revoked')));
   }
 
   void _revokeSession(String id) {
     setState(() {
       _sessions.removeWhere((s) => s['id'] == id);
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Session revoked')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Session revoked')));
   }
 
   @override
@@ -66,13 +66,18 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
         title: Text(
           'Active Sessions',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: false,
         actions: [
@@ -87,14 +92,17 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                 ),
               ),
             ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
         child: _sessions.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(child: CircularProgressIndicator())
             : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 24,
+                ),
                 itemCount: _sessions.length,
                 itemBuilder: (context, index) {
                   final session = _sessions[index];
@@ -104,7 +112,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.border, width: 1),
                     ),
@@ -119,11 +127,11 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                           ),
                           child: Icon(
                             session['icon'] as IconData,
-                            color: AppColors.text,
+                            color: Theme.of(context).colorScheme.onSurface,
                             size: 24,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,7 +142,9 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                                     child: Text(
                                       session['device'] as String,
                                       style: AppTextStyles.body1.copyWith(
-                                        color: AppColors.text,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -142,9 +152,13 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                                   if (isCurrent)
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 4),
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withValues(alpha: 0.1),
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.1,
+                                        ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
@@ -158,22 +172,27 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                                     ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Text(
                                 '${session['location']} • ${session['time']}',
                                 style: AppTextStyles.body2.copyWith(
-                                  color: AppColors.textMuted,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.textMutedDark
+                                      : AppColors.textMutedLight,
                                 ),
                               ),
                             ],
                           ),
                         ),
                         if (!isCurrent) ...[
-                          const SizedBox(width: 16),
+                          SizedBox(width: 16),
                           IconButton(
-                            icon: const Icon(Icons.logout, color: AppColors.danger),
+                            icon: Icon(Icons.logout, color: AppColors.danger),
                             tooltip: 'Revoke session',
-                            onPressed: () => _revokeSession(session['id'] as String),
+                            onPressed: () =>
+                                _revokeSession(session['id'] as String),
                           ),
                         ],
                       ],

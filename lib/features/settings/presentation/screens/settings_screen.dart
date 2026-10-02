@@ -37,7 +37,7 @@ class SettingsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               StreamBuilder<UserProfile?>(
                 stream: ProfileRepository().watchProfile(),
                 initialData: LocalDbService.instance.getUserProfile(),
@@ -81,13 +81,10 @@ class SettingsScreen extends StatelessWidget {
                                     : null,
                               ),
                               child: avatarUrl == null
-                                  ? const Icon(
-                                      Icons.person,
-                                      color: AppColors.white,
-                                    )
+                                  ? Icon(Icons.person, color: AppColors.white)
                                   : null,
                             ),
-                            const SizedBox(width: 16),
+                            SizedBox(width: 16),
                             Expanded(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -127,7 +124,7 @@ class SettingsScreen extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               _SettingsSection(
                 title: 'PREFERENCES',
@@ -160,7 +157,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               _SettingsSection(
                 title: 'ACCOUNT',
@@ -197,7 +194,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               _SettingsSection(
                 title: 'SUBSCRIPTION',
@@ -214,7 +211,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               _SettingsSection(
                 title: 'DATA',
@@ -242,7 +239,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               _SettingsSection(
                 title: 'SUPPORT',
@@ -269,7 +266,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               _SettingsSection(
                 title: 'ABOUT',
@@ -286,7 +283,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
 
               // Logout button
               Material(
@@ -367,7 +364,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               Text(
                 'Version 1.0.0 (build 42)',
@@ -378,7 +375,7 @@ class SettingsScreen extends StatelessWidget {
                       : AppColors.textMutedLight,
                 ),
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),
@@ -481,7 +478,7 @@ class _SettingsRow extends StatelessWidget {
           child: Row(
             children: [
               Icon(icon, size: 24, color: iconColor),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Text(
                   label,

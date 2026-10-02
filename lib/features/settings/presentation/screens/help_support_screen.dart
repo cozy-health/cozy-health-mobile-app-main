@@ -17,23 +17,28 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   final List<Map<String, String>> _faqs = [
     {
       'q': 'How do I log my mood?',
-      'a': 'Tap \'Log your mood\' on the Home screen. You can select how you\'re feeling, add details, and save. Takes about 30 seconds.',
+      'a':
+          'Tap \'Log your mood\' on the Home screen. You can select how you\'re feeling, add details, and save. Takes about 30 seconds.',
     },
     {
       'q': 'Is my data private?',
-      'a': 'Yes. Your journal and mood entries are private to you. We never share them, and you can export or delete everything anytime in Settings.',
+      'a':
+          'Yes. Your journal and mood entries are private to you. We never share them, and you can export or delete everything anytime in Settings.',
     },
     {
       'q': 'How do I cancel?',
-      'a': 'Go to Settings → Subscription → Cancel subscription. No phone calls, no hoops.',
+      'a':
+          'Go to Settings → Subscription → Cancel subscription. No phone calls, no hoops.',
     },
     {
       'q': 'Can I export my data?',
-      'a': 'Yes. Settings → Data → Export My Data. We\'ll email you a copy in PDF or JSON.',
+      'a':
+          'Yes. Settings → Data → Export My Data. We\'ll email you a copy in PDF or JSON.',
     },
     {
       'q': 'Is Cozy a therapist?',
-      'a': 'No. Cozy is a warm companion for reflection — not a replacement for professional care. If you need human support, we\'ll help you find it.',
+      'a':
+          'No. Cozy is a warm companion for reflection — not a replacement for professional care. If you need human support, we\'ll help you find it.',
     },
   ];
 
@@ -51,7 +56,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
@@ -64,13 +72,16 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             children: [
               Text(
                 'Help & support',
-                style: AppTextStyles.heading1.copyWith(fontSize: 28, color: AppColors.text),
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 28,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Container(
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.border),
                 ),
@@ -78,59 +89,87 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search help...',
-                    hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textSubtle),
-                    prefixIcon: const Icon(Icons.search, color: AppColors.textSubtle),
+                    hintStyle: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textSubtleDark
+                          : AppColors.textSubtleLight,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textSubtleDark
+                          : AppColors.textSubtleLight,
+                    ),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                   onChanged: (val) => setState(() {}),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               Text(
                 'Common questions',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border, width: 1),
                 ),
                 child: Column(
-                  children: _faqs.where((faq) => 
-                    faq['q']!.toLowerCase().contains(_searchController.text.toLowerCase())
-                  ).map((faq) {
-                    final isLast = faq == _faqs.last;
-                    return Column(
-                      children: [
-                        _FaqAccordion(question: faq['q']!, answer: faq['a']!),
-                        if (!isLast)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
-                          ),
-                      ],
-                    );
-                  }).toList(),
+                  children: _faqs
+                      .where(
+                        (faq) => faq['q']!.toLowerCase().contains(
+                          _searchController.text.toLowerCase(),
+                        ),
+                      )
+                      .map((faq) {
+                        final isLast = faq == _faqs.last;
+                        return Column(
+                          children: [
+                            _FaqAccordion(
+                              question: faq['q']!,
+                              answer: faq['a']!,
+                            ),
+                            if (!isLast)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: Theme.of(
+                                    context,
+                                  ).dividerColor.withValues(alpha: 0.4),
+                                ),
+                              ),
+                          ],
+                        );
+                      })
+                      .toList(),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               Text(
                 'Still need help?',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border, width: 1),
                 ),
@@ -143,7 +182,13 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 16, right: 16),
-                      child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.4),
+                      ),
                     ),
                     _ContactRow(
                       icon: Icons.chat_bubble_outline,
@@ -152,7 +197,13 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 16, right: 16),
-                      child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.4),
+                      ),
                     ),
                     _ContactRow(
                       icon: Icons.bug_report_outlined,
@@ -162,7 +213,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),
@@ -181,7 +232,8 @@ class _FaqAccordion extends StatefulWidget {
   State<_FaqAccordion> createState() => _FaqAccordionState();
 }
 
-class _FaqAccordionState extends State<_FaqAccordion> with SingleTickerProviderStateMixin {
+class _FaqAccordionState extends State<_FaqAccordion>
+    with SingleTickerProviderStateMixin {
   bool _expanded = false;
 
   @override
@@ -205,30 +257,41 @@ class _FaqAccordionState extends State<_FaqAccordion> with SingleTickerProviderS
                     child: Text(
                       widget.question,
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   AnimatedRotation(
                     turns: _expanded ? 0.125 : 0, // 45 degrees
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.easeOutCubic,
-                    child: const Icon(Icons.add, color: AppColors.textMuted),
+                    child: Icon(
+                      Icons.add,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
                   ),
                 ],
               ),
               AnimatedCrossFade(
-                firstChild: const SizedBox(height: 0, width: double.infinity),
+                firstChild: SizedBox(height: 0, width: double.infinity),
                 secondChild: Padding(
                   padding: const EdgeInsets.only(top: 12),
                   child: Text(
                     widget.answer,
-                    style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
                   ),
                 ),
-                crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                crossFadeState: _expanded
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
                 duration: const Duration(milliseconds: 400),
                 firstCurve: Curves.easeOutCubic,
                 secondCurve: Curves.easeOutCubic,
@@ -263,18 +326,28 @@ class _ContactRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              Icon(icon, color: AppColors.text, size: 24),
-              const SizedBox(width: 16),
+              Icon(
+                icon,
+                color: Theme.of(context).colorScheme.onSurface,
+                size: 24,
+              ),
+              SizedBox(width: 16),
               Expanded(
                 child: Text(
                   label,
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
-              const Icon(Icons.arrow_forward, color: AppColors.textMuted, size: 20),
+              Icon(
+                Icons.arrow_forward,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+                size: 20,
+              ),
             ],
           ),
         ),

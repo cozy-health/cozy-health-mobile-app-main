@@ -10,10 +10,12 @@ class AccessibilitySettingsScreen extends StatefulWidget {
   const AccessibilitySettingsScreen({super.key});
 
   @override
-  State<AccessibilitySettingsScreen> createState() => _AccessibilitySettingsScreenState();
+  State<AccessibilitySettingsScreen> createState() =>
+      _AccessibilitySettingsScreenState();
 }
 
-class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScreen> {
+class _AccessibilitySettingsScreenState
+    extends State<AccessibilitySettingsScreen> {
   double _textSize = 1.0;
   bool _reduceMotion = false;
   bool _highContrast = false;
@@ -56,7 +58,7 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
       SnackBar(
         content: Semantics(
           label: 'This is a test announcement for screen readers',
-          child: const Text('Screen reader test played'),
+          child: Text('Screen reader test played'),
         ),
       ),
     );
@@ -70,13 +72,18 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
         title: Text(
           'Accessibility',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: false,
       ),
@@ -86,8 +93,8 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
-              
+              SizedBox(height: 24),
+
               _SettingsSection(
                 title: 'Display',
                 children: [
@@ -99,16 +106,19 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
                         Text(
                           'Text Size',
                           style: AppTextStyles.body1.copyWith(
-                            color: AppColors.text,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         Row(
                           children: [
                             Text(
                               'A',
-                              style: AppTextStyles.body1.copyWith(fontSize: 14, color: AppColors.text),
+                              style: AppTextStyles.body1.copyWith(
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                             Expanded(
                               child: Slider(
@@ -119,24 +129,28 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
                                 activeColor: AppColors.primary,
                                 inactiveColor: AppColors.border,
                                 onChanged: _updateTextSize,
-                                semanticFormatterCallback: (value) => '${(value * 100).round()}% text size',
+                                semanticFormatterCallback: (value) =>
+                                    '${(value * 100).round()}% text size',
                               ),
                             ),
                             Text(
                               'A',
-                              style: AppTextStyles.body1.copyWith(fontSize: 22, color: AppColors.text),
+                              style: AppTextStyles.body1.copyWith(
+                                fontSize: 22,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Divider(
                       height: 1,
                       thickness: 1,
-                      color: AppColors.border,
+                      color: Theme.of(context).dividerColor,
                     ),
                   ),
                   _SettingsToggleRow(
@@ -146,8 +160,8 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               _SettingsSection(
                 title: 'Motion & Interaction',
                 children: [
@@ -164,8 +178,8 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               _SettingsSection(
                 title: 'VoiceOver / TalkBack',
                 children: [
@@ -182,12 +196,14 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
                               child: Text(
                                 'Test Screen Reader',
                                 style: AppTextStyles.body1.copyWith(
-                                  color: AppColors.text,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ),
-                            const Icon(
+                            Icon(
                               Icons.record_voice_over,
                               size: 20,
                               color: AppColors.primary,
@@ -199,7 +215,7 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
                   ),
                 ],
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),
@@ -212,10 +228,7 @@ class _SettingsSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const _SettingsSection({
-    required this.title,
-    required this.children,
-  });
+  const _SettingsSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -229,19 +242,17 @@ class _SettingsSection extends StatelessWidget {
             style: AppTextStyles.body1.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border, width: 1),
           ),
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );
@@ -280,23 +291,25 @@ class _SettingsToggleRow extends StatelessWidget {
                     Text(
                       label,
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
                     if (description != null) ...[
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         description!,
                         style: AppTextStyles.body2.copyWith(
-                          color: AppColors.textMuted,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
                         ),
                       ),
                     ],
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Semantics(
                 label: label,
                 value: value ? 'Enabled' : 'Disabled',

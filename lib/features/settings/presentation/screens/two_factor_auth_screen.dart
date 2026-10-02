@@ -16,8 +16,16 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
   String _setupStep = 'methods'; // methods, qr, backup
 
   final List<String> _backupCodes = [
-    'A1B2-C3D4', 'E5F6-G7H8', 'I9J0-K1L2', 'M3N4-O5P6', 'Q7R8-S9T0',
-    'U1V2-W3X4', 'Y5Z6-A7B8', 'C9D0-E1F2', 'G3H4-I5J6', 'K7L8-M9N0'
+    'A1B2-C3D4',
+    'E5F6-G7H8',
+    'I9J0-K1L2',
+    'M3N4-O5P6',
+    'Q7R8-S9T0',
+    'U1V2-W3X4',
+    'Y5Z6-A7B8',
+    'C9D0-E1F2',
+    'G3H4-I5J6',
+    'K7L8-M9N0',
   ];
 
   @override
@@ -28,13 +36,18 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
         title: Text(
           'Two-Factor Auth',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: false,
       ),
@@ -44,7 +57,7 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               if (_isEnabled) ...[
                 _buildEnabledState(),
               ] else ...[
@@ -52,7 +65,7 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
                 if (_setupStep == 'qr') _buildQrState(),
                 if (_setupStep == 'backup') _buildBackupState(),
               ],
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),
@@ -73,8 +86,8 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.security, color: AppColors.primary, size: 32),
-              const SizedBox(width: 16),
+              Icon(Icons.security, color: AppColors.primary, size: 32),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,10 +99,12 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       'Your account is protected with Authenticator App.',
-                      style: AppTextStyles.body2.copyWith(color: AppColors.text),
+                      style: AppTextStyles.body2.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                   ],
                 ),
@@ -97,10 +112,10 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border, width: 1),
           ),
@@ -118,7 +133,11 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                ),
               ),
               _SettingsRow(
                 icon: Icons.swap_horiz,
@@ -132,7 +151,11 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                ),
               ),
               _SettingsRow(
                 icon: Icons.gpp_bad_outlined,
@@ -155,17 +178,24 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
       children: [
         Text(
           'Protect Your Account',
-          style: AppTextStyles.heading2.copyWith(fontSize: 24, color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            fontSize: 24,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Text(
           'Two-factor authentication adds an extra layer of security to your account. Choose a method below.',
-          style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+          style: AppTextStyles.body1.copyWith(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textMutedDark
+                : AppColors.textMutedLight,
+          ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border, width: 1),
           ),
@@ -173,13 +203,18 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
             children: [
               _MethodRow(
                 title: 'Authenticator App (Recommended)',
-                description: 'Use an app like Google Authenticator or Authy to generate codes.',
+                description:
+                    'Use an app like Google Authenticator or Authy to generate codes.',
                 icon: Icons.qr_code_scanner,
                 onTap: () => setState(() => _setupStep = 'qr'),
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                ),
               ),
               _MethodRow(
                 title: 'Text Message (SMS)',
@@ -193,7 +228,11 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                ),
               ),
               _MethodRow(
                 title: 'Email',
@@ -218,54 +257,72 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
       children: [
         Text(
           'Set Up Authenticator',
-          style: AppTextStyles.heading2.copyWith(fontSize: 24, color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            fontSize: 24,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Text(
           'Scan this QR code with your authenticator app, then enter the 6-digit code it generates.',
           textAlign: TextAlign.center,
-          style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+          style: AppTextStyles.body1.copyWith(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textMutedDark
+                : AppColors.textMutedLight,
+          ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Icon(Icons.qr_code_2, size: 200, color: Colors.black),
+          child: Icon(Icons.qr_code_2, size: 200, color: Colors.black),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
         Semantics(
           label: 'Authenticator Code Input',
           child: TextField(
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
-            style: AppTextStyles.heading2.copyWith(color: AppColors.text, letterSpacing: 8),
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              letterSpacing: 8,
+            ),
             maxLength: 6,
             decoration: InputDecoration(
               hintText: '000000',
-              hintStyle: AppTextStyles.heading2.copyWith(color: AppColors.textMuted.withValues(alpha: 0.5), letterSpacing: 8),
+              hintStyle: AppTextStyles.heading2.copyWith(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight.withValues(alpha: 0.5),
+                letterSpacing: 8,
+              ),
               filled: true,
-              fillColor: AppColors.surface,
+              fillColor: Theme.of(context).colorScheme.surface,
               counterText: '',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: Theme.of(context).dividerColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: Theme.of(context).dividerColor),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.primary),
+                borderSide: BorderSide(color: AppColors.primary),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         AppButton(
           text: 'Verify and Continue',
           onPressed: () => setState(() => _setupStep = 'backup'),
@@ -280,9 +337,12 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
       children: [
         Text(
           'Backup Codes',
-          style: AppTextStyles.heading2.copyWith(fontSize: 24, color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            fontSize: 24,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -292,22 +352,25 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: AppColors.danger),
-              const SizedBox(width: 12),
+              Icon(Icons.warning_amber_rounded, color: AppColors.danger),
+              SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Save these somewhere safe! You will need them if you lose access to your device.',
-                  style: AppTextStyles.body2.copyWith(color: AppColors.danger, fontWeight: FontWeight.w500),
+                  style: AppTextStyles.body2.copyWith(
+                    color: AppColors.danger,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border, width: 1),
           ),
@@ -315,20 +378,24 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
             spacing: 24,
             runSpacing: 16,
             alignment: WrapAlignment.center,
-            children: _backupCodes.map((code) => SizedBox(
-              width: 100,
-              child: Text(
-                code,
-                style: AppTextStyles.body1.copyWith(
-                  color: AppColors.text,
-                  fontFamily: 'monospace',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            )).toList(),
+            children: _backupCodes
+                .map(
+                  (code) => SizedBox(
+                    width: 100,
+                    child: Text(
+                      code,
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
         AppButton(
           text: 'I\'ve Saved My Codes',
           onPressed: () {
@@ -337,7 +404,9 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
               _setupStep = 'methods';
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Two-factor authentication enabled!')),
+              const SnackBar(
+                content: Text('Two-factor authentication enabled!'),
+              ),
             );
           },
         ),
@@ -350,17 +419,21 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: AppColors.surface,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           title: Text(
             'Disable 2FA?',
-            style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           content: Text(
             'Your account will be less secure.',
-            style: AppTextStyles.body1.copyWith(color: AppColors.text),
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           actions: [
             TextButton(
@@ -368,7 +441,7 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
               child: Text(
                 'Cancel',
                 style: AppTextStyles.body1.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -378,7 +451,9 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
                 Navigator.of(context).pop();
                 setState(() => _isEnabled = false);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Two-factor authentication disabled')),
+                  const SnackBar(
+                    content: Text('Two-factor authentication disabled'),
+                  ),
                 );
               },
               child: Text(
@@ -422,7 +497,7 @@ class _SettingsRow extends StatelessWidget {
           child: Row(
             children: [
               Icon(icon, color: color, size: 24),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Text(
                   label,
@@ -432,7 +507,13 @@ class _SettingsRow extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(Icons.chevron_right, color: AppColors.textMuted, size: 24),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+                size: 24,
+              ),
             ],
           ),
         ),
@@ -473,7 +554,7 @@ class _MethodRow extends StatelessWidget {
                 ),
                 child: Icon(icon, color: AppColors.primary, size: 24),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,20 +562,29 @@ class _MethodRow extends StatelessWidget {
                     Text(
                       title,
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       description,
-                      style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                      style: AppTextStyles.body2.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+              ),
             ],
           ),
         ),

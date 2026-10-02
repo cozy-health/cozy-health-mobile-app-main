@@ -94,7 +94,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
@@ -103,7 +103,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               // Avatar
               Center(
                 child: Column(
@@ -126,7 +126,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 : null,
                           ),
                           child: _currentProfile?.avatarUrl == null
-                              ? const Icon(
+                              ? Icon(
                                   Icons.person,
                                   color: AppColors.white,
                                   size: 48,
@@ -147,17 +147,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   color: Theme.of(context).colorScheme.onSurface
                                       .withValues(alpha: 0.4),
                                 ),
-                                child: const Icon(
-                                  Icons.edit,
-                                  color: AppColors.white,
-                                ),
+                                child: Icon(Icons.edit, color: AppColors.white),
                               ),
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     TextButton(
                       onPressed: () {},
                       child: Text(
@@ -171,14 +168,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               _FormField(
                 label: 'Name',
                 controller: nameController,
                 onChanged: _onChanged,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               _FormField(
                 label: 'Username',
@@ -186,7 +183,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 helperText: 'Letters and numbers only.',
                 onChanged: _onChanged,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               _FormField(
                 label: 'Bio',
@@ -208,7 +205,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               _FormField(
                 label: 'Email',
@@ -216,13 +213,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 helperText: 'Contact support to change.',
                 enabled: false,
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
 
               AppButton(
                 text: 'Save Changes',
                 onPressed: _hasChanges ? _saveChanges : null,
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),
@@ -260,7 +257,7 @@ class _FormField extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         TextField(
           controller: controller,
           maxLines: maxLines,
@@ -282,24 +279,24 @@ class _FormField extends StatelessWidget {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: Theme.of(context).dividerColor),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: Theme.of(context).dividerColor),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary),
+              borderSide: BorderSide(color: AppColors.primary),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: Theme.of(context).dividerColor),
             ),
           ),
         ),
         if (helperText != null) ...[
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             helperText!,
             style: AppTextStyles.body2.copyWith(

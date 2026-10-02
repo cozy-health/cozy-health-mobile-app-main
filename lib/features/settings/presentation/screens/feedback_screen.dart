@@ -30,9 +30,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(seconds: 1)); // Mock network
     if (!mounted) return;
-    
+
     setState(() => _isLoading = false);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Thanks. We read every message.')),
     );
@@ -47,7 +47,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
@@ -60,26 +63,33 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             children: [
               Text(
                 'Share feedback',
-                style: AppTextStyles.heading1.copyWith(fontSize: 28, color: AppColors.text),
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 28,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 'We read every message.',
-                style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
+                ),
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               Text(
                 'Type',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border, width: 1),
                 ),
@@ -94,20 +104,31 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           child: InkWell(
                             onTap: () => setState(() => _selectedType = type),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
                               child: Row(
                                 children: [
                                   Icon(
-                                    isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                                    color: isSelected ? AppColors.primary : AppColors.textSubtle,
+                                    isSelected
+                                        ? Icons.radio_button_checked
+                                        : Icons.radio_button_unchecked,
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : AppColors.textSubtle,
                                   ),
-                                  const SizedBox(width: 16),
+                                  SizedBox(width: 16),
                                   Expanded(
                                     child: Text(
                                       type,
                                       style: AppTextStyles.body1.copyWith(
-                                        color: AppColors.text,
-                                        fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w500
+                                            : FontWeight.w400,
                                       ),
                                     ),
                                   ),
@@ -119,64 +140,86 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         if (!isLast)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Divider(height: 1, thickness: 1, color: AppColors.border.withValues(alpha: 0.4)),
+                            child: Divider(
+                              height: 1,
+                              thickness: 1,
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withValues(alpha: 0.4),
+                            ),
                           ),
                       ],
                     );
                   }).toList(),
                 ),
               ),
-              
-              const SizedBox(height: 24),
+
+              SizedBox(height: 24),
               Text(
                 'Message',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Semantics(
                 label: 'Message input',
                 child: TextField(
                   controller: _msgController,
                   maxLines: 6,
                   onChanged: (_) => setState(() {}),
-                  style: AppTextStyles.body1.copyWith(color: AppColors.text),
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Share your thoughts with us...',
-                    hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                    hintStyle: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
                     filled: true,
-                    fillColor: AppColors.surface,
+                    fillColor: Theme.of(context).colorScheme.surface,
                     contentPadding: const EdgeInsets.all(16),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary),
+                      borderSide: BorderSide(color: AppColors.primary),
                     ),
                   ),
                 ),
               ),
-              
-              const SizedBox(height: 32),
+
+              SizedBox(height: 32),
               AppButton(
                 text: _isLoading ? 'Sending...' : 'Send',
-                onPressed: _msgController.text.trim().isEmpty || _isLoading ? null : _submit,
+                onPressed: _msgController.text.trim().isEmpty || _isLoading
+                    ? null
+                    : _submit,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text(
                 'We don\'t need your email.\nWe read every message.',
                 textAlign: TextAlign.center,
-                style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body2.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
+                ),
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),

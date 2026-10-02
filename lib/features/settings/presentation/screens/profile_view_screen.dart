@@ -37,7 +37,7 @@ class ProfileViewScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
@@ -46,7 +46,7 @@ class ProfileViewScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               StreamBuilder<UserProfile?>(
                 stream: ProfileRepository().watchProfile(),
                 builder: (context, profileSnapshot) {
@@ -76,14 +76,14 @@ class ProfileViewScreen extends StatelessWidget {
                               : null,
                         ),
                         child: avatarUrl == null
-                            ? const Icon(
+                            ? Icon(
                                 Icons.person,
                                 color: AppColors.white,
                                 size: 48,
                               )
                             : null,
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
 
                       Text(
                         name,
@@ -92,7 +92,7 @@ class ProfileViewScreen extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       if (username.isNotEmpty) ...[
                         Text(
                           username,
@@ -105,7 +105,7 @@ class ProfileViewScreen extends StatelessWidget {
                                 : AppColors.textMutedLight,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                       ],
 
                       Text(
@@ -116,7 +116,7 @@ class ProfileViewScreen extends StatelessWidget {
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32),
 
                       // Stats
                       StreamBuilder<List<MoodEntry>>(
@@ -167,7 +167,7 @@ class ProfileViewScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              SizedBox(width: 16),
                               Expanded(
                                 child: Container(
                                   height: 80,
@@ -211,7 +211,7 @@ class ProfileViewScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32),
                     ],
                   );
                 },
@@ -225,7 +225,7 @@ class ProfileViewScreen extends StatelessWidget {
                       : AppColors.textMutedLight,
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               // Sections
               Material(
@@ -263,7 +263,7 @@ class ProfileViewScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               Material(
                 color: Theme.of(context).colorScheme.surface,
@@ -300,7 +300,7 @@ class ProfileViewScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),

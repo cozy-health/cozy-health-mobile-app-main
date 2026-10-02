@@ -51,12 +51,17 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'Privacy',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         centerTitle: false,
       ),
@@ -66,8 +71,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
-              
+              SizedBox(height: 24),
+
               _SettingsSection(
                 title: 'Profile visibility',
                 children: [
@@ -83,8 +88,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               _SettingsSection(
                 title: 'AI & Data',
                 children: [
@@ -105,8 +110,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               _SettingsSection(
                 title: 'Analytics',
                 children: [
@@ -122,8 +127,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-              
+              SizedBox(height: 32),
+
               _SettingsSection(
                 title: 'Blocked users',
                 children: [
@@ -140,15 +145,21 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                               child: Text(
                                 'Manage blocked users',
                                 style: AppTextStyles.body1.copyWith(
-                                  color: AppColors.text,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ),
-                            const Icon(
+                            Icon(
                               Icons.chevron_right,
                               size: 20,
-                              color: AppColors.textSubtle,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? AppColors.textSubtleDark
+                                  : AppColors.textSubtleLight,
                             ),
                           ],
                         ),
@@ -157,7 +168,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
             ],
           ),
         ),
@@ -170,10 +181,7 @@ class _SettingsSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const _SettingsSection({
-    required this.title,
-    required this.children,
-  });
+  const _SettingsSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -187,37 +195,36 @@ class _SettingsSection extends StatelessWidget {
             style: AppTextStyles.body1.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border, width: 1),
           ),
           child: Column(
-            children: List.generate(
-              children.length,
-              (index) {
-                final isLast = index == children.length - 1;
-                return Column(
-                  children: [
-                    children[index],
-                    if (!isLast)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16, right: 16),
-                        child: Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: AppColors.border.withValues(alpha: 0.4),
-                        ),
+            children: List.generate(children.length, (index) {
+              final isLast = index == children.length - 1;
+              return Column(
+                children: [
+                  children[index],
+                  if (!isLast)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, right: 16),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.4),
                       ),
-                  ],
-                );
-              },
-            ),
+                    ),
+                ],
+              );
+            }),
           ),
         ),
       ],
@@ -255,14 +262,14 @@ class _SettingsToggleRow extends StatelessWidget {
                     Text(
                       label,
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               CupertinoSwitch(
                 value: value,
                 onChanged: onChanged,
