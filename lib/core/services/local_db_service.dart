@@ -93,6 +93,10 @@ class LocalDbService {
     yield* moodBox.watch().map((_) => getAllMoodEntries());
   }
 
+  Future<void> deleteMoodEntry(String id) async {
+    await moodBox.delete(id);
+  }
+
   // --- Journals ---
   Box<JournalEntry> get journalBox => Hive.box<JournalEntry>(journalBoxName);
 
