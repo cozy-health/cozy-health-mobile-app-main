@@ -29,6 +29,7 @@ class FeaturedPostsScreen extends StatelessWidget {
               Text('This week', style: AppTextStyles.heading2),
               SizedBox(height: 16),
               _buildFeaturedCard(
+                context: context,
                 username: 'sarahchen',
                 content: '"Small wins are still wins."',
                 likes: 128,
@@ -37,6 +38,7 @@ class FeaturedPostsScreen extends StatelessWidget {
               ),
               SizedBox(height: 12),
               _buildFeaturedCard(
+                context: context,
                 username: 'mike',
                 content: '"I made it through today."',
                 likes: 94,
@@ -62,6 +64,7 @@ class FeaturedPostsScreen extends StatelessWidget {
   }
 
   Widget _buildFeaturedCard({
+    required BuildContext context,
     required String username,
     required String content,
     required int likes,
