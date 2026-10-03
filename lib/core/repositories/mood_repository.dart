@@ -59,8 +59,7 @@ class MoodRepository {
   }
 
   Future<void> deleteMoodEntry(String id) async {
-    // Should ideally mark as deleted, but removing for now
-    // await _local.deleteMoodEntry(id);
+    await _local.deleteMoodEntry(id);
     await _local.enqueueSync(
       type: 'mood_entry',
       action: 'delete',
