@@ -40,11 +40,56 @@ class AuthInterceptor extends Interceptor {
 }
 
 class LoggingInterceptor extends Interceptor {
+  bool _shouldRedactBody(RequestOptions options) {
+    final method = options.method.toUpperCase();
+    final path = options.uri.path;
+
+    if (path == '/api/v1/auth/register' ||
+        path == '/api/v1/auth/login' ||
+        path == '/api/v1/auth/forgot-password' ||
+        path == '/api/v1/auth/reset-password' ||
+        path == '/auth/register' ||
+        path == '/auth/login' ||
+        path == '/auth/forgot-password' ||
+        path == '/auth/reset-password' ||
+        path == '/api/v1/user/preferences' ||
+        path == '/user/preferences' ||
+        path == '/api/v1/safety-plan' ||
+        path == '/safety-plan') {
+      return true;
+    }
+
+    if ((path == '/api/v1/user/profile' || path == '/user/profile') &&
+        method == 'PATCH') {
+      return true;
+    }
+
+    if ((path == '/api/v1/mood-entries' || path == '/mood-entries') &&
+        (method == 'POST' || method == 'PATCH')) {
+      return true;
+    }
+
+    if ((path == '/api/v1/journal-entries' || path == '/journal-entries') &&
+        (method == 'POST' || method == 'PATCH')) {
+      return true;
+    }
+
+    return RegExp(
+      r'^(/api/v1)?/conversations/[^/]+/messages$',
+    ).hasMatch(path);
+  }
+
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     if (kDebugMode) {
-      debugPrint('--> \${options.method} \${options.uri}');
-      if (options.data != null) debugPrint('Body: \${options.data}');
+      debugPrint('--> ${options.method} ${options.uri}');
+      if (options.data != null) {
+        if (_shouldRedactBody(options)) {
+          debugPrint('Body: <redacted>');
+        } else {
+          debugPrint('Body: ${options.data}');
+        }
+      }
     }
     return handler.next(options);
   }
@@ -52,7 +97,7 @@ class LoggingInterceptor extends Interceptor {
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     if (kDebugMode) {
-      debugPrint('<-- \${response.statusCode} \${response.requestOptions.uri}');
+      debugPrint('<-- ${response.statusCode} ${response.requestOptions.uri}');
     }
     return handler.next(response);
   }
@@ -60,8 +105,8 @@ class LoggingInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     if (kDebugMode) {
-      debugPrint('<-- Error \${err.response?.statusCode} \${err.requestOptions.uri}');
-      debugPrint('Message: \${err.message}');
+      debugPrint('<-- Error ${err.response?.statusCode} ${err.requestOptions.uri}');
+      debugPrint('Message: ${err.message}');
     }
     return handler.next(err);
   }
