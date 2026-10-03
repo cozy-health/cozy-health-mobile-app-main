@@ -262,6 +262,7 @@ class _MonthlyAreaChartPainter extends CustomPainter {
       6,
       7,
     ];
+    if (data.isEmpty) return;
 
     final double maxData = 10;
     final double pointWidth = size.width / (data.length - 1);
