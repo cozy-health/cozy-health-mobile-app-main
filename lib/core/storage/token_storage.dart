@@ -8,8 +8,7 @@ class TokenStorage {
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: _tokenKey, value: token);
-    final preview = token.length > 10 ? token.substring(0, 10) : token;
-    debugPrint('LOGIN_SAVED: token = $preview');
+    debugPrint('LOGIN_SAVED: token stored');
   }
 
   Future<String?> getToken() async {
