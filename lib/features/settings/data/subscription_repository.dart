@@ -14,7 +14,9 @@ class SubscriptionRepository {
         await _local.saveSubscriptionStatus(sub);
         return sub;
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Fetch subscription failed: $e');
+    }
     return _local.getSubscriptionStatus();
   }
 
@@ -22,18 +24,26 @@ class SubscriptionRepository {
     return _local.watchSubscriptionStatus();
   }
 
-  Future<void> verifyReceipt(Map<String, dynamic> data) async {
+  Future<bool> verifyReceipt(Map<String, dynamic> data) async {
     try {
       await ApiClient.instance.post('/subscription/verify-receipt', data: data);
-      fetchSubscription();
-    } catch (e) {}
+      await fetchSubscription();
+      return true;
+    } catch (e) {
+      debugPrint('Verify receipt failed: $e');
+      return false;
+    }
   }
 
-  Future<void> restorePurchases() async {
+  Future<bool> restorePurchases() async {
     try {
       await ApiClient.instance.post('/subscription/restore');
-      fetchSubscription();
-    } catch (e) {}
+      await fetchSubscription();
+      return true;
+    } catch (e) {
+      debugPrint('Restore purchases failed: $e');
+      return false;
+    }
   }
   
   Stream<SubscriptionStatus?> watchStatus() {
