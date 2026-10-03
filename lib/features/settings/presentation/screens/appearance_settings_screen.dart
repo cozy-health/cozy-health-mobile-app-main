@@ -27,9 +27,12 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
     final profile = LocalDbService().getUserProfile();
     if (profile != null) {
       setState(() {
+        final theme = profile.theme;
+        final safeTheme = theme.isEmpty ? 'system' : theme;
+
         // Theme: Capitalize first letter
         _selectedTheme =
-            profile.theme[0].toUpperCase() + profile.theme.substring(1);
+            safeTheme[0].toUpperCase() + safeTheme.substring(1);
 
         // Accent Color
         if (profile.accentColor != 'lavender' &&
