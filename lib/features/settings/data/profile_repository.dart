@@ -8,15 +8,28 @@ import '../../../core/constants/api_constants.dart';
 class ProfileRepository {
   final LocalDbService _local = LocalDbService();
 
+  Map<String, dynamic>? _extractMapData(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      final nested = data['data'];
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      if (!data.containsKey('data')) return data;
+    }
+    debugPrint('Unexpected profile response shape: ${data.runtimeType}');
+    return null;
+  }
+
   Future<UserProfile?> fetchProfile() async {
     try {
       final response = await ApiClient.instance.get(ApiConstants.me);
-      if (response.data['data'] != null) {
-        final profile = UserProfile.fromJson(response.data['data']);
+      final data = _extractMapData(response.data);
+      if (data != null) {
+        final profile = UserProfile.fromJson(data);
         await _local.saveUserProfile(profile);
         return profile;
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Fetch profile failed: $e');
+    }
     return _local.getUserProfile();
   }
 

@@ -14,6 +14,15 @@ class MoodStats {
 class MoodRepository {
   final LocalDbService _local = LocalDbService();
 
+  List<dynamic> _extractListData(dynamic data) {
+    if (data is Map<String, dynamic> && data['data'] is List) {
+      return data['data'] as List;
+    }
+    if (data is List) return data;
+    debugPrint('Unexpected mood entries response shape: ${data.runtimeType}');
+    return const [];
+  }
+
   Future<List<MoodEntry>> fetchMoodEntries({
     int page = 1,
     int perPage = 50,
@@ -23,8 +32,9 @@ class MoodRepository {
         ApiConstants.moodEntries,
         queryParameters: {'page': page, 'per_page': perPage},
       );
-      final items = (response.data['data'] as List)
-          .map((json) => MoodEntry.fromJson(json))
+      final items = _extractListData(response.data)
+          .whereType<Map>()
+          .map((json) => MoodEntry.fromJson(Map<String, dynamic>.from(json)))
           .toList();
       for (final item in items) {
         await _local.saveMoodEntry(item);
@@ -72,8 +82,18 @@ class MoodRepository {
   Future<MoodStats?> fetchStats() async {
     try {
       final response = await ApiClient.instance.get('/mood-entries/stats');
-      return MoodStats.fromJson(response.data['data'] ?? {});
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final stats = data['data'];
+        if (stats is Map) {
+          return MoodStats.fromJson(Map<String, dynamic>.from(stats));
+        }
+        if (!data.containsKey('data')) return MoodStats.fromJson(data);
+      }
+      debugPrint('Unexpected mood stats response shape: ${data.runtimeType}');
+      return null;
     } catch (e) {
+      debugPrint('Fetch mood stats failed: $e');
       return null;
     }
   }

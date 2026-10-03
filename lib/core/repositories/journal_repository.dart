@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../models/journal_entry.dart';
 import '../services/local_db_service.dart';
 import '../api/api_client.dart';
@@ -5,6 +7,15 @@ import '../constants/api_constants.dart';
 
 class JournalRepository {
   final LocalDbService _local = LocalDbService();
+
+  List<dynamic> _extractListData(dynamic data) {
+    if (data is Map<String, dynamic> && data['data'] is List) {
+      return data['data'] as List;
+    }
+    if (data is List) return data;
+    debugPrint('Unexpected journal entries response shape: ${data.runtimeType}');
+    return const [];
+  }
 
   Future<List<JournalEntry>> fetchJournalEntries({
     int page = 1,
@@ -15,8 +26,9 @@ class JournalRepository {
         ApiConstants.journalEntries,
         queryParameters: {'page': page, 'per_page': perPage},
       );
-      final items = (response.data['data'] as List)
-          .map((json) => JournalEntry.fromJson(json))
+      final items = _extractListData(response.data)
+          .whereType<Map>()
+          .map((json) => JournalEntry.fromJson(Map<String, dynamic>.from(json)))
           .toList();
       for (final item in items) {
         await _local.saveJournalEntry(item);

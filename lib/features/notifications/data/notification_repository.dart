@@ -6,10 +6,22 @@ import '../../../core/api/api_client.dart';
 class NotificationRepository {
   final LocalDbService _local = LocalDbService();
 
+  List<dynamic> _extractListData(dynamic data) {
+    if (data is Map<String, dynamic> && data['data'] is List) {
+      return data['data'] as List;
+    }
+    if (data is List) return data;
+    debugPrint('Unexpected notifications response shape: ${data.runtimeType}');
+    return const [];
+  }
+
   Future<List<AppNotification>> fetchNotifications() async {
     try {
       final response = await ApiClient.instance.get('/notifications');
-      final items = (response.data['data'] as List).map((json) => AppNotification.fromJson(json)).toList();
+      final items = _extractListData(response.data)
+          .whereType<Map>()
+          .map((json) => AppNotification.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
       for (final item in items) {
         await _local.saveAppNotification(item);
       }

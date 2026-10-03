@@ -6,11 +6,22 @@ import '../../../core/api/api_client.dart';
 class SubscriptionRepository {
   final LocalDbService _local = LocalDbService();
 
+  Map<String, dynamic>? _extractMapData(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      final nested = data['data'];
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      if (!data.containsKey('data')) return data;
+    }
+    debugPrint('Unexpected subscription response shape: ${data.runtimeType}');
+    return null;
+  }
+
   Future<SubscriptionStatus?> fetchSubscription() async {
     try {
       final response = await ApiClient.instance.get('/subscription');
-      if (response.data['data'] != null) {
-        final sub = SubscriptionStatus.fromJson(response.data['data']);
+      final data = _extractMapData(response.data);
+      if (data != null) {
+        final sub = SubscriptionStatus.fromJson(data);
         await _local.saveSubscriptionStatus(sub);
         return sub;
       }

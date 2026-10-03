@@ -7,10 +7,22 @@ import '../../../core/api/api_client.dart';
 class ChatRepository {
   final LocalDbService _local = LocalDbService();
 
+  List<dynamic> _extractListData(dynamic data, String label) {
+    if (data is Map<String, dynamic> && data['data'] is List) {
+      return data['data'] as List;
+    }
+    if (data is List) return data;
+    debugPrint('Unexpected $label response shape: ${data.runtimeType}');
+    return const [];
+  }
+
   Future<List<ChatConversation>> fetchConversations() async {
     try {
       final response = await ApiClient.instance.get('/conversations');
-      final items = (response.data['data'] as List).map((json) => ChatConversation.fromJson(json)).toList();
+      final items = _extractListData(response.data, 'conversations')
+          .whereType<Map>()
+          .map((json) => ChatConversation.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
       for (final item in items) {
         await _local.saveChatConversation(item);
       }
@@ -27,7 +39,10 @@ class ChatRepository {
   Future<List<ChatMessage>> fetchMessages(String convId) async {
     try {
       final response = await ApiClient.instance.get('/conversations/$convId/messages');
-      final items = (response.data['data'] as List).map((json) => ChatMessage.fromJson(json)).toList();
+      final items = _extractListData(response.data, 'messages')
+          .whereType<Map>()
+          .map((json) => ChatMessage.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
       for (final item in items) {
         await _local.saveChatMessage(item);
       }
@@ -81,9 +96,30 @@ class ChatRepository {
         },
       );
       
-      final data = response.data['data'];
-      final userMsg = ChatMessage.fromJson(data['user_message']);
-      final assistantMsg = ChatMessage.fromJson(data['assistant_message']);
+      final responseData = response.data;
+      if (responseData is! Map<String, dynamic>) {
+        debugPrint(
+          'Unexpected send message response shape: ${responseData.runtimeType}',
+        );
+        throw const FormatException('Unexpected send message response shape');
+      }
+      final data = responseData['data'];
+      if (data is! Map) {
+        debugPrint('Unexpected send message data shape: ${data.runtimeType}');
+        throw const FormatException('Unexpected send message data shape');
+      }
+      final userMessageData = data['user_message'];
+      final assistantMessageData = data['assistant_message'];
+      if (userMessageData is! Map || assistantMessageData is! Map) {
+        debugPrint('Unexpected send message payload shape');
+        throw const FormatException('Unexpected send message payload shape');
+      }
+      final userMsg = ChatMessage.fromJson(
+        Map<String, dynamic>.from(userMessageData),
+      );
+      final assistantMsg = ChatMessage.fromJson(
+        Map<String, dynamic>.from(assistantMessageData),
+      );
       
       await _local.saveChatMessage(userMsg);
       await _local.saveChatMessage(assistantMsg);
