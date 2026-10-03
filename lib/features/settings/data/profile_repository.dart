@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/services/local_db_service.dart';
@@ -46,21 +47,29 @@ class ProfileRepository {
     return profile;
   }
 
-  Future<void> updatePreferences(Map<String, dynamic> prefs) async {
+  Future<bool> updatePreferences(Map<String, dynamic> prefs) async {
     try {
       await ApiClient.instance.patch('/user/preferences', data: prefs);
-      fetchProfile();
-    } catch (e) {}
+      await fetchProfile();
+      return true;
+    } catch (e) {
+      debugPrint('Update preferences failed: $e');
+      return false;
+    }
   }
 
-  Future<void> updateNotificationPreferences(Map<String, dynamic> prefs) async {
+  Future<bool> updateNotificationPreferences(Map<String, dynamic> prefs) async {
     try {
       await ApiClient.instance.patch(
         '/user/notification-preferences',
         data: prefs,
       );
-      fetchProfile();
-    } catch (e) {}
+      await fetchProfile();
+      return true;
+    } catch (e) {
+      debugPrint('Update notification preferences failed: $e');
+      return false;
+    }
   }
 
   Future<void> updateField(String key, dynamic value) async {
