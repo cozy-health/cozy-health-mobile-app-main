@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/permissions/permission_service.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -83,10 +84,32 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
 
             // Record / Stop Button
             GestureDetector(
-              onTap: () {
-                setState(() {
-                  isRecording = !isRecording;
-                });
+              onTap: () async {
+                if (isRecording) {
+                  setState(() => isRecording = false);
+                  return;
+                }
+                final result = await PermissionService.requestMicrophone();
+                if (!context.mounted) return;
+                if (result == MicPermissionResult.granted) {
+                  setState(() => isRecording = true);
+                } else if (result == MicPermissionResult.permanentlyDenied) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Microphone access is needed to record.'),
+                      action: SnackBarAction(
+                        label: 'Open Settings',
+                        onPressed: PermissionService.openAppSettings,
+                      ),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Microphone access is needed to record.'),
+                    ),
+                  );
+                }
                 // In real app, start/stop audio recording here
               },
               child: Container(

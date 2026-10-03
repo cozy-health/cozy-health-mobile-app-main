@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../core/permissions/permission_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../crisis/presentation/screens/crisis_screens.dart';
@@ -997,7 +998,7 @@ class _JournalVoiceRecordingScreenState
     );
   }
 
-  void _toggleRecording() {
+  Future<void> _toggleRecording() async {
     if (_isRecording) {
       HapticFeedback.lightImpact();
       _timer?.cancel();
@@ -1008,6 +1009,28 @@ class _JournalVoiceRecordingScreenState
         if (_seconds == 0) _seconds = 42;
       });
     } else {
+      final result = await PermissionService.requestMicrophone();
+      if (!mounted) return;
+      if (result == MicPermissionResult.permanentlyDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Microphone access is needed to record.'),
+            action: SnackBarAction(
+              label: 'Open Settings',
+              onPressed: PermissionService.openAppSettings,
+            ),
+          ),
+        );
+        return;
+      }
+      if (result != MicPermissionResult.granted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Microphone access is needed to record.'),
+          ),
+        );
+        return;
+      }
       HapticFeedback.mediumImpact();
       _pulseController.repeat(reverse: true);
       setState(() {
