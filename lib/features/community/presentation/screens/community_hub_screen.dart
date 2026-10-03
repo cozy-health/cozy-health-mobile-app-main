@@ -148,12 +148,12 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppColors.primary.withValues(alpha: 0.1)
+                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                               : AppColors.surface,
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
                             color: isSelected
-                                ? AppColors.primary
+                                ? Theme.of(context).colorScheme.primary
                                 : AppColors.border.withValues(alpha: 0.5),
                           ),
                         ),
@@ -164,7 +164,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                                 ? FontWeight.w600
                                 : FontWeight.w400,
                             color: isSelected
-                                ? AppColors.primary
+                                ? Theme.of(context).colorScheme.primary
                                 : AppColors.text,
                           ),
                         ),
@@ -228,7 +228,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                   height: 56,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(28),
                   ),
                   alignment: Alignment.center,

@@ -234,7 +234,7 @@ class _CongratulationsScreenState extends State<CongratulationsScreen>
                   8.sh,
 
                   const CircularProgressIndicator(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     strokeWidth: 3,
                   ),
 

@@ -59,7 +59,7 @@ class CrisisShell extends StatelessWidget {
                   if (showBack)
                     IconButton(
                       onPressed: () => context.pop(),
-                      icon: const Icon(Icons.arrow_back),
+                      icon: Icon(Icons.arrow_back),
                       color: AppColors.crisisText,
                       constraints: const BoxConstraints(
                         minWidth: 48,
@@ -637,7 +637,7 @@ class CrisisDetectionOverlayScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.favorite,
                         color: AppColors.crisisWarning,
                         size: 48,
@@ -675,7 +675,7 @@ class CrisisDetectionOverlayScreen extends StatelessWidget {
                   top: 8,
                   right: 8,
                   child: IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close,
                       size: 24,
                       color: AppColors.crisisTextMuted,
@@ -720,7 +720,7 @@ Future<void> showCrisisSupportOverlay(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.favorite,
                       color: AppColors.crisisWarning,
                       size: 48,
@@ -770,7 +770,7 @@ Future<void> showCrisisSupportOverlay(
                 top: 8,
                 right: 8,
                 child: IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close,
                     size: 24,
                     color: AppColors.crisisTextMuted,
@@ -850,7 +850,7 @@ class EmergencyContactScreen extends StatelessWidget {
               color: AppColors.crisisSubtle,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.person,
               color: AppColors.crisisPrimary,
               size: 48,
@@ -1766,7 +1766,7 @@ class ProfessionalHelpScreen extends StatelessWidget {
       children: [
         TextField(
           decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.search),
+            prefixIcon: Icon(Icons.search),
             hintText: 'Search by name or location',
             filled: true,
             fillColor: AppColors.crisisSurface,

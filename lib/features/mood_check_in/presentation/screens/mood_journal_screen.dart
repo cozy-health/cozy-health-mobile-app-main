@@ -89,7 +89,7 @@ class _MoodJournalScreenState
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back,
             color: AppColors.black,
           ),
@@ -103,7 +103,7 @@ class _MoodJournalScreenState
         ),
         actions: [
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.close,
               color: AppColors.black,
             ),

@@ -82,14 +82,14 @@ class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       username.substring(0, 1).toUpperCase(),
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -117,7 +117,7 @@ class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
                     child: ElevatedButton(
                       onPressed: () => _removeRequest(index, 'accepted'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

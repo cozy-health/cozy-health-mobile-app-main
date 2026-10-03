@@ -45,10 +45,10 @@ class _MainScreenState extends State<MainScreen> {
                 onLongPress: () => context.push(AppRouter.crisisHub),
                 child: FloatingActionButton(
                   heroTag: 'quick-actions',
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: AppColors.white,
                   onPressed: () => _showQuickActionsSheet(context),
-                  child: const Icon(Icons.add),
+                  child: Icon(Icons.add),
                 ),
               ),
             ),

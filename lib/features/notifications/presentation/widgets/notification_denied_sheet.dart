@@ -29,7 +29,7 @@ class NotificationDeniedSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 16),
-            const Icon(
+            Icon(
               Icons.notifications_off_outlined,
               size: 48,
               color: AppColors.textSubtle,

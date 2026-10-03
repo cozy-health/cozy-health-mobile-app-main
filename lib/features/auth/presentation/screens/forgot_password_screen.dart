@@ -295,7 +295,7 @@ class _OtpInput extends StatelessWidget {
       separatorBuilder: (_) => const SizedBox(width: 8),
       defaultPinTheme: theme(hasError ? AppColors.danger : AppColors.border, 1),
       focusedPinTheme: theme(
-        hasError ? AppColors.danger : AppColors.primary,
+        hasError ? AppColors.danger : Theme.of(context).colorScheme.primary,
         2,
       ),
       errorPinTheme: theme(AppColors.danger, 2),
@@ -326,7 +326,7 @@ class _Success extends StatelessWidget {
                   color: AppColors.success.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.check,
                   color: AppColors.success,
                   size: 44,

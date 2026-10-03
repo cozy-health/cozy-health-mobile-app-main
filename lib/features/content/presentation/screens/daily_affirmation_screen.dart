@@ -61,7 +61,7 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => context.pop(),
         ),
       ),
@@ -136,7 +136,7 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _currentIndex == index
-                        ? AppColors.primary
+                        ? Theme.of(context).colorScheme.primary
                         : AppColors.border,
                   ),
                 ),

@@ -72,12 +72,12 @@ class FeaturedPostsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isPrimary
-            ? AppColors.primary.withValues(alpha: 0.1)
+            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
             : AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isPrimary
-              ? AppColors.primary.withValues(alpha: 0.2)
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
               : AppColors.border,
         ),
       ),
@@ -87,12 +87,12 @@ class FeaturedPostsScreen extends StatelessWidget {
           if (isPrimary) ...[
             Row(
               children: [
-                Icon(Icons.star, color: AppColors.primary, size: 20),
+                Icon(Icons.star, color: Theme.of(context).colorScheme.primary, size: 20),
                 SizedBox(width: 8),
                 Text(
                   'Featured',
                   style: AppTextStyles.body2.copyWith(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

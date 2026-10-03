@@ -162,7 +162,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           decoration: BoxDecoration(
                             color: isAnonymous
                                 ? AppColors.border
-                                : AppColors.primary.withValues(alpha: 0.1),
+                                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           alignment: Alignment.center,
@@ -173,7 +173,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             style: AppTextStyles.body1.copyWith(
                               color: isAnonymous
                                   ? AppColors.textMuted
-                                  : AppColors.primary,
+                                  : Theme.of(context).colorScheme.primary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -307,14 +307,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       'S',
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -337,7 +337,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.arrow_upward, color: AppColors.primary),
+                    icon: Icon(Icons.arrow_upward, color: Theme.of(context).colorScheme.primary),
                     onPressed: () {
                       if (_commentController.text.isNotEmpty) {
                         _commentController.clear();

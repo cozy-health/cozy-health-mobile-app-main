@@ -22,7 +22,7 @@ class ChatTopBar extends StatelessWidget {
           IconButton(
             tooltip: 'Back',
             onPressed: onBack,
-            icon: const Icon(Icons.arrow_back, color: AppColors.text),
+            icon: Icon(Icons.arrow_back, color: AppColors.text),
           ),
           Expanded(
             child: Text(
@@ -34,7 +34,7 @@ class ChatTopBar extends StatelessWidget {
           IconButton(
             tooltip: 'Conversation menu',
             onPressed: onMenu,
-            icon: const Icon(Icons.more_horiz, color: AppColors.text),
+            icon: Icon(Icons.more_horiz, color: AppColors.text),
           ),
         ],
       ),

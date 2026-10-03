@@ -47,7 +47,7 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => context.pop(),
         ),
       ),
@@ -68,7 +68,7 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.search, color: AppColors.textMuted, size: 20),
+                    Icon(Icons.search, color: AppColors.textMuted, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
@@ -91,7 +91,7 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
                           _searchController.clear();
                           _onSearchChanged('');
                         },
-                        child: const Icon(Icons.close, color: AppColors.textMuted, size: 20),
+                        child: Icon(Icons.close, color: AppColors.textMuted, size: 20),
                       ),
                   ],
                 ),

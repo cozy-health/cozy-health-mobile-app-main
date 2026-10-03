@@ -134,7 +134,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                   height: 56,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -143,14 +143,14 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                       Text(
                         'View crisis resources',
                         style: AppTextStyles.body1.copyWith(
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Icon(
                         Icons.arrow_forward_ios,
                         size: 16,
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ],
                   ),

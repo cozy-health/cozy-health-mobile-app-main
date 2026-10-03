@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/install_marker_service.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../../../core/services/onboarding_service.dart';
 import '../../../../core/services/user_data_fetcher.dart';
@@ -126,6 +127,8 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _runSequence() async {
+    await InstallMarkerService().clearLingeringSessionOnFreshInstall();
+
     final hasToken = await _splashService.hasStoredSession();
     final onboardingDone = await OnboardingService().hasCompletedOnboarding();
     debugPrint('APP_START: token present = $hasToken');
@@ -201,7 +204,7 @@ class _SplashScreenState extends State<SplashScreen>
                             : _glowOpacity,
                         child: const BreathingGlow(
                           size: 220,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                       FadeTransition(
@@ -243,7 +246,7 @@ class _SplashScreenState extends State<SplashScreen>
                       style: GoogleFonts.outfit(
                         fontSize: 32,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         letterSpacing: 2,
                         height: 1.2,
                       ),

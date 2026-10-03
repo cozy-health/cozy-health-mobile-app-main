@@ -73,7 +73,7 @@ class _ReportSheetState extends State<ReportSheet> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.primary),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
               ),
               filled: true,
               fillColor: AppColors.background,
@@ -116,7 +116,7 @@ class _ReportSheetState extends State<ReportSheet> {
           children: [
             Icon(
               _selectedReason == reason ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: _selectedReason == reason ? AppColors.primary : AppColors.textMuted,
+              color: _selectedReason == reason ? Theme.of(context).colorScheme.primary : AppColors.textMuted,
             ),
             const SizedBox(width: 12),
             Expanded(

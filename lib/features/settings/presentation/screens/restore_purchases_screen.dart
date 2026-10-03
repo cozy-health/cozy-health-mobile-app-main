@@ -69,7 +69,7 @@ class _RestorePurchasesScreenState extends State<RestorePurchasesScreen> {
                   ),
                   child: Column(
                     children: [
-                      Icon(Icons.restore, size: 64, color: AppColors.primary),
+                      Icon(Icons.restore, size: 64, color: Theme.of(context).colorScheme.primary),
                       SizedBox(height: 24),
                       Text(
                         'Missing your Pro access?',
@@ -113,10 +113,10 @@ class _RestorePurchasesScreenState extends State<RestorePurchasesScreen> {
                 Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.3),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Column(
@@ -124,7 +124,7 @@ class _RestorePurchasesScreenState extends State<RestorePurchasesScreen> {
                       Icon(
                         Icons.check_circle,
                         size: 64,
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                       SizedBox(height: 24),
                       Text(

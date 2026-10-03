@@ -31,7 +31,7 @@ class QuizResultDetailScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => context.pop(),
         ),
         title: Text(date, style: AppTextStyles.heading2),
@@ -52,7 +52,7 @@ class QuizResultDetailScreen extends StatelessWidget {
               
               Text(
                 '$score',
-                style: AppTextStyles.heading1.copyWith(fontSize: 72, color: AppColors.primary),
+                style: AppTextStyles.heading1.copyWith(fontSize: 72, color: Theme.of(context).colorScheme.primary),
                 textAlign: TextAlign.center,
               ),
               Text(

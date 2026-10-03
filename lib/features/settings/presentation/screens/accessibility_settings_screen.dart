@@ -126,7 +126,7 @@ class _AccessibilitySettingsScreenState
                                 min: 0.8,
                                 max: 1.5,
                                 divisions: 5,
-                                activeColor: AppColors.primary,
+                                activeColor: Theme.of(context).colorScheme.primary,
                                 inactiveColor: AppColors.border,
                                 onChanged: _updateTextSize,
                                 semanticFormatterCallback: (value) =>
@@ -206,7 +206,7 @@ class _AccessibilitySettingsScreenState
                             Icon(
                               Icons.record_voice_over,
                               size: 20,
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ],
                         ),
@@ -316,7 +316,7 @@ class _SettingsToggleRow extends StatelessWidget {
                 child: CupertinoSwitch(
                   value: value,
                   onChanged: onChanged,
-                  activeTrackColor: AppColors.primary,
+                  activeTrackColor: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ],

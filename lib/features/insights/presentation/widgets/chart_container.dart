@@ -69,7 +69,7 @@ class ChartContainer extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    const Icon(Icons.lightbulb_outline, size: 20, color: AppColors.textMuted),
+                    Icon(Icons.lightbulb_outline, size: 20, color: AppColors.textMuted),
                     const SizedBox(width: 8),
                     Text(
                       'Read as table',
@@ -79,7 +79,7 @@ class ChartContainer extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    const Icon(Icons.chevron_right, size: 20, color: AppColors.textMuted),
+                    Icon(Icons.chevron_right, size: 20, color: AppColors.textMuted),
                   ],
                 ),
               ),

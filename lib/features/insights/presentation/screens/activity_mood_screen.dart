@@ -131,7 +131,7 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
                   children: [
                     _buildLegendItem('Activity', const Color(0xFFE85D3A), true),
                     SizedBox(width: 24),
-                    _buildLegendItem('Mood', AppColors.primary, false),
+                    _buildLegendItem('Mood', Theme.of(context).colorScheme.primary, false),
                   ],
                 ),
                 chart: AnimatedBuilder(

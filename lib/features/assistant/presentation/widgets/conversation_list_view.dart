@@ -31,14 +31,14 @@ class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
         children: [
           WarmPanel(
             color: AppColors.primarySubtle,
-            borderColor: AppColors.primary.withValues(alpha: .15),
+            borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: .15),
             padding: const EdgeInsets.all(14),
             child: InkWell(
               onTap: () => Navigator.pop(context, Conversation.empty()),
               child: Text(
                 '+ New conversation',
                 style: AppTextStyles.body1.copyWith(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -259,10 +259,10 @@ class ConversationEmptyState extends StatelessWidget {
     return Column(
       children: [
         const SizedBox(height: 80),
-        const Icon(
+        Icon(
           Icons.chat_bubble_outline_rounded,
           size: 56,
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
         ),
         const SizedBox(height: 22),
         Text(

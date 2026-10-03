@@ -45,7 +45,7 @@ class MessageBubble extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isUser
-                        ? AppColors.primary
+                        ? Theme.of(context).colorScheme.primary
                         : AppColors.surfaceElevated,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(20),
@@ -76,7 +76,7 @@ class MessageBubble extends StatelessWidget {
             Text(formatTime(message.createdAt), style: timestampStyle()),
             if (message.status == MessageStatus.failed) ...[
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 Icons.error_outline,
                 color: AppColors.danger,
                 size: 14,

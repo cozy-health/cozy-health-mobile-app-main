@@ -21,7 +21,7 @@ class ActivityScreen extends StatelessWidget {
 
         actions: [
           IconButton(
-            icon: const Icon(Icons.calendar_today, color: AppColors.primary),
+            icon: Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary),
             onPressed: () {},
           ),
         ],
@@ -100,7 +100,7 @@ class ActivityScreen extends StatelessWidget {
                             Text(
                               'Amazing',
                               style: AppTextStyles.heading2.copyWith(
-                                color: AppColors.primary,
+                                color: Theme.of(context).colorScheme.primary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -128,7 +128,7 @@ class ActivityScreen extends StatelessWidget {
                     spacing: 6.w,
                     runSpacing: 1.h,
                     children: [
-                      _buildLegend('This week', AppColors.primary),
+                      _buildLegend('This week', Theme.of(context).colorScheme.primary),
 
                       _buildLegend('Previous week', const Color(0xFF9BE6A6)),
                     ],
@@ -279,7 +279,7 @@ class ActivityScreen extends StatelessWidget {
       height: double.infinity,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isActive ? AppColors.primary : Colors.transparent,
+        color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Text(
@@ -363,7 +363,7 @@ class ActivityScreen extends StatelessWidget {
 
   Widget _buildCalendarDots() {
     final colors = [
-      AppColors.primary,
+      Theme.of(context).colorScheme.primary,
       const Color(0xFF9BE6A6),
       const Color(0xFFFFD08A),
       const Color(0xFFFFB3D1),
@@ -397,7 +397,7 @@ class ActivityScreen extends StatelessWidget {
         7,
         (index) => Icon(
           index < 4 ? Icons.check_circle : Icons.circle_outlined,
-          color: index < 4 ? AppColors.primary : AppColors.midGrey,
+          color: index < 4 ? Theme.of(context).colorScheme.primary : AppColors.midGrey,
           size: 28,
         ),
       ),

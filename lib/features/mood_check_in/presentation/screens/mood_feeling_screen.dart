@@ -51,7 +51,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       MoodEntry.moodEmojis['calm']!,
       'calm',
       'Calm',
-      AppColors.primary,
+      Theme.of(context).colorScheme.primary,
       'Peace looks good on you.',
     ),
     _MoodOption(
@@ -361,7 +361,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
             style: AppTextStyles.heading1.copyWith(
               fontSize: 72,
               fontWeight: FontWeight.w700,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ),
@@ -376,7 +376,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             trackHeight: 8,
-            activeTrackColor: AppColors.primary,
+            activeTrackColor: Theme.of(context).colorScheme.primary,
             inactiveTrackColor: AppColors.border,
             thumbColor: AppColors.white,
             overlayColor: AppColors.primarySoft,
@@ -500,7 +500,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
                       icon: Icon(
                         filled ? Icons.star_rounded : Icons.star_border_rounded,
                         color: filled
-                            ? AppColors.primary
+                            ? Theme.of(context).colorScheme.primary
                             : AppColors.borderStrong,
                       ),
                     ),
@@ -592,7 +592,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
         const SizedBox(height: 12),
         TextButton.icon(
           onPressed: () => context.push(AppRouter.voiceRecording),
-          icon: const Icon(Icons.mic_none_rounded),
+          icon: Icon(Icons.mic_none_rounded),
           label: const Text('Voice note'),
         ),
       ],
@@ -718,7 +718,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
       ),
     );
   }
@@ -777,7 +777,7 @@ class _MoodCheckInSuccessScreenState extends State<MoodCheckInSuccessScreen> {
                       color: AppColors.success.withValues(alpha: .12),
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.check_rounded,
                       color: AppColors.success,
                       size: 52,
@@ -878,9 +878,9 @@ class MoodHistoryScreen extends StatelessWidget {
                   _WarmPanel(
                     child: Column(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.mood_rounded,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           size: 42,
                         ),
                         const SizedBox(height: 12),
@@ -1042,7 +1042,7 @@ class MoodDetailViewScreen extends StatelessWidget {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back),
+                    icon: Icon(Icons.arrow_back),
                   ),
                   const Spacer(),
                   if (moodEntry != null)
@@ -1193,7 +1193,7 @@ class _MoodProgressHeader extends StatelessWidget {
                 value: step / totalSteps,
                 backgroundColor:
                     Theme.of(context).dividerTheme.color ?? AppColors.border,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ),
@@ -1275,7 +1275,7 @@ class _MoodCard extends StatelessWidget {
                   : AppColors.surfaceElevated,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: selected ? AppColors.primary : AppColors.border,
+                color: selected ? Theme.of(context).colorScheme.primary : AppColors.border,
                 width: selected ? 2 : 1,
               ),
               boxShadow: selected
@@ -1325,9 +1325,9 @@ class _MascotMessage extends StatelessWidget {
             color: AppColors.primarySoft,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.favorite_rounded,
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.primary,
             size: 30,
           ),
         ),
@@ -1449,14 +1449,14 @@ class _BodyZone extends StatelessWidget {
                 : AppColors.surfaceElevated,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: selected ? AppColors.primary : AppColors.border,
+              color: selected ? Theme.of(context).colorScheme.primary : AppColors.border,
             ),
           ),
           child: Text(
             label,
             style: AppTextStyles.body2.copyWith(
               color: selected
-                  ? AppColors.primary
+                  ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -1495,17 +1495,17 @@ class _ChipWrap extends StatelessWidget {
             label: Text(value),
             selected: selected,
             onSelected: (_) => onToggle(value),
-            avatar: selected ? const Icon(Icons.check_rounded, size: 16) : null,
+            avatar: selected ? Icon(Icons.check_rounded, size: 16) : null,
             backgroundColor: colorScheme.surface,
             selectedColor: AppColors.primarySubtle,
-            checkmarkColor: AppColors.primary,
+            checkmarkColor: Theme.of(context).colorScheme.primary,
             side: BorderSide(
               color: selected
-                  ? AppColors.primary
+                  ? Theme.of(context).colorScheme.primary
                   : dividerColor ?? AppColors.border,
             ),
             labelStyle: AppTextStyles.body2.copyWith(
-              color: selected ? AppColors.primary : colorScheme.onSurface,
+              color: selected ? Theme.of(context).colorScheme.primary : colorScheme.onSurface,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             ),
             shape: RoundedRectangleBorder(
@@ -1678,7 +1678,7 @@ class _PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           disabledBackgroundColor: AppColors.borderStrong,
           foregroundColor: AppColors.white,
           elevation: 0,

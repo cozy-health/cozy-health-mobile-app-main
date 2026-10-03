@@ -63,14 +63,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               return TextButton(
                 onPressed: _markAllAsRead,
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
+                  foregroundColor: Theme.of(context).colorScheme.primary,
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                 ),
                 child: Text(
                   'Mark all as read',
                   style: AppTextStyles.body2.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               );
@@ -105,13 +105,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.notifications_none,
                 size: 64,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             const SizedBox(height: 32),
@@ -142,12 +142,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   Text(
                     'Notification settings',
                     style: AppTextStyles.body1.copyWith(
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(Icons.arrow_forward, size: 20, color: AppColors.primary),
+                  Icon(Icons.arrow_forward, size: 20, color: Theme.of(context).colorScheme.primary),
                 ],
               ),
             ),
@@ -317,11 +317,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           decoration: BoxDecoration(
             color: item.read
                 ? AppColors.surface
-                : AppColors.primary.withValues(alpha: 0.04),
+                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(12),
             border: Border(
               left: BorderSide(
-                color: item.read ? Colors.transparent : AppColors.primary,
+                color: item.read ? Colors.transparent : Theme.of(context).colorScheme.primary,
                 width: 3,
               ),
               top: BorderSide(
@@ -392,7 +392,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     width: 8,
                     height: 8,
                     decoration: const BoxDecoration(
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       shape: BoxShape.circle,
                     ),
                   ),

@@ -62,11 +62,11 @@ class _FollowListScreenState extends State<FollowListScreen>
         ),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.primary,
+          labelColor: Theme.of(context).colorScheme.primary,
           unselectedLabelColor: Theme.of(context).brightness == Brightness.dark
               ? AppColors.textMutedDark
               : AppColors.textMutedLight,
-          indicatorColor: AppColors.primary,
+          indicatorColor: Theme.of(context).colorScheme.primary,
           tabs: [
             Tab(text: 'Following (${_following.length})'),
             Tab(text: 'Followers (${_followers.length})'),

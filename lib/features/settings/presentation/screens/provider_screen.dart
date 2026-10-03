@@ -445,10 +445,10 @@ class _ProviderScreenState extends State<ProviderScreen> {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                 child: Icon(
                   Icons.medical_services_outlined,
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
 
@@ -485,7 +485,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
                     Text(
                       'Connected',
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -541,7 +541,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.primary),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
         ),
       ),
     );

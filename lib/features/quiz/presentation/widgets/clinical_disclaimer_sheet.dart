@@ -27,7 +27,7 @@ class ClinicalDisclaimerSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.info_outline, size: 48, color: AppColors.textSubtle),
+            Icon(Icons.info_outline, size: 48, color: AppColors.textSubtle),
             const SizedBox(height: 24),
             Text(
               'Before we start',

@@ -20,9 +20,9 @@ class InlineCTA extends StatelessWidget {
         height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -31,10 +31,10 @@ class InlineCTA extends StatelessWidget {
               text,
               style: AppTextStyles.body1.copyWith(
                 fontWeight: FontWeight.w500,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.primary),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
           ],
         ),
       ),

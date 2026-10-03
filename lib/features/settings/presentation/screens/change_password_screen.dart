@@ -100,7 +100,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             ? AppColors.danger
                             : (_strength < 0.7
                                   ? Colors.orange
-                                  : AppColors.primary),
+                                  : Theme.of(context).colorScheme.primary),
                       ),
                       minHeight: 6,
                       borderRadius: BorderRadius.circular(3),
@@ -191,7 +191,7 @@ class _FormField extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.primary),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
               ),
             ),
           ),

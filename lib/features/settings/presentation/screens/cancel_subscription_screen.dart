@@ -193,7 +193,7 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
                                         ? Icons.radio_button_checked
                                         : Icons.radio_button_unchecked,
                                     color: isSelected
-                                        ? AppColors.primary
+                                        ? Theme.of(context).colorScheme.primary
                                         : AppColors.textSubtle,
                                   ),
                                   SizedBox(width: 16),
@@ -237,10 +237,10 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.05),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.2),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(

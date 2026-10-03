@@ -86,7 +86,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               'Save',
               style: AppTextStyles.body1.copyWith(
                 color: _hasChanges
-                    ? AppColors.primary
+                    ? Theme.of(context).colorScheme.primary
                     : Theme.of(
                         context,
                       ).colorScheme.onSurface.withValues(alpha: 0.4),
@@ -160,7 +160,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: Text(
                         'Change photo',
                         style: AppTextStyles.body2.copyWith(
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -287,7 +287,7 @@ class _FormField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.primary),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

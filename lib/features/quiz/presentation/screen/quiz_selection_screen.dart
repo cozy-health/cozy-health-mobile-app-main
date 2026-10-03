@@ -34,14 +34,14 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => context.pop(),
         ),
         title: Text('Quizzes', style: AppTextStyles.heading2),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.history, color: AppColors.text),
+            icon: Icon(Icons.history, color: AppColors.text),
             onPressed: () => context.push(AppRouter.quizHistory),
           ),
         ],
@@ -78,7 +78,7 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                       decoration: InputDecoration(
                         hintText: 'Search quizzes...',
                         hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
-                        prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
+                        prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(vertical: 16),
                       ),
@@ -102,9 +102,9 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                               ),
                             ),
-                            backgroundColor: isSelected ? AppColors.primary : AppColors.surface,
+                            backgroundColor: isSelected ? Theme.of(context).colorScheme.primary : AppColors.surface,
                             side: BorderSide(
-                              color: isSelected ? AppColors.primary : AppColors.border,
+                              color: isSelected ? Theme.of(context).colorScheme.primary : AppColors.border,
                             ),
                             onPressed: () {
                               setState(() => _selectedCategory = cat);
@@ -192,8 +192,8 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
     required String id,
   }) {
     // Clinical uses neutral, Wellness uses warm
-    final bgColor = isClinical ? AppColors.surface : AppColors.primary.withValues(alpha: 0.05);
-    final borderColor = isClinical ? AppColors.border : AppColors.primary.withValues(alpha: 0.1);
+    final bgColor = isClinical ? AppColors.surface : Theme.of(context).colorScheme.primary.withValues(alpha: 0.05);
+    final borderColor = isClinical ? AppColors.border : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
 
     return GestureDetector(
       onTap: () {
@@ -232,7 +232,7 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.check_circle, size: 14, color: AppColors.success),
+                        Icon(Icons.check_circle, size: 14, color: AppColors.success),
                         const SizedBox(width: 4),
                         Text(
                           'Done',

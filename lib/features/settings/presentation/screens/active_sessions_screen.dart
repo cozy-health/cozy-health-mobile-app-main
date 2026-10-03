@@ -156,7 +156,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withValues(
+                                        color: Theme.of(context).colorScheme.primary.withValues(
                                           alpha: 0.1,
                                         ),
                                         borderRadius: BorderRadius.circular(12),
@@ -164,7 +164,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                                       child: Text(
                                         'This device',
                                         style: AppTextStyles.body2.copyWith(
-                                          color: AppColors.primary,
+                                          color: Theme.of(context).colorScheme.primary,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
                                         ),

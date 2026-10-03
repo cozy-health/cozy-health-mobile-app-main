@@ -30,11 +30,11 @@ class QuizRetakeConfirmDialog extends StatelessWidget {
         ),
         TextButton(
           onPressed: () => context.pop('view'),
-          child: Text('View previous', style: AppTextStyles.body1.copyWith(color: AppColors.primary)),
+          child: Text('View previous', style: AppTextStyles.body1.copyWith(color: Theme.of(context).colorScheme.primary)),
         ),
         TextButton(
           onPressed: () => context.pop('retake'),
-          child: Text('Retake', style: AppTextStyles.body1.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+          child: Text('Retake', style: AppTextStyles.body1.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600)),
         ),
       ],
     );

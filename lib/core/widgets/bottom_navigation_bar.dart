@@ -56,7 +56,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
   ) {
     final isSelected = currentIndex == index;
     final navTheme = Theme.of(context).bottomNavigationBarTheme;
-    final selectedColor = navTheme.selectedItemColor ?? AppColors.primary;
+    final selectedColor = navTheme.selectedItemColor ?? Theme.of(context).colorScheme.primary;
     final unselectedColor =
         navTheme.unselectedItemColor ?? Theme.of(context).colorScheme.onSurface;
 

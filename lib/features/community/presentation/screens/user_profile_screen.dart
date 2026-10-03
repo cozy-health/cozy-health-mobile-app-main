@@ -135,14 +135,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   width: 96,
                   height: 96,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     username.substring(0, 1).toUpperCase(),
                     style: AppTextStyles.heading1.copyWith(
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontSize: 40,
                     ),
                   ),

@@ -37,13 +37,13 @@ class AboutScreen extends StatelessWidget {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(32),
                   ),
                   child: Icon(
                     Icons.favorite,
                     size: 60,
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ), // Mock logo
                 ),
               ),
@@ -157,7 +157,7 @@ class AboutScreen extends StatelessWidget {
                           applicationIcon: Icon(
                             Icons.favorite,
                             size: 60,
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         );
                       },

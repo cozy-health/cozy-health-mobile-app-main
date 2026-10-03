@@ -106,7 +106,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
           children: [
             Text('Terms and Conditions', style: AppTextStyles.heading2),
             IconButton(
-              icon: const Icon(Icons.close, color: AppColors.grey),
+              icon: Icon(Icons.close, color: AppColors.grey),
               onPressed: () => Navigator.pop(context),
               padding: EdgeInsets.zero,
               constraints:
@@ -358,7 +358,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                               _agreeToTerms = value ?? false;
                             });
                           },
-                    activeColor: AppColors.primary,
+                    activeColor: Theme.of(context).colorScheme.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -376,7 +376,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                         TextSpan(
                           text: 'terms and conditions',
                           style: AppTextStyles.body2.copyWith(
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                             decoration: TextDecoration.underline,
                             fontWeight: FontWeight.w600,
                           ),
@@ -446,7 +446,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                       TextSpan(
                         text: 'Log In',
                         style: AppTextStyles.body1.copyWith(
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

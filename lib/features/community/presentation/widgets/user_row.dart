@@ -30,14 +30,14 @@ class UserRow extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
               child: Text(
                 username.substring(0, 1).toUpperCase(),
                 style: AppTextStyles.body1.copyWith(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -69,7 +69,7 @@ class UserRow extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isFollowing ? Colors.transparent : AppColors.primary,
+                  color: isFollowing ? Colors.transparent : Theme.of(context).colorScheme.primary,
                   border: isFollowing ? Border.all(color: AppColors.border) : null,
                   borderRadius: BorderRadius.circular(16),
                 ),

@@ -26,7 +26,7 @@ class AssistantSubScaffold extends StatelessWidget {
                   IconButton(
                     tooltip: 'Back',
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: AppColors.text),
+                    icon: Icon(Icons.arrow_back, color: AppColors.text),
                   ),
                   Expanded(
                     child: Text(
@@ -150,7 +150,7 @@ class CozyCharacterState extends State<CozyCharacter>
           child: Icon(
             Icons.favorite_rounded,
             size: widget.size * .42,
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
       ),
@@ -200,7 +200,7 @@ class PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: AppColors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(

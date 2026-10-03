@@ -122,7 +122,7 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
                                     ),
                                   ),
                                   if (isSelected)
-                                    Icon(Icons.check, color: AppColors.primary),
+                                    Icon(Icons.check, color: Theme.of(context).colorScheme.primary),
                                 ],
                               ),
                             ),

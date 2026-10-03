@@ -20,7 +20,7 @@ class SaveButton extends StatelessWidget {
       return IconButton(
         icon: Icon(
           isSaved ? Icons.bookmark : Icons.bookmark_border,
-          color: isSaved ? AppColors.primary : AppColors.text,
+          color: isSaved ? Theme.of(context).colorScheme.primary : AppColors.text,
         ),
         onPressed: onToggle,
       );
@@ -41,7 +41,7 @@ class SaveButton extends StatelessWidget {
           children: [
             Icon(
               isSaved ? Icons.bookmark : Icons.bookmark_border,
-              color: isSaved ? AppColors.primary : AppColors.text,
+              color: isSaved ? Theme.of(context).colorScheme.primary : AppColors.text,
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -49,7 +49,7 @@ class SaveButton extends StatelessWidget {
               isSaved ? 'Saved for later' : 'Save for later',
               style: AppTextStyles.body1.copyWith(
                 fontWeight: FontWeight.w500,
-                color: isSaved ? AppColors.primary : AppColors.text,
+                color: isSaved ? Theme.of(context).colorScheme.primary : AppColors.text,
               ),
             ),
           ],

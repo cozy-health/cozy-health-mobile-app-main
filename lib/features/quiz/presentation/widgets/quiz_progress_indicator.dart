@@ -50,7 +50,7 @@ class QuizProgressIndicator extends StatelessWidget {
                 width: constraints.maxWidth * value,
                 height: 6,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),

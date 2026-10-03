@@ -273,7 +273,7 @@ class _SettingsToggleRow extends StatelessWidget {
               CupertinoSwitch(
                 value: value,
                 onChanged: onChanged,
-                activeTrackColor: AppColors.primary,
+                activeTrackColor: Theme.of(context).colorScheme.primary,
               ),
             ],
           ),

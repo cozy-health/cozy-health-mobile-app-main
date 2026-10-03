@@ -44,7 +44,7 @@ class AuthScaffold extends StatelessWidget {
               if (showBack)
                 IconButton(
                   onPressed: () => context.pop(),
-                  icon: const Icon(Icons.arrow_back),
+                  icon: Icon(Icons.arrow_back),
                   color: colorScheme.onSurface,
                   padding: EdgeInsets.zero,
                   alignment: Alignment.centerLeft,
@@ -176,7 +176,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
             boxShadow: _focusNode.hasFocus
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.08),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
                       blurRadius: 0,
                       spreadRadius: 2,
                     ),
@@ -211,13 +211,13 @@ class _AuthTextFieldState extends State<AuthTextField> {
                       ),
                     )
                   : hasSuccess
-                  ? const Icon(
+                  ? Icon(
                       Icons.check_circle,
                       color: AppColors.success,
                       size: 18,
                     )
                   : hasError
-                  ? const Icon(Icons.error, color: AppColors.danger, size: 18)
+                  ? Icon(Icons.error, color: AppColors.danger, size: 18)
                   : null,
             ),
           ),
@@ -301,7 +301,7 @@ class PasswordStrengthBar extends StatelessWidget {
       AppColors.danger,
       AppColors.danger,
       AppColors.warning,
-      AppColors.primary,
+      Theme.of(context).colorScheme.primary,
       AppColors.success,
     ];
     final fill = score == 0 ? 0.12 : score / 4;
@@ -372,8 +372,8 @@ class AuthLogoMark extends StatelessWidget {
             shape: BoxShape.circle,
             gradient: RadialGradient(
               colors: [
-                AppColors.primary.withValues(alpha: 0.08),
-                AppColors.primary.withValues(alpha: 0),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0),
               ],
             ),
           ),
@@ -420,7 +420,7 @@ class _LegalFooterState extends State<LegalFooter> {
           TextSpan(
             text: 'Terms',
             style: AppTextStyles.body2.copyWith(
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               decoration: TextDecoration.underline,
             ),
             recognizer: _termsRecognizer,
@@ -429,7 +429,7 @@ class _LegalFooterState extends State<LegalFooter> {
           TextSpan(
             text: 'Privacy Policy.',
             style: AppTextStyles.body2.copyWith(
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               decoration: TextDecoration.underline,
             ),
             recognizer: _privacyRecognizer,
@@ -457,7 +457,7 @@ void showAuthToast(
   final color = switch (type) {
     AuthToastType.success => AppColors.success,
     AuthToastType.error => AppColors.danger,
-    AuthToastType.info => AppColors.primary,
+    AuthToastType.info => Theme.of(context).colorScheme.primary,
     AuthToastType.warning => AppColors.warning,
     AuthToastType.loading => AppColors.borderStrong,
   };
@@ -569,7 +569,7 @@ class AuthFooterLink extends StatelessWidget {
             TextSpan(
               text: action,
               style: AppTextStyles.body2.copyWith(
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
               ),

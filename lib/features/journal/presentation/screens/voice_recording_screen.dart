@@ -62,7 +62,7 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                       width: 4,
                       height: isActive ? height : 8,
                       decoration: BoxDecoration(
-                        color: isActive ? AppColors.primary : AppColors.midGrey,
+                        color: isActive ? Theme.of(context).colorScheme.primary : AppColors.midGrey,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -95,7 +95,7 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isRecording ? Colors.red : AppColors.primary,
+                    color: isRecording ? Colors.red : Theme.of(context).colorScheme.primary,
                     width: 4,
                   ),
                 ),
@@ -104,7 +104,7 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: isRecording ? Colors.red : AppColors.primary,
+                      color: isRecording ? Colors.red : Theme.of(context).colorScheme.primary,
                       borderRadius: isRecording
                           ? BorderRadius.circular(4)
                           : BorderRadius.circular(20),
@@ -138,11 +138,11 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                       // Save and go back
                       context.pop();
                     },
-                    icon: Icon(Icons.check, color: AppColors.primary),
+                    icon: Icon(Icons.check, color: Theme.of(context).colorScheme.primary),
                     label: Text(
                       'Save Recording',
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ),

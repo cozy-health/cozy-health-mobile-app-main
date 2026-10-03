@@ -17,9 +17,9 @@ class QuizRecommendationCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -39,7 +39,7 @@ class QuizRecommendationCard extends StatelessWidget {
                   Text(
                     'Recommended for you',
                     style: AppTextStyles.body2.copyWith(
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -60,7 +60,7 @@ class QuizRecommendationCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.primary),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
           ],
         ),
       ),

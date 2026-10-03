@@ -128,13 +128,13 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                                   _selectedTime.format(context),
                                   style: AppTextStyles.heading1.copyWith(
                                     fontSize: 48,
-                                    color: AppColors.primary,
+                                    color: Theme.of(context).colorScheme.primary,
                                   ),
                                 ),
                                 SizedBox(width: 12),
                                 Icon(
                                   Icons.edit,
-                                  color: AppColors.primary,
+                                  color: Theme.of(context).colorScheme.primary,
                                   size: 24,
                                 ),
                               ],
@@ -173,11 +173,11 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: isSelected
-                                    ? AppColors.primary
+                                    ? Theme.of(context).colorScheme.primary
                                     : AppColors.surface,
                                 border: Border.all(
                                   color: isSelected
-                                      ? AppColors.primary
+                                      ? Theme.of(context).colorScheme.primary
                                       : AppColors.border,
                                   width: 1,
                                 ),

@@ -45,7 +45,7 @@ class _PreparingCozyScreenState extends State<PreparingCozyScreen> {
                 
                 // Loading spinner
           CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                   strokeWidth: 4,
                 ),
                 8.sh,

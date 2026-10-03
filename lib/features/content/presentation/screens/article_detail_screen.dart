@@ -80,7 +80,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
               backgroundColor: Colors.transparent,
               elevation: 0,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.text),
+                icon: Icon(Icons.arrow_back, color: AppColors.text),
                 onPressed: () => context.pop(),
               ),
               actions: [
@@ -107,13 +107,13 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
                         category,
                         style: AppTextStyles.body2.copyWith(
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w500,
                           fontSize: 13,
                         ),

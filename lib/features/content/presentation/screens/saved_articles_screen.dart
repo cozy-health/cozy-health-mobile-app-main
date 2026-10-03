@@ -36,7 +36,7 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => context.pop(),
         ),
         title: Text('Saved', style: AppTextStyles.heading2),
@@ -86,7 +86,7 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
                   });
                 },
                 trailing: IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textSubtle),
+                  icon: Icon(Icons.close, color: AppColors.textSubtle),
                   onPressed: () => _removeArticle(article),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),

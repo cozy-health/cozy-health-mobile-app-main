@@ -58,7 +58,7 @@ class ArticleCardCompact extends StatelessWidget {
               trailing!,
             ] else ...[
               const SizedBox(width: 16),
-              const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textSubtle),
+              Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textSubtle),
             ],
           ],
         ),

@@ -44,11 +44,11 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.primary,
+          labelColor: Theme.of(context).colorScheme.primary,
           unselectedLabelColor: Theme.of(context).brightness == Brightness.dark
               ? AppColors.textMutedDark
               : AppColors.textMutedLight,
-          indicatorColor: AppColors.primary,
+          indicatorColor: Theme.of(context).colorScheme.primary,
           tabs: const [
             Tab(text: 'Open (2)'),
             Tab(text: 'Reviewing (0)'),

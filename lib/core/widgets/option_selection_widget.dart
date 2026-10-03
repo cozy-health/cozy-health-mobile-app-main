@@ -61,7 +61,7 @@ class OptionSelectionWidget extends StatelessWidget {
                           : Border.all(color: AppColors.midGrey, width: 1.5),
                     ),
                     child: isSelected
-                        ? const Icon(Icons.check, size: 14, color: Colors.white)
+                        ? Icon(Icons.check, size: 14, color: Colors.white)
                         : null,
                   ),
                 ],

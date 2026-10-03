@@ -70,7 +70,7 @@ class _CopingMechanismsScreenState extends State<CopingMechanismsScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.black),
+          icon: Icon(Icons.arrow_back, color: AppColors.black),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -79,7 +79,7 @@ class _CopingMechanismsScreenState extends State<CopingMechanismsScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.close, color: AppColors.black),
+            icon: Icon(Icons.close, color: AppColors.black),
             onPressed: () => context.pop(),
           ),
         ],
@@ -132,7 +132,7 @@ Wrap(
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary
+              ? Theme.of(context).colorScheme.primary
               : AppColors.lightGrey,
 
           borderRadius:
@@ -140,7 +140,7 @@ Wrap(
 
           border: Border.all(
             color: isSelected
-                ? AppColors.primary
+                ? Theme.of(context).colorScheme.primary
                 : AppColors.midGrey,
             width: 1.5,
           ),

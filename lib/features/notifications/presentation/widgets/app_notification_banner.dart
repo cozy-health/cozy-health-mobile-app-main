@@ -130,7 +130,7 @@ class _AppNotificationBannerState extends State<AppNotificationBanner>
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        icon: const Icon(Icons.close, size: 20, color: AppColors.textSubtle),
+                        icon: Icon(Icons.close, size: 20, color: AppColors.textSubtle),
                         onPressed: _dismiss,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),

@@ -30,7 +30,7 @@ class ProviderShareConfirmDialog extends StatelessWidget {
         ),
         TextButton(
           onPressed: () => context.pop(true),
-          child: Text('Send', style: AppTextStyles.body1.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+          child: Text('Send', style: AppTextStyles.body1.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600)),
         ),
       ],
     );

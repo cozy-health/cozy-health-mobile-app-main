@@ -51,7 +51,7 @@ class PasswordValidation extends StatelessWidget {
             border: isValid ? null : Border.all(color: AppColors.grey, width: 1.5),
           ),
           child: isValid
-              ? const Icon(
+              ? Icon(
                   Icons.check,
                   size: 12,
                   color: Colors.white,

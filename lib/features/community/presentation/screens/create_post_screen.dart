@@ -98,7 +98,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             child: ElevatedButton(
               onPressed: _canPost ? _handlePost : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 disabledBackgroundColor: AppColors.border,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -154,7 +154,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       decoration: BoxDecoration(
                         color: _visibility == PostVisibility.anonymous
                             ? AppColors.border
-                            : AppColors.primary.withValues(alpha: 0.1),
+                            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
@@ -163,7 +163,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         style: AppTextStyles.body1.copyWith(
                           color: _visibility == PostVisibility.anonymous
                               ? AppColors.textMuted
-                              : AppColors.primary,
+                              : Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

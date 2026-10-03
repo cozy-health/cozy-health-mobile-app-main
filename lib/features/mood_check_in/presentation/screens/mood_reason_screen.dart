@@ -119,7 +119,7 @@ class _MoodReasonScreenState extends State<MoodReasonScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.black),
+          icon: Icon(Icons.arrow_back, color: AppColors.black),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -128,7 +128,7 @@ class _MoodReasonScreenState extends State<MoodReasonScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.close, color: AppColors.black),
+            icon: Icon(Icons.close, color: AppColors.black),
             onPressed: () => context.pop(),
           ),
         ],
@@ -172,11 +172,11 @@ class _MoodReasonScreenState extends State<MoodReasonScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppColors.primary
+                              ? Theme.of(context).colorScheme.primary
                               : category.color,
                           borderRadius: BorderRadius.circular(30),
                           border: isSelected
-                              ? Border.all(color: AppColors.primary, width: 2)
+                              ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
                               : null,
                         ),
                         child: Row(

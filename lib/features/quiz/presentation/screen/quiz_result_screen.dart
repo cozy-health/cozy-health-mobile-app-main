@@ -86,7 +86,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.text),
+          icon: Icon(Icons.close, color: AppColors.text),
           onPressed: () => context.push(AppRouter.quizSelection), // Go back to selection
         ),
         title: Text('Results', style: AppTextStyles.heading2),
@@ -109,7 +109,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
               if (reduceMotion)
                 Text(
                   '$score',
-                  style: AppTextStyles.heading1.copyWith(fontSize: 72, color: AppColors.primary),
+                  style: AppTextStyles.heading1.copyWith(fontSize: 72, color: Theme.of(context).colorScheme.primary),
                   textAlign: TextAlign.center,
                 )
               else
@@ -119,7 +119,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                   builder: (context, value, child) {
                     return Text(
                       '$value',
-                      style: AppTextStyles.heading1.copyWith(fontSize: 72, color: AppColors.primary),
+                      style: AppTextStyles.heading1.copyWith(fontSize: 72, color: Theme.of(context).colorScheme.primary),
                       textAlign: TextAlign.center,
                     );
                   },
@@ -180,7 +180,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                       if (context.mounted) context.pushReplacement(AppRouter.quizTaking, extra: widget.extra);
                     }
                   },
-                  child: Text('Retake Quiz', style: AppTextStyles.body1.copyWith(color: AppColors.primary)),
+                  child: Text('Retake Quiz', style: AppTextStyles.body1.copyWith(color: Theme.of(context).colorScheme.primary)),
                 ),
               ),
               const SizedBox(height: 32),

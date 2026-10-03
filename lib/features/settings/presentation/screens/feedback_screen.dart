@@ -115,7 +115,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                         ? Icons.radio_button_checked
                                         : Icons.radio_button_unchecked,
                                     color: isSelected
-                                        ? AppColors.primary
+                                        ? Theme.of(context).colorScheme.primary
                                         : AppColors.textSubtle,
                                   ),
                                   SizedBox(width: 16),
@@ -196,7 +196,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.primary),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
                     ),
                   ),
                 ),

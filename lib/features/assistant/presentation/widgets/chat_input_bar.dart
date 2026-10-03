@@ -53,7 +53,7 @@ class ChatInputBar extends StatelessWidget {
             IconButton(
               tooltip: 'Voice input',
               onPressed: onMic,
-              icon: const Icon(
+              icon: Icon(
                 Icons.mic_none_rounded,
                 color: AppColors.textMuted,
               ),
@@ -67,7 +67,7 @@ class ChatInputBar extends StatelessWidget {
                   onPressed: hasText && !sending ? onSend : null,
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.zero,
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     disabledBackgroundColor: AppColors.border,
                     foregroundColor: AppColors.white,
                     disabledForegroundColor: AppColors.textSubtle,
@@ -83,7 +83,7 @@ class ChatInputBar extends StatelessWidget {
                             color: AppColors.white,
                           ),
                         )
-                      : const Icon(Icons.arrow_upward_rounded, size: 18),
+                      : Icon(Icons.arrow_upward_rounded, size: 18),
                 ),
               ),
             ),

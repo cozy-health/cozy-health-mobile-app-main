@@ -30,19 +30,22 @@ class AppButton extends StatelessWidget {
           ? OutlinedButton(
               onPressed: isLoading ? null : onPressed,
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 1.5,
+                ),
                 padding: padding ?? const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     )
                   : trailingIcon != null
@@ -52,24 +55,28 @@ class AppButton extends StatelessWidget {
                         Text(
                           text,
                           style: AppTextStyles.buttonText.copyWith(
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Icon(trailingIcon, size: 18, color: AppColors.primary),
+                        Icon(
+                          trailingIcon,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ],
                     )
                   : Text(
                       text,
                       style: AppTextStyles.buttonText.copyWith(
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
             )
           : ElevatedButton(
               onPressed: isLoading ? null : onPressed,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: AppColors.white,
                 disabledBackgroundColor: Theme.of(
                   context,

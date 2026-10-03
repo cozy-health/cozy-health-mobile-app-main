@@ -211,7 +211,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               height: 24,
               child: Checkbox(
                 value: _agreeToTerms,
-                activeColor: AppColors.primary,
+                activeColor: Theme.of(context).colorScheme.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),

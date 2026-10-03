@@ -131,7 +131,7 @@ class _SleepMoodScreenState extends State<SleepMoodScreen>
                   children: [
                     _buildLegendItem('Sleep', const Color(0xFFA78BC7), true),
                     SizedBox(width: 24),
-                    _buildLegendItem('Mood', AppColors.primary, false),
+                    _buildLegendItem('Mood', Theme.of(context).colorScheme.primary, false),
                   ],
                 ),
                 chart: AnimatedBuilder(

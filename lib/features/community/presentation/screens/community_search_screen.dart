@@ -102,12 +102,12 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
             SizedBox(height: 16),
             TabBar(
               controller: _tabController,
-              labelColor: AppColors.primary,
+              labelColor: Theme.of(context).colorScheme.primary,
               unselectedLabelColor:
                   Theme.of(context).brightness == Brightness.dark
                   ? AppColors.textMutedDark
                   : AppColors.textMutedLight,
-              indicatorColor: AppColors.primary,
+              indicatorColor: Theme.of(context).colorScheme.primary,
               tabs: const [
                 Tab(text: 'Posts'),
                 Tab(text: 'People'),

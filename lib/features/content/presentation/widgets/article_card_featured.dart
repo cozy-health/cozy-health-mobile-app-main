@@ -27,11 +27,11 @@ class ArticleCardFeatured extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.primary.withValues(alpha: 0.15),
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
               const Color(0xFFE8A050).withValues(alpha: 0.05), // warm orange
             ],
           ),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

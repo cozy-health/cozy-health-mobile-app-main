@@ -129,7 +129,7 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: isMine
-                                ? AppColors.primary
+                                ? Theme.of(context).colorScheme.primary
                                 : AppColors.surface,
                             borderRadius: BorderRadius.circular(16),
                             border: isMine
@@ -196,7 +196,7 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.arrow_upward, color: AppColors.primary),
+                    icon: Icon(Icons.arrow_upward, color: Theme.of(context).colorScheme.primary),
                     onPressed: _sendMessage,
                   ),
                 ],

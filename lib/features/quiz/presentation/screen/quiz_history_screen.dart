@@ -18,7 +18,7 @@ class QuizHistoryScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => context.pop(),
         ),
         title: Text('Quiz History', style: AppTextStyles.heading2),
@@ -130,12 +130,12 @@ class QuizHistoryScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 'Score: $score',
-                style: AppTextStyles.body2.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+                style: AppTextStyles.body2.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -170,7 +170,7 @@ class _TrendChartPainter extends CustomPainter {
     }
     
     final paint = Paint()
-      ..color = AppColors.primary
+      ..color = Theme.of(context).colorScheme.primary
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;
@@ -181,7 +181,7 @@ class _TrendChartPainter extends CustomPainter {
       ..color = AppColors.surface
       ..style = PaintingStyle.fill;
     final pointStroke = Paint()
-      ..color = AppColors.primary
+      ..color = Theme.of(context).colorScheme.primary
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
       

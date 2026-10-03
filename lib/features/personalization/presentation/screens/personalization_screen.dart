@@ -164,7 +164,7 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
               child: LinearProgressIndicator(
                 value: (_currentPage + 1) / _questions.length,
                 backgroundColor: AppColors.lightGrey,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
               ),
             ),
 

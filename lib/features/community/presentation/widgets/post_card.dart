@@ -48,14 +48,14 @@ class PostCard extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: isAnonymous ? AppColors.border : AppColors.primary.withValues(alpha: 0.1),
+                      color: isAnonymous ? AppColors.border : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       isAnonymous ? '?' : username.substring(0, 1).toUpperCase(),
                       style: AppTextStyles.body1.copyWith(
-                        color: isAnonymous ? AppColors.textMuted : AppColors.primary,
+                        color: isAnonymous ? AppColors.textMuted : Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

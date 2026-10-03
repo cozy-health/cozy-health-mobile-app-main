@@ -90,7 +90,7 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
                         child: Container(
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppColors.primary
+                                ? Theme.of(context).colorScheme.primary
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -323,8 +323,8 @@ class _MoodAreaChartPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.primary.withValues(alpha: 0.2),
-            AppColors.primary.withValues(alpha: 0.0),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.0),
           ],
         ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
         ..style = PaintingStyle.fill;
@@ -354,7 +354,7 @@ class _MoodAreaChartPainter extends CustomPainter {
           ..color = AppColors.surface
           ..style = PaintingStyle.fill;
         final pointStroke = Paint()
-          ..color = AppColors.primary
+          ..color = Theme.of(context).colorScheme.primary
           ..strokeWidth = 2
           ..style = PaintingStyle.stroke;
 

@@ -284,7 +284,7 @@ class _AppRow extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -292,14 +292,14 @@ class _AppRow extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.check,
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                               size: 12,
                             ),
                             SizedBox(width: 4),
                             Text(
                               'Connected',
                               style: AppTextStyles.body2.copyWith(
-                                color: AppColors.primary,
+                                color: Theme.of(context).colorScheme.primary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),

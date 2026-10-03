@@ -85,7 +85,7 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.close, color: AppColors.text),
+            icon: Icon(Icons.close, color: AppColors.text),
             onPressed: () async {
               final res = await _onWillPop();
               if (res == true && context.mounted) {
@@ -131,10 +131,10 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
+                              color: isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1) : AppColors.surface,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isSelected ? AppColors.primary : AppColors.border,
+                                color: isSelected ? Theme.of(context).colorScheme.primary : AppColors.border,
                                 width: isSelected ? 2 : 1,
                               ),
                             ),
@@ -144,13 +144,13 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
                                   child: Text(
                                     _options[index],
                                     style: AppTextStyles.body1.copyWith(
-                                      color: isSelected ? AppColors.primary : AppColors.text,
+                                      color: isSelected ? Theme.of(context).colorScheme.primary : AppColors.text,
                                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                                     ),
                                   ),
                                 ),
                                 if (isSelected)
-                                  const Icon(Icons.check_circle, color: AppColors.primary),
+                                  Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary),
                               ],
                             ),
                           ),

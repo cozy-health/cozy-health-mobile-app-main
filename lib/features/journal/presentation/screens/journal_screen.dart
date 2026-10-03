@@ -860,7 +860,7 @@ class _JournalVoiceRecordingScreenState
                   width: 160,
                   height: 160,
                   decoration: BoxDecoration(
-                    color: _isRecording ? AppColors.danger : AppColors.primary,
+                    color: _isRecording ? AppColors.danger : Theme.of(context).colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -876,7 +876,7 @@ class _JournalVoiceRecordingScreenState
               _formatDuration(_seconds),
               style: AppTextStyles.heading1.copyWith(
                 fontSize: 32,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             SizedBox(height: 8),
@@ -913,7 +913,7 @@ class _JournalVoiceRecordingScreenState
                 width: 96,
                 height: 96,
                 decoration: const BoxDecoration(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -930,7 +930,7 @@ class _JournalVoiceRecordingScreenState
               _formatDuration(_seconds),
               style: AppTextStyles.heading1.copyWith(
                 fontSize: 32,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ),
@@ -945,7 +945,7 @@ class _JournalVoiceRecordingScreenState
           _WarmPanel(
             child: ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.edit_note_rounded, color: AppColors.primary),
+              leading: Icon(Icons.edit_note_rounded, color: Theme.of(context).colorScheme.primary),
               title: Text(
                 'Transcribe (optional)',
                 style: AppTextStyles.body1.copyWith(
@@ -1204,7 +1204,7 @@ class JournalEntryDetailScreen extends StatelessWidget {
             _WarmPanel(
               child: Row(
                 children: [
-                  Icon(Icons.play_arrow_rounded, color: AppColors.primary),
+                  Icon(Icons.play_arrow_rounded, color: Theme.of(context).colorScheme.primary),
                   SizedBox(width: 12),
                   Text(
                     'Voice note · ${_formatDuration(entry.voiceDuration ?? 0)}',
@@ -1298,12 +1298,12 @@ class _NewEntryHero extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: _WarmPanel(
           color: AppColors.primarySubtle,
-          borderColor: AppColors.primary.withValues(alpha: .15),
+          borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: .15),
           radius: 20,
           padding: const EdgeInsets.all(18),
           child: Row(
             children: [
-              Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 30),
+              Icon(Icons.edit_note_rounded, color: Theme.of(context).colorScheme.primary, size: 30),
               SizedBox(width: 14),
               Expanded(
                 child: Text(
@@ -1355,11 +1355,11 @@ class _FilterChips extends StatelessWidget {
               backgroundColor: colorScheme.surface,
               side: BorderSide(
                 color: isSelected
-                    ? AppColors.primary
+                    ? Theme.of(context).colorScheme.primary
                     : dividerColor ?? AppColors.border,
               ),
               labelStyle: AppTextStyles.body2.copyWith(
-                color: isSelected ? AppColors.primary : colorScheme.onSurface,
+                color: isSelected ? Theme.of(context).colorScheme.primary : colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1518,7 +1518,7 @@ class _DraftRestoreCard extends StatelessWidget {
 
     return _WarmPanel(
       color: AppColors.primarySoft,
-      borderColor: AppColors.primary.withValues(alpha: .28),
+      borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: .28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1587,7 +1587,7 @@ class _JournalEmptyState extends StatelessWidget {
             child: Icon(
               Icons.menu_book_rounded,
               size: 70,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ),
@@ -1805,7 +1805,7 @@ class _PromptCategories extends StatelessWidget {
           backgroundColor: colorScheme.surface,
           side: BorderSide(
             color: active
-                ? AppColors.primary
+                ? Theme.of(context).colorScheme.primary
                 : dividerColor ?? AppColors.border,
           ),
         );
@@ -1839,7 +1839,7 @@ class _PromptCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   prompt.category,
-                  style: AppTextStyles.body2.copyWith(color: AppColors.primary),
+                  style: AppTextStyles.body2.copyWith(color: Theme.of(context).colorScheme.primary),
                 ),
               ),
               TextButton(onPressed: onUse, child: Text('Use →')),
@@ -1860,14 +1860,14 @@ class _PromptPinnedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _WarmPanel(
       color: AppColors.primarySubtle,
-      borderColor: AppColors.primary.withValues(alpha: .15),
+      borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: .15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '💡 ${prompt.category}',
             style: AppTextStyles.body2.copyWith(
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1966,7 +1966,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                           ? Icons.radio_button_checked
                           : Icons.radio_button_off,
                       color: _dateRange == range
-                          ? AppColors.primary
+                          ? Theme.of(context).colorScheme.primary
                           : AppColors.textMuted,
                     ),
                     SizedBox(width: 12),
@@ -2220,7 +2220,7 @@ class _TagRow extends StatelessWidget {
             child: Text(
               '#$tag',
               style: AppTextStyles.body2.copyWith(
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 fontSize: compact ? 12 : 14,
               ),
             ),
@@ -2288,7 +2288,7 @@ class _Waveform extends StatelessWidget {
         width: 4,
         height: height,
         decoration: BoxDecoration(
-          color: active ? AppColors.primary : AppColors.borderStrong,
+          color: active ? Theme.of(context).colorScheme.primary : AppColors.borderStrong,
           borderRadius: BorderRadius.circular(8),
         ),
       );
@@ -2545,7 +2545,7 @@ class _PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: AppColors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -2700,7 +2700,7 @@ InputDecoration _inputDecoration(String hint) {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+      borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
     ),
   );
 }

@@ -394,7 +394,7 @@ class _MorphingPillIndicator extends StatelessWidget {
           height: 4,
           margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : const Color(0xFFCDDFF7),
+            color: isActive ? Theme.of(context).colorScheme.primary : const Color(0xFFCDDFF7),
             borderRadius: BorderRadius.circular(99),
           ),
         );

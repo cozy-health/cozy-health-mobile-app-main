@@ -290,15 +290,15 @@ class _GuestBanner extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: .08),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: .08),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppColors.primary.withValues(alpha: .18),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: .18),
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.person_outline, color: AppColors.primary, size: 20),
+                Icon(Icons.person_outline, color: Theme.of(context).colorScheme.primary, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -399,7 +399,7 @@ class _Header extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -470,7 +470,7 @@ class _MoodHeroState extends State<_MoodHero>
             : .08 + (_pulseController.value * .07);
         return _WarmCard(
           color: AppColors.primarySubtle,
-          borderColor: AppColors.primary.withValues(alpha: borderOpacity),
+          borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: borderOpacity),
           minHeight: 140,
           child: child!,
         );
@@ -500,7 +500,7 @@ class _MoodHeroState extends State<_MoodHero>
               child: ElevatedButton(
                 onPressed: () => context.push(AppRouter.moodFeeling),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: AppColors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -526,7 +526,7 @@ class _FirstTimeHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return _WarmCard(
       color: AppColors.primarySubtle,
-      borderColor: AppColors.primary.withValues(alpha: .15),
+      borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: .15),
       child: Column(
         children: [
           Container(
@@ -538,7 +538,7 @@ class _FirstTimeHero extends StatelessWidget {
             ),
             child: Icon(
               Icons.self_improvement,
-              color: AppColors.primary.withValues(alpha: .78),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: .78),
               size: 56,
             ),
           ),
@@ -566,7 +566,7 @@ class _FirstTimeHero extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () => context.push(AppRouter.moodFeeling),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: AppColors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -734,7 +734,7 @@ class _MoodChart extends StatelessWidget {
                             child: Container(
                               height: value,
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: .78),
+                                color: Theme.of(context).colorScheme.primary.withValues(alpha: .78),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
@@ -980,7 +980,7 @@ class _InfoCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary, size: 26),
+          Icon(icon, color: Theme.of(context).colorScheme.primary, size: 26),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -1024,7 +1024,7 @@ class _OfflineBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+          Icon(Icons.warning_amber_rounded, color: AppColors.warning),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -1152,7 +1152,7 @@ class _HomeErrorView extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onRetry,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: AppColors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -1200,7 +1200,7 @@ class StreakDetailScreen extends StatelessWidget {
                   '7',
                   style: AppTextStyles.heading1.copyWith(
                     fontSize: 48,
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1236,7 +1236,7 @@ class StreakDetailScreen extends StatelessWidget {
                   index < 23 ? Icons.circle : Icons.circle_outlined,
                   size: 16,
                   color: index < 23
-                      ? AppColors.primary
+                      ? Theme.of(context).colorScheme.primary
                       : AppColors.borderStrong,
                 ),
               ),
@@ -1389,7 +1389,7 @@ class _DetailScaffold extends StatelessWidget {
                   IconButton(
                     tooltip: 'Back',
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back),
+                    icon: Icon(Icons.arrow_back),
                   ),
                   Expanded(
                     child: Text(
@@ -1501,7 +1501,7 @@ class _SimpleAreaChart extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   height: value,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(
+                    color: Theme.of(context).colorScheme.primary.withValues(
                       alpha: .2 + value / 200,
                     ),
                     borderRadius: BorderRadius.circular(14),
@@ -1562,7 +1562,7 @@ class _EmptyCard extends StatelessWidget {
       color: AppColors.surfaceElevated,
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary),
+          Icon(icon, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

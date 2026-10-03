@@ -80,13 +80,13 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+            border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
-              Icon(Icons.security, color: AppColors.primary, size: 32),
+              Icon(Icons.security, color: Theme.of(context).colorScheme.primary, size: 32),
               SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -95,7 +95,7 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
                     Text(
                       '2FA is Enabled',
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -317,7 +317,7 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.primary),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
               ),
             ),
           ),
@@ -552,7 +552,7 @@ class _MethodRow extends StatelessWidget {
                   color: AppColors.warmBackground,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: AppColors.primary, size: 24),
+                child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 24),
               ),
               SizedBox(width: 16),
               Expanded(

@@ -129,7 +129,7 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.primary,
+                      Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ),
@@ -161,10 +161,10 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
               ),
             ),
             child: Column(
@@ -174,7 +174,7 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
                   width: 64,
                   height: 64,
                   decoration: const BoxDecoration(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(Icons.check, size: 32, color: AppColors.white),

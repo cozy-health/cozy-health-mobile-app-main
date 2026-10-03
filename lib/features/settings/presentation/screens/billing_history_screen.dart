@@ -135,13 +135,13 @@ class _BillingHistoryScreenState extends State<BillingHistoryScreen> {
                                     Icon(
                                       Icons.download,
                                       size: 16,
-                                      color: AppColors.primary,
+                                      color: Theme.of(context).colorScheme.primary,
                                     ),
                                     SizedBox(width: 4),
                                     Text(
                                       'Download Receipt',
                                       style: AppTextStyles.body2.copyWith(
-                                        color: AppColors.primary,
+                                        color: Theme.of(context).colorScheme.primary,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),

@@ -110,13 +110,13 @@ class _PhoneSettingsScreenState extends State<PhoneSettingsScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         'Verified',
                         style: AppTextStyles.body2.copyWith(
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -131,17 +131,17 @@ class _PhoneSettingsScreenState extends State<PhoneSettingsScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.3),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Column(
                     children: [
                       Icon(
                         Icons.sms_outlined,
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         size: 32,
                       ),
                       SizedBox(height: 12),
@@ -205,7 +205,7 @@ class _PhoneSettingsScreenState extends State<PhoneSettingsScreen> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.primary),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
                             ),
                           ),
                         ),
@@ -314,7 +314,7 @@ class _PhoneSettingsScreenState extends State<PhoneSettingsScreen> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.primary),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
                             ),
                           ),
                         ),

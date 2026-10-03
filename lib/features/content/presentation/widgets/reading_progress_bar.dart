@@ -33,7 +33,7 @@ class ReadingProgressBar extends StatelessWidget {
               return Container(
                 height: 3,
                 width: constraints.maxWidth * progress,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               );
             },
           ),

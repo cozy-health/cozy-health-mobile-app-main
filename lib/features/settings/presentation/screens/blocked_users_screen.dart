@@ -63,7 +63,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
               child: Text(
                 'Unblock',
                 style: AppTextStyles.body1.copyWith(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -185,11 +185,11 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   child: Text(
                     username[0].toUpperCase(),
                     style: AppTextStyles.body1.copyWith(
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

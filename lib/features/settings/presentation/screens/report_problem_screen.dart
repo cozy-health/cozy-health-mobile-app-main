@@ -161,7 +161,7 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.primary),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
                     ),
                   ),
                 ),
@@ -190,10 +190,10 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(Icons.image, color: AppColors.primary),
+                        child: Icon(Icons.image, color: Theme.of(context).colorScheme.primary),
                       ),
                       SizedBox(width: 16),
                       Expanded(
@@ -232,13 +232,13 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                         children: [
                           Icon(
                             Icons.camera_alt_outlined,
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                           SizedBox(height: 4),
                           Text(
                             'Add image',
                             style: AppTextStyles.body2.copyWith(
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),

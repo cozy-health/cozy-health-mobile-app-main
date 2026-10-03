@@ -146,7 +146,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                         child: StatCard(
                           value: '6.2',
                           label: 'Avg mood',
-                          backgroundColor: AppColors.primary.withValues(
+                          backgroundColor: Theme.of(context).colorScheme.primary.withValues(
                             alpha: 0.05,
                           ),
                         ),
@@ -190,7 +190,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                       child: Text(
                         'See all',
                         style: AppTextStyles.body2.copyWith(
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
@@ -223,7 +223,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                       child: Text(
                         'See all',
                         style: AppTextStyles.body2.copyWith(
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
@@ -252,7 +252,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                     child: Text(
                       'View Monthly Report',
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -283,7 +283,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
               size: const Size(double.infinity, double.infinity),
               painter: _MiniAreaChartPainter(
                 data: [4, 5, 4, 8, 7, 6, 7],
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 animationValue: 1.0, // Simplified for mini chart
               ),
             ),
@@ -340,7 +340,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                     width: constraints.maxWidth * progress,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),

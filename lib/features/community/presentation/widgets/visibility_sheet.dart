@@ -64,7 +64,7 @@ class VisibilitySheet extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -96,7 +96,7 @@ class VisibilitySheet extends StatelessWidget {
           children: [
             Icon(
               isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: isSelected ? AppColors.primary : AppColors.textMuted,
+              color: isSelected ? Theme.of(context).colorScheme.primary : AppColors.textMuted,
             ),
             const SizedBox(width: 12),
             Expanded(

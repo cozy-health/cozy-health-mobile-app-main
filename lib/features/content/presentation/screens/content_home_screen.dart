@@ -79,7 +79,7 @@ class _ContentHomeScreenState extends State<ContentHomeScreen> with SingleTicker
                     animation: searchAnim,
                     isScale: true,
                     child: IconButton(
-                      icon: const Icon(Icons.search, size: 24, color: AppColors.text),
+                      icon: Icon(Icons.search, size: 24, color: AppColors.text),
                       onPressed: () => context.push(AppRouter.contentSearch),
                     ),
                   ),
@@ -198,7 +198,7 @@ class _ContentHomeScreenState extends State<ContentHomeScreen> with SingleTicker
                             ),
                           ],
                         ),
-                        const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textSubtle),
+                        Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textSubtle),
                       ],
                     ),
                   ),

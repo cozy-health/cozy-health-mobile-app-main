@@ -243,7 +243,7 @@ class _CheckboxRow extends StatelessWidget {
               Checkbox(
                 value: value,
                 onChanged: onChanged,
-                activeColor: AppColors.primary,
+                activeColor: Theme.of(context).colorScheme.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4),
                 ),

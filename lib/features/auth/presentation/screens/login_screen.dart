@@ -207,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 24,
               child: Checkbox(
                 value: _stayLoggedIn,
-                activeColor: AppColors.primary,
+                activeColor: Theme.of(context).colorScheme.primary,
                 side: BorderSide(
                   color: Theme.of(context).colorScheme.outline,
                   width: 1.5,
