@@ -202,7 +202,7 @@ class _SplashScreenState extends State<SplashScreen>
                         opacity: reduceMotion
                             ? const AlwaysStoppedAnimation(1)
                             : _glowOpacity,
-                        child: const BreathingGlow(
+                        child: BreathingGlow(
                           size: 220,
                           color: Theme.of(context).colorScheme.primary,
                         ),

@@ -170,7 +170,7 @@ class _TrendChartPainter extends CustomPainter {
     }
     
     final paint = Paint()
-      ..color = Theme.of(context).colorScheme.primary
+      ..color = AppColors.primary
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;
@@ -181,7 +181,7 @@ class _TrendChartPainter extends CustomPainter {
       ..color = AppColors.surface
       ..style = PaintingStyle.fill;
     final pointStroke = Paint()
-      ..color = Theme.of(context).colorScheme.primary
+      ..color = AppColors.primary
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
       

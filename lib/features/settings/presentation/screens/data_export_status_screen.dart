@@ -173,7 +173,7 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
                 Container(
                   width: 64,
                   height: 64,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primary,
                     shape: BoxShape.circle,
                   ),

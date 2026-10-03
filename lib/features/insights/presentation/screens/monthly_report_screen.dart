@@ -290,8 +290,8 @@ class _MonthlyAreaChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-          Theme.of(context).colorScheme.primary.withValues(alpha: 0.0),
+          AppColors.primary.withValues(alpha: 0.2),
+          AppColors.primary.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..style = PaintingStyle.fill;
@@ -299,7 +299,7 @@ class _MonthlyAreaChartPainter extends CustomPainter {
 
     // Line
     final linePaint = Paint()
-      ..color = Theme.of(context).colorScheme.primary
+      ..color = AppColors.primary
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;

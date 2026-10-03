@@ -190,11 +190,11 @@ class ReferralScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 16,
-                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                       child: Text(
                         friend[0].toUpperCase(),
                         style: AppTextStyles.body2.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
+                          color: AppColors.primary,
                         ),
                       ),
                     ),
