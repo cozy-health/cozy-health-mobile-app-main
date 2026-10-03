@@ -5,6 +5,7 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/models/user_profile.dart';
+import '../../../../core/services/guest_session_service.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../../../core/widgets/app_scaffold_padding.dart';
 import '../../../auth/data/auth_service.dart';
@@ -44,84 +45,103 @@ class SettingsScreen extends StatelessWidget {
                 initialData: LocalDbService.instance.getUserProfile(),
                 builder: (context, snapshot) {
                   final profile = snapshot.data;
-                  final name = profile?.name ?? 'Loading...';
-                  final email = profile?.email ?? 'Loading...';
-                  final avatarUrl = profile?.avatarUrl;
 
-                  return Material(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    child: InkWell(
-                      onTap: () {
-                        context.push(AppRouter.profileView);
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        height: 88,
-                        decoration: BoxDecoration(
+                  return FutureBuilder<bool>(
+                    future: GuestSessionService().isGuestSession(),
+                    builder: (context, guestSnapshot) {
+                      final isGuest = guestSnapshot.data ?? false;
+                      final avatarUrl = isGuest ? null : profile?.avatarUrl;
+                      final name = isGuest
+                          ? 'Guest'
+                          : profile?.name ?? 'Loading...';
+                      final email = isGuest
+                          ? 'Create an account to sync your data'
+                          : profile?.email ?? 'Loading...';
+
+                      return Material(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          onTap: () {
+                            context.push(
+                              isGuest
+                                  ? AppRouter.createAccount
+                                  : AppRouter.profileView,
+                            );
+                          },
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: dividerColor ?? AppColors.border,
-                            width: 1,
+                          child: Container(
+                            height: 88,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: dividerColor ?? AppColors.border,
+                                width: 1,
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColors.midGrey,
+                                    image: avatarUrl != null
+                                        ? DecorationImage(
+                                            image: NetworkImage(avatarUrl),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
+                                  ),
+                                  child: avatarUrl == null
+                                      ? Icon(
+                                          Icons.person,
+                                          color: AppColors.white,
+                                        )
+                                      : null,
+                                ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: AppTextStyles.body1.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      Text(
+                                        email,
+                                        style: AppTextStyles.body2.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium?.color,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  size: 20,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.textSubtleDark
+                                      : AppColors.textSubtleLight,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColors.midGrey,
-                                image: avatarUrl != null
-                                    ? DecorationImage(
-                                        image: NetworkImage(avatarUrl),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                              ),
-                              child: avatarUrl == null
-                                  ? Icon(Icons.person, color: AppColors.white)
-                                  : null,
-                            ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    name,
-                                    style: AppTextStyles.body1.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  Text(
-                                    email,
-                                    style: AppTextStyles.body2.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium?.color,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Icon(
-                              Icons.chevron_right,
-                              size: 20,
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? AppColors.textSubtleDark
-                                  : AppColors.textSubtleLight,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                      );
+                    },
                   );
                 },
               ),
@@ -294,7 +314,7 @@ class SettingsScreen extends StatelessWidget {
                   onTap: () {
                     showDialog(
                       context: context,
-                      builder: (BuildContext context) {
+                      builder: (BuildContext dialogContext) {
                         return AlertDialog(
                           backgroundColor: colorScheme.surface,
                           shape: RoundedRectangleBorder(
@@ -314,7 +334,8 @@ class SettingsScreen extends StatelessWidget {
                           ),
                           actions: [
                             TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
+                              onPressed: () =>
+                                  Navigator.of(dialogContext).pop(),
                               child: Text(
                                 'Cancel',
                                 style: AppTextStyles.body1.copyWith(
@@ -325,11 +346,14 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             TextButton(
                               onPressed: () async {
-                                Navigator.of(context).pop();
-                                await AuthService().logout();
-                                if (context.mounted) {
-                                  context.go(AppRouter.welcome);
+                                Navigator.of(dialogContext).pop();
+                                try {
+                                  await AuthService().logout();
+                                } catch (e) {
+                                  debugPrint('Logout error: $e');
                                 }
+                                if (!context.mounted) return;
+                                context.go(AppRouter.welcome);
                               },
                               child: Text(
                                 'Log out',

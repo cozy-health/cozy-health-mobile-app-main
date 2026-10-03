@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/guest_session_service.dart';
+import '../../../../core/storage/token_storage.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../widgets/auth_ui.dart';
@@ -56,7 +58,11 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: () => context.go(AppRouter.home),
+                onPressed: () async {
+                  await TokenStorage().clearToken();
+                  await GuestSessionService().enterGuestSession();
+                  if (context.mounted) context.go(AppRouter.home);
+                },
                 child: Text(
                   'Continue as Guest',
                   style: AppTextStyles.body2.copyWith(

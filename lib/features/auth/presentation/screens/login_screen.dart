@@ -5,6 +5,8 @@ import 'package:local_auth/local_auth.dart';
 import '../../../../core/api/api_exceptions.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/api/auth_token_service.dart';
+import '../../../../core/services/guest_session_service.dart';
+import '../../../../core/services/personalization_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../data/auth_service.dart';
@@ -68,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     try {
-      final response = await _authService.login(
+      await _authService.login(
         email: email,
         password: password,
       );
@@ -79,9 +81,15 @@ class _LoginScreenState extends State<LoginScreen> {
         type: AuthToastType.success,
         title: 'Welcome back.',
       );
-      final user = response['user'];
-      final hasProfile = user != null && user['profile'] != null;
-      context.go(hasProfile ? AppRouter.home : AppRouter.personalization);
+      await GuestSessionService().exitGuestSession();
+      final hasCompletedPersonalization = await PersonalizationService()
+          .hasCompletedPersonalization();
+      if (!mounted) return;
+      context.go(
+        hasCompletedPersonalization
+            ? AppRouter.home
+            : AppRouter.personalization,
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       final message = _friendlyLoginError(e.message);

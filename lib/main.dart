@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/routing/app_router.dart';
+import 'core/services/install_marker_service.dart';
 import 'core/services/local_db_service.dart';
 import 'core/models/user_profile.dart';
 import 'core/theme/app_theme.dart';
 import 'features/settings/data/profile_repository.dart';
+import 'package:mcp_toolkit/mcp_toolkit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LocalDbService().init();
+  await InstallMarkerService().clearLingeringSessionOnFreshInstall();
+  MCPToolkitBinding.instance
+    ..initialize()
+    ..initializeFlutterToolkit();
   runApp(const CozyHealthApp());
 }
 

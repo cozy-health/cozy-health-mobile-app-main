@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/personalization_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -34,6 +35,11 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
     super.dispose();
   }
 
+  Future<void> _finishPersonalization() async {
+    await PersonalizationService().markComplete();
+    if (mounted) context.go(AppRouter.preparingCozy);
+  }
+
   void _nextPage() {
     if (_currentPage < _questions.length - 1) {
       _pageController.nextPage(
@@ -42,7 +48,7 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
       );
     } else {
       // Navigate to preparing cozy screen
-      context.go(AppRouter.preparingCozy);
+      _finishPersonalization();
     }
   }
 
@@ -140,7 +146,7 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
             : null,
         actions: [
           TextButton(
-            onPressed: () => context.go(AppRouter.preparingCozy),
+            onPressed: _finishPersonalization,
             child: Text(
               'Skip',
               style: AppTextStyles.linkText.copyWith(color: AppColors.grey),

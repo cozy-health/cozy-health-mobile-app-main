@@ -7,6 +7,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/response_data.dart';
 import '../../../core/models/user_profile.dart';
+import '../../../core/services/guest_session_service.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/services/user_data_fetcher.dart';
 import '../../../core/storage/token_storage.dart';
@@ -36,6 +37,7 @@ class AuthService {
     if (token != null && token.isNotEmpty) {
       await _tokenStorage.saveToken(token);
     }
+    await GuestSessionService().exitGuestSession();
     await _cacheUserProfile(data['user']);
     await ProfileRepository().fetchProfile();
     _syncUserDataInBackground();
@@ -68,6 +70,7 @@ class AuthService {
     if (token != null && token.isNotEmpty) {
       await _tokenStorage.saveToken(token);
     }
+    await GuestSessionService().exitGuestSession();
     await _cacheUserProfile(data['user']);
     await ProfileRepository().fetchProfile();
     _syncUserDataInBackground();
@@ -86,6 +89,7 @@ class AuthService {
       debugPrint('Logout API failed: $e');
     } finally {
       await _tokenStorage.clearToken();
+      await GuestSessionService().exitGuestSession();
       await LocalDbService.instance.clearAllUserData();
     }
   }

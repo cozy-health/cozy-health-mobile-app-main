@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/guest_session_service.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../../../core/services/user_data_fetcher.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -137,6 +138,7 @@ class _HomeScreenState extends State<HomeScreen>
                         _OfflineBanner(onRetry: () {}),
                         const SizedBox(height: 16),
                       ],
+                      const _GuestBanner(),
                       _AnimatedIn(
                         controller: _entranceController,
                         interval: const Interval(
@@ -268,6 +270,54 @@ class _HomeScreenState extends State<HomeScreen>
           },
         ),
       ),
+    );
+  }
+}
+
+class _GuestBanner extends StatelessWidget {
+  const _GuestBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: GuestSessionService().isGuestSession(),
+      builder: (context, snapshot) {
+        if (snapshot.data != true) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: .18),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.person_outline, color: AppColors.primary, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "You're browsing as a guest",
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.go(AppRouter.createAccount),
+                  child: const Text('Create Account'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
