@@ -10,6 +10,7 @@ import '../../../../core/api/api_client.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/local_db_service.dart';
+import '../../../../core/services/onboarding_service.dart';
 import '../../../../core/services/user_data_fetcher.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -126,6 +127,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _runSequence() async {
     final hasToken = await _splashService.hasStoredSession();
+    final onboardingDone = await OnboardingService().hasCompletedOnboarding();
     debugPrint('APP_START: token present = $hasToken');
 
     _timeline.forward();
@@ -143,7 +145,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (!results.first) {
-      context.go(AppRouter.welcome);
+      context.go(onboardingDone ? AppRouter.welcome : AppRouter.onboarding);
       return;
     }
 
