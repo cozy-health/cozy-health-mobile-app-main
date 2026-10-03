@@ -279,7 +279,7 @@ class ActivityScreen extends StatelessWidget {
       height: double.infinity,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent,
+        color: isActive ? AppColors.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Text(
@@ -363,7 +363,7 @@ class ActivityScreen extends StatelessWidget {
 
   Widget _buildCalendarDots() {
     final colors = [
-      Theme.of(context).colorScheme.primary,
+      AppColors.primary,
       const Color(0xFF9BE6A6),
       const Color(0xFFFFD08A),
       const Color(0xFFFFB3D1),
@@ -397,7 +397,7 @@ class ActivityScreen extends StatelessWidget {
         7,
         (index) => Icon(
           index < 4 ? Icons.check_circle : Icons.circle_outlined,
-          color: index < 4 ? Theme.of(context).colorScheme.primary : AppColors.midGrey,
+          color: index < 4 ? AppColors.primary : AppColors.midGrey,
           size: 28,
         ),
       ),
