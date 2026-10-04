@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/audio/audio_recorder_service.dart';
 import '../../../../core/permissions/permission_service.dart';
-import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../utils/responsive_extensions.dart';
@@ -16,6 +16,14 @@ class VoiceRecordingScreen extends StatefulWidget {
 class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
   bool isRecording = false;
   String recordingTime = "00:03:54"; // Example time
+  final AudioRecorderService _audioRecorder = AudioRecorderService();
+  String? _recordingPath;
+
+  @override
+  void dispose() {
+    _audioRecorder.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,12 +94,35 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
             GestureDetector(
               onTap: () async {
                 if (isRecording) {
-                  setState(() => isRecording = false);
+                  final path = await _audioRecorder.stop();
+                  if (!context.mounted) return;
+                  if (path == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Couldn't save recording. Try again?"),
+                      ),
+                    );
+                  }
+                  setState(() {
+                    isRecording = false;
+                    _recordingPath = path;
+                  });
                   return;
                 }
                 final result = await PermissionService.requestMicrophone();
                 if (!context.mounted) return;
                 if (result == MicPermissionResult.granted) {
+                  try {
+                    await _audioRecorder.start();
+                  } catch (_) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Couldn't save recording. Try again?"),
+                      ),
+                    );
+                    return;
+                  }
                   setState(() => isRecording = true);
                 } else if (result == MicPermissionResult.permanentlyDenied) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -110,7 +141,6 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                     ),
                   );
                 }
-                // In real app, start/stop audio recording here
               },
               child: Container(
                 width: 80,
@@ -158,7 +188,14 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                 if (!isRecording)
                   TextButton.icon(
                     onPressed: () {
-                      // Save and go back
+                      if (_recordingPath == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Couldn't save recording. Try again?"),
+                          ),
+                        );
+                        return;
+                      }
                       context.pop();
                     },
                     icon: Icon(Icons.check, color: Theme.of(context).colorScheme.primary),

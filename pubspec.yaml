@@ -52,6 +52,8 @@ dependencies:
   uuid: ^4.6.0
   local_auth: ^3.0.2
   permission_handler: ^13.0.2
+  record: ^7.1.1
+  just_audio: ^0.10.6
 
 dev_dependencies:
   flutter_gen_runner:

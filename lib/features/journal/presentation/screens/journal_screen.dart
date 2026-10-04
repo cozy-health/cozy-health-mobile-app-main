@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../core/audio/audio_recorder_service.dart';
 import '../../../../core/permissions/permission_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -818,8 +819,10 @@ class _JournalVoiceRecordingScreenState
   bool _showTranscription = false;
   int _seconds = 0;
   Timer? _timer;
+  final AudioRecorderService _audioRecorder = AudioRecorderService();
   final TextEditingController _transcriptionController =
       TextEditingController();
+  String? _recordingPath;
 
   @override
   void initState() {
@@ -835,6 +838,7 @@ class _JournalVoiceRecordingScreenState
   @override
   void dispose() {
     _timer?.cancel();
+    unawaited(_audioRecorder.dispose());
     _pulseController.dispose();
     _transcriptionController.dispose();
     super.dispose();
@@ -909,7 +913,7 @@ class _JournalVoiceRecordingScreenState
           SizedBox(height: 50),
           Center(
             child: GestureDetector(
-              onTap: () => setState(() => _isPlaying = !_isPlaying),
+              onTap: _togglePlayback,
               child: Container(
                 width: 96,
                 height: 96,
@@ -1003,9 +1007,29 @@ class _JournalVoiceRecordingScreenState
       HapticFeedback.lightImpact();
       _timer?.cancel();
       _pulseController.stop();
+      final path = await _audioRecorder.stop();
+      if (!mounted) return;
+      if (_seconds < 1) {
+        setState(() {
+          _isRecording = false;
+          _seconds = 0;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Hold longer to record.')),
+        );
+        return;
+      }
+      if (path == null) {
+        setState(() => _isRecording = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn't save recording. Try again?")),
+        );
+        return;
+      }
       setState(() {
         _isRecording = false;
         _hasRecording = true;
+        _recordingPath = path;
         if (_seconds == 0) _seconds = 42;
       });
     } else {
@@ -1028,6 +1052,15 @@ class _JournalVoiceRecordingScreenState
           const SnackBar(
             content: Text('Microphone access is needed to record.'),
           ),
+        );
+        return;
+      }
+      try {
+        await _audioRecorder.start();
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn't save recording. Try again?")),
         );
         return;
       }
@@ -1060,11 +1093,40 @@ class _JournalVoiceRecordingScreenState
   }
 
   void _rerecord() {
+    unawaited(_audioRecorder.stopPlayback());
     setState(() {
       _hasRecording = false;
+      _isPlaying = false;
       _showTranscription = false;
       _seconds = 0;
+      _recordingPath = null;
     });
+  }
+
+  Future<void> _togglePlayback() async {
+    final path = _recordingPath;
+    if (_isPlaying) {
+      await _audioRecorder.stopPlayback();
+      if (mounted) setState(() => _isPlaying = false);
+      return;
+    }
+    if (path == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't play recording.")),
+      );
+      return;
+    }
+    setState(() => _isPlaying = true);
+    try {
+      await _audioRecorder.play(path);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't play recording.")),
+      );
+    } finally {
+      if (mounted) setState(() => _isPlaying = false);
+    }
   }
 
   void _saveVoice() {
