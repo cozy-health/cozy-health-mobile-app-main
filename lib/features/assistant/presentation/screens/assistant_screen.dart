@@ -197,7 +197,7 @@ class _AssistantScreenState extends State<AssistantScreen>
             'Hi Sarah.',
             textAlign: TextAlign.center,
             style: AppTextStyles.heading1.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -210,7 +210,7 @@ class _AssistantScreenState extends State<AssistantScreen>
             "I'm here to listen.\nWhat's on your mind?",
             textAlign: TextAlign.center,
             style: AppTextStyles.body1.copyWith(
-              color: AppColors.textMuted,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
               height: 1.4,
             ),
           ),

@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
-import 'chat_shared_widgets.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../models/chat.dart';
 
 class ChatInputBar extends StatelessWidget {
   const ChatInputBar({
@@ -23,15 +18,20 @@ class ChatInputBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasText = controller.text.trim().isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
       child: Container(
         constraints: const BoxConstraints(minHeight: 52),
         padding: const EdgeInsets.only(left: 18, right: 8),
         decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
+          color: isDark
+              ? AppColors.surfaceElevatedDark
+              : AppColors.surfaceElevatedLight,
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -44,9 +44,14 @@ class ChatInputBar extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'Message Cozy...',
                   hintStyle: AppTextStyles.body1.copyWith(
-                    color: AppColors.textSubtle,
+                    color: isDark
+                        ? AppColors.textSubtleDark
+                        : AppColors.textSubtleLight,
                   ),
                   border: InputBorder.none,
+                ),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
@@ -55,7 +60,7 @@ class ChatInputBar extends StatelessWidget {
               onPressed: onMic,
               icon: Icon(
                 Icons.mic_none_rounded,
-                color: AppColors.textMuted,
+                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
               ),
             ),
             Padding(
@@ -68,9 +73,11 @@ class ChatInputBar extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.zero,
                     backgroundColor: Theme.of(context).colorScheme.primary,
-                    disabledBackgroundColor: AppColors.border,
+                    disabledBackgroundColor:
+                        isDark ? AppColors.borderDark : AppColors.borderLight,
                     foregroundColor: AppColors.white,
-                    disabledForegroundColor: AppColors.textSubtle,
+                    disabledForegroundColor:
+                        isDark ? AppColors.textSubtleDark : AppColors.textSubtleLight,
                     elevation: 0,
                     shape: const CircleBorder(),
                   ),

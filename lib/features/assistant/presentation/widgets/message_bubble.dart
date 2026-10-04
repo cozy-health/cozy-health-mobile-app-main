@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'chat_shared_widgets.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../models/chat.dart';
@@ -21,6 +18,7 @@ class MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.role == ChatRole.user;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: isUser
           ? CrossAxisAlignment.end
@@ -46,19 +44,29 @@ class MessageBubble extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isUser
                         ? Theme.of(context).colorScheme.primary
-                        : AppColors.surfaceElevated,
+                        : isDark
+                        ? AppColors.surfaceElevatedDark
+                        : AppColors.surfaceElevatedLight,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(20),
                       topRight: const Radius.circular(20),
                       bottomLeft: Radius.circular(isUser ? 20 : 4),
                       bottomRight: Radius.circular(isUser ? 4 : 20),
                     ),
-                    border: isUser ? null : Border.all(color: AppColors.border),
+                    border: isUser
+                        ? null
+                        : Border.all(
+                            color: isDark
+                                ? AppColors.borderDark
+                                : AppColors.borderLight,
+                          ),
                   ),
                   child: Text(
                     message.text,
                     style: AppTextStyles.body1.copyWith(
-                      color: isUser ? AppColors.white : AppColors.text,
+                      color: isUser
+                          ? AppColors.white
+                          : Theme.of(context).colorScheme.onSurface,
                       height: 1.5,
                     ),
                   ),

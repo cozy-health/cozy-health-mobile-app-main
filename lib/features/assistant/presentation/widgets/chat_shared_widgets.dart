@@ -26,14 +26,17 @@ class AssistantSubScaffold extends StatelessWidget {
                   IconButton(
                     tooltip: 'Back',
                     onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.arrow_back, color: AppColors.text),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   Expanded(
                     child: Text(
                       title,
                       textAlign: TextAlign.right,
                       style: AppTextStyles.heading2.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -55,15 +58,20 @@ class MenuSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
+            color: isDark
+                ? AppColors.surfaceElevatedDark
+                : AppColors.surfaceElevatedLight,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
           ),
           child: Column(mainAxisSize: MainAxisSize.min, children: children),
         ),
@@ -88,11 +96,18 @@ class SheetTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: danger ? AppColors.danger : AppColors.text),
+      leading: Icon(
+        icon,
+        color: danger
+            ? AppColors.danger
+            : Theme.of(context).colorScheme.onSurface,
+      ),
       title: Text(
         label,
         style: AppTextStyles.body1.copyWith(
-          color: danger ? AppColors.danger : AppColors.text,
+          color: danger
+              ? AppColors.danger
+              : Theme.of(context).colorScheme.onSurface,
         ),
       ),
       onTap: onTap,
@@ -173,13 +188,20 @@ class WarmPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveColor = isDark && color == AppColors.surfaceElevated
+        ? AppColors.surfaceElevatedDark
+        : color;
+    final effectiveBorder = borderColor ??
+        (isDark ? AppColors.borderDark : AppColors.borderLight);
+
     return Container(
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: color,
+        color: effectiveColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor ?? AppColors.border),
+        border: Border.all(color: effectiveBorder),
       ),
       child: child,
     );
@@ -227,8 +249,12 @@ class SecondaryButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.text,
-          side: const BorderSide(color: AppColors.border),
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
+          side: BorderSide(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.borderDark
+                : AppColors.borderLight,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -290,7 +316,9 @@ class InlineSuggestions extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Text(
               '💡 Want a prompt?',
-              style: AppTextStyles.body2.copyWith(color: AppColors.text),
+              style: AppTextStyles.body2.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -324,6 +352,7 @@ class PromptButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(22),
@@ -332,13 +361,19 @@ class PromptButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18),
         alignment: Alignment.centerLeft,
         decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
+          color: isDark
+              ? AppColors.surfaceElevatedDark
+              : AppColors.surfaceElevatedLight,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
         ),
         child: Text(
           text,
-          style: AppTextStyles.body2.copyWith(color: AppColors.text),
+          style: AppTextStyles.body2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
       ),
     );

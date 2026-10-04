@@ -14,7 +14,6 @@ import '../../../../core/services/local_db_service.dart';
 import '../../../../core/services/onboarding_service.dart';
 import '../../../../core/services/user_data_fetcher.dart';
 import '../../../../core/storage/token_storage.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../data/splash_service.dart';
 import '../widgets/breathing_glow.dart';
 
@@ -267,7 +266,9 @@ class _SplashScreenState extends State<SplashScreen>
                       style: GoogleFonts.outfit(
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
-                        color: AppColors.black.withValues(alpha: 0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.72),
                         letterSpacing: 0.5,
                         height: 1.4,
                       ),

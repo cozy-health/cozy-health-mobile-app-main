@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'chat_shared_widgets.dart';
 import 'message_bubble.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../data/chat_repository.dart';
@@ -180,7 +177,9 @@ class HistorySection extends StatelessWidget {
       children: [
         Text(
           title,
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 12),
         for (final conversation in conversations) ...[
@@ -224,7 +223,7 @@ class ConversationCard extends StatelessWidget {
                   Text(
                     conversation.title,
                     style: AppTextStyles.body1.copyWith(
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                     maxLines: 1,
@@ -234,7 +233,7 @@ class ConversationCard extends StatelessWidget {
                   Text(
                     '"${conversation.lastMessagePreview}"',
                     style: AppTextStyles.body2.copyWith(
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -267,14 +266,16 @@ class ConversationEmptyState extends StatelessWidget {
         const SizedBox(height: 22),
         Text(
           'No conversations yet.',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 10),
         Text(
           "Start one whenever\nyou're ready.",
           textAlign: TextAlign.center,
           style: AppTextStyles.body1.copyWith(
-            color: AppColors.textMuted,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
             height: 1.4,
           ),
         ),
@@ -300,14 +301,16 @@ class DeleteConversationDialog extends StatelessWidget {
             Text(
               'Delete this\nconversation?',
               textAlign: TextAlign.center,
-              style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+              style: AppTextStyles.heading2.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
               'All messages will be\npermanently removed.',
               textAlign: TextAlign.center,
               style: AppTextStyles.body1.copyWith(
-                color: AppColors.textMuted,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 height: 1.35,
               ),
             ),

@@ -533,7 +533,9 @@ class _FirstTimeHero extends StatelessWidget {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: AppColors.surfaceElevated,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.surfaceDark
+                  : AppColors.surfaceElevatedLight,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(
@@ -546,7 +548,10 @@ class _FirstTimeHero extends StatelessWidget {
           Text(
             'Welcome to Cozy Health.',
             textAlign: TextAlign.center,
-            style: AppTextStyles.heading1.copyWith(fontWeight: FontWeight.w600),
+            style: AppTextStyles.heading1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 10),
           Text(
@@ -1611,16 +1616,23 @@ class _WarmCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveColor = isDark && color == AppColors.surfaceElevated
+        ? AppColors.surfaceElevatedDark
+        : color;
+    final effectiveBorder = borderColor ??
+        (isDark
+            ? AppColors.borderDark.withValues(alpha: .9)
+            : AppColors.border.withValues(alpha: .65));
+
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(minHeight: minHeight ?? 0),
       padding: padding,
       decoration: BoxDecoration(
-        color: color,
+        color: effectiveColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: borderColor ?? AppColors.border.withValues(alpha: .65),
-        ),
+        border: Border.all(color: effectiveBorder),
       ),
       child: child,
     );

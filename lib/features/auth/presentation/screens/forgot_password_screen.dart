@@ -274,15 +274,18 @@ class _OtpInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     PinTheme theme(Color color, double width) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       return PinTheme(
         width: 48,
         height: 56,
         textStyle: AppTextStyles.heading2.copyWith(
-          color: hasError ? AppColors.danger : AppColors.text,
+          color: hasError
+              ? AppColors.danger
+              : Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color, width: width),
         ),
@@ -293,7 +296,14 @@ class _OtpInput extends StatelessWidget {
       controller: controller,
       length: 6,
       separatorBuilder: (_) => const SizedBox(width: 8),
-      defaultPinTheme: theme(hasError ? AppColors.danger : AppColors.border, 1),
+      defaultPinTheme: theme(
+        hasError
+            ? AppColors.danger
+            : Theme.of(context).brightness == Brightness.dark
+            ? AppColors.borderDark
+            : AppColors.borderLight,
+        1,
+      ),
       focusedPinTheme: theme(
         hasError ? AppColors.danger : Theme.of(context).colorScheme.primary,
         2,
@@ -337,7 +347,7 @@ class _Success extends StatelessWidget {
                 "You're all set.",
                 textAlign: TextAlign.center,
                 style: AppTextStyles.heading1.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 28,
                   fontWeight: FontWeight.w600,
                 ),
@@ -347,7 +357,7 @@ class _Success extends StatelessWidget {
                 'Your password has been reset. Log in with your new one.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.body1.copyWith(
-                  color: AppColors.textMuted,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                   height: 1.5,
                 ),
               ),

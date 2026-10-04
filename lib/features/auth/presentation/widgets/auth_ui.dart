@@ -135,13 +135,14 @@ class _AuthTextFieldState extends State<AuthTextField> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasError = widget.error != null;
     final hasSuccess = widget.success != null && !hasError;
     final borderColor = hasError
         ? AppColors.danger
         : _focusNode.hasFocus
-        ? AppColors.borderStrong
-        : AppColors.border;
+        ? (isDark ? AppColors.borderStrongDark : AppColors.borderStrongLight)
+        : (isDark ? AppColors.borderDark : AppColors.borderLight);
     final message = widget.error ?? widget.success ?? widget.helper;
     final messageType = hasError
         ? AuthMessageType.error
@@ -167,7 +168,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
           duration: const Duration(milliseconds: 200),
           height: 56,
           decoration: BoxDecoration(
-            color: colorScheme.surface,
+            color: isDark ? AppColors.surfaceElevatedDark : colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: borderColor,
@@ -296,6 +297,7 @@ class PasswordStrengthBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final labels = ['Weak', 'Weak', 'Fair', 'Good', 'Strong'];
     final colors = [
       AppColors.danger,
@@ -316,7 +318,10 @@ class PasswordStrengthBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
                 child: Stack(
                   children: [
-                    Container(height: 4, color: AppColors.lightGrey),
+                    Container(
+                      height: 4,
+                      color: isDark ? AppColors.borderDark : AppColors.lightGrey,
+                    ),
                     AnimatedFractionallySizedBox(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeOutCubic,
@@ -470,6 +475,7 @@ void showAuthToast(
   };
 
   final messenger = ScaffoldMessenger.of(context);
+  final isDark = Theme.of(context).brightness == Brightness.dark;
   messenger.hideCurrentSnackBar();
   messenger.showSnackBar(
     SnackBar(
@@ -489,7 +495,9 @@ void showAuthToast(
       content: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: isDark
+              ? AppColors.surfaceElevatedDark
+              : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: color.withValues(alpha: 0.2)),
           boxShadow: [

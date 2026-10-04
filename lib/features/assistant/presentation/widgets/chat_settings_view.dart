@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'chat_shared_widgets.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../models/chat.dart';
 
 class ChatSettingsScreen extends StatefulWidget {
   const ChatSettingsScreen({super.key});
@@ -31,7 +27,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
           Text(
             'Cozy settings',
             style: AppTextStyles.heading1.copyWith(
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 28,
               fontWeight: FontWeight.w600,
             ),
@@ -143,7 +139,9 @@ class SettingsSection extends StatelessWidget {
         children: [
           Text(
             title,
-            style: AppTextStyles.heading2.copyWith(color: AppColors.text),
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 12),
           ...children.expand((child) => [child, const SizedBox(height: 10)]),
@@ -183,7 +181,9 @@ class SettingRow extends StatelessWidget {
                   Text(
                     title,
                     style: AppTextStyles.body1.copyWith(
-                      color: danger ? AppColors.danger : AppColors.text,
+                      color: danger
+                          ? AppColors.danger
+                          : Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -192,7 +192,7 @@ class SettingRow extends StatelessWidget {
                     Text(
                       subtitle!,
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                     ),
                   ],
@@ -202,7 +202,9 @@ class SettingRow extends StatelessWidget {
             if (value != null)
               Text(
                 value!,
-                style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body2.copyWith(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
           ],
         ),
@@ -237,7 +239,7 @@ class SettingSwitch extends StatelessWidget {
                 Text(
                   title,
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.text,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -245,7 +247,7 @@ class SettingSwitch extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AppTextStyles.body2.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
               ],

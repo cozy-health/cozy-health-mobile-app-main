@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/guest_session_service.dart';
 import '../../../../core/storage/token_storage.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../widgets/auth_ui.dart';
 
@@ -26,11 +25,10 @@ class WelcomeScreen extends StatelessWidget {
                 'Welcome to\nCozy Health.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.heading1.copyWith(
-                  color: AppColors.text,
                   fontSize: 28,
                   fontWeight: FontWeight.w600,
                   height: 1.3,
-                  letterSpacing: -0.5,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 12),
@@ -40,7 +38,7 @@ class WelcomeScreen extends StatelessWidget {
                   'A quiet space to check in with yourself.',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body1.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                     height: 1.5,
                   ),
                 ),
@@ -66,7 +64,7 @@ class WelcomeScreen extends StatelessWidget {
                 child: Text(
                   'Continue as Guest',
                   style: AppTextStyles.body2.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

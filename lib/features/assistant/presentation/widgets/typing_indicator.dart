@@ -1,11 +1,5 @@
 import 'package:flutter/material.dart';
-import 'chat_shared_widgets.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../models/chat.dart';
 
 class TypingIndicatorBubble extends StatefulWidget {
   const TypingIndicatorBubble();
@@ -52,14 +46,19 @@ class TypingIndicatorBubbleState extends State<TypingIndicatorBubble>
   }
 
   Widget _dotBubble(List<double> opacities) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
+          color: isDark
+              ? AppColors.surfaceElevatedDark
+              : AppColors.surfaceElevatedLight,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -71,8 +70,10 @@ class TypingIndicatorBubbleState extends State<TypingIndicatorBubble>
                 width: 6,
                 height: 6,
                 margin: const EdgeInsets.symmetric(horizontal: 2),
-                decoration: const BoxDecoration(
-                  color: AppColors.textMuted,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
                   shape: BoxShape.circle,
                 ),
               ),
