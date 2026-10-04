@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 import '../../../../core/widgets/app_button.dart';
 
 class ReportSheet extends StatefulWidget {
@@ -45,16 +46,16 @@ class _ReportSheetState extends State<ReportSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.communitySurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('What\'s wrong?', style: AppTextStyles.heading3),
+          Text('What\'s wrong?', style: context.communityHeading3),
           const SizedBox(height: 16),
           ..._reasons.map((reason) => _buildRadio(reason)),
           const SizedBox(height: 16),
@@ -62,24 +63,24 @@ class _ReportSheetState extends State<ReportSheet> {
             controller: _notesController,
             decoration: InputDecoration(
               hintText: 'Additional notes (optional)',
-              hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+              hintStyle: context.communityBody1.copyWith(color: context.communityMuted),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+                borderSide: BorderSide(color: context.communityBorder.withValues(alpha: 0.7)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+                borderSide: BorderSide(color: context.communityBorder.withValues(alpha: 0.7)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
               ),
               filled: true,
-              fillColor: AppColors.background,
+              fillColor: context.communityBackground,
             ),
             maxLines: 3,
-            style: AppTextStyles.body1,
+            style: context.communityBody1,
           ),
           const SizedBox(height: 24),
           AppButton(
@@ -116,13 +117,13 @@ class _ReportSheetState extends State<ReportSheet> {
           children: [
             Icon(
               _selectedReason == reason ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: _selectedReason == reason ? Theme.of(context).colorScheme.primary : AppColors.textMuted,
+              color: _selectedReason == reason ? Theme.of(context).colorScheme.primary : context.communityMuted,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 reason,
-                style: AppTextStyles.body1,
+                style: context.communityBody1,
               ),
             ),
           ],

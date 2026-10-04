@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 import '../widgets/visibility_sheet.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -78,15 +79,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     final isWarning = textLength >= _maxLength - 200;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.communityBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.communityBackground,
         elevation: 0,
         leading: TextButton(
           onPressed: () => context.pop(),
           child: Text(
             'Cancel',
-            style: AppTextStyles.body1.copyWith(
+            style: context.communityBody1.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -99,7 +100,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               onPressed: _canPost ? _handlePost : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
-                disabledBackgroundColor: AppColors.border,
+                disabledBackgroundColor: context.communityBorder,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -116,7 +117,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     )
                   : Text(
                       'Post',
-                      style: AppTextStyles.body2.copyWith(
+                      style: context.communityBody2.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
@@ -153,16 +154,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: _visibility == PostVisibility.anonymous
-                            ? AppColors.border
-                            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                            ? context.communityBorder
+                            : Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.14),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
                       child: Text(
                         _visibility == PostVisibility.anonymous ? '?' : 'S',
-                        style: AppTextStyles.body1.copyWith(
+                        style: context.communityBody1.copyWith(
                           color: _visibility == PostVisibility.anonymous
-                              ? AppColors.textMuted
+                              ? context.communityMuted
                               : Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -177,7 +180,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             _visibility == PostVisibility.anonymous
                                 ? 'Anonymous'
                                 : '@sarahchen',
-                            style: AppTextStyles.body1.copyWith(
+                            style: context.communityBody1.copyWith(
+                              color: context.communityText,
                               fontWeight: FontWeight.w500,
                               fontStyle: _visibility == PostVisibility.anonymous
                                   ? FontStyle.italic
@@ -192,12 +196,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                     : _visibility == PostVisibility.followers
                                     ? 'Followers only'
                                     : 'Posting anonymously',
-                                style: AppTextStyles.body2.copyWith(
+                                style: context.communityBody2.copyWith(
                                   color:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? AppColors.textMutedDark
-                                      : AppColors.textMutedLight,
+                                      context.communityMuted,
                                   fontSize: 13,
                                 ),
                               ),
@@ -206,10 +207,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                 Icons.keyboard_arrow_down,
                                 size: 16,
                                 color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? AppColors.textMutedDark
-                                    : AppColors.textMutedLight,
+                                    context.communityMuted,
                               ),
                             ],
                           ),
@@ -230,10 +228,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   maxLines: null,
                   decoration: InputDecoration(
                     hintText: 'What\'s on your mind?',
-                    hintStyle: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textMutedDark
-                          : AppColors.textMutedLight,
+                    hintStyle: context.communityBody1.copyWith(
+                      color: context.communityMuted,
                       fontFamily: 'Georgia', // Serif font
                       fontSize: 18,
                     ),
@@ -276,7 +272,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(_selectedTopic, style: AppTextStyles.body1),
+                        Text(_selectedTopic, style: context.communityBody1),
                         Icon(
                           Icons.keyboard_arrow_down,
                           color: Theme.of(context).colorScheme.onSurface,
@@ -297,7 +293,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                           SizedBox(width: 12),
-                          Text('Add image', style: AppTextStyles.body1),
+                          Text('Add image', style: context.communityBody1),
                         ],
                       ),
                     ],
@@ -327,7 +323,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           Expanded(
                             child: Text(
                               'Community guidelines\nBe kind. Be honest. Be safe.',
-                              style: AppTextStyles.body2.copyWith(
+                              style: context.communityBody2.copyWith(
                                 color: AppColors.warning,
                               ),
                             ),
@@ -349,12 +345,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     children: [
                       Text(
                         '$textLength / $_maxLength',
-                        style: AppTextStyles.body2.copyWith(
+                        style: context.communityBody2.copyWith(
                           color: isOverLimit
                               ? AppColors.danger
                               : isWarning
                               ? AppColors.warning
-                              : AppColors.textMuted,
+                              : context.communityMuted,
                           fontWeight: isWarning
                               ? FontWeight.w600
                               : FontWeight.w400,

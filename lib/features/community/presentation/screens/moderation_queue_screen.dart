@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 
 class ModerationQueueScreen extends StatefulWidget {
   const ModerationQueueScreen({super.key});
@@ -29,9 +30,9 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.communityBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.communityBackground,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -40,14 +41,12 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
           ),
           onPressed: () => context.pop(),
         ),
-        title: Text('Moderation', style: AppTextStyles.heading3),
+        title: Text('Moderation', style: context.communityHeading3),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
           labelColor: Theme.of(context).colorScheme.primary,
-          unselectedLabelColor: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.textMutedDark
-              : AppColors.textMutedLight,
+          unselectedLabelColor: context.communityMuted,
           indicatorColor: Theme.of(context).colorScheme.primary,
           tabs: const [
             Tab(text: 'Open (2)'),
@@ -86,7 +85,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.communityBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +96,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
               SizedBox(width: 8),
               Text(
                 'Reported Post',
-                style: AppTextStyles.body1.copyWith(
+                style: context.communityBody1.copyWith(
                   color: AppColors.danger,
                   fontWeight: FontWeight.w600,
                 ),
@@ -107,17 +106,15 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
           SizedBox(height: 12),
           Text(
             '"I am so tired of everything..."',
-            style: AppTextStyles.body1.copyWith(fontStyle: FontStyle.italic),
+            style: context.communityBody1.copyWith(fontStyle: FontStyle.italic),
           ),
           SizedBox(height: 12),
-          Text('Reported by 2 users', style: AppTextStyles.body2),
-          Text('Reasons: Encourages harm', style: AppTextStyles.body2),
+          Text('Reported by 2 users', style: context.communityBody2),
+          Text('Reasons: Encourages harm', style: context.communityBody2),
           Text(
             'Posted 4h ago',
-            style: AppTextStyles.body2.copyWith(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
+            style: context.communityBody2.copyWith(
+              color: context.communityMuted,
             ),
           ),
           SizedBox(height: 16),
@@ -151,7 +148,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.communityBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +159,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
               SizedBox(width: 8),
               Text(
                 'Reported User',
-                style: AppTextStyles.body1.copyWith(
+                style: context.communityBody1.copyWith(
                   color: AppColors.warning,
                   fontWeight: FontWeight.w600,
                 ),
@@ -172,11 +169,11 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
           SizedBox(height: 12),
           Text(
             '@username',
-            style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.w600),
+            style: context.communityBody1.copyWith(fontWeight: FontWeight.w600),
           ),
           SizedBox(height: 8),
-          Text('Reported by 1 user', style: AppTextStyles.body2),
-          Text('Reasons: Harassment', style: AppTextStyles.body2),
+          Text('Reported by 1 user', style: context.communityBody2),
+          Text('Reasons: Harassment', style: context.communityBody2),
           SizedBox(height: 16),
           Row(
             children: [
@@ -201,10 +198,8 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
     return Center(
       child: Text(
         message,
-        style: AppTextStyles.body1.copyWith(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.textMutedDark
-              : AppColors.textMutedLight,
+        style: context.communityBody1.copyWith(
+          color: context.communityMuted,
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 
 class CommentCard extends StatelessWidget {
   final Map<String, dynamic> comment;
@@ -30,9 +31,9 @@ class CommentCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.communitySurface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          border: Border.all(color: context.communityBorder.withValues(alpha: 0.7)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,14 +47,18 @@ class CommentCard extends StatelessWidget {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: isAnonymous ? AppColors.border : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      color: isAnonymous
+                          ? context.communityBorder
+                          : Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       isAnonymous ? '?' : username.substring(0, 1).toUpperCase(),
-                      style: AppTextStyles.body2.copyWith(
-                        color: isAnonymous ? AppColors.textMuted : Theme.of(context).colorScheme.primary,
+                      style: context.communityBody2.copyWith(
+                        color: isAnonymous
+                            ? context.communityMuted
+                            : Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -64,14 +69,17 @@ class CommentCard extends StatelessWidget {
                       children: [
                         Text(
                           isAnonymous ? 'Anonymous' : '@$username',
-                          style: AppTextStyles.body2.copyWith(
+                          style: context.communityBody2.copyWith(
+                            color: context.communityText,
                             fontWeight: FontWeight.w500,
                             fontStyle: isAnonymous ? FontStyle.italic : FontStyle.normal,
                           ),
                         ),
                         Text(
                           ' · $timeAgo',
-                          style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                          style: context.communityBody2.copyWith(
+                            color: context.communityMuted,
+                          ),
                         ),
                       ],
                     ),
@@ -84,7 +92,7 @@ class CommentCard extends StatelessWidget {
             // Content
             Text(
               content,
-              style: AppTextStyles.body1.copyWith(height: 1.5),
+              style: context.communityBody1.copyWith(height: 1.5),
             ),
             const SizedBox(height: 12),
             
@@ -96,13 +104,13 @@ class CommentCard extends StatelessWidget {
                     Icon(
                       isLiked ? Icons.favorite : Icons.favorite_border,
                       size: 16,
-                      color: isLiked ? AppColors.danger : AppColors.textMuted,
+                      color: isLiked ? AppColors.danger : context.communityMuted,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       likes.toString(),
-                      style: AppTextStyles.body2.copyWith(
-                        color: isLiked ? AppColors.danger : AppColors.textMuted,
+                      style: context.communityBody2.copyWith(
+                        color: isLiked ? AppColors.danger : context.communityMuted,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -113,8 +121,8 @@ class CommentCard extends StatelessWidget {
                   onTap: onReplyTap,
                   child: Text(
                     'Reply',
-                    style: AppTextStyles.body2.copyWith(
-                      color: AppColors.textMuted,
+                    style: context.communityBody2.copyWith(
+                      color: context.communityMuted,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

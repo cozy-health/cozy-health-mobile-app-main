@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 
 class PostCard extends StatelessWidget {
   final Map<String, dynamic> post;
@@ -32,9 +33,9 @@ class PostCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.communitySurface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          border: Border.all(color: context.communityBorder.withValues(alpha: 0.7)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,14 +49,18 @@ class PostCard extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: isAnonymous ? AppColors.border : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      color: isAnonymous
+                          ? context.communityBorder
+                          : Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       isAnonymous ? '?' : username.substring(0, 1).toUpperCase(),
-                      style: AppTextStyles.body1.copyWith(
-                        color: isAnonymous ? AppColors.textMuted : Theme.of(context).colorScheme.primary,
+                      style: context.communityBody1.copyWith(
+                        color: isAnonymous
+                            ? context.communityMuted
+                            : Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -67,14 +72,18 @@ class PostCard extends StatelessWidget {
                       children: [
                         Text(
                           isAnonymous ? 'Anonymous' : '@$username',
-                          style: AppTextStyles.body1.copyWith(
+                          style: context.communityBody1.copyWith(
+                            color: context.communityText,
                             fontWeight: FontWeight.w500,
                             fontStyle: isAnonymous ? FontStyle.italic : FontStyle.normal,
                           ),
                         ),
                         Text(
                           timeAgo,
-                          style: AppTextStyles.body2.copyWith(color: AppColors.textMuted, fontSize: 13),
+                          style: context.communityBody2.copyWith(
+                            color: context.communityMuted,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -87,7 +96,7 @@ class PostCard extends StatelessWidget {
             // Content
             Text(
               content,
-              style: AppTextStyles.body1.copyWith(height: 1.5),
+              style: context.communityBody1.copyWith(height: 1.5),
               maxLines: 5,
               overflow: TextOverflow.ellipsis,
             ),
@@ -99,13 +108,13 @@ class PostCard extends StatelessWidget {
                 _buildReaction(
                   icon: isLiked ? Icons.favorite : Icons.favorite_border,
                   count: likes,
-                  color: isLiked ? AppColors.danger : AppColors.textMuted,
+                  color: isLiked ? AppColors.danger : context.communityMuted,
                 ),
                 const SizedBox(width: 24),
                 _buildReaction(
                   icon: Icons.chat_bubble_outline,
                   count: comments,
-                  color: AppColors.textMuted,
+                  color: context.communityMuted,
                 ),
               ],
             ),
@@ -122,7 +131,7 @@ class PostCard extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           count.toString(),
-          style: AppTextStyles.body2.copyWith(
+          style: context.communityBody2.copyWith(
             color: color,
             fontWeight: FontWeight.w500,
           ),

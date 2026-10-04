@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 
 class UserRow extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -36,7 +37,7 @@ class UserRow extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 username.substring(0, 1).toUpperCase(),
-                style: AppTextStyles.body1.copyWith(
+                style: context.communityBody1.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
@@ -49,13 +50,13 @@ class UserRow extends StatelessWidget {
                 children: [
                   Text(
                     '@$username',
-                    style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.w500),
+                    style: context.communityBody1.copyWith(fontWeight: FontWeight.w500),
                   ),
                   if (bio != null && bio.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       bio,
-                      style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                      style: context.communityBody2.copyWith(color: context.communityMuted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -70,14 +71,14 @@ class UserRow extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: isFollowing ? Colors.transparent : Theme.of(context).colorScheme.primary,
-                  border: isFollowing ? Border.all(color: AppColors.border) : null,
+                  border: isFollowing ? Border.all(color: context.communityBorder) : null,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
                   isFollowing ? 'Following' : 'Follow',
-                  style: AppTextStyles.body2.copyWith(
+                  style: context.communityBody2.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: isFollowing ? AppColors.text : Colors.white,
+                    color: isFollowing ? context.communityText : Colors.white,
                   ),
                 ),
               ),

@@ -4,6 +4,7 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_scaffold_padding.dart';
+import '../community_theme.dart';
 import '../widgets/post_card.dart';
 
 class CommunityHubScreen extends StatefulWidget {
@@ -91,7 +92,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
     final bool reduceMotion = MediaQuery.of(context).accessibleNavigation;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.communityBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -107,7 +108,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                   children: [
                     Text(
                       'Community',
-                      style: AppTextStyles.heading1.copyWith(fontSize: 28),
+                      style: context.communityHeading1.copyWith(fontSize: 28),
                     ),
                     IconButton(
                       icon: Icon(
@@ -149,23 +150,23 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                         decoration: BoxDecoration(
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-                              : AppColors.surface,
+                              : context.communitySurface,
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
                             color: isSelected
                                 ? Theme.of(context).colorScheme.primary
-                                : AppColors.border.withValues(alpha: 0.5),
+                                : context.communityBorder.withValues(alpha: 0.7),
                           ),
                         ),
                         child: Text(
                           filter,
-                          style: AppTextStyles.body2.copyWith(
+                          style: context.communityBody2.copyWith(
                             fontWeight: isSelected
                                 ? FontWeight.w600
                                 : FontWeight.w400,
                             color: isSelected
                                 ? Theme.of(context).colorScheme.primary
-                                : AppColors.text,
+                                : context.communityText,
                           ),
                         ),
                       ),
@@ -204,20 +205,18 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.communityBorder),
                 ),
                 alignment: Alignment.center,
                 child: Text('👋', style: TextStyle(fontSize: 48)),
               ),
               SizedBox(height: 24),
-              Text('It\'s quiet here.', style: AppTextStyles.heading2),
+              Text('It\'s quiet here.', style: context.communityHeading2),
               SizedBox(height: 8),
               Text(
                 'Be the first to share.\nOr just read for now — that\'s welcome too.',
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textMutedDark
-                      : AppColors.textMutedLight,
+                style: context.communityBody1.copyWith(
+                  color: context.communityMuted,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -234,7 +233,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                   alignment: Alignment.center,
                   child: Text(
                     'Share something →',
-                    style: AppTextStyles.body1.copyWith(
+                    style: context.communityBody1.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                     ),
@@ -275,7 +274,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                  color: AppColors.border.withValues(alpha: 0.5),
+                  color: context.communityBorder.withValues(alpha: 0.7),
                 ),
               ),
               child: Row(
@@ -283,18 +282,14 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                 children: [
                   Text(
                     'Share something...',
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textMutedDark
-                          : AppColors.textMutedLight,
+                    style: context.communityBody1.copyWith(
+                      color: context.communityMuted,
                     ),
                   ),
                   Icon(
                     Icons.edit,
                     size: 20,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
+                    color: context.communityMuted,
                   ),
                 ],
               ),

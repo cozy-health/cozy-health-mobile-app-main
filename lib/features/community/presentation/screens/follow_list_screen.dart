@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 import '../widgets/user_row.dart';
 
 class FollowListScreen extends StatefulWidget {
@@ -49,9 +50,9 @@ class _FollowListScreenState extends State<FollowListScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.communityBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.communityBackground,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -63,9 +64,7 @@ class _FollowListScreenState extends State<FollowListScreen>
         bottom: TabBar(
           controller: _tabController,
           labelColor: Theme.of(context).colorScheme.primary,
-          unselectedLabelColor: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.textMutedDark
-              : AppColors.textMutedLight,
+          unselectedLabelColor: context.communityMuted,
           indicatorColor: Theme.of(context).colorScheme.primary,
           tabs: [
             Tab(text: 'Following (${_following.length})'),
@@ -92,10 +91,8 @@ class _FollowListScreenState extends State<FollowListScreen>
           padding: const EdgeInsets.all(32),
           child: Text(
             emptyMessage,
-            style: AppTextStyles.body1.copyWith(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
+            style: context.communityBody1.copyWith(
+              color: context.communityMuted,
             ),
             textAlign: TextAlign.center,
           ),

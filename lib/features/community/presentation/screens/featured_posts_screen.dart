@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 
 class FeaturedPostsScreen extends StatelessWidget {
   const FeaturedPostsScreen({super.key});
@@ -9,15 +10,15 @@ class FeaturedPostsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.communityBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.communityBackground,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: context.communityText),
           onPressed: () => context.pop(),
         ),
-        title: Text('Featured', style: AppTextStyles.heading3),
+        title: Text('Featured', style: context.communityHeading3),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -26,7 +27,7 @@ class FeaturedPostsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('This week', style: AppTextStyles.heading2),
+              Text('This week', style: context.communityHeading2),
               SizedBox(height: 16),
               _buildFeaturedCard(
                 context: context,
@@ -47,12 +48,12 @@ class FeaturedPostsScreen extends StatelessWidget {
               ),
               SizedBox(height: 48),
 
-              Text('From the team', style: AppTextStyles.heading2),
+              Text('From the team', style: context.communityHeading2),
               SizedBox(height: 16),
               Text(
                 'These posts moved us this week.\nWe hope they reach someone who needs them.',
-                style: AppTextStyles.body1.copyWith(
-                  color: AppColors.textMuted,
+                style: context.communityBody1.copyWith(
+                  color: context.communityMuted,
                   height: 1.5,
                 ),
               ),
@@ -76,12 +77,12 @@ class FeaturedPostsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isPrimary
             ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-            : AppColors.surface,
+            : context.communitySurface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isPrimary
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
-              : AppColors.border,
+              : context.communityBorder,
         ),
       ),
       child: Column(
@@ -94,7 +95,7 @@ class FeaturedPostsScreen extends StatelessWidget {
                 SizedBox(width: 8),
                 Text(
                   'Featured',
-                  style: AppTextStyles.body2.copyWith(
+                  style: context.communityBody2.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -105,7 +106,7 @@ class FeaturedPostsScreen extends StatelessWidget {
           ],
           Text(
             content,
-            style: AppTextStyles.heading3.copyWith(
+            style: context.communityHeading3.copyWith(
               fontFamily: 'Georgia',
               height: 1.5,
               fontWeight: FontWeight.w400,
@@ -114,7 +115,7 @@ class FeaturedPostsScreen extends StatelessWidget {
           SizedBox(height: 12),
           Text(
             '— @$username',
-            style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.w500),
+            style: context.communityBody1.copyWith(fontWeight: FontWeight.w500),
           ),
           SizedBox(height: 24),
           Row(
@@ -132,12 +133,12 @@ class FeaturedPostsScreen extends StatelessWidget {
   Widget _buildReaction(IconData icon, int count) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: AppColors.textMuted),
+        Icon(icon, size: 20, color: context.communityMuted),
         SizedBox(width: 6),
         Text(
           count.toString(),
-          style: AppTextStyles.body2.copyWith(
-            color: AppColors.textMuted,
+          style: context.communityBody2.copyWith(
+            color: context.communityMuted,
             fontWeight: FontWeight.w500,
           ),
         ),

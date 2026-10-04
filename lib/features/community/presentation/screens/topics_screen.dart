@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 
 class TopicsScreen extends StatelessWidget {
   const TopicsScreen({super.key});
@@ -20,9 +21,9 @@ class TopicsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.communityBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.communityBackground,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -31,7 +32,7 @@ class TopicsScreen extends StatelessWidget {
           ),
           onPressed: () => context.pop(),
         ),
-        title: Text('Topics', style: AppTextStyles.heading3),
+        title: Text('Topics', style: context.communityHeading3),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -53,7 +54,7 @@ class TopicsScreen extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: context.communityBorder.withValues(alpha: 0.7),
                   ),
                 ),
                 child: Row(
@@ -65,16 +66,12 @@ class TopicsScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(topic['title'], style: AppTextStyles.heading3),
+                          Text(topic['title'], style: context.communityHeading3),
                           SizedBox(height: 2),
                           Text(
                             '${topic['posts']} posts',
-                            style: AppTextStyles.body2.copyWith(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? AppColors.textMutedDark
-                                  : AppColors.textMutedLight,
+                            style: context.communityBody2.copyWith(
+                              color: context.communityMuted,
                             ),
                           ),
                         ],
@@ -83,9 +80,7 @@ class TopicsScreen extends StatelessWidget {
                     Icon(
                       Icons.arrow_forward_ios,
                       size: 16,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textMutedDark
-                          : AppColors.textMutedLight,
+                      color: context.communityMuted,
                     ),
                   ],
                 ),

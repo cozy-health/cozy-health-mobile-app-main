@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 
 class DirectMessagesScreen extends StatefulWidget {
   final Map<String, dynamic> extra;
@@ -69,7 +70,7 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
               leading: Icon(Icons.flag_outlined, color: AppColors.danger),
               title: Text(
                 'Report conversation',
-                style: AppTextStyles.body1.copyWith(color: AppColors.danger),
+                style: context.communityBody1.copyWith(color: AppColors.danger),
               ),
               onTap: () => Navigator.pop(context),
             ),
@@ -84,9 +85,9 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
     final username = widget.extra['username'] as String? ?? 'user';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.communityBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.communityBackground,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -95,7 +96,7 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
           ),
           onPressed: () => context.pop(),
         ),
-        title: Text('@$username', style: AppTextStyles.heading3),
+        title: Text('@$username', style: context.communityHeading3),
         centerTitle: true,
         actions: [
           IconButton(
@@ -130,30 +131,27 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
                           decoration: BoxDecoration(
                             color: isMine
                                 ? Theme.of(context).colorScheme.primary
-                                : AppColors.surface,
+                                : context.communitySurface,
                             borderRadius: BorderRadius.circular(16),
                             border: isMine
                                 ? null
-                                : Border.all(color: AppColors.border),
+                                : Border.all(color: context.communityBorder),
                           ),
                           constraints: BoxConstraints(
                             maxWidth: MediaQuery.of(context).size.width * 0.75,
                           ),
                           child: Text(
                             message['content'],
-                            style: AppTextStyles.body1.copyWith(
-                              color: isMine ? Colors.white : AppColors.text,
+                            style: context.communityBody1.copyWith(
+                              color: isMine ? Colors.white : context.communityText,
                             ),
                           ),
                         ),
                         SizedBox(height: 4),
                         Text(
                           message['time'],
-                          style: AppTextStyles.body2.copyWith(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? AppColors.textMutedDark
-                                : AppColors.textMutedLight,
+                          style: context.communityBody2.copyWith(
+                            color: context.communityMuted,
                             fontSize: 12,
                           ),
                         ),
@@ -184,10 +182,8 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
                       controller: _messageController,
                       decoration: InputDecoration(
                         hintText: 'Message...',
-                        hintStyle: AppTextStyles.body1.copyWith(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? AppColors.textMutedDark
-                              : AppColors.textMutedLight,
+                        hintStyle: context.communityBody1.copyWith(
+                          color: context.communityMuted,
                         ),
                         border: InputBorder.none,
                         isDense: true,

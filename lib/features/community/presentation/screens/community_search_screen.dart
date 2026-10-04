@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 
 class CommunitySearchScreen extends StatefulWidget {
   const CommunitySearchScreen({super.key});
@@ -36,9 +37,9 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.communityBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.communityBackground,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -60,16 +61,14 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: context.communityBorder.withValues(alpha: 0.7),
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.search,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textMutedDark
-                          : AppColors.textMutedLight,
+                    color: context.communityMuted,
                       size: 20,
                     ),
                     SizedBox(width: 12),
@@ -79,17 +78,15 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
                         focusNode: _focusNode,
                         decoration: InputDecoration(
                           hintText: 'Search community...',
-                          hintStyle: AppTextStyles.body1.copyWith(
+                          hintStyle: context.communityBody1.copyWith(
                             color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? AppColors.textMutedDark
-                                : AppColors.textMutedLight,
+                                context.communityMuted,
                           ),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
-                        style: AppTextStyles.body1,
+                        style: context.communityBody1,
                         onChanged: (v) {
                           setState(() {});
                         },
@@ -104,9 +101,7 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
               controller: _tabController,
               labelColor: Theme.of(context).colorScheme.primary,
               unselectedLabelColor:
-                  Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
+                  context.communityMuted,
               indicatorColor: Theme.of(context).colorScheme.primary,
               tabs: const [
                 Tab(text: 'Posts'),
@@ -134,10 +129,8 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
     return Center(
       child: Text(
         message,
-        style: AppTextStyles.body1.copyWith(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.textMutedDark
-              : AppColors.textMutedLight,
+        style: context.communityBody1.copyWith(
+          color: context.communityMuted,
         ),
       ),
     );

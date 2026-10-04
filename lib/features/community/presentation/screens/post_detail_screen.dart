@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 import '../widgets/comment_card.dart';
 import '../widgets/report_sheet.dart';
 
@@ -86,7 +87,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               leading: Icon(Icons.flag_outlined, color: AppColors.danger),
               title: Text(
                 'Report',
-                style: AppTextStyles.body1.copyWith(color: AppColors.danger),
+                style: context.communityBody1.copyWith(color: AppColors.danger),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -120,9 +121,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final isLiked = widget.post['isLiked'] as bool? ?? false;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.communityBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.communityBackground,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -161,8 +162,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           height: 48,
                           decoration: BoxDecoration(
                             color: isAnonymous
-                                ? AppColors.border
-                                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                ? context.communityBorder
+                                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
                             shape: BoxShape.circle,
                           ),
                           alignment: Alignment.center,
@@ -170,9 +171,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             isAnonymous
                                 ? '?'
                                 : username.substring(0, 1).toUpperCase(),
-                            style: AppTextStyles.body1.copyWith(
+                            style: context.communityBody1.copyWith(
                               color: isAnonymous
-                                  ? AppColors.textMuted
+                                  ? context.communityMuted
                                   : Theme.of(context).colorScheme.primary,
                               fontWeight: FontWeight.w600,
                             ),
@@ -185,7 +186,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             children: [
                               Text(
                                 isAnonymous ? 'Anonymous' : '@$username',
-                                style: AppTextStyles.body1.copyWith(
+                                style: context.communityBody1.copyWith(
+                                  color: context.communityText,
                                   fontWeight: FontWeight.w600,
                                   fontStyle: isAnonymous
                                       ? FontStyle.italic
@@ -194,12 +196,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                               ),
                               Text(
                                 timeAgo,
-                                style: AppTextStyles.body2.copyWith(
+                                style: context.communityBody2.copyWith(
                                   color:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? AppColors.textMutedDark
-                                      : AppColors.textMutedLight,
+                                      context.communityMuted,
                                 ),
                               ),
                             ],
@@ -232,25 +231,21 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           count: likes,
                           color: isLiked
                               ? AppColors.danger
-                              : AppColors.textMuted,
+                              : context.communityMuted,
                         ),
                         SizedBox(width: 12),
                         _buildReactionCard(
                           icon: Icons
                               .sign_language, // using generic icon for support/pray
                           count: 3,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? AppColors.textMutedDark
-                              : AppColors.textMutedLight,
+                          color: context.communityMuted,
                         ),
                         SizedBox(width: 12),
                         _buildReactionCard(
                           icon: Icons
                               .emoji_emotions_outlined, // using generic icon for flex/strength
                           count: 2,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? AppColors.textMutedDark
-                              : AppColors.textMutedLight,
+                          color: context.communityMuted,
                         ),
                       ],
                     ),
@@ -261,7 +256,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     // Comments Header
                     Text(
                       'Comments (${_comments.length})',
-                      style: AppTextStyles.heading2,
+                      style: context.communityHeading2,
                     ),
                     SizedBox(height: 16),
 
@@ -313,7 +308,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     alignment: Alignment.center,
                     child: Text(
                       'S',
-                      style: AppTextStyles.body2.copyWith(
+                      style: context.communityBody2.copyWith(
                         color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
@@ -326,10 +321,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       focusNode: _commentFocusNode,
                       decoration: InputDecoration(
                         hintText: 'Add a comment...',
-                        hintStyle: AppTextStyles.body1.copyWith(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? AppColors.textMutedDark
-                              : AppColors.textMutedLight,
+                        hintStyle: context.communityBody1.copyWith(
+                          color: context.communityMuted,
                         ),
                         border: InputBorder.none,
                         isDense: true,
@@ -367,7 +360,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.communityBorder),
       ),
       child: Row(
         children: [
@@ -375,7 +368,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           SizedBox(width: 8),
           Text(
             count.toString(),
-            style: AppTextStyles.body2.copyWith(
+            style: context.communityBody2.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
             ),

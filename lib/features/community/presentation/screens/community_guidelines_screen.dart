@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 
 class CommunityGuidelinesScreen extends StatelessWidget {
   const CommunityGuidelinesScreen({super.key});
@@ -10,15 +11,15 @@ class CommunityGuidelinesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.communityBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.communityBackground,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: context.communityText),
           onPressed: () => context.pop(),
         ),
-        title: Text('Guidelines', style: AppTextStyles.heading3),
+        title: Text('Guidelines', style: context.communityHeading3),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -42,69 +43,77 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Our community\nguidelines',
-                  style: AppTextStyles.heading1.copyWith(fontSize: 28),
+                  style: context.communityHeading1.copyWith(fontSize: 28),
                 ),
               ),
               SizedBox(height: 32),
 
               _buildGuideline(
+                context,
                 '💛',
                 'Be kind.',
                 'Everyone here is going through something. Assume good intent. Speak to people the way you\'d want to be spoken to on your hardest day.',
               ),
               _buildGuideline(
+                context,
                 '🤝',
                 'Be honest.',
                 'Share what\'s real for you. You don\'t have to perform wellness or hide struggle. Both are welcome.',
               ),
               _buildGuideline(
+                context,
                 '🛡',
                 'Be safe.',
                 'Don\'t encourage harm — to yourself or others. If you\'re in crisis, we have support for you. If someone else is, help them find it.',
               ),
               _buildGuideline(
+                context,
                 '🔒',
                 'Be private.',
                 'What\'s shared here stays here. Don\'t screenshot, share, or repost. Don\'t share anyone\'s personal information.',
               ),
               _buildGuideline(
+                context,
                 '📍',
                 'Be here.',
                 'This isn\'t a place to sell, promote, recruit, or recruit for anything. It\'s a place to be human with other humans.',
               ),
               _buildGuideline(
+                context,
                 '🎁',
                 'Be generous.',
                 'If you have the energy, support someone. A kind reply goes further than you think.',
               ),
               _buildGuideline(
+                context,
                 '⏳',
                 'Be patient.',
                 'Moderators are human. Reports take time to process. We get to them.',
               ),
 
               SizedBox(height: 32),
-              Divider(color: AppColors.border),
+              Divider(color: context.communityBorder),
               SizedBox(height: 32),
 
-              Text('What gets you removed', style: AppTextStyles.heading2),
+              Text('What gets you removed', style: context.communityHeading2),
               SizedBox(height: 16),
-              _buildBullet('Harassment, hate speech, or threats'),
+              _buildBullet(context, 'Harassment, hate speech, or threats'),
               _buildBullet(
+                context,
                 'Content that encourages self-harm or eating disorders',
               ),
-              _buildBullet('Sharing someone\'s private information'),
-              _buildBullet('Spam, scams, or promotional content'),
-              _buildBullet('Sexual content involving minors'),
-              _buildBullet('Impersonation'),
+              _buildBullet(context, 'Sharing someone\'s private information'),
+              _buildBullet(context, 'Spam, scams, or promotional content'),
+              _buildBullet(context, 'Sexual content involving minors'),
+              _buildBullet(context, 'Impersonation'),
 
               SizedBox(height: 32),
-              Divider(color: AppColors.border),
+              Divider(color: context.communityBorder),
               SizedBox(height: 32),
 
               Text(
                 'What happens if you\'re reported',
-                style: AppTextStyles.heading2,
+                style: context.communityHeading2,
               ),
               SizedBox(height: 16),
               Text(
@@ -113,18 +122,18 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                 '• Temporary suspension (3–30 days)\n'
                 '• Permanent removal\n\n'
                 'You can appeal any decision by emailing appeals@cozyhealth.app.',
-                style: AppTextStyles.body1.copyWith(height: 1.5),
+                style: context.communityBody1.copyWith(height: 1.5),
               ),
 
               SizedBox(height: 32),
-              Divider(color: AppColors.border),
+              Divider(color: context.communityBorder),
               SizedBox(height: 32),
 
-              Text('If you\'re in crisis', style: AppTextStyles.heading2),
+              Text('If you\'re in crisis', style: context.communityHeading2),
               SizedBox(height: 16),
               Text(
                 'Posting about it is okay. We care. And we\'ll also send you resources. You don\'t have to go through this alone.',
-                style: AppTextStyles.body1.copyWith(height: 1.5),
+                style: context.communityBody1.copyWith(height: 1.5),
               ),
               SizedBox(height: 24),
 
@@ -142,7 +151,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                     children: [
                       Text(
                         'View crisis resources',
-                        style: AppTextStyles.body1.copyWith(
+                        style: context.communityBody1.copyWith(
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -165,14 +174,14 @@ class CommunityGuidelinesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGuideline(String icon, String title, String body) {
+  Widget _buildGuideline(BuildContext context, String icon, String title, String body) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.communitySurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border: Border.all(color: context.communityBorder.withValues(alpha: 0.7)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,15 +190,15 @@ class CommunityGuidelinesScreen extends StatelessWidget {
             children: [
               Text(icon, style: TextStyle(fontSize: 24)),
               SizedBox(width: 12),
-              Text(title, style: AppTextStyles.heading3),
+              Text(title, style: context.communityHeading3),
             ],
           ),
           SizedBox(height: 12),
           Text(
             body,
-            style: AppTextStyles.body1.copyWith(
+            style: context.communityBody1.copyWith(
               height: 1.5,
-              color: AppColors.text,
+              color: context.communityText,
             ),
           ),
         ],
@@ -197,19 +206,19 @@ class CommunityGuidelinesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBullet(String text) {
+  Widget _buildBullet(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('• ', style: TextStyle(fontSize: 18, color: AppColors.text)),
+          Text('• ', style: TextStyle(fontSize: 18, color: context.communityText)),
           Expanded(
             child: Text(
               text,
-              style: AppTextStyles.body1.copyWith(
+              style: context.communityBody1.copyWith(
                 height: 1.5,
-                color: AppColors.text,
+                color: context.communityText,
               ),
             ),
           ),

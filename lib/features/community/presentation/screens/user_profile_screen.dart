@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../widgets/post_card.dart';
 import '../widgets/report_sheet.dart';
@@ -75,7 +76,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               leading: Icon(Icons.flag_outlined, color: AppColors.danger),
               title: Text(
                 'Report user',
-                style: AppTextStyles.body1.copyWith(color: AppColors.danger),
+                style: context.communityBody1.copyWith(color: AppColors.danger),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -102,9 +103,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final username = widget.extra['username'] as String? ?? 'user';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.communityBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.communityBackground,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -141,7 +142,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   alignment: Alignment.center,
                   child: Text(
                     username.substring(0, 1).toUpperCase(),
-                    style: AppTextStyles.heading1.copyWith(
+                    style: context.communityHeading1.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                       fontSize: 40,
                     ),
@@ -153,16 +154,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               // Name & Join Date
               Text(
                 '@$username',
-                style: AppTextStyles.heading1.copyWith(fontSize: 28),
+                style: context.communityHeading1.copyWith(fontSize: 28),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 4),
               Text(
                 'Joined March 2026',
-                style: AppTextStyles.body2.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textMutedDark
-                      : AppColors.textMutedLight,
+                style: context.communityBody2.copyWith(
+                  color: context.communityMuted,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -171,7 +170,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               // Bio
               Text(
                 '"Trying to be kinder to myself."',
-                style: AppTextStyles.body1.copyWith(
+                style: context.communityBody1.copyWith(
                   fontStyle: FontStyle.italic,
                 ),
                 textAlign: TextAlign.center,
@@ -211,7 +210,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.border.withValues(alpha: 0.5),
+                        color: context.communityBorder.withValues(alpha: 0.7),
                       ),
                     ),
                     child: IconButton(
@@ -232,7 +231,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               SizedBox(height: 48),
 
               // Recent Posts
-              Text('Recent posts', style: AppTextStyles.heading2),
+              Text('Recent posts', style: context.communityHeading2),
               SizedBox(height: 16),
 
               ..._recentPosts.map(
@@ -265,18 +264,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border: Border.all(color: context.communityBorder.withValues(alpha: 0.7)),
       ),
       child: Column(
         children: [
-          Text(count, style: AppTextStyles.heading2),
+          Text(count, style: context.communityHeading2),
           SizedBox(height: 4),
           Text(
             label,
-            style: AppTextStyles.body2.copyWith(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
+            style: context.communityBody2.copyWith(
+              color: context.communityMuted,
             ),
           ),
         ],

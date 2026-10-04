@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../community_theme.dart';
 
 enum PostVisibility { public, followers, anonymous }
 
@@ -31,16 +32,16 @@ class VisibilitySheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.communitySurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Who can see this?', style: AppTextStyles.heading3),
+          Text('Who can see this?', style: context.communityHeading3),
           const SizedBox(height: 16),
           _buildOption(
             context,
@@ -69,7 +70,7 @@ class VisibilitySheet extends StatelessWidget {
             ),
             child: Text(
               'Note: Moderators can always see your username for safety.',
-              style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+              style: context.communityBody2.copyWith(color: context.communityMuted),
             ),
           ),
         ],
@@ -96,15 +97,20 @@ class VisibilitySheet extends StatelessWidget {
           children: [
             Icon(
               isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: isSelected ? Theme.of(context).colorScheme.primary : AppColors.textMuted,
+              color: isSelected ? Theme.of(context).colorScheme.primary : context.communityMuted,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.w500)),
-                  Text(subtitle, style: AppTextStyles.body2.copyWith(color: AppColors.textMuted)),
+                  Text(
+                    title,
+                    style: context.communityBody1.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(subtitle, style: context.communityBody2.copyWith(color: context.communityMuted)),
                 ],
               ),
             ),
