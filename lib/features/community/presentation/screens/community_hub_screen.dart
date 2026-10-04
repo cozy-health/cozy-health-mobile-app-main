@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_scaffold_padding.dart';
 import '../community_theme.dart';
 import '../widgets/post_card.dart';

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../community_theme.dart';
 
 class PostCard extends StatelessWidget {
@@ -131,7 +130,8 @@ class PostCard extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           count.toString(),
-          style: context.communityBody2.copyWith(
+          style: TextStyle(
+            fontSize: 14,
             color: color,
             fontWeight: FontWeight.w500,
           ),

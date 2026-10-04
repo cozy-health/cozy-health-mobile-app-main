@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../community_theme.dart';
 
 class FeaturedPostsScreen extends StatelessWidget {
@@ -120,9 +118,9 @@ class FeaturedPostsScreen extends StatelessWidget {
           SizedBox(height: 24),
           Row(
             children: [
-              _buildReaction(Icons.favorite_border, likes),
+              _buildReaction(context, Icons.favorite_border, likes),
               SizedBox(width: 24),
-              _buildReaction(Icons.chat_bubble_outline, comments),
+              _buildReaction(context, Icons.chat_bubble_outline, comments),
             ],
           ),
         ],
@@ -130,7 +128,7 @@ class FeaturedPostsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildReaction(IconData icon, int count) {
+  Widget _buildReaction(BuildContext context, IconData icon, int count) {
     return Row(
       children: [
         Icon(icon, size: 20, color: context.communityMuted),
