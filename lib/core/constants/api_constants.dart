@@ -46,24 +46,7 @@ class ApiConstants {
   | Mood Check-ins
   |--------------------------------------------------------------------------
   */
-  static const String moodCheckins = '/mood-checkins';
-
   static const String moodEntries = '/mood-entries';
-
-  static const String moodCheckinToday = '/mood-checkins/today';
-
-  /*
-  |--------------------------------------------------------------------------
-  | Mood Lookup Data
-  |--------------------------------------------------------------------------
-  */
-  static const String feelings = '/feelings';
-
-  static const String feelingExpressions = '/feeling-expressions';
-
-  static const String feelingCauses = '/feeling-causes';
-
-  static const String copingMechanisms = '/coping-mechanisms';
 
   /*
   |--------------------------------------------------------------------------

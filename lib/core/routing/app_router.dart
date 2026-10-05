@@ -2,7 +2,6 @@ import '../security_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
-import 'package:cozy_health/features/mood_check_in/presentation/screens/coping_mechanisms_screen.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_detail_screen.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_result_screen.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_selection_screen.dart';
@@ -54,8 +53,6 @@ import '../../features/insights/presentation/screens/activity_mood_screen.dart';
 import '../../features/insights/presentation/screens/monthly_report_screen.dart';
 
 import '../../features/mood_check_in/presentation/screens/mood_feeling_screen.dart';
-import '../../features/mood_check_in/presentation/screens/mood_reason_screen.dart';
-import '../../features/mood_check_in/presentation/screens/mood_journal_screen.dart';
 import '../../features/mood_check_in/presentation/screens/mood_success_screen.dart';
 import '../../features/journal/presentation/screens/journal_screen.dart';
 import '../../features/journal/presentation/screens/voice_recording_screen.dart';
@@ -154,8 +151,6 @@ class AppRouter {
   static const String insightsMonthlyReport = '/insights/monthly-report';
 
   static const String moodFeeling = '/mood-feeling';
-  static const String moodReason = '/mood-reason';
-  static const String moodJournal = '/mood-journal';
   static const String moodSuccess = '/mood-success';
   static const String moodHistory = '/mood-history';
   static const String moodDetail = '/mood-detail';
@@ -190,7 +185,6 @@ class AppRouter {
   static const String featuredPosts = '/community/featured';
   static const String topics = '/community/topics';
 
-  static const String copingMechanisms = '/coping-mechanisms';
   static const String crisisHub = '/crisis';
   static const String crisisOverlay = '/crisis-overlay';
   static const String crisisContact = '/crisis-contact';
@@ -307,33 +301,6 @@ class AppRouter {
         ),
       ),
       GoRoute(
-        path: moodReason,
-        name: 'moodReason',
-        builder: (_, state) {
-          final map = state.extra is Map ? (state.extra as Map) : null;
-          return MoodReasonScreen(
-            selectedFeelingExpId: (map?['selectedFeelingExpId'] as int?) ?? 1,
-            intensity: (map?['intensity'] as int?) ?? 3,
-          );
-        },
-      ),
-      GoRoute(
-        path: moodJournal,
-        name: 'moodJournal',
-        builder: (_, state) {
-          final extra = state.extra as Map<String, dynamic>? ?? {};
-
-          return MoodJournalScreen(
-            selectedFeelingExpId: extra['feeling_exp_id'] as int? ?? 1,
-            intensity: extra['intensity'] as int? ?? 5,
-            selectedReasonIds: List<int>.from(extra['reason_ids'] ?? []),
-            selectedCopingIds: List<int>.from(
-              extra['coping_mechanism_ids'] ?? [],
-            ),
-          );
-        },
-      ),
-      GoRoute(
         path: moodSuccess,
         name: 'moodSuccess',
         builder: (_, __) => const MoodSuccessScreen(
@@ -375,19 +342,6 @@ class AppRouter {
         path: quizResultDetail,
         name: 'quizResultDetail',
         builder: (_, state) => QuizResultDetailScreen(extra: _extraMap(state)),
-      ),
-      GoRoute(
-        path: copingMechanisms,
-        name: 'copingMechanisms',
-        builder: (_, state) {
-          final extra = state.extra as Map<String, dynamic>? ?? {};
-
-          return CopingMechanismsScreen(
-            selectedFeelingExpId: extra['feeling_exp_id'] as int? ?? 1,
-            intensity: extra['intensity'] as int? ?? 5,
-            selectedReasonIds: List<int>.from(extra['reason_ids'] ?? []),
-          );
-        },
       ),
       GoRoute(
         path: crisisHub,
