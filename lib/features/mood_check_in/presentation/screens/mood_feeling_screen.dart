@@ -270,6 +270,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
               ),
             ),
             _BottomActions(
+              moodSelection: _step == 1,
               showSkip: _step >= 3 && _step <= 8,
               label: _step == _totalSteps ? 'Save Entry' : 'Continue',
               enabled: _canContinue && !_isSaving,
@@ -1598,6 +1599,7 @@ class _ReviewRow extends StatelessWidget {
 
 class _BottomActions extends StatelessWidget {
   const _BottomActions({
+    required this.moodSelection,
     required this.showSkip,
     required this.label,
     required this.enabled,
@@ -1606,6 +1608,7 @@ class _BottomActions extends StatelessWidget {
     required this.onSkip,
   });
 
+  final bool moodSelection;
   final bool showSkip;
   final String label;
   final bool enabled;
@@ -1623,6 +1626,12 @@ class _BottomActions extends StatelessWidget {
           _PrimaryButton(
             label: busy ? 'Saving...' : label,
             onPressed: enabled ? onContinue : null,
+            disabledBackgroundColor: moodSelection
+                ? Theme.of(context).colorScheme.surfaceContainerHighest
+                : null,
+            disabledForegroundColor: moodSelection
+                ? Theme.of(context).colorScheme.onSurfaceVariant
+                : null,
           ),
           if (showSkip) ...[
             const SizedBox(height: 10),
@@ -1635,10 +1644,17 @@ class _BottomActions extends StatelessWidget {
 }
 
 class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton({required this.label, required this.onPressed});
+  const _PrimaryButton({
+    required this.label,
+    required this.onPressed,
+    this.disabledBackgroundColor,
+    this.disabledForegroundColor,
+  });
 
   final String label;
   final VoidCallback? onPressed;
+  final Color? disabledBackgroundColor;
+  final Color? disabledForegroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1649,7 +1665,9 @@ class _PrimaryButton extends StatelessWidget {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
-          disabledBackgroundColor: Theme.of(context).colorScheme.outline,
+          disabledBackgroundColor:
+              disabledBackgroundColor ?? Theme.of(context).colorScheme.outline,
+          disabledForegroundColor: disabledForegroundColor,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
           elevation: 0,
           shape: RoundedRectangleBorder(
