@@ -148,6 +148,20 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         child: const _Header(),
                       ),
+                      InkWell(
+                        onTap: () => context.push(AppRouter.crisisHub),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            'Need help now?',
+                            style: AppTextStyles.body2.copyWith(
+                              fontSize: 13,
+                              color: AppColors.crisisPrimary,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 24),
                       if (dynamicState == HomeDashboardState.firstTime)
                         _AnimatedIn(

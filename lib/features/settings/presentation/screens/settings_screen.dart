@@ -148,6 +148,20 @@ class SettingsScreen extends StatelessWidget {
               SizedBox(height: 32),
 
               _SettingsSection(
+                title: 'CRISIS SUPPORT',
+                children: [
+                  _SettingsRow(
+                    icon: Icons.favorite_outline,
+                    label: 'Crisis Resources',
+                    subtitle: 'Hotlines, safety plan, grounding',
+                    emphasisColor: AppColors.crisisPrimary,
+                    onTap: () => context.push(AppRouter.crisisHub),
+                  ),
+                ],
+              ),
+              SizedBox(height: 32),
+
+              _SettingsSection(
                 title: 'PREFERENCES',
                 children: [
                   _SettingsRow(
@@ -482,6 +496,7 @@ class _SettingsRow extends StatelessWidget {
   final String label;
   final String? subtitle;
   final bool isDanger;
+  final Color? emphasisColor;
   final VoidCallback onTap;
 
   const _SettingsRow({
@@ -489,17 +504,21 @@ class _SettingsRow extends StatelessWidget {
     required this.label,
     this.subtitle,
     this.isDanger = false,
+    this.emphasisColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = isDanger
-        ? AppColors.danger
-        : Theme.of(context).colorScheme.onSurface;
-    final iconColor = isDanger
-        ? AppColors.danger
-        : Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textMuted;
+    final color =
+        emphasisColor ??
+        (isDanger ? AppColors.danger : Theme.of(context).colorScheme.onSurface);
+    final iconColor =
+        emphasisColor ??
+        (isDanger
+            ? AppColors.danger
+            : Theme.of(context).textTheme.bodyMedium?.color ??
+                  AppColors.textMuted);
 
     return Material(
       color: Theme.of(context).colorScheme.surface,
@@ -536,7 +555,8 @@ class _SettingsRow extends StatelessWidget {
                           Text(
                             subtitle!,
                             style: AppTextStyles.body2.copyWith(
-                              color: Theme.of(context).brightness ==
+                              color:
+                                  Theme.of(context).brightness ==
                                       Brightness.dark
                                   ? AppColors.textMutedDark
                                   : AppColors.textMutedLight,
