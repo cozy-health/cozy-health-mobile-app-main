@@ -52,11 +52,11 @@ class MoodSuccessScreen extends StatelessWidget {
                         fontFamily: 'Outfit',
                         fontSize: 52,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF00C853),
+                        color: AppColors.success,
                         height: 1.0,
                         shadows: [
                           Shadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -73,6 +73,7 @@ class MoodSuccessScreen extends StatelessWidget {
               Text(
                 'Welldone $userName',
                 style: AppTextStyles.heading1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                 ),
@@ -84,7 +85,7 @@ class MoodSuccessScreen extends StatelessWidget {
               Text(
                 'You have completed the mood check in for today',
                 style: AppTextStyles.body1.copyWith(
-                  color: AppColors.grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -96,7 +97,7 @@ class MoodSuccessScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: EdgeInsets.all(4.w),
                 decoration: BoxDecoration(
-                  color: AppColors.lightGrey,
+                  color: Theme.of(context).colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(
@@ -105,6 +106,7 @@ class MoodSuccessScreen extends StatelessWidget {
                     Text(
                       'Mood Summary',
                       style: AppTextStyles.heading2.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
@@ -114,21 +116,27 @@ class MoodSuccessScreen extends StatelessWidget {
 
                     Text(
                       'Feeling: $selectedFeeling',
-                      style: AppTextStyles.body1,
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
 
                     1.sh,
 
                     Text(
                       'Reasons: ${selectedReasons.join(', ')}',
-                      style: AppTextStyles.body1,
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
 
                     1.sh,
 
                     Text(
                       'Coping: ${selectedCoping.join(', ')}',
-                      style: AppTextStyles.body1,
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
 
                     if (journalText.isNotEmpty) ...[
@@ -137,6 +145,7 @@ class MoodSuccessScreen extends StatelessWidget {
                       Text(
                         'Journal:',
                         style: AppTextStyles.body1.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -146,7 +155,7 @@ class MoodSuccessScreen extends StatelessWidget {
                       Text(
                         journalText,
                         style: AppTextStyles.body1.copyWith(
-                          color: AppColors.grey,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
