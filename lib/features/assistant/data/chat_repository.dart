@@ -77,7 +77,7 @@ class ChatRepository {
 
   Future<void> updateMessageStatus(String msgId, String status) async {
     // We fetch, update, save
-    final msg = await _local.getChatMessage(msgId);
+    final msg = _local.getChatMessage(msgId);
     if (msg != null) {
       await _local.saveChatMessage(msg); // core.ChatMessage doesn't have a settable status right now, but it's okay just to save it back.
       await _local.enqueueSync(type: 'chat_message', action: 'upsert', recordId: msg.id, payload: msg.toJson());

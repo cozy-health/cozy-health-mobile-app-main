@@ -62,7 +62,7 @@ class SubscriptionRepository {
   }
 
   Future<SubscriptionStatus> purchase(String plan) async {
-    final current = await _local.getSubscriptionStatus();
+    final current = _local.getSubscriptionStatus();
     final updated = (current ?? SubscriptionStatus(
       id: 'sub_${DateTime.now().millisecondsSinceEpoch}',
       isActive: false,
@@ -88,7 +88,7 @@ class SubscriptionRepository {
   }
 
   Future<void> cancel() async {
-    final current = await _local.getSubscriptionStatus();
+    final current = _local.getSubscriptionStatus();
     if (current != null) {
       final updated = current.copyWith(
         isActive: false,
