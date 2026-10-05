@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/api/api_exceptions.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../data/auth_service.dart';
 import '../widgets/auth_ui.dart';
 
