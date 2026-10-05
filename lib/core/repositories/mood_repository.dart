@@ -79,25 +79,6 @@ class MoodRepository {
     _local.processSyncQueue();
   }
 
-  Future<MoodStats?> fetchStats() async {
-    try {
-      final response = await ApiClient.instance.get('/mood-entries/stats');
-      final data = response.data;
-      if (data is Map<String, dynamic>) {
-        final stats = data['data'];
-        if (stats is Map) {
-          return MoodStats.fromJson(Map<String, dynamic>.from(stats));
-        }
-        if (!data.containsKey('data')) return MoodStats.fromJson(data);
-      }
-      debugPrint('Unexpected mood stats response shape: ${data.runtimeType}');
-      return null;
-    } catch (e) {
-      debugPrint('Fetch mood stats failed: $e');
-      return null;
-    }
-  }
-
   /// Alias for saveMoodEntry — some UI code calls save() directly.
   Future<MoodEntry> save(MoodEntry entry) => saveMoodEntry(entry);
 }
