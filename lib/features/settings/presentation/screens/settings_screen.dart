@@ -213,6 +213,12 @@ class SettingsScreen extends StatelessWidget {
                     label: 'Connected Apps',
                     onTap: () => context.push(AppRouter.connectedApps),
                   ),
+                  _SettingsRow(
+                    icon: Icons.medical_services_outlined,
+                    label: 'My Provider',
+                    subtitle: 'Manage your therapist connection',
+                    onTap: () => context.push(AppRouter.provider),
+                  ),
                 ],
               ),
               SizedBox(height: 32),
@@ -474,12 +480,14 @@ class _SettingsSection extends StatelessWidget {
 class _SettingsRow extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? subtitle;
   final bool isDanger;
   final VoidCallback onTap;
 
   const _SettingsRow({
     required this.icon,
     required this.label,
+    this.subtitle,
     this.isDanger = false,
     required this.onTap,
   });
@@ -498,20 +506,44 @@ class _SettingsRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: 56,
+          height: subtitle == null ? 56 : 72,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
               Icon(icon, size: 24, color: iconColor),
               SizedBox(width: 16),
               Expanded(
-                child: Text(
-                  label,
-                  style: AppTextStyles.body1.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
+                child: subtitle == null
+                    ? Text(
+                        label,
+                        style: AppTextStyles.body1.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            label,
+                            style: AppTextStyles.body1.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            subtitle!,
+                            style: AppTextStyles.body2.copyWith(
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? AppColors.textMutedDark
+                                  : AppColors.textMutedLight,
+                            ),
+                          ),
+                        ],
+                      ),
               ),
               Icon(
                 Icons.chevron_right,
