@@ -28,7 +28,7 @@ class AuthInterceptor extends Interceptor {
       await LocalDbService().clearAllUserData();
       
       final context = AppRouter.navigatorKey.currentContext;
-      if (context != null) {
+      if (context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Session expired. Please log in again.")),
         );
