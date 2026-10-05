@@ -64,7 +64,6 @@ import '../../features/settings/presentation/screens/help_support_screen.dart';
 import '../../features/settings/presentation/screens/terms_policies_screen.dart';
 import '../../features/settings/presentation/screens/report_problem_screen.dart';
 
-import '../../features/settings/presentation/screens/provider_screen.dart';
 import '../../features/settings/presentation/screens/subscription_screen.dart';
 import '../../features/settings/presentation/screens/profile_view_screen.dart';
 import '../../features/settings/presentation/screens/notification_preferences_screen.dart';
@@ -109,7 +108,6 @@ class AppRouter {
   static const String helpSupport = '/help-support';
   static const String termsPolicies = '/terms-policies';
   static const String reportProblem = '/report-problem';
-  static const String provider = '/provider';
   static const String subscription = '/subscription';
   static const String profileView = '/profile-view';
   static const String notificationPreferences = '/notification-preferences';
@@ -560,11 +558,6 @@ class AppRouter {
         path: reportProblem,
         name: 'reportProblem',
         builder: (_, __) => const ReportProblemScreen(),
-      ),
-      GoRoute(
-        path: provider,
-        name: 'provider',
-        builder: (_, __) => const ProviderScreen(),
       ),
       GoRoute(
         path: subscription,

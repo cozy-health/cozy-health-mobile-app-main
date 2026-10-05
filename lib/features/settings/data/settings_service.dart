@@ -28,38 +28,6 @@ class SettingsService {
     ));
   }
 
-  Future<Map<String, dynamic>> getProvider() async {
-    return responseMap(await _apiClient.get(ApiConstants.provider));
-  }
-
-  Future<Map<String, dynamic>> requestProvider({
-    required String providerEmail,
-    String? providerName,
-  }) async {
-    return responseMap(await _apiClient.post(
-      ApiConstants.providerRequest,
-      body: {
-        'provider_email': providerEmail,
-        if (providerName != null) 'provider_name': providerName,
-      },
-    ));
-  }
-
-  Future<Map<String, dynamic>> verifyProvider({
-    required String code,
-  }) async {
-    return responseMap(await _apiClient.post(
-      ApiConstants.providerVerify,
-      body: {
-        'code': code,
-      },
-    ));
-  }
-
-  Future<Map<String, dynamic>> removeProvider() async {
-    return responseMap(await _apiClient.delete(ApiConstants.provider));
-  }
-
   Future<Map<String, dynamic>> getSubscription() async {
     return responseMap(await _apiClient.get(ApiConstants.subscription));
   }
