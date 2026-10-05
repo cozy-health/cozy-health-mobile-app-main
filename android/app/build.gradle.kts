@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.cozy_health"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
