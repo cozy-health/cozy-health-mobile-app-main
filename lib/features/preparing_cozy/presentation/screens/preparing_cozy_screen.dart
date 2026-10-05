@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../utils/responsive_extensions.dart';
-import '../../../../utils/screen_util.dart';
 
 class PreparingCozyScreen extends StatefulWidget {
   const PreparingCozyScreen({super.key});
@@ -29,7 +28,6 @@ class _PreparingCozyScreenState extends State<PreparingCozyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ScreenUtil.init(context);
     
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,

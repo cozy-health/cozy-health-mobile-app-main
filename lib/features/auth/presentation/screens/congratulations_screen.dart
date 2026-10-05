@@ -6,7 +6,6 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../utils/responsive_extensions.dart';
-import '../../../../utils/screen_util.dart';
 import '../../../../gen/assets.gen.dart';
 import '../widgets/confetti_painter.dart';
 
@@ -160,7 +159,6 @@ class _CongratulationsScreenState extends State<CongratulationsScreen>
 
   @override
   Widget build(BuildContext context) {
-    ScreenUtil.init(context);
 
     // Capture screen size on first build
     WidgetsBinding.instance.addPostFrameCallback((_) {

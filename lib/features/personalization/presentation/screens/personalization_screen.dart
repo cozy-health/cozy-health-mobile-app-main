@@ -8,7 +8,6 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/challenge_selection_widget.dart';
 import '../../../../core/widgets/option_selection_widget.dart';
 import '../../../../utils/responsive_extensions.dart';
-import '../../../../utils/screen_util.dart';
 import '../../data/personalization_data.dart';
 
 class PersonalizationScreen extends StatefulWidget {
@@ -126,7 +125,6 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ScreenUtil.init(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,

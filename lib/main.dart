@@ -7,6 +7,7 @@ import 'core/services/local_db_service.dart';
 import 'core/models/user_profile.dart';
 import 'core/theme/app_theme.dart';
 import 'features/settings/data/profile_repository.dart';
+import 'utils/screen_util.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,6 +53,7 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
           darkTheme: darkTheme,
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
+            ScreenUtil.init(context);
             final brightness = Theme.of(context).brightness;
             final isDark = brightness == Brightness.dark;
             SystemChrome.setSystemUIOverlayStyle(
