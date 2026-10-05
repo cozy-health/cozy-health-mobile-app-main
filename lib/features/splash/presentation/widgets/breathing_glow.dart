@@ -65,9 +65,9 @@ class _BreathingGlowState extends State<BreathingGlow>
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            widget.color.withOpacity(opacity),
-            widget.color.withOpacity(opacity * 0.5),
-            widget.color.withOpacity(0),
+            widget.color.withValues(alpha: opacity),
+            widget.color.withValues(alpha: opacity * 0.5),
+            widget.color.withValues(alpha: 0),
           ],
           stops: const [0.0, 0.5, 1.0],
         ),

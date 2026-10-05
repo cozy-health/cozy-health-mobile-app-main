@@ -50,7 +50,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
 
   void _updateAccent(Color color) {
     setState(() => _selectedAccent = color);
-    ProfileRepository().updateField('accentColor', color.value.toString());
+    ProfileRepository().updateField('accentColor', color.toARGB32().toString());
   }
 
   final List<String> _themes = ['Light', 'Dark', 'System'];
