@@ -224,9 +224,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       if (!mounted) return;
     }
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const MoodCheckInSuccessScreen()),
-    );
+    context.go(AppRouter.moodSuccess);
   }
 
   bool get _canContinue => _step != 1 || _moodLabel != null;

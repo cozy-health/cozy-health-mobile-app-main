@@ -53,7 +53,6 @@ import '../../features/insights/presentation/screens/activity_mood_screen.dart';
 import '../../features/insights/presentation/screens/monthly_report_screen.dart';
 
 import '../../features/mood_check_in/presentation/screens/mood_feeling_screen.dart';
-import '../../features/mood_check_in/presentation/screens/mood_success_screen.dart';
 import '../../features/journal/presentation/screens/journal_screen.dart';
 import '../../features/journal/presentation/screens/voice_recording_screen.dart';
 import '../../features/assistant/presentation/screens/assistant_screen.dart';
@@ -303,12 +302,7 @@ class AppRouter {
       GoRoute(
         path: moodSuccess,
         name: 'moodSuccess',
-        builder: (_, __) => const MoodSuccessScreen(
-          selectedFeeling: '',
-          selectedReasons: [],
-          selectedCoping: [],
-          journalText: '',
-        ),
+        builder: (_, __) => const MoodCheckInSuccessScreen(),
       ),
       GoRoute(
         path: moodHistory,
