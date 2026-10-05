@@ -5,9 +5,10 @@ import 'package:local_auth/local_auth.dart';
 import '../../../../core/api/api_exceptions.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/api/auth_token_service.dart';
+import '../../../../core/storage/token_storage.dart';
 import '../../../../core/services/guest_session_service.dart';
 import '../../../../core/services/personalization_service.dart';
-import '../../../../core/theme/app_colors.dart';
+
 import '../../../../core/theme/app_text_styles.dart';
 import '../../data/auth_service.dart';
 import '../widgets/auth_ui.dart';
@@ -73,6 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await _authService.login(
         email: email,
         password: password,
+        stayLoggedIn: _stayLoggedIn,
       );
       if (!mounted) return;
 
@@ -161,6 +163,8 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
+      await TokenStorage().saveToken(token, stayLoggedIn: _stayLoggedIn);
+      await GuestSessionService().exitGuestSession();
       if (mounted) context.go(AppRouter.home);
     } catch (e) {
       debugPrint('Biometric error: $e');

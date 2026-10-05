@@ -1,3 +1,5 @@
+import '../../../../core/security_gate.dart';
+import '../../../../core/services/security_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +17,10 @@ class PrivacySettingsScreen extends StatefulWidget {
 }
 
 class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
+  bool _appLock = false;
+  bool _journalPin = false;
+  bool _securityBusy = false;
+  bool _securityReady = false;
   bool _showUsername = true;
   bool _showStats = true;
   bool _referenceMood = true;
@@ -26,10 +32,74 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSecurity();
     final profile = LocalDbService().getUserProfile();
     if (profile != null) {
       _showUsername = profile.showUsername;
       _showStats = profile.showStats;
+    }
+  }
+
+  Future<void> _loadSecurity() async {
+    try {
+      final lock = await SecurityService.instance.appLockEnabled();
+      final pin = await SecurityService.instance.hasPin();
+      if (mounted) {
+        setState(() {
+          _appLock = lock;
+          _journalPin = pin;
+          _securityReady = true;
+        });
+      }
+    } catch (_) {
+      _showSecurityError();
+    }
+  }
+
+  void _showSecurityError() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Unable to update security settings. Try again.'),
+      ),
+    );
+  }
+
+  Future<void> _toggleLock(bool value) async {
+    if (_securityBusy || !_securityReady) return;
+    setState(() => _securityBusy = true);
+    try {
+      if (!await SecurityService.instance.authenticate()) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Biometric verification is required. Set up Face ID or fingerprint in device settings.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+      await SecurityService.instance.setAppLock(value);
+      await _loadSecurity();
+    } catch (_) {
+      _showSecurityError();
+    } finally {
+      if (mounted) setState(() => _securityBusy = false);
+    }
+  }
+
+  Future<void> _togglePin(bool value) async {
+    if (_securityBusy || !_securityReady) return;
+    setState(() => _securityBusy = true);
+    try {
+      await journalPinDialog(context, setup: value);
+      await _loadSecurity();
+    } catch (_) {
+      _showSecurityError();
+    } finally {
+      if (mounted) setState(() => _securityBusy = false);
     }
   }
 
@@ -73,6 +143,22 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
             children: [
               SizedBox(height: 24),
 
+              _SettingsSection(
+                title: 'Security',
+                children: [
+                  _SettingsToggleRow(
+                    label: 'App lock — Face ID / biometrics',
+                    value: _appLock,
+                    onChanged: _toggleLock,
+                  ),
+                  _SettingsToggleRow(
+                    label: 'Journal PIN (4–6 digits)',
+                    value: _journalPin,
+                    onChanged: _togglePin,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
               _SettingsSection(
                 title: 'Profile visibility',
                 children: [

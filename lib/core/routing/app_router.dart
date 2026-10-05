@@ -1,3 +1,4 @@
+import '../security_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
@@ -541,12 +542,20 @@ class AppRouter {
       GoRoute(
         path: journal,
         name: 'journal',
-        builder: (_, __) => const JournalScreen(),
+        builder: (_, __) => const SecurityGate(
+          journal: true,
+          journalRoot: true,
+          child: JournalScreen(),
+        ),
       ),
       GoRoute(
         path: voiceRecording,
         name: 'voiceRecording',
-        builder: (_, __) => const VoiceRecordingScreen(),
+        builder: (_, __) => const SecurityGate(
+          journal: true,
+          journalRoot: true,
+          child: VoiceRecordingScreen(),
+        ),
       ),
       GoRoute(
         path: activity,

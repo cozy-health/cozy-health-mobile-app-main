@@ -1,3 +1,5 @@
+import 'core/security_gate.dart';
+import 'core/services/install_marker_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/routing/app_router.dart';
@@ -9,6 +11,7 @@ import 'features/settings/data/profile_repository.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LocalDbService().init();
+  await InstallMarkerService().clearLingeringSessionOnFreshInstall();
   runApp(const CozyHealthApp());
 }
 
@@ -69,7 +72,7 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
                 textScaler: TextScaler.linear(textScaleFactor),
                 boldText: profile?.highContrast ?? false,
               ),
-              child: child!,
+              child: SecurityGate(child: child!),
             );
           },
           routerConfig: AppRouter.router,
@@ -93,7 +96,8 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
     return theme.copyWith(
       colorScheme: theme.colorScheme.copyWith(primary: accent),
       elevatedButtonTheme: ElevatedButtonThemeData(
-        style: theme.elevatedButtonTheme.style?.copyWith(
+        style:
+            theme.elevatedButtonTheme.style?.copyWith(
               backgroundColor: WidgetStateProperty.all(accent),
               foregroundColor: WidgetStateProperty.all(Colors.white),
             ) ??
@@ -103,13 +107,15 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
             ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: theme.textButtonTheme.style?.copyWith(
+        style:
+            theme.textButtonTheme.style?.copyWith(
               foregroundColor: WidgetStateProperty.all(accent),
             ) ??
             TextButton.styleFrom(foregroundColor: accent),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
-        style: theme.outlinedButtonTheme.style?.copyWith(
+        style:
+            theme.outlinedButtonTheme.style?.copyWith(
               foregroundColor: WidgetStateProperty.all(accent),
               side: WidgetStateProperty.all(BorderSide(color: accent)),
             ) ??

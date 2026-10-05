@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/security_gate.dart';
 
 import '../../../../core/audio/audio_recorder_service.dart';
 import '../../../../core/permissions/permission_service.dart';
@@ -262,8 +263,14 @@ class _JournalScreenState extends State<JournalScreen>
   }) async {
     final entry = await Navigator.of(context).push<JournalEntry>(
       MaterialPageRoute(
-        builder: (_) =>
-            JournalEditorScreen(type: type, prompt: prompt, existing: existing),
+        builder: (_) => SecurityGate(
+          journal: true,
+          child: JournalEditorScreen(
+            type: type,
+            prompt: prompt,
+            existing: existing,
+          ),
+        ),
       ),
     );
     if (entry != null) await _saveEntry(entry);
@@ -271,7 +278,10 @@ class _JournalScreenState extends State<JournalScreen>
 
   Future<void> _openPromptLibrary() async {
     final prompt = await Navigator.of(context).push<JournalPrompt>(
-      MaterialPageRoute(builder: (_) => const GuidedPromptsScreen()),
+      MaterialPageRoute(
+        builder: (_) =>
+            const SecurityGate(journal: true, child: GuidedPromptsScreen()),
+      ),
     );
     if (prompt != null) {
       await _openEditor(type: 'guided', prompt: prompt);
@@ -280,7 +290,12 @@ class _JournalScreenState extends State<JournalScreen>
 
   Future<void> _openVoiceRecording() async {
     final entry = await Navigator.of(context).push<JournalEntry>(
-      MaterialPageRoute(builder: (_) => const JournalVoiceRecordingScreen()),
+      MaterialPageRoute(
+        builder: (_) => const SecurityGate(
+          journal: true,
+          child: JournalVoiceRecordingScreen(),
+        ),
+      ),
     );
     if (entry != null) await _saveEntry(entry);
   }
@@ -288,15 +303,25 @@ class _JournalScreenState extends State<JournalScreen>
   Future<void> _openSearch(List<JournalEntry> allEntries) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) =>
-            JournalSearchScreen(entries: allEntries, onOpen: _openEntryDetail),
+        builder: (_) => SecurityGate(
+          journal: true,
+          child: JournalSearchScreen(
+            entries: allEntries,
+            onOpen: _openEntryDetail,
+          ),
+        ),
       ),
     );
   }
 
   Future<void> _openEntryDetail(JournalEntry entry) async {
     final result = await Navigator.of(context).push<_EntryAction>(
-      MaterialPageRoute(builder: (_) => JournalEntryDetailScreen(entry: entry)),
+      MaterialPageRoute(
+        builder: (_) => SecurityGate(
+          journal: true,
+          child: JournalEntryDetailScreen(entry: entry),
+        ),
+      ),
     );
 
     if (result == null) return;
@@ -419,7 +444,7 @@ class _JournalScreenState extends State<JournalScreen>
           } catch (_) {}
 
           HapticFeedback.selectionClick();
-          if (mounted) Navigator.pop(context);
+          if (context.mounted) Navigator.pop(context);
         },
       ),
     ).whenComplete(controller.dispose);
@@ -440,7 +465,14 @@ class _JournalScreenState extends State<JournalScreen>
   Future<void> _deleteEntry(JournalEntry entry) async {
     try {
       await _repo.deleteJournalEntry(entry.id);
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Journal entry deletion failed: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to delete entry. Try again.')),
+      );
+      return;
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
@@ -865,7 +897,9 @@ class _JournalVoiceRecordingScreenState
                   width: 160,
                   height: 160,
                   decoration: BoxDecoration(
-                    color: _isRecording ? AppColors.danger : Theme.of(context).colorScheme.primary,
+                    color: _isRecording
+                        ? AppColors.danger
+                        : Theme.of(context).colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -950,7 +984,10 @@ class _JournalVoiceRecordingScreenState
           _WarmPanel(
             child: ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.edit_note_rounded, color: Theme.of(context).colorScheme.primary),
+              leading: Icon(
+                Icons.edit_note_rounded,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               title: Text(
                 'Transcribe (optional)',
                 style: AppTextStyles.body1.copyWith(
@@ -1014,9 +1051,9 @@ class _JournalVoiceRecordingScreenState
           _isRecording = false;
           _seconds = 0;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Hold longer to record.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Hold longer to record.')));
         return;
       }
       if (path == null) {
@@ -1111,9 +1148,9 @@ class _JournalVoiceRecordingScreenState
       return;
     }
     if (path == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't play recording.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't play recording.")));
       return;
     }
     setState(() => _isPlaying = true);
@@ -1121,9 +1158,9 @@ class _JournalVoiceRecordingScreenState
       await _audioRecorder.play(path);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't play recording.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't play recording.")));
     } finally {
       if (mounted) setState(() => _isPlaying = false);
     }
@@ -1289,7 +1326,10 @@ class JournalEntryDetailScreen extends StatelessWidget {
             _WarmPanel(
               child: Row(
                 children: [
-                  Icon(Icons.play_arrow_rounded, color: Theme.of(context).colorScheme.primary),
+                  Icon(
+                    Icons.play_arrow_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   SizedBox(width: 12),
                   Text(
                     'Voice note · ${_formatDuration(entry.voiceDuration ?? 0)}',
@@ -1383,12 +1423,18 @@ class _NewEntryHero extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: _WarmPanel(
           color: AppColors.primarySubtle,
-          borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: .15),
+          borderColor: Theme.of(
+            context,
+          ).colorScheme.primary.withValues(alpha: .15),
           radius: 20,
           padding: const EdgeInsets.all(18),
           child: Row(
             children: [
-              Icon(Icons.edit_note_rounded, color: Theme.of(context).colorScheme.primary, size: 30),
+              Icon(
+                Icons.edit_note_rounded,
+                color: Theme.of(context).colorScheme.primary,
+                size: 30,
+              ),
               SizedBox(width: 14),
               Expanded(
                 child: Text(
@@ -1444,7 +1490,9 @@ class _FilterChips extends StatelessWidget {
                     : dividerColor ?? AppColors.border,
               ),
               labelStyle: AppTextStyles.body2.copyWith(
-                color: isSelected ? Theme.of(context).colorScheme.primary : colorScheme.onSurface,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1924,7 +1972,9 @@ class _PromptCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   prompt.category,
-                  style: AppTextStyles.body2.copyWith(color: Theme.of(context).colorScheme.primary),
+                  style: AppTextStyles.body2.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
               TextButton(onPressed: onUse, child: Text('Use →')),
@@ -2373,7 +2423,9 @@ class _Waveform extends StatelessWidget {
         width: 4,
         height: height,
         decoration: BoxDecoration(
-          color: active ? Theme.of(context).colorScheme.primary : AppColors.borderStrong,
+          color: active
+              ? Theme.of(context).colorScheme.primary
+              : AppColors.borderStrong,
           borderRadius: BorderRadius.circular(8),
         ),
       );

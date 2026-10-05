@@ -24,6 +24,7 @@ class AuthService {
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
+    bool stayLoggedIn = false,
   }) async {
     final response = await _apiClient.post(
       ApiConstants.login,
@@ -35,7 +36,7 @@ class AuthService {
     final token = data['token']?.toString();
 
     if (token != null && token.isNotEmpty) {
-      await _tokenStorage.saveToken(token);
+      await _tokenStorage.saveToken(token, stayLoggedIn: stayLoggedIn);
     }
     await GuestSessionService().exitGuestSession();
     await _cacheUserProfile(data['user']);
@@ -141,6 +142,11 @@ class AuthService {
     final name = json['name']?.toString();
 
     if (id == null || email == null || name == null || name.isEmpty) return;
+
+    final cached = LocalDbService.instance.getUserProfile();
+    if (cached != null && cached.id != id) {
+      await LocalDbService.instance.clearAllUserData();
+    }
 
     await LocalDbService.instance.saveUserProfile(
       UserProfile(
