@@ -24,8 +24,8 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
   List<PersonalizationQuestion> get _questions => PersonalizationQuestion.questions;
 
   // Store answers for each question
-  List<String> _selectedChallenges = [];
-  List<String> _selectedGoals = [];
+  final List<String> _selectedChallenges = [];
+  final List<String> _selectedGoals = [];
   String? _selectedAge;
   String? _selectedGender;
 
