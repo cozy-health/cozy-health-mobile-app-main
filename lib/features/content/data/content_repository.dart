@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/models/saved_article.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/api/api_client.dart';
@@ -26,14 +28,18 @@ class ContentRepository {
     try {
       await ApiClient.instance.post('/content/articles/$articleId/save');
       fetchSavedArticles();
-    } catch(e) {}
+    } catch (e, stack) {
+      debugPrint('Caught error: $e\n$stack');
+    }
   }
   
   Future<void> unsaveArticle(String articleId) async {
     try {
       await ApiClient.instance.delete('/content/articles/$articleId/save');
       fetchSavedArticles();
-    } catch(e) {}
+    } catch (e, stack) {
+      debugPrint('Caught error: $e\n$stack');
+    }
   }
 
   Stream<bool> isSaved(String articleId) {

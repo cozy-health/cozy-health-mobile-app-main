@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/models/safety_plan.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/api/api_client.dart';
@@ -13,7 +15,8 @@ class SafetyPlanRepository {
         await _local.saveSafetyPlan(plan);
         return plan;
       }
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('Caught error: $e\n$stack');
     }
     return _local.getSafetyPlan();
   }

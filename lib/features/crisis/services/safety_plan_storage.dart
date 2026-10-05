@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../../../core/models/safety_plan.dart';
 import '../data/safety_plan_repository.dart';
 
@@ -40,7 +42,9 @@ class SafetyPlanStorage {
   Future<void> clear() async {
     try {
       await _repo.clearSafetyPlan();
-    } catch (error) {}
+    } catch (e, stack) {
+      debugPrint('Caught error: $e\n$stack');
+    }
   }
 
   Future<bool> hasPlan() async {

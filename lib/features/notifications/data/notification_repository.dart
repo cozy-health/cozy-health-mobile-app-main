@@ -39,14 +39,18 @@ class NotificationRepository {
     try {
       await ApiClient.instance.patch('/notifications/$id/read');
       fetchNotifications();
-    } catch(e) {}
+    } catch (e, stack) {
+      debugPrint('Caught error: $e\n$stack');
+    }
   }
 
   Future<void> markAllAsRead() async {
     try {
       await ApiClient.instance.patch('/notifications/read-all');
       fetchNotifications();
-    } catch(e) {}
+    } catch (e, stack) {
+      debugPrint('Caught error: $e\n$stack');
+    }
   }
 
   Future<void> deleteNotification(String id) async {
