@@ -29,5 +29,5 @@ class ApiServerException extends ApiException {
 }
 
 class ApiUnknownException extends ApiException {
-  ApiUnknownException(String message) : super(message);
+  ApiUnknownException(super.message);
 }
