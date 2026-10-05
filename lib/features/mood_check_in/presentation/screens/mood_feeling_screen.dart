@@ -1138,7 +1138,7 @@ String _formatMoodDate(DateTime date) {
   final dayLabel = sameDay
       ? 'Today'
       : '${local.month}/${local.day}/${local.year}';
-  return '${dayLabel}, ${hour}:${minute} ${period}';
+  return '$dayLabel, $hour:$minute $period';
 }
 
 class _MoodProgressHeader extends StatelessWidget {
