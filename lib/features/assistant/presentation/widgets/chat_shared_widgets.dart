@@ -4,7 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class AssistantSubScaffold extends StatelessWidget {
-  const AssistantSubScaffold({required this.title, required this.child});
+  const AssistantSubScaffold({super.key, required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -49,7 +49,7 @@ class AssistantSubScaffold extends StatelessWidget {
 }
 
 class MenuSheet extends StatelessWidget {
-  const MenuSheet({required this.children});
+  const MenuSheet({super.key, required this.children});
 
   final List<Widget> children;
 
@@ -79,6 +79,7 @@ class MenuSheet extends StatelessWidget {
 
 class SheetTile extends StatelessWidget {
   const SheetTile({
+    super.key,
     required this.icon,
     required this.label,
     required this.onTap,
@@ -113,7 +114,7 @@ class SheetTile extends StatelessWidget {
 }
 
 class CozyCharacter extends StatefulWidget {
-  const CozyCharacter({required this.size});
+  const CozyCharacter({super.key, required this.size});
 
   final double size;
 
@@ -172,6 +173,7 @@ class CozyCharacterState extends State<CozyCharacter>
 
 class WarmPanel extends StatelessWidget {
   const WarmPanel({
+    super.key,
     required this.child,
     this.color = AppColors.surfaceElevated,
     this.borderColor,
@@ -206,7 +208,7 @@ class WarmPanel extends StatelessWidget {
 }
 
 class PrimaryButton extends StatelessWidget {
-  const PrimaryButton({required this.label, required this.onPressed});
+  const PrimaryButton({super.key, required this.label, required this.onPressed});
 
   final String label;
   final VoidCallback onPressed;
@@ -233,7 +235,7 @@ class PrimaryButton extends StatelessWidget {
 }
 
 class SecondaryButton extends StatelessWidget {
-  const SecondaryButton({required this.label, required this.onPressed});
+  const SecondaryButton({super.key, required this.label, required this.onPressed});
 
   final String label;
   final VoidCallback onPressed;
@@ -264,6 +266,7 @@ class SecondaryButton extends StatelessWidget {
 
 class AnimatedIn extends StatelessWidget {
   const AnimatedIn({
+    super.key,
     required this.controller,
     required this.child,
     required this.interval,
@@ -293,7 +296,7 @@ class AnimatedIn extends StatelessWidget {
 }
 
 class InlineSuggestions extends StatelessWidget {
-  const InlineSuggestions({required this.onPick});
+  const InlineSuggestions({super.key, required this.onPick});
 
   final ValueChanged<String> onPick;
 
@@ -342,7 +345,7 @@ class InlineSuggestions extends StatelessWidget {
 }
 
 class PromptButton extends StatelessWidget {
-  const PromptButton({required this.text, required this.onTap});
+  const PromptButton({super.key, required this.text, required this.onTap});
 
   final String text;
   final VoidCallback onTap;

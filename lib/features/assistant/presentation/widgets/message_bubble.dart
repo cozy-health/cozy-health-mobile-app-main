@@ -6,6 +6,7 @@ import '../../models/chat.dart';
 
 class MessageBubble extends StatelessWidget {
   const MessageBubble({
+    super.key,
     required this.message,
     required this.onLongPress,
     this.onRetry,

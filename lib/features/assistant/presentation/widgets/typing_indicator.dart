@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class TypingIndicatorBubble extends StatefulWidget {
-  const TypingIndicatorBubble();
+  const TypingIndicatorBubble({super.key});
 
   @override
   State<TypingIndicatorBubble> createState() => TypingIndicatorBubbleState();

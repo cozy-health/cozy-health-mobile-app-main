@@ -158,6 +158,7 @@ class PastConversationScreen extends StatelessWidget {
 
 class HistorySection extends StatelessWidget {
   const HistorySection({
+    super.key,
     required this.title,
     required this.conversations,
     required this.onOpen,
@@ -197,6 +198,7 @@ class HistorySection extends StatelessWidget {
 
 class ConversationCard extends StatelessWidget {
   const ConversationCard({
+    super.key,
     required this.conversation,
     required this.onTap,
     required this.onLongPress,
@@ -251,7 +253,7 @@ class ConversationCard extends StatelessWidget {
 }
 
 class ConversationEmptyState extends StatelessWidget {
-  const ConversationEmptyState();
+  const ConversationEmptyState({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +287,7 @@ class ConversationEmptyState extends StatelessWidget {
 }
 
 class DeleteConversationDialog extends StatelessWidget {
-  const DeleteConversationDialog({required this.onDelete});
+  const DeleteConversationDialog({super.key, required this.onDelete});
 
   final VoidCallback onDelete;
 

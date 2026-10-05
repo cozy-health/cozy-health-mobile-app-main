@@ -125,7 +125,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
 }
 
 class SettingsSection extends StatelessWidget {
-  const SettingsSection({required this.title, required this.children});
+  const SettingsSection({super.key, required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -153,6 +153,7 @@ class SettingsSection extends StatelessWidget {
 
 class SettingRow extends StatelessWidget {
   const SettingRow({
+    super.key,
     required this.title,
     this.value,
     this.subtitle,
@@ -215,6 +216,7 @@ class SettingRow extends StatelessWidget {
 
 class SettingSwitch extends StatelessWidget {
   const SettingSwitch({
+    super.key,
     required this.title,
     required this.subtitle,
     required this.value,
