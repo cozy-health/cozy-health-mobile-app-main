@@ -287,6 +287,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                       onTap: () async {
                         await NotificationRepository().markAsRead(item.id);
+                        if (!context.mounted) return;
                         if (mounted) context.pop();
                       },
                     ),

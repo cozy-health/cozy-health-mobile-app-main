@@ -95,6 +95,7 @@ class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
           await repo.deleteConversation(conversation.id);
           
           if (!mounted) return;
+          if (!context.mounted) return;
           
           setState(() => _conversations.removeAt(index));
           ScaffoldMessenger.of(context).showSnackBar(

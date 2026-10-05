@@ -98,7 +98,7 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
             TextButton(
               onPressed: () async {
                 await SubscriptionRepository().cancel();
-                if (mounted) {
+                if (mounted && context.mounted) {
                   Navigator.of(context).pop(); // Close dialog
                   Navigator.of(context).pop(); // Go back to subscription
                   ScaffoldMessenger.of(context).showSnackBar(
