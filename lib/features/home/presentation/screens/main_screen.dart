@@ -10,6 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/bottom_navigation_bar.dart';
 import 'home_screen.dart';
+import '../../../crisis/presentation/widgets/crisis_fab.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -31,14 +32,16 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const assistantTabIndex = 2;
-
     return Scaffold(
       extendBody: true,
       body: SafeArea(bottom: false, child: _screens[_currentIndex]),
-      floatingActionButton: _currentIndex == assistantTabIndex
-          ? null
-          : Semantics(
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(left: 32),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const CrisisFab(),
+            Semantics(
               button: true,
               label: 'Open quick actions',
               child: GestureDetector(
@@ -52,6 +55,9 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _currentIndex,
