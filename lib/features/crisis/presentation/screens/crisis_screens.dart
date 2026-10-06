@@ -60,7 +60,7 @@ class CrisisShell extends StatelessWidget {
                     IconButton(
                       onPressed: () => context.pop(),
                       icon: Icon(Icons.arrow_back),
-                      color: AppColors.crisisText,
+                      color: Theme.of(context).colorScheme.onSurface,
                       constraints: const BoxConstraints(
                         minWidth: 48,
                         minHeight: 48,
@@ -73,10 +73,20 @@ class CrisisShell extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 32),
-              Text(title, style: CrisisText.h1),
+              Text(
+                title,
+                style: CrisisText.h1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
               if (subtitle != null) ...[
                 const SizedBox(height: 12),
-                Text(subtitle!, style: CrisisText.bodyMuted),
+                Text(
+                  subtitle!,
+                  style: CrisisText.bodyMuted.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
               const SizedBox(height: 40),
               ...children,
@@ -151,10 +161,12 @@ class CrisisButton extends StatelessWidget {
         child: Text(
           label,
           textAlign: TextAlign.center,
-          style: CrisisText.body.copyWith(
-            color: AppColors.crisisTextMuted,
-            fontWeight: FontWeight.w600,
-          ),
+          style: CrisisText.body
+              .copyWith(color: Theme.of(context).colorScheme.onSurface)
+              .copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
         ),
       );
     }
@@ -182,7 +194,7 @@ class CrisisButton extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 elevation: 0,
                 backgroundColor: color,
-                foregroundColor: AppColors.crisisTextOnDark,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -219,13 +231,15 @@ class CrisisActionCard extends StatelessWidget {
         ? AppColors.crisisPrimary
         : danger
         ? AppColors.crisisDanger.withValues(alpha: 0.1)
-        : AppColors.crisisSurface;
-    final fg = primary ? AppColors.white : AppColors.crisisText;
+        : Theme.of(context).colorScheme.surface;
+    final fg = primary
+        ? Theme.of(context).colorScheme.onPrimary
+        : Theme.of(context).colorScheme.onSurface;
     final border = primary
         ? Colors.transparent
         : danger
         ? AppColors.crisisDanger.withValues(alpha: 0.3)
-        : AppColors.crisisSubtle;
+        : Theme.of(context).colorScheme.outline;
 
     return Semantics(
       button: true,
@@ -248,7 +262,9 @@ class CrisisActionCard extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: primary ? AppColors.white : AppColors.crisisPrimary,
+                color: primary
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : AppColors.crisisPrimary,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -257,29 +273,44 @@ class CrisisActionCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: CrisisText.body.copyWith(
-                        color: fg,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: CrisisText.body
+                          .copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          )
+                          .copyWith(color: fg, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: CrisisText.caption.copyWith(
-                        color: primary
-                            ? AppColors.white
-                            : AppColors.crisisTextMuted,
-                      ),
+                      style: CrisisText.caption
+                          .copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          )
+                          .copyWith(
+                            color: primary
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                          ),
                     ),
                   ],
                 ),
               ),
               Text(
                 action,
-                style: CrisisText.caption.copyWith(
-                  color: primary ? AppColors.white : AppColors.crisisPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: CrisisText.caption
+                    .copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    )
+                    .copyWith(
+                      color: primary
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : AppColors.crisisPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
             ],
           ),
@@ -299,7 +330,12 @@ class CrisisResourcesHubScreen extends StatelessWidget {
       subtitle: 'Here are people who can help right now.',
       trailing: TextButton(
         onPressed: () => context.go(AppRouter.home),
-        child: Text('Close', style: CrisisText.caption),
+        child: Text(
+          'Close',
+          style: CrisisText.caption.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
       children: [
         CrisisActionCard(
@@ -376,7 +412,9 @@ class CrisisResourcesHubScreen extends StatelessWidget {
           child: Text(
             "This app is not a substitute for professional care. If you're in immediate danger, call 911.",
             textAlign: TextAlign.center,
-            style: CrisisText.caption,
+            style: CrisisText.caption.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],
@@ -421,12 +459,17 @@ class _DividerLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Expanded(child: Divider(color: AppColors.crisisSubtle)),
+        Expanded(child: Divider(color: Theme.of(context).colorScheme.outline)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(label, style: CrisisText.caption),
+          child: Text(
+            label,
+            style: CrisisText.caption.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ),
-        const Expanded(child: Divider(color: AppColors.crisisSubtle)),
+        Expanded(child: Divider(color: Theme.of(context).colorScheme.outline)),
       ],
     );
   }
@@ -446,19 +489,27 @@ void showCrisisCallSheet(
     builder: (context) {
       return Container(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-        decoration: const BoxDecoration(
-          color: AppColors.crisisSurface,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(title, textAlign: TextAlign.center, style: CrisisText.h2),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: CrisisText.h2.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
             const SizedBox(height: 12),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: CrisisText.bodyMuted,
+              style: CrisisText.bodyMuted.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 24),
             CrisisButton(
@@ -542,25 +593,35 @@ void showLaunchFailureSheet(
     builder: (sheetContext) {
       return Container(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-        decoration: const BoxDecoration(
-          color: AppColors.crisisSurface,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(headline, textAlign: TextAlign.center, style: CrisisText.h2),
+            Text(
+              headline,
+              textAlign: TextAlign.center,
+              style: CrisisText.h2.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
             const SizedBox(height: 12),
             Text(
               subtext,
               textAlign: TextAlign.center,
-              style: CrisisText.bodyMuted,
+              style: CrisisText.bodyMuted.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 18),
             SelectableText(
               value,
               textAlign: TextAlign.center,
-              style: CrisisText.h1.copyWith(color: AppColors.crisisPrimary),
+              style: CrisisText.h1
+                  .copyWith(color: Theme.of(context).colorScheme.onSurface)
+                  .copyWith(color: AppColors.crisisPrimary),
             ),
             const SizedBox(height: 24),
             CrisisButton(
@@ -605,9 +666,12 @@ void showLaunchFailureSheet(
 void _showSupportSnack(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(message),
+      content: Text(
+        message,
+        style: TextStyle(color: Theme.of(context).colorScheme.onInverseSurface),
+      ),
       behavior: SnackBarBehavior.floating,
-      backgroundColor: AppColors.crisisText,
+      backgroundColor: Theme.of(context).colorScheme.inverseSurface,
     ),
   );
 }
@@ -645,12 +709,16 @@ class CrisisDetectionOverlayScreen extends StatelessWidget {
                       const SizedBox(height: 24),
                       Text(
                         "It sounds like you're going through a lot.",
-                        style: CrisisText.h2,
+                        style: CrisisText.h2.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         "You don't have to carry this alone. We're here with you.",
-                        style: CrisisText.bodyMuted,
+                        style: CrisisText.bodyMuted.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 24),
                       CrisisButton(
@@ -678,7 +746,7 @@ class CrisisDetectionOverlayScreen extends StatelessWidget {
                     icon: Icon(
                       Icons.close,
                       size: 24,
-                      color: AppColors.crisisTextMuted,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     onPressed: () => context.pop(),
                     tooltip: 'Close',
@@ -709,7 +777,7 @@ Future<void> showCrisisSupportOverlay(
         insetPadding: const EdgeInsets.all(24),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.crisisSurface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
           ),
           child: Stack(
@@ -730,14 +798,18 @@ Future<void> showCrisisSupportOverlay(
                       isSoft
                           ? 'That sounds heavy.'
                           : "It sounds like you're going through a lot.",
-                      style: CrisisText.h2,
+                      style: CrisisText.h2.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       isSoft
                           ? 'Want to talk to someone, or try a grounding exercise?'
                           : "You don't have to carry this alone. We're here with you.",
-                      style: CrisisText.bodyMuted,
+                      style: CrisisText.bodyMuted.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     CrisisButton(
@@ -773,7 +845,7 @@ Future<void> showCrisisSupportOverlay(
                   icon: Icon(
                     Icons.close,
                     size: 24,
-                    color: AppColors.crisisTextMuted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   onPressed: () => Navigator.pop(dialogContext),
                   tooltip: 'Close',
@@ -801,18 +873,18 @@ class _CrisisDismissButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.crisisText,
-          side: BorderSide(color: _crisisSubtle(context)),
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
+          side: BorderSide(color: Theme.of(context).colorScheme.outline),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
         ),
         child: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
-            color: AppColors.text,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -839,22 +911,23 @@ class EmergencyContactScreen extends StatelessWidget {
           context,
           'Contact editing needs contacts permission wiring.',
         ),
-        child: Text('Edit', style: CrisisText.caption),
+        child: Text(
+          'Edit',
+          style: CrisisText.caption.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
       children: [
         Center(
           child: Container(
             width: 96,
             height: 96,
-            decoration: const BoxDecoration(
-              color: AppColors.crisisSubtle,
+            decoration: BoxDecoration(
+              color: _crisisSubtle(context),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.person,
-              color: AppColors.crisisPrimary,
-              size: 48,
-            ),
+            child: Icon(Icons.person, color: AppColors.crisisPrimary, size: 48),
           ),
         ),
         const SizedBox(height: 32),
@@ -1073,8 +1146,8 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
       builder: (context) {
         return Container(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-          decoration: const BoxDecoration(
-            color: AppColors.crisisSurface,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: Column(
@@ -1083,13 +1156,17 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
               Text(
                 'Continue your safety plan?',
                 textAlign: TextAlign.center,
-                style: CrisisText.h2,
+                style: CrisisText.h2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 'You left off at Step ${currentStep + 1} of 6.',
                 textAlign: TextAlign.center,
-                style: CrisisText.bodyMuted,
+                style: CrisisText.bodyMuted.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 24),
               CrisisButton(
@@ -1117,10 +1194,17 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text('Start over?', style: CrisisText.h2),
+          title: Text(
+            'Start over?',
+            style: CrisisText.h2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
           content: Text(
             'This will clear your current safety plan draft.',
-            style: CrisisText.bodyMuted,
+            style: CrisisText.bodyMuted.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           actions: [
             TextButton(
@@ -1190,7 +1274,12 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
     return CrisisShell(
       title: _titles[_step],
       subtitle: _subtitles[_step],
-      trailing: Text('Step ${_step + 1}/6', style: CrisisText.caption),
+      trailing: Text(
+        'Step ${_step + 1}/6',
+        style: CrisisText.caption.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(99),
@@ -1267,10 +1356,14 @@ class _PlanChip extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 56),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: selected ? AppColors.crisisSubtle : AppColors.crisisSurface,
+          color: selected
+              ? _crisisSubtle(context)
+              : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? AppColors.crisisPrimary : AppColors.crisisSubtle,
+            color: selected
+                ? AppColors.crisisPrimary
+                : Theme.of(context).colorScheme.outline,
           ),
         ),
         child: Row(
@@ -1279,10 +1372,17 @@ class _PlanChip extends StatelessWidget {
               selected ? Icons.check_box : Icons.check_box_outline_blank,
               color: selected
                   ? AppColors.crisisPrimary
-                  : AppColors.crisisTextMuted,
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 12),
-            Expanded(child: Text(label, style: CrisisText.body)),
+            Expanded(
+              child: Text(
+                label,
+                style: CrisisText.body.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -1317,7 +1417,12 @@ class SafetyPlanViewScreen extends StatelessWidget {
       subtitle: 'Last updated today',
       trailing: TextButton(
         onPressed: () => context.push(AppRouter.safetyPlan),
-        child: Text('Edit', style: CrisisText.caption),
+        child: Text(
+          'Edit',
+          style: CrisisText.caption.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
       children: [
         ...sections.entries.map(
@@ -1326,20 +1431,27 @@ class SafetyPlanViewScreen extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.crisisSurface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.crisisSubtle),
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   entry.key,
-                  style: CrisisText.body.copyWith(fontWeight: FontWeight.w700),
+                  style: CrisisText.body
+                      .copyWith(color: Theme.of(context).colorScheme.onSurface)
+                      .copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 10),
                 ...entry.value.map(
-                  (item) => Text('• $item', style: CrisisText.bodyMuted),
+                  (item) => Text(
+                    '• $item',
+                    style: CrisisText.bodyMuted.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1418,7 +1530,12 @@ class PersistedSafetyPlanViewScreen extends StatelessWidget {
           subtitle: 'Last updated ${_formatPlanDate(plan.lastUpdatedAt)}',
           trailing: TextButton(
             onPressed: () => context.push(AppRouter.safetyPlan),
-            child: Text('Edit', style: CrisisText.caption),
+            child: Text(
+              'Edit',
+              style: CrisisText.caption.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           children: [
             ...sections.entries.map(
@@ -1427,25 +1544,41 @@ class PersistedSafetyPlanViewScreen extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.crisisSurface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.crisisSubtle),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       entry.key,
-                      style: CrisisText.body.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: CrisisText.body
+                          .copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          )
+                          .copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 10),
                     if (entry.value == null || entry.value!.isEmpty)
-                      Text('Nothing added yet.', style: CrisisText.bodyMuted)
+                      Text(
+                        'Nothing added yet.',
+                        style: CrisisText.bodyMuted.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      )
                     else
                       ...entry.value!.map(
-                        (item) => Text('- $item', style: CrisisText.bodyMuted),
+                        (item) => Text(
+                          '- $item',
+                          style: CrisisText.bodyMuted.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -1542,15 +1675,19 @@ class _GroundingExerciseScreenState extends State<GroundingExerciseScreen> {
     return CrisisShell(
       title: _senses[_step],
       subtitle: _copy[_step],
-      trailing: Text('Step ${_step + 1}/5', style: CrisisText.caption),
+      trailing: Text(
+        'Step ${_step + 1}/5',
+        style: CrisisText.caption.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
       children: [
         Center(
           child: Text(
             '$count',
-            style: CrisisText.h1.copyWith(
-              fontSize: 120,
-              color: AppColors.crisisPrimary,
-            ),
+            style: CrisisText.h1
+                .copyWith(color: Theme.of(context).colorScheme.onSurface)
+                .copyWith(fontSize: 120, color: AppColors.crisisPrimary),
           ),
         ),
         const SizedBox(height: 24),
@@ -1562,14 +1699,18 @@ class _GroundingExerciseScreenState extends State<GroundingExerciseScreen> {
               decoration: InputDecoration(
                 hintText: '${index + 1}.',
                 filled: true,
-                fillColor: AppColors.crisisSurface,
+                fillColor: Theme.of(context).colorScheme.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.crisisSubtle),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.crisisSubtle),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
               ),
             ),
@@ -1709,11 +1850,16 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen> {
               height: 200,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.crisisSubtle,
+                color: _crisisSubtle(context),
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.crisisPrimary, width: 2),
               ),
-              child: Text('Breathe', style: CrisisText.h2),
+              child: Text(
+                'Breathe',
+                style: CrisisText.h2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
             ),
           ),
         ),
@@ -1730,7 +1876,7 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen> {
                 shape: BoxShape.circle,
                 color: index <= _cycle
                     ? AppColors.crisisPrimary
-                    : AppColors.crisisSubtle,
+                    : _crisisSubtle(context),
               ),
             ),
           ),
@@ -1769,10 +1915,12 @@ class ProfessionalHelpScreen extends StatelessWidget {
             prefixIcon: Icon(Icons.search),
             hintText: 'Search by name or location',
             filled: true,
-            fillColor: AppColors.crisisSurface,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppColors.crisisSubtle),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline,
+              ),
             ),
           ),
         ),
@@ -1809,7 +1957,9 @@ class ProfessionalHelpScreen extends StatelessWidget {
           child: Text(
             "Cozy Health doesn't endorse or profit from any of these services.",
             textAlign: TextAlign.center,
-            style: CrisisText.caption,
+            style: CrisisText.caption.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],
@@ -1887,17 +2037,27 @@ void showQuickCalmSheet(BuildContext context) {
     builder: (context) {
       return Container(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-        decoration: const BoxDecoration(
-          color: AppColors.crisisSurface,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('I need a moment.', style: CrisisText.h2),
+            Text(
+              'I need a moment.',
+              style: CrisisText.h2.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
             const SizedBox(height: 8),
-            Text('What would help right now?', style: CrisisText.bodyMuted),
+            Text(
+              'What would help right now?',
+              style: CrisisText.bodyMuted.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 24),
             _SupportRow(
               icon: Icons.air,
