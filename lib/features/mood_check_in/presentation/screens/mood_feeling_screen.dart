@@ -38,6 +38,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   int _energy = 5;
   final Set<String> _coping = {};
   bool _isSaving = false;
+  bool _discardDialogOpen = false;
 
   late final List<_MoodOption> _moods = [
     _MoodOption(
@@ -172,6 +173,86 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     _goToStep(_step + 1);
   }
 
+  void _handleSystemBack() {
+    if (_isSaving || _discardDialogOpen) return;
+    if (_step > 1) {
+      _goToStep(_step - 1);
+      return;
+    }
+    if (_hasDraftContent()) {
+      _showDiscardDialog();
+    } else {
+      _exitFlow();
+    }
+  }
+
+  bool _hasDraftContent() =>
+      _moodLabel != null ||
+      _intensity != 5 ||
+      _bodyZones.isNotEmpty ||
+      _triggers.isNotEmpty ||
+      _triggerController.text.trim().isNotEmpty ||
+      _sleepQuality != null ||
+      _energy != 5 ||
+      _noteController.text.trim().isNotEmpty ||
+      _coping.isNotEmpty;
+
+  Future<void> _showDiscardDialog() async {
+    if (_isSaving || _discardDialogOpen) return;
+    _discardDialogOpen = true;
+    final colorScheme = Theme.of(context).colorScheme;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        title: Text(
+          'Discard this entry?',
+          style: TextStyle(color: colorScheme.onSurface),
+        ),
+        content: Text(
+          'Your progress will be lost.',
+          style: TextStyle(color: colorScheme.onSurfaceVariant),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Discard'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep editing'),
+          ),
+        ],
+      ),
+    );
+    _discardDialogOpen = false;
+    if (!mounted) return;
+    if (discard == true) _discardAndExit();
+  }
+
+  void _exitFlow() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRouter.home);
+    }
+  }
+
+  void _discardAndExit() {
+    _step = 1;
+    _moodLabel = null;
+    _moodEmoji = null;
+    _intensity = 5;
+    _bodyZones.clear();
+    _triggers.clear();
+    _triggerController.clear();
+    _sleepQuality = null;
+    _energy = 5;
+    _noteController.clear();
+    _coping.clear();
+    _exitFlow();
+  }
+
   void _skip() {
     if (_step == 3) _bodyZones.clear();
     if (_step == 4) {
@@ -249,7 +330,12 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       _ => _reviewStep(),
     };
 
-    return Scaffold(
+    return PopScope<Object?>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _handleSystemBack();
+      },
+      child: Scaffold(
       body: SafeArea(
         child: Column(
           children: [
@@ -278,8 +364,19 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
               onContinue: _next,
               onSkip: _skip,
             ),
+            if (_step == _totalSteps)
+              TextButton(
+                onPressed: _isSaving ? null : _showDiscardDialog,
+                child: Text(
+                  'Cancel this entry',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
           ],
         ),
+      ),
       ),
     );
   }
