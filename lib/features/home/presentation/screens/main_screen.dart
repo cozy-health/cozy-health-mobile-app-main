@@ -35,28 +35,27 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       extendBody: true,
       body: SafeArea(bottom: false, child: _screens[_currentIndex]),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(left: 32),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const CrisisFab(),
-            Semantics(
-              button: true,
-              label: 'Open quick actions',
-              child: GestureDetector(
-                onLongPress: () => context.push(AppRouter.crisisHub),
-                child: FloatingActionButton(
-                  heroTag: 'quick-actions',
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: AppColors.white,
-                  onPressed: () => _showQuickActionsSheet(context),
-                  child: Icon(Icons.add),
-                ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const CrisisFab(),
+          const SizedBox(height: 16),
+          Semantics(
+            button: true,
+            label: 'Open quick actions',
+            child: GestureDetector(
+              onLongPress: () => context.push(AppRouter.crisisHub),
+              child: FloatingActionButton(
+                heroTag: 'quick-actions',
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: AppColors.white,
+                onPressed: () => _showQuickActionsSheet(context),
+                child: Icon(Icons.add),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: CustomBottomNavigationBar(
