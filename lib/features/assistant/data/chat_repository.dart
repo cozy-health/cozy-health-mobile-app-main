@@ -8,10 +8,14 @@ class ChatRepository {
   final LocalDbService _local = LocalDbService();
 
   List<dynamic> _extractListData(dynamic data, String label) {
-    if (data is Map<String, dynamic> && data['data'] is List) {
+    if (data is List) return data;
+    if (data is Map && data['data'] is List) {
       return data['data'] as List;
     }
-    if (data is List) return data;
+    if (data is Map && data['data'] is Map) {
+      final nested = data['data'] as Map;
+      if (nested['data'] is List) return nested['data'] as List;
+    }
     debugPrint('Unexpected $label response shape: ${data.runtimeType}');
     return const [];
   }
