@@ -1,3 +1,4 @@
+import '../../../../core/services/crash_reporting.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'dart:async';
@@ -770,95 +771,97 @@ Future<void> showCrisisSupportOverlay(
 }) {
   final isSoft = signal == CrisisSignal.soft;
 
-  return showDialog<void>(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: 'Dismiss',
-    builder: (dialogContext) {
-      return Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(24),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.favorite,
-                      color: AppColors.crisisWarning,
-                      size: 48,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      isSoft
-                          ? 'That sounds heavy.'
-                          : "It sounds like you're going through a lot.",
-                      style: CrisisText.h2.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
+  return CrashReporting.privateOverlay(
+    () => showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Dismiss',
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(24),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.favorite,
+                        color: AppColors.crisisWarning,
+                        size: 48,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      isSoft
-                          ? 'Want to talk to someone, or try a grounding exercise?'
-                          : "You don't have to carry this alone. We're here with you.",
-                      style: CrisisText.bodyMuted.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      const SizedBox(height: 24),
+                      Text(
+                        isSoft
+                            ? 'That sounds heavy.'
+                            : "It sounds like you're going through a lot.",
+                        style: CrisisText.h2.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    CrisisButton(
-                      label: 'Talk to someone',
-                      onPressed: () {
-                        Navigator.pop(dialogContext);
-                        context.push(AppRouter.crisisHub);
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    CrisisButton(
-                      label: isSoft
-                          ? 'Try grounding'
-                          : 'Try a grounding exercise',
-                      outlined: true,
-                      onPressed: () {
-                        Navigator.pop(dialogContext);
-                        context.push(AppRouter.grounding);
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    _CrisisDismissButton(
-                      label: isSoft ? "I'm okay" : "I'm okay right now",
-                      onPressed: () => Navigator.pop(dialogContext),
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.close,
-                    size: 24,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      const SizedBox(height: 16),
+                      Text(
+                        isSoft
+                            ? 'Want to talk to someone, or try a grounding exercise?'
+                            : "You don't have to carry this alone. We're here with you.",
+                        style: CrisisText.bodyMuted.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      CrisisButton(
+                        label: 'Talk to someone',
+                        onPressed: () {
+                          Navigator.pop(dialogContext);
+                          context.push(AppRouter.crisisHub);
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      CrisisButton(
+                        label: isSoft
+                            ? 'Try grounding'
+                            : 'Try a grounding exercise',
+                        outlined: true,
+                        onPressed: () {
+                          Navigator.pop(dialogContext);
+                          context.push(AppRouter.grounding);
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _CrisisDismissButton(
+                        label: isSoft ? "I'm okay" : "I'm okay right now",
+                        onPressed: () => Navigator.pop(dialogContext),
+                      ),
+                    ],
                   ),
-                  onPressed: () => Navigator.pop(dialogContext),
-                  tooltip: 'Close',
                 ),
-              ),
-            ],
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      size: 24,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: () => Navigator.pop(dialogContext),
+                    tooltip: 'Close',
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
-    },
+        );
+      },
+    ),
   );
 }
 

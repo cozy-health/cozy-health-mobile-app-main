@@ -1,3 +1,4 @@
+import 'core/services/crash_reporting.dart';
 import 'core/security_gate.dart';
 import 'core/services/install_marker_service.dart';
 import 'package:flutter/material.dart';
@@ -9,10 +10,20 @@ import 'core/theme/app_theme.dart';
 import 'features/settings/data/profile_repository.dart';
 import 'utils/screen_util.dart';
 
-void main() async {
+Future<void> main() => CrashReporting.run(_startApp);
+
+Future<void> _startApp() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LocalDbService().init();
   await InstallMarkerService().clearLingeringSessionOnFreshInstall();
+  AppRouter.router.routeInformationProvider.addListener(() {
+    CrashReporting.tagRoute(
+      AppRouter.router.routeInformationProvider.value.uri.path,
+    );
+  });
+  CrashReporting.tagRoute(
+    AppRouter.router.routeInformationProvider.value.uri.path,
+  );
   runApp(const CozyHealthApp());
 }
 
