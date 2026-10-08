@@ -2,9 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../widgets/insights_feed.dart';
 
-class TriggersAnalysisScreen extends StatelessWidget {
+class TriggersAnalysisScreen extends StatefulWidget {
   const TriggersAnalysisScreen({super.key});
+  @override
+  State<TriggersAnalysisScreen> createState() => _TriggersAnalysisScreenState();
+}
+
+class _TriggersAnalysisScreenState extends State<TriggersAnalysisScreen> {
+  final _feed = InsightsFeed();
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _feed.addListener(_refresh);
+    _feed.load(trigger: true);
+  }
+
+  @override
+  void dispose() {
+    _feed.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,47 +62,23 @@ class TriggersAnalysisScreen extends StatelessWidget {
               ),
               SizedBox(height: 32),
 
-              _buildTriggerRow(
-                context,
-                title: 'Work',
-                frequency: 4,
-                maxFrequency: 4,
-                avgMood: 4.8,
-                comparison: 'Lower than your usual.',
-                barColor: const Color(0xFFE85D3A), // warmOrange
+              InsightsStatus(
+                loading: _feed.loading && _feed.triggers == null,
+                failed: _feed.failed,
+                empty: (_feed.triggers ?? []).isEmpty,
               ),
-              SizedBox(height: 12),
-              _buildTriggerRow(
-                context,
-                title: 'Sleep',
-                frequency: 3,
-                maxFrequency: 4,
-                avgMood: 4.2,
-                comparison: 'Lower than your usual.',
-                barColor: const Color(0xFFE85D3A), // warmOrange
-              ),
-              SizedBox(height: 12),
-              _buildTriggerRow(
-                context,
-                title: 'Family',
-                frequency: 2,
-                maxFrequency: 4,
-                avgMood: 5.5,
-                comparison: 'About your usual.',
-                barColor: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.textMutedDark
-                    : AppColors.textMutedLight,
-              ),
-              SizedBox(height: 12),
-              _buildTriggerRow(
-                context,
-                title: 'Friends',
-                frequency: 1,
-                maxFrequency: 4,
-                avgMood: 7.5,
-                comparison: 'Higher than your usual.',
-                barColor: const Color(0xFF2D9E54), // warmGreen
-              ),
+              for (final row in (_feed.triggers ?? [])) ...[
+                _buildTriggerRow(
+                  context,
+                  title: row['name'] as String,
+                  frequency: (row['count'] as num).toInt(),
+                  maxFrequency: (_feed.triggers!.first['count'] as num).toInt(),
+                  avgMood: (row['avg_intensity'] as num).toDouble(),
+                  comparison: 'Based on your entries in the last 30 days.',
+                  barColor: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: 12),
+              ],
 
               SizedBox(height: 48),
 

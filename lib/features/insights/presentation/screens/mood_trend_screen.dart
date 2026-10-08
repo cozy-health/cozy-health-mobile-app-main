@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../widgets/chart_container.dart';
+import '../widgets/local_insights.dart';
 
 class MoodTrendScreen extends StatefulWidget {
   const MoodTrendScreen({super.key});
@@ -14,6 +15,18 @@ class MoodTrendScreen extends StatefulWidget {
 class _MoodTrendScreenState extends State<MoodTrendScreen>
     with SingleTickerProviderStateMixin {
   String _selectedRange = '7 days';
+  int get _days => int.parse(_selectedRange.split(' ').first);
+  List<Map<String, dynamic>> get _daily => LocalInsights.daily(days: _days);
+  String _extreme(bool highest) {
+    if (_daily.isEmpty) return '\u2014';
+    final rows = [..._daily]
+      ..sort(
+        (a, b) =>
+            (a['avg_intensity'] as num).compareTo(b['avg_intensity'] as num),
+      );
+    final row = highest ? rows.last : rows.first;
+    return "${(row['avg_intensity'] as num).toStringAsFixed(1)} on ${(row['day'] as String).substring(5)}";
+  }
 
   late AnimationController _controller;
   late Animation<double> _chartAnimation;
@@ -115,43 +128,39 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
               SizedBox(height: 32),
 
               // Chart
-              ChartContainer(
-                title: 'Mood trend ($_selectedRange)',
-                accessibleLabel: 'Mood trend chart for $_selectedRange',
-                tableColumns: const [
-                  DataColumn(label: Text('Day')),
-                  DataColumn(label: Text('Mood')),
-                ],
-                tableRows: const [
-                  DataRow(
-                    cells: [DataCell(Text('Monday')), DataCell(Text('4'))],
+              if (LocalInsights.moods(days: _days).length < 3)
+                const Text('Log 3 moods to see trends'),
+              if (_daily.isNotEmpty)
+                ChartContainer(
+                  title: 'Mood trend ($_selectedRange)',
+                  accessibleLabel: 'Mood trend chart for $_selectedRange',
+                  tableColumns: const [
+                    DataColumn(label: Text('Day')),
+                    DataColumn(label: Text('Mood')),
+                  ],
+                  tableRows: _daily
+                      .map(
+                        (row) => DataRow(
+                          cells: [
+                            DataCell(Text(row['day'] as String)),
+                            DataCell(
+                              Text(
+                                (row['avg_intensity'] as num).toStringAsFixed(
+                                  1,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      .toList(),
+                  chart: AnimatedBuilder(
+                    animation: _chartAnimation,
+                    builder: (context, child) {
+                      return _buildAreaChart();
+                    },
                   ),
-                  DataRow(
-                    cells: [DataCell(Text('Tuesday')), DataCell(Text('5'))],
-                  ),
-                  DataRow(
-                    cells: [DataCell(Text('Wednesday')), DataCell(Text('6'))],
-                  ),
-                  DataRow(
-                    cells: [DataCell(Text('Thursday')), DataCell(Text('8'))],
-                  ),
-                  DataRow(
-                    cells: [DataCell(Text('Friday')), DataCell(Text('7'))],
-                  ),
-                  DataRow(
-                    cells: [DataCell(Text('Saturday')), DataCell(Text('6'))],
-                  ),
-                  DataRow(
-                    cells: [DataCell(Text('Sunday')), DataCell(Text('7'))],
-                  ),
-                ],
-                chart: AnimatedBuilder(
-                  animation: _chartAnimation,
-                  builder: (context, child) {
-                    return _buildAreaChart();
-                  },
                 ),
-              ),
               SizedBox(height: 32),
 
               // Summary Card
@@ -172,14 +181,17 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
                       style: AppTextStyles.heading2,
                     ),
                     SizedBox(height: 16),
-                    _buildSummaryRow('Average:', '6.2 / 10'),
+                    _buildSummaryRow(
+                      'Average:',
+                      '${LocalInsights.averageText(days: _days)} / 10',
+                    ),
                     SizedBox(height: 8),
-                    _buildSummaryRow('Highest:', '8 on Thursday'),
+                    _buildSummaryRow('Highest daily avg:', _extreme(true)),
                     SizedBox(height: 8),
-                    _buildSummaryRow('Lowest:', '4 on Monday'),
+                    _buildSummaryRow('Lowest daily avg:', _extreme(false)),
                     SizedBox(height: 24),
                     Text(
-                      'You had more calm moments toward the end of the week.',
+                      'Your saved mood entries show patterns over time.',
                       style: AppTextStyles.body1.copyWith(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? AppColors.textMutedDark
@@ -228,7 +240,9 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
           child: CustomPaint(
             size: const Size(double.infinity, double.infinity),
             painter: _MoodAreaChartPainter(
-              data: [4, 5, 6, 8, 7, 6, 7], // Mock data
+              data: _daily
+                  .map((row) => (row['avg_intensity'] as num).toDouble())
+                  .toList(),
               animationValue: _chartAnimation.value,
             ),
           ),
@@ -236,17 +250,20 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
         SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
-            return Text(
-              day,
-              style: AppTextStyles.body2.copyWith(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.textSubtleDark
-                    : AppColors.textSubtleLight,
-                fontSize: 12,
-              ),
-            );
-          }).toList(),
+          children: _daily
+              .map((row) => (row['day'] as String).substring(5))
+              .map((day) {
+                return Text(
+                  day,
+                  style: AppTextStyles.body2.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textSubtleDark
+                        : AppColors.textSubtleLight,
+                    fontSize: 12,
+                  ),
+                );
+              })
+              .toList(),
         ),
       ],
     );
@@ -264,7 +281,8 @@ class _MoodAreaChartPainter extends CustomPainter {
     if (data.isEmpty) return;
 
     final double maxData = 10;
-    final double pointWidth = size.width / (data.length - 1);
+    final double pointWidth =
+        size.width / (data.length > 1 ? data.length - 1 : 1);
 
     final path = Path();
     final areaPath = Path();
@@ -371,6 +389,7 @@ class _MoodAreaChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _MoodAreaChartPainter oldDelegate) {
     return oldDelegate.animationValue != animationValue ||
+        oldDelegate.data != data ||
         oldDelegate.data != data;
   }
 }

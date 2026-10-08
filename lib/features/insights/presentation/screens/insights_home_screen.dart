@@ -5,6 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../widgets/insight_card.dart';
 import '../widgets/stat_card.dart';
+import '../widgets/insights_feed.dart';
+import '../widgets/local_insights.dart';
 
 class InsightsHomeScreen extends StatefulWidget {
   const InsightsHomeScreen({super.key});
@@ -17,10 +19,39 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
     with SingleTickerProviderStateMixin {
   // We'll use a staggered animation for the elements
   late AnimationController _controller;
+  final _feed = InsightsFeed();
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
+  List<Map<String, dynamic>> get _daily => LocalInsights.daily();
+  Map<String, dynamic>? get _week {
+    final rows = _feed.weeks ?? [];
+    if (rows.isEmpty) return null;
+    return rows.last;
+  }
+
+  double? get _sleepAverage {
+    final rows = _feed.sleep ?? [];
+    final count = rows.fold<int>(
+      0,
+      (sum, row) => sum + (row['count'] as num).toInt(),
+    );
+    return count == 0
+        ? null
+        : rows.fold<double>(
+                0,
+                (sum, row) =>
+                    sum + (row['sleep_quality'] as num) * (row['count'] as num),
+              ) /
+              count;
+  }
 
   @override
   void initState() {
     super.initState();
+    _feed.addListener(_refresh);
+    _feed.load(weekly: true, trigger: true, sleepMood: true);
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -30,6 +61,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
 
   @override
   void dispose() {
+    _feed.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -79,6 +111,11 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              InsightsStatus(
+                loading: _feed.loading && _feed.weeks == null,
+                failed: _feed.failed,
+                empty: (_feed.weeks ?? []).isEmpty,
+              ),
               FadeTransition(
                 opacity: headerAnim,
                 child: SlideTransition(
@@ -104,7 +141,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                     end: Offset.zero,
                   ).animate(subtextAnim),
                   child: Text(
-                    'You felt calmer than last week.',
+                    'Your logged mood patterns, at your pace.',
                     style: AppTextStyles.body1.copyWith(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? AppColors.textMutedDark
@@ -121,10 +158,13 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                     begin: const Offset(0, 0.1),
                     end: Offset.zero,
                   ).animate(heroCardAnim),
-                  child: const InsightCard(
+                  child: InsightCard(
                     icon: '🌿',
-                    title: 'Your best day was\nThursday.',
-                    subtitle: 'You logged 7 entries this week.',
+                    title: _week == null
+                        ? 'Your patterns will appear here.'
+                        : 'Most logged mood: ${_week!['top_mood']}',
+                    subtitle:
+                        'You logged ${_week?['entry_count'] ?? 0} entries this week.',
                   ),
                 ),
               ),
@@ -138,17 +178,23 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                   ).animate(statsAnim),
                   child: Row(
                     children: [
-                      const Expanded(
-                        child: StatCard(value: '7', label: 'Entries'),
+                      Expanded(
+                        child: StatCard(
+                          value: '${_week?['entry_count'] ?? 0}',
+                          label: 'Entries',
+                        ),
                       ),
                       SizedBox(width: 12),
                       Expanded(
                         child: StatCard(
-                          value: '6.2',
+                          value: _week == null
+                              ? '\u2014'
+                              : (_week!['avg_intensity'] as num)
+                                    .toStringAsFixed(1),
                           label: 'Avg mood',
-                          backgroundColor: Theme.of(context).colorScheme.primary.withValues(
-                            alpha: 0.05,
-                          ),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.05),
                         ),
                       ),
                     ],
@@ -166,11 +212,19 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                   child: Row(
                     children: [
                       Expanded(
-                        child: StatCard(value: 'Work', label: 'Top trigger'),
+                        child: StatCard(
+                          value: (_feed.triggers ?? []).isEmpty
+                              ? '\u2014'
+                              : _feed.triggers!.first['name'] as String,
+                          label: 'Top trigger (30d)',
+                        ),
                       ),
                       SizedBox(width: 12),
                       Expanded(
-                        child: StatCard(value: '7.5', label: 'Avg sleep'),
+                        child: StatCard(
+                          value: _sleepAverage?.toStringAsFixed(1) ?? '\u2014',
+                          label: 'Avg sleep (1-5)',
+                        ),
                       ),
                     ],
                   ),
@@ -235,9 +289,15 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                 opacity: section2Anim,
                 child: Column(
                   children: [
-                    _buildMiniTrigger('Work', '4 times', 0.8),
-                    SizedBox(height: 8),
-                    _buildMiniTrigger('Sleep', '3 times', 0.6),
+                    for (final row in (_feed.triggers ?? []).take(2)) ...[
+                      _buildMiniTrigger(
+                        row['name'] as String,
+                        "${row['count']} times",
+                        (row['count'] as num) /
+                            (_feed.triggers!.first['count'] as num),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                   ],
                 ),
               ),
@@ -268,6 +328,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
   }
 
   Widget _buildMiniChart() {
+    if (_daily.isEmpty) return const Text('Log 3 moods to see trends');
     return Container(
       height: 120,
       padding: const EdgeInsets.only(top: 24, left: 16, right: 16, bottom: 8),
@@ -282,7 +343,9 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
             child: CustomPaint(
               size: const Size(double.infinity, double.infinity),
               painter: _MiniAreaChartPainter(
-                data: [4, 5, 4, 8, 7, 6, 7],
+                data: _daily
+                    .map((row) => (row['avg_intensity'] as num).toDouble())
+                    .toList(),
                 color: Theme.of(context).colorScheme.primary,
                 animationValue: 1.0, // Simplified for mini chart
               ),
@@ -291,17 +354,20 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
           SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
-              return Text(
-                day,
-                style: AppTextStyles.body2.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textSubtleDark
-                      : AppColors.textSubtleLight,
-                  fontSize: 12,
-                ),
-              );
-            }).toList(),
+            children: _daily
+                .map((row) => (row['day'] as String).substring(5))
+                .map((day) {
+                  return Text(
+                    day,
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textSubtleDark
+                          : AppColors.textSubtleLight,
+                      fontSize: 12,
+                    ),
+                  );
+                })
+                .toList(),
           ),
         ],
       ),
@@ -379,7 +445,8 @@ class _MiniAreaChartPainter extends CustomPainter {
     if (data.isEmpty) return;
 
     final double maxData = 10;
-    final double pointWidth = size.width / (data.length - 1);
+    final double pointWidth =
+        size.width / (data.length > 1 ? data.length - 1 : 1);
 
     final path = Path();
     final areaPath = Path();
@@ -443,6 +510,7 @@ class _MiniAreaChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MiniAreaChartPainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue;
+    return oldDelegate.animationValue != animationValue ||
+        oldDelegate.data != data;
   }
 }

@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../widgets/insight_card.dart';
 import '../widgets/chart_container.dart';
+import '../widgets/local_insights.dart';
 
 class ActivityMoodScreen extends StatefulWidget {
   const ActivityMoodScreen({super.key});
@@ -15,6 +16,7 @@ class ActivityMoodScreen extends StatefulWidget {
 class _ActivityMoodScreenState extends State<ActivityMoodScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  List<Map<String, dynamic>> get _daily => LocalInsights.daily();
   late Animation<double> _chartAnimation;
 
   @override
@@ -62,85 +64,69 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
             children: [
               const InsightCard(
                 icon: '📓',
-                title: 'Journaling tends to lift\nyour mood.',
+                title: 'Your journaling and\nmood patterns.',
               ),
               SizedBox(height: 32),
 
-              ChartContainer(
-                title: 'Activity & Mood Correlation',
-                accessibleLabel:
-                    'Chart showing correlation between journaling activity and mood over 7 days',
-                tableColumns: const [
-                  DataColumn(label: Text('Day')),
-                  DataColumn(label: Text('Activity')),
-                  DataColumn(label: Text('Mood')),
-                ],
-                tableRows: const [
-                  DataRow(
-                    cells: [
-                      DataCell(Text('M')),
-                      DataCell(Text('0')),
-                      DataCell(Text('4')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('T')),
-                      DataCell(Text('0')),
-                      DataCell(Text('5')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('W')),
-                      DataCell(Text('1')),
-                      DataCell(Text('6')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('T')),
-                      DataCell(Text('1')),
-                      DataCell(Text('8')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('F')),
-                      DataCell(Text('1')),
-                      DataCell(Text('7')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('S')),
-                      DataCell(Text('0')),
-                      DataCell(Text('6')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('S')),
-                      DataCell(Text('1')),
-                      DataCell(Text('7')),
-                    ],
-                  ),
-                ],
-                legend: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildLegendItem('Activity', const Color(0xFFE85D3A), true),
-                    SizedBox(width: 24),
-                    _buildLegendItem('Mood', Theme.of(context).colorScheme.primary, false),
+              if (LocalInsights.moods().length < 3)
+                const Text('Log 3 moods to see trends'),
+              if (_daily.isNotEmpty)
+                ChartContainer(
+                  title: 'Activity & Mood Correlation',
+                  accessibleLabel:
+                      'Chart showing correlation between journaling activity and mood over 7 days',
+                  tableColumns: const [
+                    DataColumn(label: Text('Day')),
+                    DataColumn(label: Text('Activity')),
+                    DataColumn(label: Text('Mood')),
                   ],
+                  tableRows: _daily
+                      .asMap()
+                      .entries
+                      .map(
+                        (entry) => DataRow(
+                          cells: [
+                            DataCell(Text(entry.value['day'] as String)),
+                            DataCell(
+                              Text(
+                                LocalInsights.activity(
+                                  _daily,
+                                )[entry.key].toInt().toString(),
+                              ),
+                            ),
+                            DataCell(
+                              Text(
+                                (entry.value['avg_intensity'] as num)
+                                    .toStringAsFixed(1),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      .toList(),
+                  legend: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem(
+                        'Activity',
+                        const Color(0xFFE85D3A),
+                        true,
+                      ),
+                      SizedBox(width: 24),
+                      _buildLegendItem(
+                        'Mood',
+                        Theme.of(context).colorScheme.primary,
+                        false,
+                      ),
+                    ],
+                  ),
+                  chart: AnimatedBuilder(
+                    animation: _chartAnimation,
+                    builder: (context, child) {
+                      return _buildDualLineChart();
+                    },
+                  ),
                 ),
-                chart: AnimatedBuilder(
-                  animation: _chartAnimation,
-                  builder: (context, child) {
-                    return _buildDualLineChart();
-                  },
-                ),
-              ),
 
               SizedBox(height: 32),
 
@@ -159,7 +145,7 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
                     Text('What we noticed', style: AppTextStyles.heading2),
                     SizedBox(height: 16),
                     Text(
-                      'On days you journaled, your mood was 1.8 points higher on average.',
+                      LocalInsights.activityComparison(),
                       style: AppTextStyles.body1.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         height: 1.5,
@@ -167,7 +153,7 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
                     ),
                     SizedBox(height: 12),
                     Text(
-                      'You journaled 4 times this week.',
+                      'You journaled ${LocalInsights.journals().length} times in the last 7 days.',
                       style: AppTextStyles.body1.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         height: 1.5,
@@ -221,8 +207,10 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
           child: CustomPaint(
             size: const Size(double.infinity, double.infinity),
             painter: _DualLineChartPainter(
-              moodData: [4, 5, 6, 8, 7, 6, 7],
-              activityData: [2, 3, 5, 8, 6, 4, 7], // Mocked activity intensity
+              moodData: _daily
+                  .map((row) => (row['avg_intensity'] as num).toDouble())
+                  .toList(),
+              activityData: LocalInsights.activity(_daily),
               animationValue: _chartAnimation.value,
             ),
           ),
@@ -230,17 +218,20 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
         SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
-            return Text(
-              day,
-              style: AppTextStyles.body2.copyWith(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.textSubtleDark
-                    : AppColors.textSubtleLight,
-                fontSize: 12,
-              ),
-            );
-          }).toList(),
+          children: _daily
+              .map((row) => (row['day'] as String).substring(5))
+              .map((day) {
+                return Text(
+                  day,
+                  style: AppTextStyles.body2.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textSubtleDark
+                        : AppColors.textSubtleLight,
+                    fontSize: 12,
+                  ),
+                );
+              })
+              .toList(),
         ),
       ],
     );
@@ -263,7 +254,8 @@ class _DualLineChartPainter extends CustomPainter {
     if (moodData.isEmpty || activityData.isEmpty) return;
 
     final double maxData = 10;
-    final double pointWidth = size.width / (moodData.length - 1);
+    final double pointWidth =
+        size.width / (moodData.length > 1 ? moodData.length - 1 : 1);
 
     // Grid
     final gridPaint = Paint()
@@ -387,6 +379,8 @@ class _DualLineChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DualLineChartPainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue;
+    return oldDelegate.animationValue != animationValue ||
+        oldDelegate.moodData != moodData ||
+        oldDelegate.activityData != activityData;
   }
 }

@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../widgets/insight_card.dart';
 import '../widgets/chart_container.dart';
+import '../widgets/insights_feed.dart';
 
 class SleepMoodScreen extends StatefulWidget {
   const SleepMoodScreen({super.key});
@@ -15,11 +16,21 @@ class SleepMoodScreen extends StatefulWidget {
 class _SleepMoodScreenState extends State<SleepMoodScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  final _feed = InsightsFeed();
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
+  List<Map<String, dynamic>> get _points => _feed.sleep ?? [];
+  int get _count =>
+      _points.fold<int>(0, (sum, row) => sum + (row['count'] as num).toInt());
   late Animation<double> _chartAnimation;
 
   @override
   void initState() {
     super.initState();
+    _feed.addListener(_refresh);
+    _feed.load(sleepMood: true);
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -33,6 +44,7 @@ class _SleepMoodScreenState extends State<SleepMoodScreen>
 
   @override
   void dispose() {
+    _feed.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -62,85 +74,65 @@ class _SleepMoodScreenState extends State<SleepMoodScreen>
             children: [
               const InsightCard(
                 icon: '💤',
-                title: 'Better sleep tends to\nmean better mood for you.',
+                title: 'Your sleep quality and\nmood patterns.',
               ),
               SizedBox(height: 32),
 
-              ChartContainer(
-                title: 'Sleep & Mood Correlation',
-                accessibleLabel:
-                    'Chart showing correlation between sleep and mood over 7 days',
-                tableColumns: const [
-                  DataColumn(label: Text('Day')),
-                  DataColumn(label: Text('Sleep')),
-                  DataColumn(label: Text('Mood')),
-                ],
-                tableRows: const [
-                  DataRow(
-                    cells: [
-                      DataCell(Text('M')),
-                      DataCell(Text('5')),
-                      DataCell(Text('4')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('T')),
-                      DataCell(Text('6')),
-                      DataCell(Text('5')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('W')),
-                      DataCell(Text('6.5')),
-                      DataCell(Text('6')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('T')),
-                      DataCell(Text('8')),
-                      DataCell(Text('8')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('F')),
-                      DataCell(Text('7.5')),
-                      DataCell(Text('7')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('S')),
-                      DataCell(Text('7')),
-                      DataCell(Text('6')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: [
-                      DataCell(Text('S')),
-                      DataCell(Text('8')),
-                      DataCell(Text('7')),
-                    ],
-                  ),
-                ],
-                legend: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildLegendItem('Sleep', const Color(0xFFA78BC7), true),
-                    SizedBox(width: 24),
-                    _buildLegendItem('Mood', Theme.of(context).colorScheme.primary, false),
-                  ],
-                ),
-                chart: AnimatedBuilder(
-                  animation: _chartAnimation,
-                  builder: (context, child) {
-                    return _buildDualLineChart();
-                  },
-                ),
+              InsightsStatus(
+                loading: _feed.loading && _feed.sleep == null,
+                failed: _feed.failed,
+                empty: _points.isEmpty,
               ),
+              if (_points.isNotEmpty)
+                ChartContainer(
+                  title: 'Sleep & Mood Correlation',
+                  accessibleLabel:
+                      'Average mood intensity grouped by sleep quality over 30 days',
+                  tableColumns: const [
+                    DataColumn(label: Text('Sleep quality')),
+                    DataColumn(label: Text('Entries')),
+                    DataColumn(label: Text('Mood')),
+                  ],
+                  tableRows: _points
+                      .map(
+                        (row) => DataRow(
+                          cells: [
+                            DataCell(Text(row['sleep_quality'].toString())),
+                            DataCell(Text(row['count'].toString())),
+                            DataCell(
+                              Text(
+                                (row['avg_intensity'] as num).toStringAsFixed(
+                                  1,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      .toList(),
+                  legend: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem(
+                        'Sleep quality (1-5)',
+                        const Color(0xFFA78BC7),
+                        true,
+                      ),
+                      SizedBox(width: 24),
+                      _buildLegendItem(
+                        'Mood',
+                        Theme.of(context).colorScheme.primary,
+                        false,
+                      ),
+                    ],
+                  ),
+                  chart: AnimatedBuilder(
+                    animation: _chartAnimation,
+                    builder: (context, child) {
+                      return _buildDualLineChart();
+                    },
+                  ),
+                ),
 
               SizedBox(height: 32),
 
@@ -159,7 +151,7 @@ class _SleepMoodScreenState extends State<SleepMoodScreen>
                     Text('What we noticed', style: AppTextStyles.heading2),
                     SizedBox(height: 16),
                     Text(
-                      'On nights when you slept well, your mood the next day was 2.3 points higher on average.',
+                      'Each point shows average mood intensity for a sleep quality rating. These are patterns, not causes.',
                       style: AppTextStyles.body1.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         height: 1.5,
@@ -167,7 +159,7 @@ class _SleepMoodScreenState extends State<SleepMoodScreen>
                     ),
                     SizedBox(height: 12),
                     Text(
-                      'You slept well 4 nights this week.',
+                      '$_count mood entries included a sleep quality rating in the last 30 days.',
                       style: AppTextStyles.body1.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         height: 1.5,
@@ -221,8 +213,12 @@ class _SleepMoodScreenState extends State<SleepMoodScreen>
           child: CustomPaint(
             size: const Size(double.infinity, double.infinity),
             painter: _DualLineChartPainter(
-              moodData: [4, 5, 6, 8, 7, 6, 7],
-              sleepData: [5, 6, 6.5, 8, 7.5, 7, 8],
+              moodData: _points
+                  .map((row) => (row['avg_intensity'] as num).toDouble())
+                  .toList(),
+              sleepData: _points
+                  .map((row) => (row['sleep_quality'] as num).toDouble())
+                  .toList(),
               animationValue: _chartAnimation.value,
             ),
           ),
@@ -230,7 +226,9 @@ class _SleepMoodScreenState extends State<SleepMoodScreen>
         SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
+          children: _points.map((row) => row['sleep_quality'].toString()).map((
+            day,
+          ) {
             return Text(
               day,
               style: AppTextStyles.body2.copyWith(
@@ -263,7 +261,8 @@ class _DualLineChartPainter extends CustomPainter {
     if (moodData.isEmpty || sleepData.isEmpty) return;
 
     final double maxData = 10;
-    final double pointWidth = size.width / (moodData.length - 1);
+    final double pointWidth =
+        size.width / (moodData.length > 1 ? moodData.length - 1 : 1);
 
     // Grid
     final gridPaint = Paint()
@@ -275,6 +274,18 @@ class _DualLineChartPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
+    if (moodData.length == 1) {
+      canvas.drawCircle(
+        Offset(0, size.height - moodData[0] / maxData * size.height),
+        4,
+        Paint()..color = const Color(0xFF2D9E54),
+      );
+      canvas.drawCircle(
+        Offset(0, size.height - sleepData[0] / maxData * size.height),
+        4,
+        Paint()..color = const Color(0xFFA78BC7),
+      );
+    }
     _drawSleepLine(canvas, size, maxData, pointWidth);
     _drawMoodLine(canvas, size, maxData, pointWidth);
   }
@@ -386,6 +397,8 @@ class _DualLineChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DualLineChartPainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue;
+    return oldDelegate.animationValue != animationValue ||
+        oldDelegate.moodData != moodData ||
+        oldDelegate.sleepData != sleepData;
   }
 }
