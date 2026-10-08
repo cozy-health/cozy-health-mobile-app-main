@@ -1,3 +1,5 @@
+import '../../../../core/services/user_data_fetcher.dart';
+import '../../../../core/services/local_db_service.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -49,8 +51,10 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
       body: SafeArea(
         child: StreamBuilder<List<SavedArticle>>(
           stream: ContentRepository().watchSavedArticles(),
+          initialData: LocalDbService().getAllSavedArticles(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData) {
               return const ListSkeleton();
             }
             final articles = snapshot.data ?? [];
@@ -104,6 +108,7 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
   }
 
   Widget _buildEmptyState() => EmptyState(
+    onOfflineRetry: () => UserDataFetcher().fetchSavedArticles(),
     icon: Icons.bookmark_border,
     title: 'Save articles to read later.',
     primaryCtaLabel: 'Explore articles',

@@ -1,3 +1,4 @@
+import '../../../core/services/user_data_merge.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/models/user_profile.dart';
@@ -19,13 +20,18 @@ class ProfileRepository {
   }
 
   Future<UserProfile?> fetchProfile() async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.get(ApiConstants.me);
       final data = _extractMapData(response.data);
       if (data != null) {
-        final profile = UserProfile.fromJson(data);
-        await _local.saveUserProfile(profile);
-        return profile;
+        await UserDataMerge().apply(
+          'user_profile',
+          data,
+          isActive: () =>
+              scope == _local.boxName(LocalDbService.userSettingsBoxName),
+        );
+        return _local.getUserProfile();
       }
     } catch (e) {
       debugPrint('Fetch profile failed: $e');

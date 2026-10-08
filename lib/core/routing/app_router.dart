@@ -1,3 +1,5 @@
+import '../../features/auth/presentation/screens/restore_screen.dart';
+import '../services/restore_service.dart';
 import '../../features/settings/presentation/screens/digital_wellbeing_screen.dart';
 import '../security_gate.dart';
 import 'package:flutter/material.dart';
@@ -98,6 +100,7 @@ class AppRouter {
   static const String onboarding = '/onboarding';
   static const String welcome = '/welcome';
   static const String login = '/login';
+  static const String restore = '/restore';
   static const String createAccount = '/create-account';
   static const String forgotPassword = '/forgot-password';
   static const String congratulations = '/congratulations';
@@ -252,7 +255,18 @@ class AppRouter {
         builder: (_, __) => const PreparingCozyScreen(),
       ),
 
-      GoRoute(path: home, name: 'home', builder: (_, __) => const MainScreen()),
+      GoRoute(
+        path: restore,
+        name: 'restore',
+        builder: (_, __) => const RestoreScreen(),
+      ),
+      GoRoute(
+        path: home,
+        name: 'home',
+        redirect: (_, __) async =>
+            await RestoreService.required ? restore : null,
+        builder: (_, __) => const MainScreen(),
+      ),
 
       GoRoute(
         path: notifications,

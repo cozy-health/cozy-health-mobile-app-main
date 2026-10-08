@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/network_status.dart';
 
 /// A shared, scroll-safe invitation for an empty screen or card.
 class EmptyState extends StatelessWidget {
@@ -10,6 +11,7 @@ class EmptyState extends StatelessWidget {
     this.subtitle,
     this.primaryCtaLabel,
     this.onPrimaryCta,
+    this.onOfflineRetry,
   });
 
   final IconData? icon;
@@ -18,9 +20,29 @@ class EmptyState extends StatelessWidget {
   final String? subtitle;
   final String? primaryCtaLabel;
   final VoidCallback? onPrimaryCta;
+  final VoidCallback? onOfflineRetry;
 
   @override
   Widget build(BuildContext context) {
+    if (onOfflineRetry != null) {
+      return ValueListenableBuilder<bool?>(
+        valueListenable: networkOffline,
+        child: _build(context),
+        builder: (context, offline, child) => offline == true
+            ? EmptyState(
+                icon: Icons.cloud_off,
+                title: "You're offline.",
+                subtitle: 'Connect to load your data, then try again.',
+                primaryCtaLabel: 'Try again',
+                onPrimaryCta: onOfflineRetry,
+              )
+            : child!,
+      );
+    }
+    return _build(context);
+  }
+
+  Widget _build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final content = Padding(
       padding: const EdgeInsets.all(24),

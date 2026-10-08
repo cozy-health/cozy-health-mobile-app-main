@@ -6,8 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/api/api_client.dart';
-import '../../../../core/constants/api_constants.dart';
+import '../../../../core/api/api_exceptions.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/install_marker_service.dart';
 import '../../../../core/services/local_db_service.dart';
@@ -15,6 +14,7 @@ import '../../../../core/services/onboarding_service.dart';
 import '../../../../core/services/user_data_fetcher.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../data/splash_service.dart';
+import '../../../auth/data/auth_service.dart';
 import '../widgets/breathing_glow.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -152,16 +152,23 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     try {
-      await ApiClient.instance.get(ApiConstants.me);
+      final needsRestore = await AuthService().resumeStoredSession();
       if (!mounted) return;
-      context.go(AppRouter.home);
-      unawaited(_syncUserDataInBackground());
-    } catch (e) {
-      debugPrint('Stored session validation failed: $e');
+      context.go(needsRestore ? AppRouter.restore : AppRouter.home);
+      if (!needsRestore) unawaited(_syncUserDataInBackground());
+    } on ApiAuthException {
       await TokenStorage().clearToken();
-      await LocalDbService.instance.clearAllUserData();
+      await LocalDbService.instance.activateGuest();
       if (!mounted) return;
       context.go(AppRouter.welcome);
+    } catch (_) {
+      // Connectivity failures must never remove offline records or queued edits.
+      if (!mounted) return;
+      context.go(
+        LocalDbService().getUserProfile() != null
+            ? AppRouter.home
+            : AppRouter.welcome,
+      );
     }
   }
 

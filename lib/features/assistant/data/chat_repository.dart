@@ -1,3 +1,4 @@
+import '../../../core/services/user_data_merge.dart';
 import 'package:flutter/foundation.dart';
 import '../../../core/models/chat_conversation.dart';
 import '../../../core/models/chat_message.dart';
@@ -21,33 +22,48 @@ class ChatRepository {
   }
 
   Future<List<ChatConversation>> fetchConversations() async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.get('/conversations');
       final items = _extractListData(response.data, 'conversations')
           .whereType<Map>()
-          .map((json) => ChatConversation.fromJson(Map<String, dynamic>.from(json)))
+          .map(
+            (json) =>
+                ChatConversation.fromJson(Map<String, dynamic>.from(json)),
+          )
           .toList();
       for (final item in items) {
-        await _local.saveChatConversation(item);
+        await UserDataMerge().apply(
+          'chat_conversation',
+          item.toJson(),
+          isActive: () =>
+              scope == _local.boxName(LocalDbService.userSettingsBoxName),
+        );
       }
       return items;
     } catch (e) {
       return _local.getAllChatConversations();
     }
   }
-  
+
   Stream<List<ChatConversation>> watchConversations() {
     return _local.watchChatConversations();
   }
-  
+
   Future<List<ChatMessage>> fetchMessages(String convId) async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
-      final response = await ApiClient.instance.get('/conversations/$convId/messages');
+      final response = await ApiClient.instance.get(
+        '/conversations/$convId/messages',
+      );
       final items = _extractListData(response.data, 'messages')
           .whereType<Map>()
           .map((json) => ChatMessage.fromJson(Map<String, dynamic>.from(json)))
           .toList();
       for (final item in items) {
+        if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+          return [];
+        }
         await _local.saveChatMessage(item);
       }
       return items;
@@ -62,20 +78,35 @@ class ChatRepository {
 
   Future<ChatConversation> saveConversation(ChatConversation conv) async {
     await _local.saveChatConversation(conv);
-    await _local.enqueueSync(type: 'chat_conversation', action: 'upsert', recordId: conv.id, payload: conv.toJson());
+    await _local.enqueueSync(
+      type: 'chat_conversation',
+      action: 'upsert',
+      recordId: conv.id,
+      payload: conv.toJson(),
+    );
     _local.processSyncQueue();
     return conv;
   }
-  
+
   Future<void> deleteConversation(String id) async {
     await _local.deleteChatConversation(id);
-    await _local.enqueueSync(type: 'chat_conversation', action: 'delete', recordId: id, payload: null);
+    await _local.enqueueSync(
+      type: 'chat_conversation',
+      action: 'delete',
+      recordId: id,
+      payload: null,
+    );
     _local.processSyncQueue();
   }
 
   Future<void> saveMessage(ChatMessage msg) async {
     await _local.saveChatMessage(msg);
-    await _local.enqueueSync(type: 'chat_message', action: 'upsert', recordId: msg.id, payload: msg.toJson());
+    await _local.enqueueSync(
+      type: 'chat_message',
+      action: 'upsert',
+      recordId: msg.id,
+      payload: msg.toJson(),
+    );
     _local.processSyncQueue();
   }
 
@@ -83,13 +114,24 @@ class ChatRepository {
     // We fetch, update, save
     final msg = _local.getChatMessage(msgId);
     if (msg != null) {
-      await _local.saveChatMessage(msg); // core.ChatMessage doesn't have a settable status right now, but it's okay just to save it back.
-      await _local.enqueueSync(type: 'chat_message', action: 'upsert', recordId: msg.id, payload: msg.toJson());
+      await _local.saveChatMessage(
+        msg,
+      ); // core.ChatMessage doesn't have a settable status right now, but it's okay just to save it back.
+      await _local.enqueueSync(
+        type: 'chat_message',
+        action: 'upsert',
+        recordId: msg.id,
+        payload: msg.toJson(),
+      );
       _local.processSyncQueue();
     }
   }
 
-  Future<List<ChatMessage>> sendMessage(String conversationId, ChatMessage userMessage) async {
+  Future<List<ChatMessage>> sendMessage(
+    String conversationId,
+    ChatMessage userMessage,
+  ) async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.post(
         '/conversations/$conversationId/messages',
@@ -99,7 +141,10 @@ class ChatRepository {
           'client_created_at': userMessage.createdAt.toUtc().toIso8601String(),
         },
       );
-      
+
+      if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+        return [];
+      }
       final responseData = response.data;
       if (responseData is! Map<String, dynamic>) {
         debugPrint(
@@ -124,10 +169,10 @@ class ChatRepository {
       final assistantMsg = ChatMessage.fromJson(
         Map<String, dynamic>.from(assistantMessageData),
       );
-      
+
       await _local.saveChatMessage(userMsg);
       await _local.saveChatMessage(assistantMsg);
-      
+
       return [userMsg, assistantMsg];
     } catch (e) {
       // Mark as failed locally (omitting method call since not defined in local_db_service)

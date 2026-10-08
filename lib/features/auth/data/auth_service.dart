@@ -9,6 +9,7 @@ import '../../../core/api/response_data.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/services/guest_session_service.dart';
 import '../../../core/services/local_db_service.dart';
+import '../../../core/services/restore_service.dart';
 import '../../../core/services/user_data_fetcher.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../settings/data/profile_repository.dart';
@@ -33,15 +34,7 @@ class AuthService {
     );
 
     final data = _payload(responseMap(response));
-    final token = data['token']?.toString();
-
-    if (token != null && token.isNotEmpty) {
-      await _tokenStorage.saveToken(token, stayLoggedIn: stayLoggedIn);
-    }
-    await GuestSessionService().exitGuestSession();
-    await _cacheUserProfile(data['user']);
-    await ProfileRepository().fetchProfile();
-    _syncUserDataInBackground();
+    await _acceptSession(data, stayLoggedIn: stayLoggedIn);
 
     return data;
   }
@@ -56,18 +49,7 @@ class AuthService {
       body: {'id_token': idToken, 'device_name': defaultTargetPlatform.name},
     );
     final data = _payload(responseMap(response));
-    final token = data['token']?.toString();
-
-    if (token == null || token.isEmpty) {
-      throw const FormatException('Missing authentication token.');
-    }
-    if (token.isNotEmpty) {
-      await _tokenStorage.saveToken(token, stayLoggedIn: stayLoggedIn);
-    }
-    await GuestSessionService().exitGuestSession();
-    await _cacheUserProfile(data['user']);
-    await ProfileRepository().fetchProfile();
-    _syncUserDataInBackground();
+    await _acceptSession(data, stayLoggedIn: stayLoggedIn);
 
     return data;
   }
@@ -92,15 +74,7 @@ class AuthService {
       },
     );
     final data = _payload(responseMap(response));
-    final token = data['token']?.toString();
-    if (token == null || token.isEmpty) {
-      throw const FormatException('Missing authentication token.');
-    }
-    await _tokenStorage.saveToken(token, stayLoggedIn: stayLoggedIn);
-    await GuestSessionService().exitGuestSession();
-    await _cacheUserProfile(data['user']);
-    await ProfileRepository().fetchProfile();
-    _syncUserDataInBackground();
+    await _acceptSession(data, stayLoggedIn: stayLoggedIn);
     return data;
   }
 
@@ -124,21 +98,31 @@ class AuthService {
     );
 
     final data = _payload(responseMap(response));
-    final token = data['token']?.toString();
-
-    if (token != null && token.isNotEmpty) {
-      await _tokenStorage.saveToken(token);
-    }
-    await GuestSessionService().exitGuestSession();
-    await _cacheUserProfile(data['user']);
-    await ProfileRepository().fetchProfile();
-    _syncUserDataInBackground();
+    await _acceptSession(data, stayLoggedIn: true, registration: true);
 
     return data;
   }
 
   Future<Map<String, dynamic>> me() async {
     return _payload(responseMap(await _apiClient.get(ApiConstants.me)));
+  }
+
+  Future<bool> resumeStoredSession() async {
+    final profile = await me();
+    final userId = profile['user_id']?.toString();
+    if (userId == null) {
+      throw const FormatException('Missing account identity.');
+    }
+    final local = LocalDbService();
+    local.syncPaused = true;
+    try {
+      await local.waitForSyncIdle();
+      await local.activateAccount(userId, email: profile['email']?.toString());
+      await GuestSessionService().exitGuestSession();
+      return await RestoreService.prepare(userId);
+    } finally {
+      local.syncPaused = false;
+    }
   }
 
   Future<void> logout() async {
@@ -149,7 +133,7 @@ class AuthService {
     } finally {
       await _tokenStorage.clearToken();
       await GuestSessionService().exitGuestSession();
-      await LocalDbService.instance.clearAllUserData();
+      await LocalDbService.instance.activateGuest();
     }
   }
 
@@ -202,9 +186,7 @@ class AuthService {
     if (id == null || email == null || name == null || name.isEmpty) return;
 
     final cached = LocalDbService.instance.getUserProfile();
-    if (cached != null && cached.id != id) {
-      await LocalDbService.instance.clearAllUserData();
-    }
+    if (cached != null) return;
 
     await LocalDbService.instance.saveUserProfile(
       UserProfile(
@@ -219,6 +201,47 @@ class AuthService {
             DateTime.now(),
       ),
     );
+    await (await LocalDbService().settingsBox()).put(
+      'auth_profile_placeholder',
+      true,
+    );
+  }
+
+  Future<void> _acceptSession(
+    Map<String, dynamic> data, {
+    required bool stayLoggedIn,
+    bool registration = false,
+  }) async {
+    final token = data['token']?.toString();
+    final user = data['user'];
+    if (token == null || token.isEmpty || user is! Map || user['id'] == null) {
+      throw const FormatException('Missing session identity.');
+    }
+    final local = LocalDbService();
+    local.syncPaused = true;
+    try {
+      await local.waitForSyncIdle();
+      await local.activateAccount(
+        user['id'].toString(),
+        email: user['email']?.toString(),
+        registration: registration,
+      );
+      await _tokenStorage.saveToken(token, stayLoggedIn: stayLoggedIn);
+      await GuestSessionService().exitGuestSession();
+      await (await local.settingsBox()).put(
+        'device_user_id',
+        user['id'].toString(),
+      );
+      await _cacheUserProfile(user);
+      final restore = await RestoreService.prepare(
+        user['id'].toString(),
+        registration: registration,
+      );
+      if (!restore) await ProfileRepository().fetchProfile();
+    } finally {
+      local.syncPaused = false;
+    }
+    if (!await RestoreService.required) _syncUserDataInBackground();
   }
 
   void _syncUserDataInBackground() {

@@ -82,6 +82,7 @@ class _JournalScreenState extends State<JournalScreen>
       body: SafeArea(
         child: StreamBuilder<List<JournalEntry>>(
           stream: _repo.watchJournalEntries(),
+          initialData: LocalDbService().getAllJournalEntries(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting &&
                 !snapshot.hasData) {
@@ -93,6 +94,7 @@ class _JournalScreenState extends State<JournalScreen>
 
             if (allEntries.isEmpty) {
               return EmptyState(
+                onOfflineRetry: () => _repo.fetchJournalEntries(),
                 icon: Icons.menu_book_rounded,
                 title: 'A private space for your thoughts.',
                 primaryCtaLabel: 'Write your first entry',
@@ -265,9 +267,7 @@ class _JournalScreenState extends State<JournalScreen>
 
     AppSnackbar.show(
       context,
-      AppSnackbar.fromLegacy(
-        content: Text(entry.isDraft ? 'Draft saved.' : 'Entry saved.'),
-      ),
+      AppSnackbar.saved(type: 'journal_entry', id: entry.id),
     );
     return true;
   }

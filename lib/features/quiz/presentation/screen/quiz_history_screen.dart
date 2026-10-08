@@ -1,3 +1,5 @@
+import '../../../../core/services/user_data_fetcher.dart';
+import '../../../../core/services/local_db_service.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
@@ -29,14 +31,17 @@ class QuizHistoryScreen extends StatelessWidget {
       body: SafeArea(
         child: StreamBuilder<List<QuizAttempt>>(
           stream: QuizRepository().watchAttempts(),
+          initialData: LocalDbService().getAllQuizAttempts(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData) {
               return const ListSkeleton();
             }
 
             final attempts = [...?snapshot.data];
             if (attempts.isEmpty) {
               return EmptyState(
+                onOfflineRetry: () => UserDataFetcher().fetchQuizAttempts(),
                 icon: Icons.history,
                 title: 'Your results will appear here.',
                 primaryCtaLabel: 'Explore assessments',

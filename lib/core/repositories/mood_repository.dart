@@ -1,3 +1,4 @@
+import '../services/user_data_merge.dart';
 import 'package:flutter/foundation.dart';
 import '../models/mood_entry.dart';
 import '../services/local_db_service.dart';
@@ -31,6 +32,7 @@ class MoodRepository {
     int page = 1,
     int perPage = 50,
   }) async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.get(
         ApiConstants.moodEntries,
@@ -40,8 +42,13 @@ class MoodRepository {
           .whereType<Map>()
           .map((json) => MoodEntry.fromJson(Map<String, dynamic>.from(json)))
           .toList();
-      for (final item in items) {
-        await _local.saveMoodEntry(item);
+      for (final raw in _extractListData(response.data).whereType<Map>()) {
+        await UserDataMerge().apply(
+          'mood_entry',
+          Map<String, dynamic>.from(raw),
+          isActive: () =>
+              scope == _local.boxName(LocalDbService.userSettingsBoxName),
+        );
       }
       return items;
     } on ApiAuthException {

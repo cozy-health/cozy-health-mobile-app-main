@@ -22,6 +22,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController emailController = TextEditingController();
 
   bool _hasChanges = false;
+  bool _saving = false;
   UserProfile? _currentProfile;
 
   @override
@@ -48,23 +49,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _saveChanges() async {
-    if (_currentProfile != null) {
-      final updated = _currentProfile!.copyWith(
-        name: nameController.text.trim(),
-        username: usernameController.text.trim(),
-        bio: bioController.text.trim(),
-        email: emailController.text.trim(),
-        updatedAt: DateTime.now(),
-      );
-      await ProfileRepository().saveProfile(updated);
-    }
+    if (_saving || _currentProfile == null) return;
+    setState(() => _saving = true);
+    try {
+      if (_currentProfile != null) {
+        final updated = _currentProfile!.copyWith(
+          name: nameController.text.trim(),
+          username: usernameController.text.trim(),
+          bio: bioController.text.trim(),
+          email: emailController.text.trim(),
+          updatedAt: DateTime.now(),
+        );
+        await ProfileRepository().saveProfile(updated);
+      }
 
-    if (!mounted) return;
-    AppSnackbar.show(
-      context,
-      AppSnackbar.fromLegacy(content: Text('Profile updated')),
-    );
-    context.pop();
+      if (!mounted) return;
+      AppSnackbar.show(
+        context,
+        AppSnackbar.saved(type: 'user_profile', id: _currentProfile!.id),
+      );
+      context.pop();
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            "We couldn't save your profile. Please try again.",
+            onRetry: _saveChanges,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -83,9 +100,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: _hasChanges ? _saveChanges : null,
+            onPressed: _hasChanges && !_saving ? _saveChanges : null,
             child: Text(
-              'Save',
+              _saving ? 'Loading...' : 'Save',
               style: AppTextStyles.body1.copyWith(
                 color: _hasChanges
                     ? Theme.of(context).colorScheme.primary
@@ -219,7 +236,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               AppButton(
                 text: 'Save Changes',
-                onPressed: _hasChanges ? _saveChanges : null,
+                isLoading: _saving,
+                onPressed: _hasChanges && !_saving ? _saveChanges : null,
               ),
               SizedBox(height: 48),
             ],

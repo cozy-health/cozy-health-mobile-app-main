@@ -54,6 +54,7 @@ dependencies:
   permission_handler: 11.4.0
   record: ^7.1.1
   just_audio: 0.9.46
+  audio_session: ^0.1.25
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^8.2.0
   timezone: ^0.11.1
@@ -83,6 +84,7 @@ flutter:
   assets:
     - assets/svg/
     - assets/png/
+    - assets/sounds/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

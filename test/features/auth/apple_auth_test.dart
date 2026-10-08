@@ -544,6 +544,9 @@ void main() {
     tearDownAll(fixture.close);
     setUp(() async {
       await fixture.reset();
+      if (LocalDbService().isBoxOpen(LocalDbService.userProfileBoxName)) {
+        await LocalDbService().userProfileBox.clear();
+      }
       fixture.body = {'data': user};
       SharedPreferences.setMockInitialValues({'is_guest_session': true});
     });
@@ -574,7 +577,7 @@ void main() {
         });
         expect(await storage.getToken(), 'sanctum-token');
         expect(storage.isSessionOnly, true);
-        expect(fixture.box.values.first.id, '43');
+        expect(LocalDbService().getUserProfile()?.id, '43');
         expect(
           (await SharedPreferences.getInstance()).getBool('is_guest_session'),
           isNull,

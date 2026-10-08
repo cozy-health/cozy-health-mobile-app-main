@@ -1,10 +1,10 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:async';
 import 'dart:math';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import '../api/api_client.dart';
 import '../api/api_exceptions.dart';
 import '../models/sync_item.dart';
+import '../models/sync_summary.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/mood_entry.dart';
@@ -19,6 +19,7 @@ import '../models/app_notification.dart';
 import '../models/subscription_status.dart';
 import '../models/user_preferences.dart';
 import 'package:flutter/foundation.dart';
+import '../storage/token_storage.dart';
 
 class LocalDbService {
   // Singleton pattern
@@ -27,6 +28,205 @@ class LocalDbService {
   LocalDbService._internal();
   static LocalDbService get instance => _instance;
   bool _isProcessingSyncQueue = false;
+  bool syncPaused = false;
+  Future<void> waitForSyncIdle() async {
+    await _currentSync;
+  }
+
+  Future<SyncSummary>? _currentSync;
+  final _syncResults = StreamController<SyncSummary>.broadcast();
+  Stream<SyncSummary> get syncResults => _syncResults.stream;
+  String? _activeUser;
+  final _accountChanges = StreamController<void>.broadcast();
+  String boxName(String base) => _activeUser == null
+      ? base
+      : '${base}_user_${_activeUser!.codeUnits.map((c) => c.toRadixString(16).padLeft(2, '0')).join()}';
+  bool isBoxOpen(String base) => Hive.isBoxOpen(boxName(base));
+
+  Future<void> activateAccount(
+    String userId, {
+    String? email,
+    bool registration = false,
+  }) async {
+    final wasPaused = syncPaused;
+    syncPaused = true;
+    await waitForSyncIdle();
+    try {
+      await _activateAccount(userId, email: email, registration: registration);
+    } finally {
+      syncPaused = wasPaused;
+    }
+  }
+
+  Future<void> _activateAccount(
+    String userId, {
+    String? email,
+    bool registration = false,
+  }) async {
+    final registry = await Hive.openBox<dynamic>('device_registry');
+    if (!registry.containsKey('legacy_email')) {
+      final legacy = Hive.isBoxOpen(userProfileBoxName)
+          ? Hive.box<UserProfile>(userProfileBoxName).values.firstOrNull
+          : null;
+      await registry.put('legacy_email', legacy?.email.toLowerCase() ?? '');
+    }
+    final legacyEmail = registry.get('legacy_email') as String;
+    final isGuest = userId.startsWith('guest_');
+    final fromGuest = _activeUser?.startsWith('guest_') == true;
+    final adoptLegacy =
+        !isGuest &&
+        legacyEmail.isNotEmpty &&
+        legacyEmail == email?.toLowerCase() &&
+        registry.get('legacy_claimed_by') == null;
+    final adopt = adoptLegacy || (!isGuest && fromGuest && registration);
+    String sourceName(String base) =>
+        adoptLegacy ? base : (fromGuest ? boxName(base) : base);
+    final scope = userId.codeUnits
+        .map((c) => c.toRadixString(16).padLeft(2, '0'))
+        .join();
+    Future<void> open<T>(
+      String base,
+      T Function(Map<String, dynamic>) clone,
+    ) async {
+      final target = await Hive.openBox<T>('${base}_user_$scope');
+      if (adopt && target.isEmpty && Hive.isBoxOpen(sourceName(base))) {
+        final source = Hive.box<T>(sourceName(base));
+        for (final key in source.keys) {
+          final dynamic value = source.get(key);
+          if (value != null) {
+            await target.put(
+              key,
+              clone(Map<String, dynamic>.from(value.toJson() as Map)),
+            );
+          }
+        }
+      }
+    }
+
+    await open<MoodEntry>(moodBoxName, MoodEntry.fromJson);
+    await open<JournalEntry>(journalBoxName, JournalEntry.fromJson);
+    await open<ChatMessage>(chatMessageBoxName, ChatMessage.fromJson);
+    await open<ChatConversation>(
+      chatConversationBoxName,
+      ChatConversation.fromJson,
+    );
+    await open<SafetyPlan>(safetyPlanBoxName, SafetyPlan.fromJson);
+    await open<UserProfile>(userProfileBoxName, UserProfile.fromJson);
+    await open<QuizAttempt>(quizAttemptBoxName, QuizAttempt.fromJson);
+    await open<SavedArticle>(savedArticleBoxName, SavedArticle.fromJson);
+    await open<AppNotification>(
+      appNotificationBoxName,
+      AppNotification.fromJson,
+    );
+    await open<SubscriptionStatus>(
+      subscriptionStatusBoxName,
+      SubscriptionStatus.fromJson,
+    );
+    if (!Hive.isAdapterRegistered(11)) {
+      Hive.registerAdapter(UserPreferencesAdapter());
+    }
+    await open<UserPreferences>(
+      userPreferencesBoxName,
+      UserPreferences.fromJson,
+    );
+    final queue = await Hive.openBox<String>('${syncQueueBoxName}_user_$scope');
+    final settings = await Hive.openBox<dynamic>(
+      '${userSettingsBoxName}_user_$scope',
+    );
+    if (adopt &&
+        queue.isEmpty &&
+        Hive.isBoxOpen(sourceName(syncQueueBoxName))) {
+      await queue.putAll(
+        Hive.box<String>(sourceName(syncQueueBoxName)).toMap(),
+      );
+    }
+    if (adopt &&
+        settings.isEmpty &&
+        Hive.isBoxOpen(sourceName(userSettingsBoxName))) {
+      await settings.putAll(
+        Hive.box<dynamic>(sourceName(userSettingsBoxName)).toMap(),
+      );
+    }
+    // Before login, copy onboarding answers only; guest history remains separate.
+    if (!adopt &&
+        !isGuest &&
+        (fromGuest || (legacyEmail.isEmpty && _activeUser == null)) &&
+        Hive.isBoxOpen(sourceName(userPreferencesBoxName))) {
+      final source = Hive.box<UserPreferences>(
+        sourceName(userPreferencesBoxName),
+      );
+      final target = Hive.box<UserPreferences>(
+        '${userPreferencesBoxName}_user_$scope',
+      );
+      final preferences = source.get('current');
+      if (target.isEmpty && preferences != null) {
+        await target.put(
+          'current',
+          UserPreferences.fromJson(preferences.toJson()),
+        );
+      }
+      if (queue.isEmpty && Hive.isBoxOpen(sourceName(syncQueueBoxName))) {
+        for (final key in Hive.box<String>(sourceName(syncQueueBoxName)).keys) {
+          final value = Hive.box<String>(
+            sourceName(syncQueueBoxName),
+          ).get(key)!;
+          try {
+            if (SyncItem.fromJson(value).type == 'user_preferences') {
+              await queue.put(key, value);
+            }
+          } catch (_) {}
+        }
+      }
+    }
+    if (fromGuest && !isGuest) {
+      await registry.put(
+        'guest_epoch',
+        (registry.get('guest_epoch', defaultValue: 0) as int) + 1,
+      );
+    }
+    if (adoptLegacy) {
+      await registry.put('legacy_claimed_by', userId);
+    }
+    _activeUser = userId;
+    await registry.put('active_user_id', userId);
+    _accountChanges.add(null);
+  }
+
+  Future<void> activateGuest() async {
+    await waitForSyncIdle();
+    final registry = await Hive.openBox<dynamic>('device_registry');
+    final epoch = registry.get('guest_epoch', defaultValue: 0) as int;
+    await activateAccount('guest_$epoch');
+  }
+
+  Stream<T> _watchScoped<T>(
+    T Function() read,
+    Stream<BoxEvent> Function() events,
+  ) => Stream<T>.multi((controller) {
+    StreamSubscription<BoxEvent>? records;
+    void bind() {
+      records?.cancel();
+      try {
+        controller.add(read());
+        records = events().listen((_) {
+          try {
+            controller.add(read());
+          } catch (error, stack) {
+            controller.addError(error, stack);
+          }
+        }, onError: controller.addError);
+      } catch (error, stack) {
+        controller.addError(error, stack);
+      }
+    }
+
+    final account = _accountChanges.stream.listen((_) => bind());
+    bind();
+    controller.onCancel = () async {
+      await records?.cancel();
+      await account.cancel();
+    };
+  });
 
   static const String moodBoxName = 'moods';
   static const String journalBoxName = 'journals';
@@ -72,19 +272,23 @@ class LocalDbService {
     await Hive.openBox<String>(syncQueueBoxName);
     await Hive.openBox<UserPreferences>(userPreferencesBoxName);
     await Hive.openBox<dynamic>(userSettingsBoxName);
-    Connectivity().onConnectivityChanged.listen((results) {
-      if (!results.contains(ConnectivityResult.none)) {
-        processSyncQueue();
-      }
-    });
     Timer.periodic(const Duration(minutes: 5), (_) {
       processSyncQueue();
     });
+    final registry = await Hive.openBox<dynamic>('device_registry');
+    final active = registry.get('active_user_id') as String?;
+    if (active != null &&
+        (active.startsWith('guest_') ||
+            await TokenStorage().getToken() != null)) {
+      await activateAccount(active);
+    } else if (await TokenStorage().getToken() == null) {
+      await activateGuest();
+    }
     Future.microtask(() => processSyncQueue());
   }
 
   // --- Moods ---
-  Box<MoodEntry> get moodBox => Hive.box<MoodEntry>(moodBoxName);
+  Box<MoodEntry> get moodBox => Hive.box<MoodEntry>(boxName(moodBoxName));
 
   Future<void> saveMoodEntry(MoodEntry entry) async {
     await moodBox.put(entry.id, entry);
@@ -95,17 +299,16 @@ class LocalDbService {
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
-  Stream<List<MoodEntry>> watchMoodEntries() async* {
-    yield getAllMoodEntries();
-    yield* moodBox.watch().map((_) => getAllMoodEntries());
-  }
+  Stream<List<MoodEntry>> watchMoodEntries() =>
+      _watchScoped(getAllMoodEntries, () => moodBox.watch());
 
   Future<void> deleteMoodEntry(String id) async {
     await moodBox.delete(id);
   }
 
   // --- Journals ---
-  Box<JournalEntry> get journalBox => Hive.box<JournalEntry>(journalBoxName);
+  Box<JournalEntry> get journalBox =>
+      Hive.box<JournalEntry>(boxName(journalBoxName));
 
   Future<void> saveJournalEntry(JournalEntry entry) async {
     await journalBox.put(entry.id, entry);
@@ -116,10 +319,8 @@ class LocalDbService {
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
-  Stream<List<JournalEntry>> watchJournalEntries() async* {
-    yield getAllJournalEntries();
-    yield* journalBox.watch().map((_) => getAllJournalEntries());
-  }
+  Stream<List<JournalEntry>> watchJournalEntries() =>
+      _watchScoped(getAllJournalEntries, () => journalBox.watch());
 
   Future<void> deleteJournalEntry(String id) async {
     await journalBox.delete(id);
@@ -143,9 +344,9 @@ class LocalDbService {
 
   // --- Chat ---
   Box<ChatMessage> get chatMessageBox =>
-      Hive.box<ChatMessage>(chatMessageBoxName);
+      Hive.box<ChatMessage>(boxName(chatMessageBoxName));
   Box<ChatConversation> get chatConversationBox =>
-      Hive.box<ChatConversation>(chatConversationBoxName);
+      Hive.box<ChatConversation>(boxName(chatConversationBoxName));
 
   Future<void> saveChatMessage(ChatMessage message) async {
     await chatMessageBox.put(message.id, message);
@@ -155,10 +356,8 @@ class LocalDbService {
     await chatConversationBox.put(conversation.id, conversation);
   }
 
-  Stream<List<ChatConversation>> watchConversations() async* {
-    yield getAllConversations();
-    yield* chatConversationBox.watch().map((_) => getAllConversations());
-  }
+  Stream<List<ChatConversation>> watchConversations() =>
+      _watchScoped(getAllConversations, () => chatConversationBox.watch());
 
   Stream<List<ChatConversation>> watchChatConversations() =>
       watchConversations();
@@ -179,12 +378,11 @@ class LocalDbService {
     }
   }
 
-  Stream<List<ChatMessage>> watchMessages(String conversationId) async* {
-    yield getMessagesForConversation(conversationId);
-    yield* chatMessageBox.watch().map(
-      (_) => getMessagesForConversation(conversationId),
-    );
-  }
+  Stream<List<ChatMessage>> watchMessages(String conversationId) =>
+      _watchScoped(
+        () => getMessagesForConversation(conversationId),
+        () => chatMessageBox.watch(),
+      );
 
   Stream<List<ChatMessage>> watchChatMessages(String conversationId) =>
       watchMessages(conversationId);
@@ -201,15 +399,15 @@ class LocalDbService {
   }
 
   // --- Safety Plan ---
-  Box<SafetyPlan> get safetyPlanBox => Hive.box<SafetyPlan>(safetyPlanBoxName);
+  Box<SafetyPlan> get safetyPlanBox =>
+      Hive.box<SafetyPlan>(boxName(safetyPlanBoxName));
 
   Future<void> saveSafetyPlan(SafetyPlan plan) async {
     await safetyPlanBox.put(plan.id, plan);
   }
 
-  Stream<SafetyPlan?> watchSafetyPlan() {
-    return safetyPlanBox.watch().map((_) => safetyPlanBox.values.firstOrNull);
-  }
+  Stream<SafetyPlan?> watchSafetyPlan() =>
+      _watchScoped(getSafetyPlan, () => safetyPlanBox.watch());
 
   SafetyPlan? getSafetyPlan() {
     return safetyPlanBox.values.firstOrNull;
@@ -221,31 +419,29 @@ class LocalDbService {
 
   // --- User Profile ---
   Box<UserProfile> get userProfileBox =>
-      Hive.box<UserProfile>(userProfileBoxName);
+      Hive.box<UserProfile>(boxName(userProfileBoxName));
 
-  bool get isUserProfileBoxOpen => Hive.isBoxOpen(userProfileBoxName);
+  bool get isUserProfileBoxOpen => isBoxOpen(userProfileBoxName);
 
   Future<void> saveUserProfile(UserProfile profile) async {
     await userProfileBox.put(profile.id, profile);
+    await (await settingsBox()).put('current_profile_id', profile.id);
+    _accountChanges.add(null);
   }
 
-  Stream<UserProfile?> watchUserProfile() async* {
-    UserProfile? readFresh() {
-      final key = userProfileBox.keys.firstOrNull;
-      if (key == null) return null;
-      final stored = userProfileBox.get(key);
-      if (stored == null) return null;
-      return UserProfile.fromJson(stored.toJson());
-    }
-
-    yield readFresh();
-    await for (final _ in userProfileBox.watch()) {
-      yield readFresh();
-    }
-  }
+  Stream<UserProfile?> watchUserProfile() => _watchScoped(() {
+    final stored = getUserProfile();
+    return stored == null ? null : UserProfile.fromJson(stored.toJson());
+  }, () => userProfileBox.watch());
 
   UserProfile? getUserProfile() {
-    return userProfileBox.values.firstOrNull;
+    final key = isBoxOpen(userSettingsBoxName)
+        ? Hive.box<dynamic>(
+            boxName(userSettingsBoxName),
+          ).get('current_profile_id')
+        : null;
+    return (key == null ? null : userProfileBox.get(key)) ??
+        userProfileBox.values.firstOrNull;
   }
 
   Future<void> clearUserProfile() async {
@@ -254,21 +450,14 @@ class LocalDbService {
 
   // --- Quizzes ---
   Box<QuizAttempt> get quizAttemptBox =>
-      Hive.box<QuizAttempt>(quizAttemptBoxName);
+      Hive.box<QuizAttempt>(boxName(quizAttemptBoxName));
 
   Future<void> saveQuizAttempt(QuizAttempt attempt) async {
     await quizAttemptBox.put(attempt.id, attempt);
   }
 
-  Stream<List<QuizAttempt>> watchQuizAttempts() async* {
-    yield quizAttemptBox.values.toList()
-      ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
-    yield* quizAttemptBox.watch().map(
-      (_) =>
-          quizAttemptBox.values.toList()
-            ..sort((a, b) => b.completedAt.compareTo(a.completedAt)),
-    );
-  }
+  Stream<List<QuizAttempt>> watchQuizAttempts() =>
+      _watchScoped(getAllQuizAttempts, () => quizAttemptBox.watch());
 
   List<QuizAttempt> getQuizAttempts() {
     return quizAttemptBox.values.toList()
@@ -279,7 +468,7 @@ class LocalDbService {
 
   // --- Saved Articles ---
   Box<SavedArticle> get savedArticleBox =>
-      Hive.box<SavedArticle>(savedArticleBoxName);
+      Hive.box<SavedArticle>(boxName(savedArticleBoxName));
 
   Future<void> saveSavedArticle(SavedArticle article) async {
     await savedArticleBox.put(article.articleId, article);
@@ -289,15 +478,8 @@ class LocalDbService {
     await savedArticleBox.delete(articleId);
   }
 
-  Stream<List<SavedArticle>> watchSavedArticles() async* {
-    yield savedArticleBox.values.toList()
-      ..sort((a, b) => b.savedAt.compareTo(a.savedAt));
-    yield* savedArticleBox.watch().map(
-      (_) =>
-          savedArticleBox.values.toList()
-            ..sort((a, b) => b.savedAt.compareTo(a.savedAt)),
-    );
-  }
+  Stream<List<SavedArticle>> watchSavedArticles() =>
+      _watchScoped(getAllSavedArticles, () => savedArticleBox.watch());
 
   SavedArticle? getSavedArticle(String articleId) {
     return savedArticleBox.get(articleId);
@@ -310,7 +492,7 @@ class LocalDbService {
 
   // --- Notifications ---
   Box<AppNotification> get appNotificationBox =>
-      Hive.box<AppNotification>(appNotificationBoxName);
+      Hive.box<AppNotification>(boxName(appNotificationBoxName));
 
   Future<void> saveNotification(AppNotification notif) async {
     await appNotificationBox.put(notif.id, notif);
@@ -320,15 +502,8 @@ class LocalDbService {
     await appNotificationBox.delete(id);
   }
 
-  Stream<List<AppNotification>> watchNotifications() async* {
-    yield appNotificationBox.values.toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    yield* appNotificationBox.watch().map(
-      (_) =>
-          appNotificationBox.values.toList()
-            ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
-    );
-  }
+  Stream<List<AppNotification>> watchNotifications() =>
+      _watchScoped(getNotifications, () => appNotificationBox.watch());
 
   List<AppNotification> getNotifications() {
     return appNotificationBox.values.toList()
@@ -344,10 +519,8 @@ class LocalDbService {
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
-  Stream<List<AppNotification>> watchAppNotifications() async* {
-    yield getAllAppNotifications();
-    yield* appNotificationBox.watch().map((_) => getAllAppNotifications());
-  }
+  Stream<List<AppNotification>> watchAppNotifications() =>
+      _watchScoped(getAllAppNotifications, () => appNotificationBox.watch());
 
   Future<void> deleteAppNotification(String id) async {
     await appNotificationBox.delete(id);
@@ -355,15 +528,16 @@ class LocalDbService {
 
   // --- Subscription ---
   Box<SubscriptionStatus> get subscriptionStatusBox =>
-      Hive.box<SubscriptionStatus>(subscriptionStatusBoxName);
+      Hive.box<SubscriptionStatus>(boxName(subscriptionStatusBoxName));
 
   Future<void> saveSubscriptionStatus(SubscriptionStatus status) async {
     await subscriptionStatusBox.put(status.id, status);
   }
 
   Stream<SubscriptionStatus?> watchSubscriptionStatus() {
-    return subscriptionStatusBox.watch().map(
-      (_) => subscriptionStatusBox.values.firstOrNull,
+    return _watchScoped(
+      getSubscriptionStatus,
+      () => subscriptionStatusBox.watch(),
     );
   }
 
@@ -376,15 +550,14 @@ class LocalDbService {
     if (!Hive.isAdapterRegistered(11)) {
       Hive.registerAdapter(UserPreferencesAdapter());
     }
-    return Hive.isBoxOpen(userPreferencesBoxName)
-        ? Hive.box<UserPreferences>(userPreferencesBoxName)
-        : Hive.openBox<UserPreferences>(userPreferencesBoxName);
+    return isBoxOpen(userPreferencesBoxName)
+        ? Hive.box<UserPreferences>(boxName(userPreferencesBoxName))
+        : Hive.openBox<UserPreferences>(boxName(userPreferencesBoxName));
   }
 
-  Future<Box<dynamic>> settingsBox() async =>
-      Hive.isBoxOpen(userSettingsBoxName)
-      ? Hive.box<dynamic>(userSettingsBoxName)
-      : Hive.openBox<dynamic>(userSettingsBoxName);
+  Future<Box<dynamic>> settingsBox() async => isBoxOpen(userSettingsBoxName)
+      ? Hive.box<dynamic>(boxName(userSettingsBoxName))
+      : Hive.openBox<dynamic>(boxName(userSettingsBoxName));
 
   Future<UserPreferences?> getUserPreferences() async =>
       (await preferencesBox()).get('current');
@@ -400,8 +573,8 @@ class LocalDbService {
     final recordId =
         settings.get('preferences_sync_id') as String? ?? const Uuid().v4();
     await settings.put('preferences_sync_id', recordId);
-    if (!Hive.isBoxOpen(syncQueueBoxName)) {
-      await Hive.openBox<String>(syncQueueBoxName);
+    if (!isBoxOpen(syncQueueBoxName)) {
+      await Hive.openBox<String>(boxName(syncQueueBoxName));
     }
     await removeFromQueue('user_preferences', recordId);
     await enqueueSync(
@@ -410,13 +583,11 @@ class LocalDbService {
       recordId: recordId,
       payload: {'id': recordId, ...preferences.toJson()},
     );
-    debugPrint(
-      'Onboarding preferences saved locally and queued for sync.',
-    );
+    debugPrint('Onboarding preferences saved locally and queued for sync.');
   }
 
   // --- Sync Queue ---
-  Box<String> get syncQueueBox => Hive.box<String>(syncQueueBoxName);
+  Box<String> get syncQueueBox => Hive.box<String>(boxName(syncQueueBoxName));
 
   Future<void> queueSync(String type, String id) async {
     await enqueueSync(
@@ -458,17 +629,38 @@ class LocalDbService {
     return syncQueueBox.keys.cast<String>().toList();
   }
 
-  Future<void> processSyncQueue() async {
-    if (_isProcessingSyncQueue) return;
+  List<SyncItem> get pendingItems =>
+      isBoxOpen(syncQueueBoxName) ? _getQueuedSyncItems() : [];
+  bool hasPending(String type, String id) =>
+      pendingItems.any((item) => item.type == type && item.recordId == id);
+  Stream<List<SyncItem>> watchPendingItems() => isBoxOpen(syncQueueBoxName)
+      ? _watchScoped(() => pendingItems, () => syncQueueBox.watch())
+      : Stream.value([]);
+
+  Future<SyncSummary> processSyncQueue({bool force = false}) {
+    if (syncPaused || !isBoxOpen(syncQueueBoxName)) {
+      return Future.value(const SyncSummary());
+    }
+    if (_isProcessingSyncQueue) {
+      return _currentSync ?? Future.value(const SyncSummary());
+    }
+    _currentSync = _processSyncQueue(force: force);
+    return _currentSync!;
+  }
+
+  Future<SyncSummary> _processSyncQueue({required bool force}) async {
     _isProcessingSyncQueue = true;
+    var synced = 0;
+    var failed = 0;
     try {
       final now = DateTime.now().toUtc();
       final dueItems =
           _getQueuedSyncItems()
               .where(
                 (item) =>
-                    (item.nextRetryAt == null ||
-                        !item.nextRetryAt!.isAfter(now)),
+                    (force ||
+                    item.nextRetryAt == null ||
+                    !item.nextRetryAt!.isAfter(now)),
               )
               .toList()
             ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -480,14 +672,20 @@ class LocalDbService {
             '/sync/batch',
             data: {'operations': batch.map(_operationForSyncItem).toList()},
           );
-          await _applyBatchResult(batch, response.data);
+          final result = await _applyBatchResult(batch, response.data);
+          synced += result.synced;
+          failed += result.failed;
         } on ApiAuthException {
-          return;
+          failed += dueItems.length - start;
+          break;
         } on ApiNetworkException {
-          return;
+          failed += dueItems.length - start;
+          break;
         } on ApiTimeoutException {
-          return;
+          failed += dueItems.length - start;
+          break;
         } catch (error) {
+          failed += batch.length;
           for (final item in batch) {
             await _scheduleRetry(item);
           }
@@ -496,6 +694,9 @@ class LocalDbService {
     } finally {
       _isProcessingSyncQueue = false;
     }
+    final summary = SyncSummary(synced: synced, failed: failed);
+    if (summary.attempted > 0) _syncResults.add(summary);
+    return summary;
   }
 
   List<SyncItem> _getQueuedSyncItems() {
@@ -536,23 +737,22 @@ class LocalDbService {
     };
   }
 
-  Future<void> _applyBatchResult(List<SyncItem> batch, dynamic data) async {
+  Future<SyncSummary> _applyBatchResult(
+    List<SyncItem> batch,
+    dynamic data,
+  ) async {
     final results = _extractBatchResults(data);
-    if (results == null) {
-      for (final item in batch) {
-        await syncQueueBox.delete(item.id);
-      }
-      return;
-    }
-
+    var synced = 0;
     for (final item in batch) {
-      final result = results[item.id] ?? results[item.recordId];
+      final result = results?[item.id] ?? results?[item.recordId];
       if (result == true) {
+        synced++;
         await syncQueueBox.delete(item.id);
       } else {
         await _scheduleRetry(item);
       }
     }
+    return SyncSummary(synced: synced, failed: batch.length - synced);
   }
 
   Map<String, bool>? _extractBatchResults(dynamic data) {
@@ -573,11 +773,6 @@ class LocalDbService {
 
   Future<void> _scheduleRetry(SyncItem item) async {
     final nextRetryCount = item.retryCount + 1;
-    if (nextRetryCount > 10) {
-      await syncQueueBox.delete(item.id);
-      return;
-    }
-
     final retryAt = _nextRetryAt(nextRetryCount);
     final updated = item.copyWith(
       retryCount: nextRetryCount,
@@ -606,20 +801,22 @@ class LocalDbService {
   Future<void> clearAllUserData() async {
     await moodBox.clear();
     await journalBox.clear();
-    await Hive.box<ChatMessage>(chatMessageBoxName).clear();
-    await Hive.box<ChatConversation>(chatConversationBoxName).clear();
-    await Hive.box<SafetyPlan>(safetyPlanBoxName).clear();
+    await Hive.box<ChatMessage>(boxName(chatMessageBoxName)).clear();
+    await Hive.box<ChatConversation>(boxName(chatConversationBoxName)).clear();
+    await Hive.box<SafetyPlan>(boxName(safetyPlanBoxName)).clear();
     await userProfileBox.clear();
-    await Hive.box<QuizAttempt>(quizAttemptBoxName).clear();
-    await Hive.box<SavedArticle>(savedArticleBoxName).clear();
-    await Hive.box<AppNotification>(appNotificationBoxName).clear();
-    await Hive.box<SubscriptionStatus>(subscriptionStatusBoxName).clear();
+    await Hive.box<QuizAttempt>(boxName(quizAttemptBoxName)).clear();
+    await Hive.box<SavedArticle>(boxName(savedArticleBoxName)).clear();
+    await Hive.box<AppNotification>(boxName(appNotificationBoxName)).clear();
+    await Hive.box<SubscriptionStatus>(
+      boxName(subscriptionStatusBoxName),
+    ).clear();
     await syncQueueBox.clear();
-    if (Hive.isBoxOpen(userPreferencesBoxName)) {
-      await Hive.box<UserPreferences>(userPreferencesBoxName).clear();
+    if (isBoxOpen(userPreferencesBoxName)) {
+      await Hive.box<UserPreferences>(boxName(userPreferencesBoxName)).clear();
     }
-    if (Hive.isBoxOpen(userSettingsBoxName)) {
-      await Hive.box<dynamic>(userSettingsBoxName).clear();
+    if (isBoxOpen(userSettingsBoxName)) {
+      await Hive.box<dynamic>(boxName(userSettingsBoxName)).clear();
     }
   }
 }

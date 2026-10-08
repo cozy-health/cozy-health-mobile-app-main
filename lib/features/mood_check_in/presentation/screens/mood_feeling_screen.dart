@@ -1,3 +1,4 @@
+import '../../../../core/services/local_db_service.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
@@ -394,6 +395,10 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       if (!mounted) return;
     }
 
+    AppSnackbar.show(
+      context,
+      AppSnackbar.saved(type: 'mood_entry', id: entry.id),
+    );
     context.go(AppRouter.moodSuccess);
   }
 
@@ -1035,6 +1040,7 @@ class MoodHistoryScreen extends StatelessWidget {
       body: SafeArea(
         child: StreamBuilder<List<MoodEntry>>(
           stream: MoodRepository().watchMoodEntries(),
+          initialData: LocalDbService().getAllMoodEntries(),
           builder: (context, snapshot) {
             final entries = snapshot.data ?? const <MoodEntry>[];
 
@@ -1075,6 +1081,7 @@ class MoodHistoryScreen extends StatelessWidget {
                   const SizedBox(height: 320, child: ListSkeleton())
                 else if (entries.isEmpty)
                   EmptyState(
+                    onOfflineRetry: () => MoodRepository().fetchMoodEntries(),
                     icon: Icons.mood_rounded,
                     title: 'Your moods will appear here.',
                     primaryCtaLabel: 'Log a mood',

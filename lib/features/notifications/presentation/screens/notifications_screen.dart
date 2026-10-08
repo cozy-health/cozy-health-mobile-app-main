@@ -1,3 +1,5 @@
+import '../../../../core/services/user_data_fetcher.dart';
+import '../../../../core/services/local_db_service.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_router.dart';
@@ -60,6 +62,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         actions: [
           StreamBuilder<List<AppNotification>>(
             stream: NotificationRepository().watchNotifications(),
+            initialData: LocalDbService().getNotifications(),
             builder: (context, snapshot) {
               final items = snapshot.data ?? [];
               final unreadCount = items.where((n) => !n.read).length;
@@ -86,8 +89,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: SafeArea(
         child: StreamBuilder<List<AppNotification>>(
           stream: NotificationRepository().watchNotifications(),
+          initialData: LocalDbService().getNotifications(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData) {
               return const ListSkeleton();
             }
             final items = snapshot.data ?? [];
@@ -99,7 +104,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildEmptyState() => const EmptyState(
+  Widget _buildEmptyState() => EmptyState(
+    onOfflineRetry: () => UserDataFetcher().fetchNotifications(),
     icon: Icons.notifications_none,
     title: "You're all caught up.",
   );

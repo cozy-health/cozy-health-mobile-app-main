@@ -1,271 +1,109 @@
 import 'package:flutter/foundation.dart';
-
 import '../api/api_client.dart';
-import '../constants/api_constants.dart';
-import '../models/app_notification.dart';
-import '../models/chat_conversation.dart';
-import '../models/journal_entry.dart';
-import '../models/mood_entry.dart';
-import '../models/quiz_attempt.dart';
-import '../models/safety_plan.dart';
-import '../models/saved_article.dart';
 import '../models/subscription_status.dart';
-import '../models/user_profile.dart';
 import 'local_db_service.dart';
+import 'user_data_merge.dart';
 
+/// Streams render Hive immediately; refreshes only merge into the active account.
 class UserDataFetcher {
-  static final _instance = UserDataFetcher._();
-  factory UserDataFetcher() => _instance;
-  UserDataFetcher._();
-
   final _api = ApiClient.instance;
-  final _local = LocalDbService.instance;
-
-  Future<void> fetchAll() async {
-    final tasks = <Future<void>>[
-      fetchMoods(),
-      fetchJournals(),
-      fetchConversations(),
-      fetchNotifications(),
-      fetchProfile(),
-      fetchSafetyPlan(),
-      fetchQuizAttempts(),
-      fetchSavedArticles(),
-      fetchSubscription(),
-    ];
-    await Future.wait(tasks, eagerError: false);
-  }
-
-  Future<void> fetchMoods() async {
-    try {
-      final entries = await _fetchPaginated<MoodEntry>(
-        ApiConstants.moodEntries,
-        (json) => MoodEntry.fromJson(json),
-        debugLabel: 'moods',
-        logRawResponse: true,
-      );
-
-      for (final entry in entries) {
-        await _local.saveMoodEntry(entry);
-      }
-
-      final hiveEntries = _local.getAllMoodEntries();
-      final apiIds = entries.map((entry) => entry.id).toSet();
-      final hiveIds = hiveEntries.map((entry) => entry.id).toSet();
-      final missingIds = apiIds.difference(hiveIds).toList();
-      debugPrint(
-        'MOODS SYNC COUNTS: api=${entries.length} '
-        'apiUnique=${apiIds.length} hiveAfterWrite=${hiveEntries.length}',
-      );
-      if (missingIds.isNotEmpty || apiIds.length != entries.length) {
-        debugPrint(
-          'MOODS SYNC DIVERGENCE: duplicateApiIds=${entries.length - apiIds.length} '
-          'missingInHive=${missingIds.length} missingIds=$missingIds',
-        );
-      }
-      assert(() {
-        if (missingIds.isNotEmpty) {
-          debugPrint(
-            'MOODS SYNC ASSERTION: ${missingIds.length} fetched moods were not saved to Hive.',
-          );
-        }
-        return true;
-      }());
-      debugPrint('Fetched ${entries.length} moods from backend');
-    } catch (e) {
-      debugPrint('Fetch moods failed: $e');
-    }
-  }
-
-  Future<void> fetchJournals() async {
-    await _fetchListDomain<JournalEntry>(
-      endpoint: ApiConstants.journalEntries,
-      fallbackEndpoint: ApiConstants.journals,
-      debugLabel: 'journals',
-      fromJson: (json) => JournalEntry.fromJson(json),
-      save: _local.saveJournalEntry,
-    );
-  }
-
-  Future<void> fetchConversations() async {
-    await _fetchListDomain<ChatConversation>(
-      endpoint: ApiConstants.conversations,
-      debugLabel: 'conversations',
-      fromJson: (json) => ChatConversation.fromJson(json),
-      save: _local.saveChatConversation,
-    );
-  }
-
-  Future<void> fetchNotifications() async {
-    await _fetchListDomain<AppNotification>(
-      endpoint: ApiConstants.notifications,
-      debugLabel: 'notifications',
-      fromJson: (json) => AppNotification.fromJson(json),
-      save: _local.saveAppNotification,
-    );
-  }
-
-  Future<void> fetchProfile() async {
-    await _fetchSingleDomain<UserProfile>(
-      endpoint: ApiConstants.me,
-      debugLabel: 'profile',
-      fromJson: (json) => UserProfile.fromJson(json),
-      save: _local.saveUserProfile,
-    );
-  }
-
-  Future<void> fetchSafetyPlan() async {
-    await _fetchSingleDomain<SafetyPlan>(
-      endpoint: ApiConstants.safetyPlan,
-      debugLabel: 'safety plan',
-      fromJson: (json) => SafetyPlan.fromJson(json),
-      save: _local.saveSafetyPlan,
-    );
-  }
-
-  Future<void> fetchQuizAttempts() async {
-    await _fetchListDomain<QuizAttempt>(
-      endpoint: ApiConstants.quizAttempts,
-      fallbackEndpoint: ApiConstants.quizResults,
-      debugLabel: 'quiz attempts',
-      fromJson: (json) => QuizAttempt.fromJson(json),
-      save: _local.saveQuizAttempt,
-    );
-  }
-
+  final _local = LocalDbService();
+  final _merge = UserDataMerge();
+  Future<void> fetchAll() async => Future.wait([
+    fetchMoods(),
+    fetchJournals(),
+    fetchConversations(),
+    fetchNotifications(),
+    fetchProfile(),
+    fetchSafetyPlan(),
+    fetchQuizAttempts(),
+    fetchSubscription(),
+  ]);
+  Future<void> fetchMoods() => _list('/mood-entries', 'mood_entry');
+  Future<void> fetchJournals() => _list('/journal-entries', 'journal_entry');
+  Future<void> fetchConversations() =>
+      _list('/conversations', 'chat_conversation');
+  Future<void> fetchNotifications() =>
+      _list('/notifications', 'app_notification');
+  Future<void> fetchQuizAttempts() => _list('/quiz-attempts', 'quiz_attempt');
   Future<void> fetchSavedArticles() async {
-    await _fetchListDomain<SavedArticle>(
-      endpoint: ApiConstants.savedContent,
-      debugLabel: 'saved articles',
-      fromJson: (json) => SavedArticle.fromJson(json),
-      save: _local.saveSavedArticle,
-    );
+    /* No backend route exists yet. */
   }
-
+  Future<void> fetchProfile() => _single('/user/profile', 'user_profile');
+  Future<void> fetchSafetyPlan() => _single('/safety-plan', 'safety_plan');
   Future<void> fetchSubscription() async {
-    await _fetchSingleDomain<SubscriptionStatus>(
-      endpoint: ApiConstants.subscription,
-      debugLabel: 'subscription',
-      fromJson: (json) => SubscriptionStatus.fromJson(json),
-      save: _local.saveSubscriptionStatus,
-    );
-  }
-
-  Future<void> _fetchListDomain<T>({
-    required String endpoint,
-    String? fallbackEndpoint,
-    required String debugLabel,
-    required T Function(Map<String, dynamic>) fromJson,
-    required Future<void> Function(T) save,
-  }) async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
-      final items = await _fetchPaginated<T>(
-        endpoint,
-        fromJson,
-        debugLabel: debugLabel,
-      );
-      for (final item in items) {
-        await save(item);
-      }
-      debugPrint('Fetched ${items.length} $debugLabel from backend');
-    } catch (e) {
-      if (fallbackEndpoint == null) {
-        debugPrint('Fetch $debugLabel skipped/failed: $e');
-        return;
-      }
-      try {
-        final items = await _fetchPaginated<T>(
-          fallbackEndpoint,
-          fromJson,
-          debugLabel: debugLabel,
+      final response = await _api.get('/subscription');
+      final data = response.data is Map
+          ? response.data['data'] ?? response.data
+          : null;
+      if (data is Map &&
+          scope == _local.boxName(LocalDbService.userSettingsBoxName)) {
+        await _local.saveSubscriptionStatus(
+          SubscriptionStatus.fromJson(Map<String, dynamic>.from(data)),
         );
-        for (final item in items) {
-          await save(item);
-        }
-        debugPrint('Fetched ${items.length} $debugLabel from backend');
-      } catch (fallbackError) {
-        debugPrint('Fetch $debugLabel skipped/failed: $fallbackError');
       }
+    } catch (_) {
+      debugPrint('Subscription refresh unavailable; retaining cache.');
     }
   }
 
-  Future<void> _fetchSingleDomain<T>({
-    required String endpoint,
-    required String debugLabel,
-    required T Function(Map<String, dynamic>) fromJson,
-    required Future<void> Function(T) save,
-  }) async {
+  Future<void> _single(String endpoint, String type) async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await _api.get(endpoint);
-      final item = _extractSingle(response.data);
-      if (item == null) {
-        debugPrint('Fetch $debugLabel skipped: empty response');
-        return;
+      final data = response.data is Map
+          ? response.data['data'] ?? response.data
+          : null;
+      if (data is Map &&
+          scope == _local.boxName(LocalDbService.userSettingsBoxName)) {
+        await _merge.apply(
+          type,
+          Map<String, dynamic>.from(data),
+          isActive: () =>
+              scope == _local.boxName(LocalDbService.userSettingsBoxName),
+        );
       }
-      await save(fromJson(item));
-      debugPrint('Fetched $debugLabel from backend');
-    } catch (e) {
-      debugPrint('Fetch $debugLabel skipped/failed: $e');
+    } catch (_) {
+      debugPrint('$type refresh unavailable; retaining cache.');
     }
   }
 
-  Future<List<T>> _fetchPaginated<T>(
-    String endpoint,
-    T Function(Map<String, dynamic>) fromJson, {
-    required String debugLabel,
-    bool logRawResponse = false,
-  }) async {
-    var page = 1;
-    var totalPages = 1;
-    final items = <T>[];
-
-    while (page <= totalPages) {
-      final response = await _api.get(
-        endpoint,
-        queryParameters: {'page': page, 'per_page': 50},
-      );
-      if (logRawResponse) {
-        debugPrint('MOODS API RESPONSE: ${response.data}');
-      }
-
-      final data = response.data is Map ? response.data['data'] : response.data;
-      final list = _extractList(data);
-      for (final item in list) {
-        if (item is Map) {
-          items.add(fromJson(Map<String, dynamic>.from(item)));
+  Future<void> _list(String endpoint, String type) async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
+    try {
+      var page = 1;
+      var lastPage = 1;
+      do {
+        final response = await _api.get(
+          endpoint,
+          queryParameters: {'page': page, 'per_page': 50},
+        );
+        if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) return;
+        final data = response.data is Map
+            ? response.data['data'] ?? response.data
+            : response.data;
+        final rows = data is Map ? data['data'] : data;
+        if (rows is! List) throw const FormatException('Invalid collection');
+        final last = data is Map ? data['last_page'] : null;
+        lastPage = last is num ? last.toInt() : 1;
+        if (lastPage < page || lastPage > 1000) {
+          throw const FormatException('Invalid pagination');
         }
-      }
-
-      totalPages = _lastPage(data) ?? _lastPage(response.data) ?? 1;
-      debugPrint(
-        'Fetched $debugLabel page $page/$totalPages: ${list.length} items',
-      );
-      page++;
+        for (final row in rows) {
+          if (row is! Map) throw const FormatException('Invalid record');
+          await _merge.apply(
+            type,
+            Map<String, dynamic>.from(row),
+            isActive: () =>
+                scope == _local.boxName(LocalDbService.userSettingsBoxName),
+          );
+        }
+        page++;
+      } while (page <= lastPage);
+    } catch (_) {
+      debugPrint('$type refresh unavailable; retaining cache.');
     }
-
-    return items;
-  }
-
-  List<dynamic> _extractList(dynamic data) {
-    if (data is List) return data;
-    if (data is Map) {
-      final nested = data['data'] ?? data['items'] ?? data['results'];
-      if (nested is List) return nested;
-    }
-    return const [];
-  }
-
-  Map<String, dynamic>? _extractSingle(dynamic data) {
-    final payload = data is Map ? data['data'] ?? data : data;
-    if (payload is Map) return Map<String, dynamic>.from(payload);
-    return null;
-  }
-
-  int? _lastPage(dynamic data) {
-    if (data is! Map) return null;
-    final value = data['last_page'] ?? data['total_pages'];
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    return int.tryParse(value?.toString() ?? '');
   }
 }

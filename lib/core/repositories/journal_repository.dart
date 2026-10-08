@@ -1,3 +1,4 @@
+import '../services/user_data_merge.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/journal_entry.dart';
@@ -17,7 +18,9 @@ class JournalRepository {
       final nested = data['data'] as Map;
       if (nested['data'] is List) return nested['data'] as List;
     }
-    debugPrint('Unexpected journal entries response shape: ${data.runtimeType}');
+    debugPrint(
+      'Unexpected journal entries response shape: ${data.runtimeType}',
+    );
     return const [];
   }
 
@@ -25,6 +28,7 @@ class JournalRepository {
     int page = 1,
     int perPage = 50,
   }) async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.get(
         ApiConstants.journalEntries,
@@ -34,8 +38,13 @@ class JournalRepository {
           .whereType<Map>()
           .map((json) => JournalEntry.fromJson(Map<String, dynamic>.from(json)))
           .toList();
-      for (final item in items) {
-        await _local.saveJournalEntry(item);
+      for (final raw in _extractListData(response.data).whereType<Map>()) {
+        await UserDataMerge().apply(
+          'journal_entry',
+          Map<String, dynamic>.from(raw),
+          isActive: () =>
+              scope == _local.boxName(LocalDbService.userSettingsBoxName),
+        );
       }
       return items;
     } catch (e) {

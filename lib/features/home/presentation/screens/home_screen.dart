@@ -1,3 +1,4 @@
+import '../../../../core/widgets/sync_queue_badge.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -212,8 +213,11 @@ class _HomeScreenState extends State<HomeScreen>
       body: SafeArea(
         child: StreamBuilder<List<MoodEntry>>(
           stream: _moodStream,
+          initialData: LocalDbService().getAllMoodEntries(),
           builder: (context, snapshot) {
-            if ((_loadingDashboard && _dashboard == null) ||
+            if ((_loadingDashboard &&
+                    _dashboard == null &&
+                    (snapshot.data?.isEmpty ?? true)) ||
                 snapshot.connectionState == ConnectionState.waiting &&
                     !snapshot.hasData) {
               return const _HomeSkeleton();
@@ -293,6 +297,7 @@ class _HomeScreenState extends State<HomeScreen>
                             const SizedBox(height: 16),
                           ],
                           const _GuestBanner(),
+                          const SyncQueueBadge(),
                           _AnimatedIn(
                             controller: _entranceController,
                             interval: const Interval(

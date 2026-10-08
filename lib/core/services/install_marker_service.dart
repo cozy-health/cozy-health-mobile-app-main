@@ -13,7 +13,7 @@ class InstallMarkerService {
     if (markerSet) return;
 
     await TokenStorage().clearToken();
-    await LocalDbService.instance.clearAllUserData();
+    await LocalDbService.instance.activateGuest();
     await prefs.setBool(_key, true);
   }
 }

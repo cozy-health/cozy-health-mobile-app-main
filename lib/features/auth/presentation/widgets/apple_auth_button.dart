@@ -1,3 +1,4 @@
+import '../../../../core/services/restore_service.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -82,8 +83,15 @@ class _AppleAuthButtonState extends State<AppleAuthButton> {
       } else {
         final completed = await PersonalizationService()
             .hasCompletedPersonalization();
+        final needsRestore = await RestoreService.required;
         if (mounted) {
-          context.go(completed ? AppRouter.home : AppRouter.personalization);
+          context.go(
+            needsRestore
+                ? AppRouter.restore
+                : completed
+                ? AppRouter.home
+                : AppRouter.personalization,
+          );
         }
       }
     } on ApiException catch (error) {

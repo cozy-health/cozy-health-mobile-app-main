@@ -1,3 +1,4 @@
+import '../../../../core/services/restore_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
@@ -116,8 +117,12 @@ class _LoginScreenState extends State<LoginScreen> {
       final hasCompletedPersonalization = await PersonalizationService()
           .hasCompletedPersonalization();
       if (!mounted) return;
+      final needsRestore = await RestoreService.required;
+      if (!mounted) return;
       context.go(
-        hasCompletedPersonalization
+        needsRestore
+            ? AppRouter.restore
+            : hasCompletedPersonalization
             ? AppRouter.home
             : AppRouter.personalization,
       );
@@ -200,10 +205,12 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      await _authService.me();
+      final needsRestore = await _authService.resumeStoredSession();
       await TokenStorage().saveToken(token, stayLoggedIn: _stayLoggedIn);
       await GuestSessionService().exitGuestSession();
-      if (mounted) context.go(AppRouter.home);
+      if (mounted) {
+        context.go(needsRestore ? AppRouter.restore : AppRouter.home);
+      }
     } catch (e) {
       debugPrint('Biometric error: $e');
       if (!mounted) return;

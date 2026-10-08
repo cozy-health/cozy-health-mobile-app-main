@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../routing/app_router.dart';
+import '../services/local_db_service.dart';
 
 enum _NoticeKind { success, error, info, warning }
 
 class AppSnackbar {
+  static SnackBar saved({required String type, required String id}) => success(
+    LocalDbService().hasPending(type, id)
+        ? 'Saved locally — will sync when online'
+        : 'Saved',
+  );
   static final _failures = <String, int>{};
   static String friendly(String message) {
     if (RegExp(
@@ -13,7 +19,10 @@ class AppSnackbar {
     ).hasMatch(message)) {
       return "We couldn't complete that. Check your connection and try again.";
     }
-    return message.replaceFirst(RegExp(r"^(Failed to|Unable to)", caseSensitive: false), "We couldn't");
+    return message.replaceFirst(
+      RegExp(r"^(Failed to|Unable to)", caseSensitive: false),
+      "We couldn't",
+    );
   }
 
   static SnackBar success(String message) =>
