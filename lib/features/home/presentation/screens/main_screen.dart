@@ -10,6 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/bottom_navigation_bar.dart';
 import 'home_screen.dart';
+import '../widgets/feature_tour.dart';
 import '../../../crisis/presentation/widgets/crisis_fab.dart';
 
 class MainScreen extends StatefulWidget {
@@ -22,8 +23,9 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
+  final _tourTargets = FeatureTourTargets();
+  late final List<Widget> _screens = [
+    HomeScreen(tourTargets: _tourTargets),
     const ActivityScreen(),
     const AssistantScreen(),
     const CommunityHubScreen(),
@@ -39,7 +41,7 @@ class _MainScreenState extends State<MainScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const CrisisFab(),
+          CrisisFab(key: _tourTargets.crisis),
           const SizedBox(height: 16),
           Semantics(
             button: true,
@@ -47,6 +49,7 @@ class _MainScreenState extends State<MainScreen> {
             child: GestureDetector(
               onLongPress: () => context.push(AppRouter.crisisHub),
               child: FloatingActionButton(
+                key: _tourTargets.journal,
                 heroTag: 'quick-actions',
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: AppColors.white,
@@ -59,6 +62,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: CustomBottomNavigationBar(
+        assistantTourKey: _tourTargets.assistant,
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {

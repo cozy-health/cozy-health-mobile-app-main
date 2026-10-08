@@ -7,11 +7,13 @@ import '../../gen/assets.gen.dart';
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
+  final GlobalKey? assistantTourKey;
 
   const CustomBottomNavigationBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    this.assistantTourKey,
   });
 
   @override
@@ -56,11 +58,13 @@ class CustomBottomNavigationBar extends StatelessWidget {
   ) {
     final isSelected = currentIndex == index;
     final navTheme = Theme.of(context).bottomNavigationBarTheme;
-    final selectedColor = navTheme.selectedItemColor ?? Theme.of(context).colorScheme.primary;
+    final selectedColor =
+        navTheme.selectedItemColor ?? Theme.of(context).colorScheme.primary;
     final unselectedColor =
         navTheme.unselectedItemColor ?? Theme.of(context).colorScheme.onSurface;
 
     return Semantics(
+      key: index == 2 ? assistantTourKey : null,
       button: true,
       selected: isSelected,
       label: label,

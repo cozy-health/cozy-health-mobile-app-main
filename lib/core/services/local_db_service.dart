@@ -17,6 +17,8 @@ import '../models/quiz_attempt.dart';
 import '../models/saved_article.dart';
 import '../models/app_notification.dart';
 import '../models/subscription_status.dart';
+import '../models/user_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class LocalDbService {
   // Singleton pattern
@@ -37,6 +39,8 @@ class LocalDbService {
   static const String appNotificationBoxName = 'app_notifications';
   static const String subscriptionStatusBoxName = 'subscription_status';
   static const String syncQueueBoxName = 'sync_queue';
+  static const String userPreferencesBoxName = 'user_preferences';
+  static const String userSettingsBoxName = 'user_settings';
 
   Future<void> init() async {
     await Hive.initFlutter();
@@ -52,6 +56,7 @@ class LocalDbService {
     Hive.registerAdapter(SavedArticleAdapter());
     Hive.registerAdapter(AppNotificationAdapter());
     Hive.registerAdapter(SubscriptionStatusAdapter());
+    Hive.registerAdapter(UserPreferencesAdapter());
 
     // Open Boxes
     await Hive.openBox<MoodEntry>(moodBoxName);
@@ -65,6 +70,8 @@ class LocalDbService {
     await Hive.openBox<AppNotification>(appNotificationBoxName);
     await Hive.openBox<SubscriptionStatus>(subscriptionStatusBoxName);
     await Hive.openBox<String>(syncQueueBoxName);
+    await Hive.openBox<UserPreferences>(userPreferencesBoxName);
+    await Hive.openBox<dynamic>(userSettingsBoxName);
     Connectivity().onConnectivityChanged.listen((results) {
       if (!results.contains(ConnectivityResult.none)) {
         processSyncQueue();
@@ -364,6 +371,50 @@ class LocalDbService {
     return subscriptionStatusBox.values.firstOrNull;
   }
 
+  // --- Onboarding preferences ---
+  Future<Box<UserPreferences>> preferencesBox() async {
+    if (!Hive.isAdapterRegistered(11)) {
+      Hive.registerAdapter(UserPreferencesAdapter());
+    }
+    return Hive.isBoxOpen(userPreferencesBoxName)
+        ? Hive.box<UserPreferences>(userPreferencesBoxName)
+        : Hive.openBox<UserPreferences>(userPreferencesBoxName);
+  }
+
+  Future<Box<dynamic>> settingsBox() async =>
+      Hive.isBoxOpen(userSettingsBoxName)
+      ? Hive.box<dynamic>(userSettingsBoxName)
+      : Hive.openBox<dynamic>(userSettingsBoxName);
+
+  Future<UserPreferences?> getUserPreferences() async =>
+      (await preferencesBox()).get('current');
+
+  Future<void> saveUserPreferences(UserPreferences preferences) async {
+    await (await preferencesBox()).put('current', preferences);
+    final settings = await settingsBox();
+    await settings.put('onboarding_preferences', preferences.toJson());
+    if (!settings.containsKey('has_seen_tour')) {
+      await settings.put('has_seen_tour', false);
+    }
+    // Keep a durable sync intent until the backend accepts this type.
+    final recordId =
+        settings.get('preferences_sync_id') as String? ?? const Uuid().v4();
+    await settings.put('preferences_sync_id', recordId);
+    if (!Hive.isBoxOpen(syncQueueBoxName)) {
+      await Hive.openBox<String>(syncQueueBoxName);
+    }
+    await removeFromQueue('user_preferences', recordId);
+    await enqueueSync(
+      type: 'user_preferences',
+      action: 'upsert',
+      recordId: recordId,
+      payload: {'id': recordId, ...preferences.toJson()},
+    );
+    debugPrint(
+      'Onboarding preferences saved locally; user_preferences sync awaits backend support.',
+    );
+  }
+
   // --- Sync Queue ---
   Box<String> get syncQueueBox => Hive.box<String>(syncQueueBoxName);
 
@@ -416,7 +467,10 @@ class LocalDbService {
           _getQueuedSyncItems()
               .where(
                 (item) =>
-                    item.nextRetryAt == null || !item.nextRetryAt!.isAfter(now),
+                    // SyncController currently returns Unknown type for preferences.
+                    item.type != 'user_preferences' &&
+                    (item.nextRetryAt == null ||
+                        !item.nextRetryAt!.isAfter(now)),
               )
               .toList()
             ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -563,5 +617,11 @@ class LocalDbService {
     await Hive.box<AppNotification>(appNotificationBoxName).clear();
     await Hive.box<SubscriptionStatus>(subscriptionStatusBoxName).clear();
     await syncQueueBox.clear();
+    if (Hive.isBoxOpen(userPreferencesBoxName)) {
+      await Hive.box<UserPreferences>(userPreferencesBoxName).clear();
+    }
+    if (Hive.isBoxOpen(userSettingsBoxName)) {
+      await Hive.box<dynamic>(userSettingsBoxName).clear();
+    }
   }
 }

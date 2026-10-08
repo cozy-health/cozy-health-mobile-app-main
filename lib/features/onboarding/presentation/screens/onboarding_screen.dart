@@ -1,404 +1,259 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../../../core/models/user_preferences.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/local_db_service.dart';
 import '../../../../core/services/onboarding_service.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/services/personalization_service.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../data/onboarding_data.dart';
+import 'steps/welcome_step.dart';
+import 'steps/focus_areas_step.dart';
+import 'steps/challenges_step.dart';
+import 'steps/frequency_step.dart';
+import 'steps/attribution_step.dart';
+import 'steps/preview_step.dart';
+import 'steps/step_widgets.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
-
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
-  final PageController _pageController = PageController();
-  final List<OnboardingData> _pages = OnboardingData.pages;
-
-  late final AnimationController _textRevealController;
-  late final Animation<double> _titleOpacity;
-  late final Animation<Offset> _titleOffset;
-  late final Animation<double> _bodyOpacity;
-  late final Animation<Offset> _bodyOffset;
-
-  int _currentPage = 0;
+  final _pages = PageController();
+  late final _entrance = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  );
+  late final _fade = CurvedAnimation(
+    parent: _entrance,
+    curve: Curves.easeOutCubic,
+  );
+  final _focus = <String>{};
+  final _challenges = <String>{};
+  String _frequency = 'A few times a week';
+  String? _attribution;
+  int _step = 0;
+  bool _skipped = false;
+  bool _moving = false;
+  bool _saving = false;
+  bool get _reduceMotion =>
+      MediaQuery.of(context).disableAnimations ||
+      MediaQuery.of(context).accessibleNavigation;
+  bool get _canContinue =>
+      !_moving &&
+      !_saving &&
+      (_step != 1 || _focus.isNotEmpty) &&
+      (_step != 2 || _challenges.isNotEmpty);
 
   @override
-  void initState() {
-    super.initState();
-
-    _textRevealController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 620),
-    );
-
-    _titleOpacity = CurvedAnimation(
-      parent: _textRevealController,
-      curve: const Interval(0, 0.7, curve: Curves.easeOutCubic),
-    );
-    _titleOffset = Tween<Offset>(
-      begin: const Offset(0, 0.22),
-      end: Offset.zero,
-    ).animate(_titleOpacity);
-
-    _bodyOpacity = CurvedAnimation(
-      parent: _textRevealController,
-      curve: const Interval(0.32, 1, curve: Curves.easeOutCubic),
-    );
-    _bodyOffset = Tween<Offset>(
-      begin: const Offset(0, 0.22),
-      end: Offset.zero,
-    ).animate(_bodyOpacity);
-
-    _textRevealController.forward();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_reduceMotion) {
+      _entrance.value = 1;
+    } else {
+      _entrance.forward();
+    }
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
-    _textRevealController.dispose();
+    _pages.dispose();
+    _fade.dispose();
+    _entrance.dispose();
     super.dispose();
   }
 
-  Future<void> _nextPage() async {
-    if (_currentPage == _pages.length - 1) {
-      await OnboardingService().markOnboardingComplete();
-      if (!mounted) return;
-      context.go(AppRouter.welcome);
-      return;
+  void _toggle(Set<String> values, String value) => setState(() {
+    if (!values.add(value)) values.remove(value);
+  });
+
+  Future<void> _goTo(int step) async {
+    if (_moving || _saving) return;
+    setState(() => _moving = true);
+    if (_reduceMotion) {
+      _pages.jumpToPage(step);
+    } else {
+      await _pages.animateToPage(
+        step,
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.easeOutCubic,
+      );
     }
-
-    await _pageController.nextPage(
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOutCubic,
-    );
+    if (mounted) setState(() => _moving = false);
   }
 
-  Future<void> _skipToLastPage() async {
-    if (_currentPage == _pages.length - 1) return;
-
-    await _pageController.animateToPage(
-      _pages.length - 1,
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOutCubic,
-    );
+  void _changed(int step) {
+    setState(() => _step = step);
+    if (_reduceMotion) {
+      _entrance.value = 1;
+    } else {
+      _entrance.forward(from: 0);
+    }
   }
 
-  void _handlePageChanged(int index) {
+  Future<void> _skip() async {
+    if (_moving || _saving) return;
     setState(() {
-      _currentPage = index;
+      _skipped = true;
+      if (_step == 1) _focus.clear();
+      if (_step == 2) _challenges.clear();
+      if (_step == 4) _attribution = null;
     });
-    _textRevealController
-      ..reset()
-      ..forward();
+    if (_step == 6) {
+      await _finish(AppRouter.welcome);
+    } else {
+      await _goTo(_step + 1);
+    }
   }
+
+  Future<void> _finish(String route) async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await LocalDbService().saveUserPreferences(
+        UserPreferences(
+          focusAreas: _focus.toList(),
+          currentChallenges: _challenges.toList(),
+          checkInFrequency: _frequency,
+          attribution: _attribution,
+          completedAt: DateTime.now().toUtc(),
+          skipped: _skipped,
+        ),
+      );
+      await OnboardingService().markOnboardingComplete();
+      await PersonalizationService().markComplete();
+      if (mounted) context.go(route);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("We couldn't save your choices. Please try again."),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _page(int index) => switch (index) {
+    0 => const WelcomeStep(),
+    1 => FocusAreasStep(selected: _focus, onToggle: (v) => _toggle(_focus, v)),
+    2 => ChallengesStep(
+      selected: _challenges,
+      onToggle: (v) => _toggle(_challenges, v),
+    ),
+    3 => FrequencyStep(
+      selected: _frequency,
+      onChanged: (v) => setState(() => _frequency = v),
+    ),
+    4 => AttributionStep(
+      selected: _attribution ?? 'Prefer not to say',
+      onChanged: (v) =>
+          setState(() => _attribution = v == 'Prefer not to say' ? null : v),
+    ),
+    5 => PreviewStep(
+      focusAreas: _focus,
+      challenges: _challenges,
+      frequency: _frequency,
+      onEdit: () => _goTo(1),
+    ),
+    _ => const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        StepHeading(
+          title: 'Make this space yours.',
+          subtitle:
+              'Create an account to keep your check-ins and thoughts together.',
+        ),
+        Icon(Icons.person_outline, size: 120),
+      ],
+    ),
+  };
 
   @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+  Widget build(BuildContext context) => PopScope(
+    canPop: _step == 0 && !_saving,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop && _step > 0) _goTo(_step - 1);
+    },
+    child: Scaffold(
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           child: Column(
             children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: AnimatedOpacity(
-                  opacity: _currentPage == _pages.length - 1 ? 0 : 1,
-                  duration: const Duration(milliseconds: 300),
-                  child: IgnorePointer(
-                    ignoring: _currentPage == _pages.length - 1,
-                    child: TextButton(
-                      onPressed: _skipToLastPage,
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.grey,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        'Skip',
-                        style: AppTextStyles.body2.copyWith(
-                          color: AppColors.grey,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+              Row(
+                children: [
+                  if (_step > 0)
+                    IconButton(
+                      tooltip: 'Back',
+                      onPressed: _moving || _saving
+                          ? null
+                          : () => _goTo(_step - 1),
+                      icon: const Icon(Icons.arrow_back),
                     ),
+                  Expanded(
+                    child: Text(
+                      'Step ${_step + 1} of 7',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  // Frequency has a default and intentionally has no Skip control.
+                  if (_step != 3)
+                    TextButton(
+                      onPressed: _moving || _saving ? null : _skip,
+                      child: const Text('Skip'),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Semantics(
+                label: 'Onboarding progress',
+                value: 'Step ${_step + 1} of 7',
+                child: LinearProgressIndicator(value: (_step + 1) / 7),
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: PageView.builder(
+                  controller: _pages,
+                  itemCount: 7,
+                  onPageChanged: _changed,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) => SingleChildScrollView(
+                    child: FadeTransition(opacity: _fade, child: _page(index)),
                   ),
                 ),
               ),
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: _pages.length,
-                  onPageChanged: _handlePageChanged,
-                  itemBuilder: (context, index) {
-                    return AnimatedBuilder(
-                      animation: _pageController,
-                      builder: (context, _) {
-                        final pageValue = _pageController.hasClients
-                            ? (_pageController.page ?? _currentPage.toDouble())
-                            : _currentPage.toDouble();
-                        final delta = pageValue - index;
-
-                        return _OnboardingSlide(
-                          page: _pages[index],
-                          pageIndex: index,
-                          pageDelta: delta,
-                          imageHeight: size.height * 0.38,
-                          titleOpacity: _titleOpacity,
-                          titleOffset: _titleOffset,
-                          bodyOpacity: _bodyOpacity,
-                          bodyOffset: _bodyOffset,
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
-              _MorphingPillIndicator(
-                currentPage: _currentPage,
-                totalPages: _pages.length,
-              ),
-              const SizedBox(height: 34),
+              const SizedBox(height: 24),
               AppButton(
-                text: _currentPage == _pages.length - 1
-                    ? 'Get Started'
-                    : 'Next',
-                onPressed: _nextPage,
-                trailingIcon: _currentPage == _pages.length - 1
-                    ? null
-                    : Icons.arrow_forward,
+                text: _step == 5
+                    ? 'Looks good'
+                    : _step == 6
+                    ? 'Create account'
+                    : 'Continue',
+                isLoading: _saving,
+                onPressed: _canContinue
+                    ? () {
+                        if (_step == 6) {
+                          _finish(AppRouter.createAccount);
+                        } else {
+                          _goTo(_step + 1);
+                        }
+                      }
+                    : null,
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _OnboardingSlide extends StatelessWidget {
-  final OnboardingData page;
-  final int pageIndex;
-  final double pageDelta;
-  final double imageHeight;
-  final Animation<double> titleOpacity;
-  final Animation<Offset> titleOffset;
-  final Animation<double> bodyOpacity;
-  final Animation<Offset> bodyOffset;
-
-  const _OnboardingSlide({
-    required this.page,
-    required this.pageIndex,
-    required this.pageDelta,
-    required this.imageHeight,
-    required this.titleOpacity,
-    required this.titleOffset,
-    required this.bodyOpacity,
-    required this.bodyOffset,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final parallaxX = pageDelta * -56;
-    final imageX = pageDelta * -39.2;
-
-    return Column(
-      children: [
-        Expanded(
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Transform.translate(
-                offset: Offset(parallaxX, 0),
-                child: _SlideBackdrop(index: pageIndex),
-              ),
-              Transform.translate(
-                offset: Offset(imageX, 0),
-                child: page.pngAsset.image(
-                  height: imageHeight.clamp(250, 330),
-                  width: double.infinity,
-                  fit: BoxFit.contain,
+              if (_step == 6)
+                TextButton(
+                  onPressed: _saving ? null : () => _finish(AppRouter.login),
+                  child: const Text('I already have an account'),
                 ),
-              ),
             ],
           ),
         ),
-        FadeTransition(
-          opacity: titleOpacity,
-          child: SlideTransition(
-            position: titleOffset,
-            child: Text(
-              page.title,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.heading1.copyWith(
-                fontSize: 25,
-                fontWeight: FontWeight.w800,
-                height: 1.16,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        FadeTransition(
-          opacity: bodyOpacity,
-          child: SlideTransition(
-            position: bodyOffset,
-            child: Text(
-              page.description,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body1.copyWith(
-                color: AppColors.grey,
-                height: 1.5,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SlideBackdrop extends StatelessWidget {
-  final int index;
-
-  const _SlideBackdrop({required this.index});
-
-  @override
-  Widget build(BuildContext context) {
-    final palettes = [
-      (
-        const Color(0xFFE7F1FF),
-        const Color(0xFFFFF1D8),
-        const Color(0xFFDDFBE8),
       ),
-      (
-        const Color(0xFFFFECE9),
-        const Color(0xFFE9F4FF),
-        const Color(0xFFFFF7CF),
-      ),
-      (
-        const Color(0xFFEAF8F0),
-        const Color(0xFFFFEFE2),
-        const Color(0xFFEAF1FF),
-      ),
-    ];
-    final palette = palettes[index % palettes.length];
-
-    return SizedBox.expand(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            top: 52,
-            left: 18,
-            child: _SoftShape(
-              width: 132,
-              height: 118,
-              color: palette.$1,
-              angle: -0.18,
-            ),
-          ),
-          Positioned(
-            top: 88,
-            right: 2,
-            child: _SoftShape(
-              width: 116,
-              height: 150,
-              color: palette.$2,
-              angle: 0.22,
-            ),
-          ),
-          Positioned(
-            bottom: 34,
-            left: 34,
-            child: _SoftShape(
-              width: 118,
-              height: 86,
-              color: palette.$3,
-              angle: 0.12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SoftShape extends StatelessWidget {
-  final double width;
-  final double height;
-  final Color color;
-  final double angle;
-
-  const _SoftShape({
-    required this.width,
-    required this.height,
-    required this.color,
-    required this.angle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: angle,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 1.4, sigmaY: 1.4),
-          child: Container(
-            width: width,
-            height: height,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(32),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MorphingPillIndicator extends StatelessWidget {
-  final int currentPage;
-  final int totalPages;
-
-  const _MorphingPillIndicator({
-    required this.currentPage,
-    required this.totalPages,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(totalPages, (index) {
-        final isActive = currentPage == index;
-
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-          width: isActive ? 78 : 38,
-          height: 4,
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          decoration: BoxDecoration(
-            color: isActive ? Theme.of(context).colorScheme.primary : const Color(0xFFCDDFF7),
-            borderRadius: BorderRadius.circular(99),
-          ),
-        );
-      }),
-    );
-  }
+    ),
+  );
 }

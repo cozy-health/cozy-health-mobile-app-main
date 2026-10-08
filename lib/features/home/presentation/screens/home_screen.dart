@@ -1,4 +1,5 @@
 import '../../../../core/widgets/empty_state.dart';
+import '../widgets/feature_tour.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../../../core/repositories/affirmation_repository.dart';
@@ -31,7 +32,12 @@ enum HomeDashboardState {
 }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, this.state = HomeDashboardState.returningUser});
+  const HomeScreen({
+    super.key,
+    this.state = HomeDashboardState.returningUser,
+    this.tourTargets,
+  });
+  final FeatureTourTargets? tourTargets;
 
   final HomeDashboardState state;
 
@@ -256,171 +262,183 @@ class _HomeScreenState extends State<HomeScreen>
                       entries.first.createdAt.month == now.month &&
                       entries.first.createdAt.year == now.year;
 
-            return _DashboardScope(
-              data: _dashboard,
-              child: Semantics(
-                label:
-                    'Home dashboard loaded. $streak day streak. ${recentEntries.length} recent entries.',
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    await UserDataFetcher().fetchAll();
-                    await _loadDashboard();
-                  },
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(
-                      24,
-                      16,
-                      24,
-                      AppScaffoldPadding.tabScrollBottom(context).bottom,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_dashboardFailed) ...[
-                          _OfflineBanner(onRetry: _loadDashboard),
-                          const SizedBox(height: 16),
-                        ],
-                        const _GuestBanner(),
-                        _AnimatedIn(
-                          controller: _entranceController,
-                          interval: const Interval(
-                            0,
-                            .35,
-                            curve: Curves.easeOutCubic,
+            return FeatureTour(
+              targets: widget.tourTargets,
+              child: _DashboardScope(
+                data: _dashboard,
+                child: Semantics(
+                  label:
+                      'Home dashboard loaded. $streak day streak. ${recentEntries.length} recent entries.',
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      await UserDataFetcher().fetchAll();
+                      await _loadDashboard();
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        24,
+                        16,
+                        24,
+                        AppScaffoldPadding.tabScrollBottom(context).bottom,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_dashboardFailed) ...[
+                            _OfflineBanner(onRetry: _loadDashboard),
+                            const SizedBox(height: 16),
+                          ],
+                          const _GuestBanner(),
+                          _AnimatedIn(
+                            controller: _entranceController,
+                            interval: const Interval(
+                              0,
+                              .35,
+                              curve: Curves.easeOutCubic,
+                            ),
+                            child: const _Header(),
                           ),
-                          child: const _Header(),
-                        ),
-                        InkWell(
-                          onTap: () => context.push(AppRouter.crisisHub),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              'Need help now?',
-                              style: AppTextStyles.body2.copyWith(
-                                fontSize: 13,
-                                color: AppColors.crisisPrimary,
-                                decoration: TextDecoration.none,
+                          InkWell(
+                            onTap: () => context.push(AppRouter.crisisHub),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Need help now?',
+                                style: AppTextStyles.body2.copyWith(
+                                  fontSize: 13,
+                                  color: AppColors.crisisPrimary,
+                                  decoration: TextDecoration.none,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        if (dynamicState == HomeDashboardState.firstTime)
-                          _AnimatedIn(
-                            controller: _entranceController,
-                            interval: const Interval(
-                              .14,
-                              .58,
-                              curve: Curves.easeOutCubic,
-                            ),
-                            yOffset: 16,
-                            child: const _FirstTimeHero(),
-                          )
-                        else
-                          _AnimatedIn(
-                            controller: _entranceController,
-                            interval: const Interval(
-                              .14,
-                              .58,
-                              curve: Curves.easeOutCubic,
-                            ),
-                            yOffset: 16,
-                            child: _MoodHero(hasMoodToday: hasMoodToday),
-                          ),
-                        const SizedBox(height: 16),
-                        _AnimatedIn(
-                          controller: _entranceController,
-                          interval: const Interval(
-                            .28,
-                            .68,
-                            curve: Curves.easeOutCubic,
-                          ),
-                          yOffset: 12,
-                          child: _StatsRow(isEmpty: isEmpty, streak: streak),
-                        ),
-                        const SizedBox(height: 32),
-                        if (dynamicState == HomeDashboardState.firstTime)
-                          _FirstTimeInfo(controller: _entranceController)
-                        else ...[
-                          _SectionHeader(
-                            title: 'This week',
-                            action: 'See all',
-                            onAction: () => context.push(AppRouter.moodHistory),
-                          ),
-                          const SizedBox(height: 12),
-                          _AnimatedIn(
-                            controller: _entranceController,
-                            interval: const Interval(
-                              .48,
-                              .86,
-                              curve: Curves.easeOutCubic,
-                            ),
-                            yOffset: 10,
-                            child: _MoodChart(entries: moodsThisWeek),
-                          ),
-                          const SizedBox(height: 32),
-                          _SectionHeader(
-                            title: 'Recent entries',
-                            action: 'See all',
-                            onAction: () => context.push(AppRouter.moodHistory),
-                          ),
-                          const SizedBox(height: 12),
-                          if (recentEntries.isEmpty)
-                            const _EmptyCard(
-                              icon: Icons.edit_note,
-                              title: 'Your first entry will show here',
-                              subtitle:
-                                  'Notes stay private and easy to revisit.',
+                          const SizedBox(height: 24),
+                          if (dynamicState == HomeDashboardState.firstTime)
+                            _AnimatedIn(
+                              controller: _entranceController,
+                              interval: const Interval(
+                                .14,
+                                .58,
+                                curve: Curves.easeOutCubic,
+                              ),
+                              yOffset: 16,
+                              child: _FirstTimeHero(
+                                key: widget.tourTargets?.hero,
+                              ),
                             )
                           else
-                            ...recentEntries.asMap().entries.map(
-                              (entry) => Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: entry.key == recentEntries.length - 1
-                                      ? 0
-                                      : 8,
-                                ),
-                                child: _AnimatedIn(
-                                  controller: _entranceController,
-                                  interval: Interval(
-                                    .64 + (entry.key * .07),
-                                    1,
-                                    curve: Curves.easeOutCubic,
-                                  ),
-                                  yOffset: 12,
-                                  child: _EntryCard(entry: entry.value),
-                                ),
+                            _AnimatedIn(
+                              controller: _entranceController,
+                              interval: const Interval(
+                                .14,
+                                .58,
+                                curve: Curves.easeOutCubic,
+                              ),
+                              yOffset: 16,
+                              child: _MoodHero(
+                                key: widget.tourTargets?.hero,
+                                hasMoodToday: hasMoodToday,
                               ),
                             ),
+                          const SizedBox(height: 16),
+                          _AnimatedIn(
+                            controller: _entranceController,
+                            interval: const Interval(
+                              .28,
+                              .68,
+                              curve: Curves.easeOutCubic,
+                            ),
+                            yOffset: 12,
+                            child: _StatsRow(isEmpty: isEmpty, streak: streak),
+                          ),
+                          const SizedBox(height: 32),
+                          if (dynamicState == HomeDashboardState.firstTime)
+                            _FirstTimeInfo(controller: _entranceController)
+                          else ...[
+                            _SectionHeader(
+                              title: 'This week',
+                              action: 'See all',
+                              onAction: () =>
+                                  context.push(AppRouter.moodHistory),
+                            ),
+                            const SizedBox(height: 12),
+                            _AnimatedIn(
+                              controller: _entranceController,
+                              interval: const Interval(
+                                .48,
+                                .86,
+                                curve: Curves.easeOutCubic,
+                              ),
+                              yOffset: 10,
+                              child: _MoodChart(entries: moodsThisWeek),
+                            ),
+                            const SizedBox(height: 32),
+                            _SectionHeader(
+                              title: 'Recent entries',
+                              action: 'See all',
+                              onAction: () =>
+                                  context.push(AppRouter.moodHistory),
+                            ),
+                            const SizedBox(height: 12),
+                            if (recentEntries.isEmpty)
+                              const _EmptyCard(
+                                icon: Icons.edit_note,
+                                title: 'Your first entry will show here',
+                                subtitle:
+                                    'Notes stay private and easy to revisit.',
+                              )
+                            else
+                              ...recentEntries.asMap().entries.map(
+                                (entry) => Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom:
+                                        entry.key == recentEntries.length - 1
+                                        ? 0
+                                        : 8,
+                                  ),
+                                  child: _AnimatedIn(
+                                    controller: _entranceController,
+                                    interval: Interval(
+                                      .64 + (entry.key * .07),
+                                      1,
+                                      curve: Curves.easeOutCubic,
+                                    ),
+                                    yOffset: 12,
+                                    child: _EntryCard(entry: entry.value),
+                                  ),
+                                ),
+                              ),
+                          ],
+                          const SizedBox(height: 24),
+                          _AnimatedIn(
+                            controller: _entranceController,
+                            interval: const Interval(
+                              .82,
+                              1,
+                              curve: Curves.easeOutCubic,
+                            ),
+                            yOffset: 12,
+                            child: _AffirmationCard(
+                              text: _affirmations[_affirmationIndex],
+                              index: _affirmationIndex,
+                              count: _affirmations.length,
+                              onSwipe: (direction) {
+                                setState(() {
+                                  _affirmationIndex =
+                                      (_affirmationIndex + direction) %
+                                      _affirmations.length;
+                                  if (_affirmationIndex < 0) {
+                                    _affirmationIndex =
+                                        _affirmations.length - 1;
+                                  }
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 24),
                         ],
-                        const SizedBox(height: 24),
-                        _AnimatedIn(
-                          controller: _entranceController,
-                          interval: const Interval(
-                            .82,
-                            1,
-                            curve: Curves.easeOutCubic,
-                          ),
-                          yOffset: 12,
-                          child: _AffirmationCard(
-                            text: _affirmations[_affirmationIndex],
-                            index: _affirmationIndex,
-                            count: _affirmations.length,
-                            onSwipe: (direction) {
-                              setState(() {
-                                _affirmationIndex =
-                                    (_affirmationIndex + direction) %
-                                    _affirmations.length;
-                                if (_affirmationIndex < 0) {
-                                  _affirmationIndex = _affirmations.length - 1;
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -607,7 +625,7 @@ class _Header extends StatelessWidget {
 }
 
 class _MoodHero extends StatefulWidget {
-  const _MoodHero({required this.hasMoodToday});
+  const _MoodHero({super.key, required this.hasMoodToday});
 
   final bool hasMoodToday;
 
@@ -698,7 +716,7 @@ class _MoodHeroState extends State<_MoodHero>
 }
 
 class _FirstTimeHero extends StatelessWidget {
-  const _FirstTimeHero();
+  const _FirstTimeHero({super.key});
   @override
   Widget build(BuildContext context) => _WarmCard(
     color: AppColors.primarySubtle,
