@@ -46,6 +46,32 @@ class AuthService {
     return data;
   }
 
+  Future<Map<String, dynamic>> loginWithGoogle(
+    String idToken, {
+    bool stayLoggedIn = true,
+  }) async {
+    final response = await _apiClient.post(
+      ApiConstants.googleLogin,
+      withAuth: false,
+      body: {'id_token': idToken, 'device_name': defaultTargetPlatform.name},
+    );
+    final data = _payload(responseMap(response));
+    final token = data['token']?.toString();
+
+    if (token == null || token.isEmpty) {
+      throw const FormatException('Missing authentication token.');
+    }
+    if (token.isNotEmpty) {
+      await _tokenStorage.saveToken(token, stayLoggedIn: stayLoggedIn);
+    }
+    await GuestSessionService().exitGuestSession();
+    await _cacheUserProfile(data['user']);
+    await ProfileRepository().fetchProfile();
+    _syncUserDataInBackground();
+
+    return data;
+  }
+
   Future<Map<String, dynamic>> register({
     required String firstname,
     required String lastname,

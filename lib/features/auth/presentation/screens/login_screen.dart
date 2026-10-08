@@ -12,6 +12,7 @@ import '../../../../core/services/personalization_service.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../data/auth_service.dart';
 import '../widgets/auth_ui.dart';
+import '../widgets/google_auth_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,6 +28,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _stayLoggedIn = false;
   bool _isLoading = false;
+  bool _googleLoading = false;
+  bool get _busy => _isLoading || _googleLoading;
   String? _emailError;
   String? _passwordError;
 
@@ -193,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
           error: _emailError,
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          enabled: !_isLoading,
+          enabled: !_busy,
         ),
         const SizedBox(height: 24),
         AuthTextField(
@@ -201,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
           error: _passwordError,
           controller: _passwordController,
           obscure: true,
-          enabled: !_isLoading,
+          enabled: !_busy,
         ),
         const SizedBox(height: 16),
         Row(
@@ -220,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
-                onChanged: _isLoading
+                onChanged: _busy
                     ? null
                     : (value) => setState(() => _stayLoggedIn = value ?? false),
               ),
@@ -238,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
-            onPressed: _isLoading
+            onPressed: _busy
                 ? null
                 : () => context.push(AppRouter.forgotPassword),
             child: Text(
@@ -252,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 32),
         AuthPrimaryButton(
           text: 'Log In',
-          onPressed: _isLoading ? null : _login,
+          onPressed: _busy ? null : _login,
           isLoading: _isLoading,
         ),
         const SizedBox(height: 24),
@@ -272,12 +275,18 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
         const SizedBox(height: 24),
+        GoogleAuthButton(
+          enabled: !_busy,
+          stayLoggedIn: _stayLoggedIn,
+          onLoadingChanged: (value) => setState(() => _googleLoading = value),
+        ),
+        const SizedBox(height: 24),
         AuthPrimaryButton(
           text: Theme.of(context).platform == TargetPlatform.iOS
               ? 'Log in with Face ID'
               : 'Log in with fingerprint',
           isOutlined: true,
-          onPressed: _isLoading ? null : _loginWithBiometric,
+          onPressed: _busy ? null : _loginWithBiometric,
         ),
       ],
     );

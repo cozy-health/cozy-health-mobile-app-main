@@ -9,7 +9,10 @@ import '../services/local_db_service.dart';
 
 class AuthInterceptor extends Interceptor {
   @override
-  Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  Future<void> onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     if (options.extra['skipAuth'] == true) {
       return handler.next(options);
     }
@@ -23,14 +26,17 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401) {
+    if (err.response?.statusCode == 401 &&
+        !err.requestOptions.path.endsWith('/auth/google')) {
       await AuthTokenService.clearToken();
       await LocalDbService().clearAllUserData();
-      
+
       final context = AppRouter.navigatorKey.currentContext;
       if (context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Session expired. Please log in again.")),
+          const SnackBar(
+            content: Text("Session expired. Please log in again."),
+          ),
         );
         context.go(AppRouter.login);
       }
@@ -44,7 +50,9 @@ class LoggingInterceptor extends Interceptor {
     final method = options.method.toUpperCase();
     final path = options.uri.path;
 
-    if (path == '/api/v1/auth/register' ||
+    if (path == '/api/v1/auth/google' ||
+        path == '/auth/google' ||
+        path == '/api/v1/auth/register' ||
         path == '/api/v1/auth/login' ||
         path == '/api/v1/auth/forgot-password' ||
         path == '/api/v1/auth/reset-password' ||
@@ -74,9 +82,7 @@ class LoggingInterceptor extends Interceptor {
       return true;
     }
 
-    return RegExp(
-      r'^(/api/v1)?/conversations/[^/]+/messages$',
-    ).hasMatch(path);
+    return RegExp(r'^(/api/v1)?/conversations/[^/]+/messages$').hasMatch(path);
   }
 
   @override
@@ -105,7 +111,9 @@ class LoggingInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     if (kDebugMode) {
-      debugPrint('<-- Error ${err.response?.statusCode} ${err.requestOptions.uri}');
+      debugPrint(
+        '<-- Error ${err.response?.statusCode} ${err.requestOptions.uri}',
+      );
       debugPrint('Message: ${err.message}');
     }
     return handler.next(err);
@@ -117,8 +125,8 @@ class ErrorInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) {
     ApiException exception;
 
-    if (err.type == DioExceptionType.connectionTimeout || 
-        err.type == DioExceptionType.receiveTimeout || 
+    if (err.type == DioExceptionType.connectionTimeout ||
+        err.type == DioExceptionType.receiveTimeout ||
         err.type == DioExceptionType.sendTimeout) {
       exception = ApiTimeoutException();
     } else if (err.type == DioExceptionType.connectionError) {
@@ -126,7 +134,24 @@ class ErrorInterceptor extends Interceptor {
     } else if (err.response != null) {
       final statusCode = err.response!.statusCode;
       final data = err.response!.data;
-      
+
+      if (err.requestOptions.path.endsWith('/auth/google') &&
+          data is Map &&
+          data['message'] is String) {
+        return handler.reject(
+          DioException(
+            requestOptions: err.requestOptions,
+            response: err.response,
+            type: err.type,
+            error: ApiValidationException(
+              const {},
+              data['message'] as String,
+              statusCode: statusCode,
+            ),
+          ),
+        );
+      }
+
       if (statusCode == 401 || statusCode == 403) {
         exception = ApiAuthException(statusCode: statusCode);
       } else if (statusCode == 422) {
@@ -138,20 +163,29 @@ class ErrorInterceptor extends Interceptor {
               errors[key.toString()] = value.map((e) => e.toString()).toList();
             }
           });
-        } else if (data is Map && data['error'] != null && data['error']['details'] != null) {
+        } else if (data is Map &&
+            data['error'] != null &&
+            data['error']['details'] != null) {
           final details = data['error']['details'];
           if (details is Map) {
             details.forEach((key, value) {
               if (value is List) {
-                errors[key.toString()] = value.map((e) => e.toString()).toList();
+                errors[key.toString()] = value
+                    .map((e) => e.toString())
+                    .toList();
               }
             });
           }
         }
-        final message = errors.values.firstOrNull?.firstOrNull ??
+        final message =
+            errors.values.firstOrNull?.firstOrNull ??
             (data is Map ? data['message']?.toString() : null) ??
             'Validation Failed';
-        exception = ApiValidationException(errors, message, statusCode: statusCode);
+        exception = ApiValidationException(
+          errors,
+          message,
+          statusCode: statusCode,
+        );
       } else if (statusCode != null && statusCode >= 500) {
         exception = ApiServerException(statusCode: statusCode);
       } else {
@@ -161,11 +195,13 @@ class ErrorInterceptor extends Interceptor {
       exception = ApiUnknownException(err.message ?? 'Unknown error');
     }
 
-    return handler.reject(DioException(
-      requestOptions: err.requestOptions,
-      response: err.response,
-      type: err.type,
-      error: exception,
-    ));
+    return handler.reject(
+      DioException(
+        requestOptions: err.requestOptions,
+        response: err.response,
+        type: err.type,
+        error: exception,
+      ),
+    );
   }
 }

@@ -5,6 +5,7 @@ import '../../../../core/api/api_exceptions.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../data/auth_service.dart';
 import '../widgets/auth_ui.dart';
+import '../widgets/google_auth_button.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -22,6 +23,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   bool _agreeToTerms = false;
   bool _isLoading = false;
+  bool _googleLoading = false;
+  bool get _busy => _isLoading || _googleLoading;
   String? _nameError;
   String? _emailError;
   String? _passwordError;
@@ -169,7 +172,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           label: 'Full Name',
           error: _nameError,
           controller: _nameController,
-          enabled: !_isLoading,
+          enabled: !_busy,
         ),
         const SizedBox(height: 24),
         AuthTextField(
@@ -181,7 +184,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               : null,
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          enabled: !_isLoading,
+          enabled: !_busy,
         ),
         const SizedBox(height: 24),
         AuthTextField(
@@ -189,7 +192,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           error: _passwordError,
           controller: _passwordController,
           obscure: true,
-          enabled: !_isLoading,
+          enabled: !_busy,
         ),
         const SizedBox(height: 12),
         PasswordStrengthBar(password: _passwordController.text),
@@ -199,7 +202,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           error: _confirmError,
           controller: _confirmController,
           obscure: true,
-          enabled: !_isLoading,
+          enabled: !_busy,
         ),
         const SizedBox(height: 24),
         Row(
@@ -214,7 +217,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
-                onChanged: _isLoading
+                onChanged: _busy
                     ? null
                     : (value) => setState(() {
                         _agreeToTerms = value ?? false;
@@ -238,9 +241,17 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         const SizedBox(height: 32),
         AuthPrimaryButton(
           text: 'Create Account',
-          onPressed: _isLoading || !_isFormValid ? null : _submit,
+          onPressed: _busy || !_isFormValid ? null : _submit,
           isLoading: _isLoading,
         ),
+        const SizedBox(height: 24),
+        const Center(child: Text('or')),
+        const SizedBox(height: 24),
+        GoogleAuthButton(
+          enabled: !_busy,
+          onLoadingChanged: (value) => setState(() => _googleLoading = value),
+        ),
+        const SizedBox(height: 24),
       ],
     );
   }
