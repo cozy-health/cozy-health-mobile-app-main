@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/repositories/home_repository.dart';
+import '../../../../core/api/auth_token_service.dart';
 
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/guest_session_service.dart';
@@ -40,6 +42,11 @@ class _HomeScreenState extends State<HomeScreen>
   int _affirmationIndex = 0;
 
   final MoodRepository _moodRepo = MoodRepository();
+  final HomeRepository _homeRepo = HomeRepository();
+  late final Stream<List<MoodEntry>> _moodStream;
+  DashboardData? _dashboard;
+  bool _loadingDashboard = true;
+  bool _dashboardFailed = false;
 
   final List<String> _affirmations = const [
     "You're doing great.\nSmall steps count.",
@@ -50,6 +57,8 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    _moodStream = _moodRepo.watchMoodEntries();
+    _loadDashboard();
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -69,6 +78,58 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
+  Future<void> _loadDashboard() async {
+    final cached = await _homeRepo.getCachedDashboard();
+    final offline =
+        cached ?? await _homeRepo.getCachedDashboard(allowStale: true);
+    if (!mounted) return;
+    if (offline != null) setState(() => _dashboard = offline);
+    if (!await AuthTokenService.hasToken()) {
+      if (mounted) setState(() => _loadingDashboard = false);
+      return;
+    }
+    try {
+      final fresh = await _homeRepo.fetchDashboard();
+      if (mounted) {
+        setState(() {
+          _dashboard = fresh;
+          _dashboardFailed = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _dashboardFailed = true);
+        if (_dashboard == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Could not refresh Home. Your saved moods are still available.',
+              ),
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _loadingDashboard = false);
+    }
+  }
+
+  int _localStreak(List<MoodEntry> entries) {
+    final dates = entries.map((entry) {
+      final day = entry.createdAt.toLocal();
+      return DateTime(day.year, day.month, day.day);
+    }).toSet();
+    final now = DateTime.now();
+    var day = DateTime(now.year, now.month, now.day);
+    if (!dates.contains(day)) day = DateTime(day.year, day.month, day.day - 1);
+    var streak = 0;
+    while (dates.contains(day)) {
+      streak++;
+      day = DateTime(day.year, day.month, day.day - 1);
+    }
+    return streak;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.state == HomeDashboardState.error) {
@@ -78,15 +139,19 @@ class _HomeScreenState extends State<HomeScreen>
     return Scaffold(
       body: SafeArea(
         child: StreamBuilder<List<MoodEntry>>(
-          stream: _moodRepo.watchMoodEntries(),
+          stream: _moodStream,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting &&
-                !snapshot.hasData) {
+            if ((_loadingDashboard && _dashboard == null) ||
+                snapshot.connectionState == ConnectionState.waiting &&
+                    !snapshot.hasData) {
               return const _HomeSkeleton();
             }
 
             final entries = snapshot.data ?? [];
-            final isEmpty = entries.isEmpty;
+            final isEmpty = _dashboard == null
+                ? entries.isEmpty
+                : _dashboard!.recentEntries.isEmpty &&
+                      _dashboard!.todayMood == null;
             final allMoods = LocalDbService.instance.getAllMoodEntries();
             final weekAgo = DateTime.now().subtract(const Duration(days: 7));
             final moodsThisWeek = allMoods.where((entry) {
@@ -103,180 +168,197 @@ class _HomeScreenState extends State<HomeScreen>
 
             // Compute streak
             final now = DateTime.now();
-            int streak = 0;
-            // A simple streak logic for last 7 days (mocking a real calculation)
-            // Real logic would group by day and count consecutive days backwards
-            if (entries.isNotEmpty) {
-              streak = 1; // Simplified for now
-            }
+            final streak = _dashboard?.streakDays ?? _localStreak(entries);
 
             // Recent 2 entries
-            final recentEntries = entries.take(2).toList();
-            final hasMoodToday =
-                entries.isNotEmpty &&
-                entries.first.createdAt.day == now.day &&
-                entries.first.createdAt.month == now.month &&
-                entries.first.createdAt.year == now.year;
+            final recentEntries =
+                _dashboard?.recentEntries.take(2).map((row) {
+                  final local = entries
+                      .where((entry) => entry.id == row['id'])
+                      .firstOrNull;
+                  return local ??
+                      MoodEntry.fromJson({
+                        ...row,
+                        'client_created_at':
+                            row['client_created_at'] ?? row['created_at'],
+                        'client_updated_at':
+                            row['client_created_at'] ?? row['created_at'],
+                      });
+                }).toList() ??
+                entries.take(2).toList();
+            final hasMoodToday = _dashboard != null
+                ? _dashboard!.todayMood != null
+                : entries.isNotEmpty &&
+                      entries.first.createdAt.day == now.day &&
+                      entries.first.createdAt.month == now.month &&
+                      entries.first.createdAt.year == now.year;
 
-            return Semantics(
-              label:
-                  'Home dashboard loaded. $streak day streak. ${recentEntries.length} recent entries.',
-              child: RefreshIndicator(
-                onRefresh: () => UserDataFetcher().fetchAll(),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(
-                    24,
-                    16,
-                    24,
-                    AppScaffoldPadding.tabScrollBottom(context).bottom,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (dynamicState == HomeDashboardState.offline) ...[
-                        _OfflineBanner(onRetry: () {}),
-                        const SizedBox(height: 16),
-                      ],
-                      const _GuestBanner(),
-                      _AnimatedIn(
-                        controller: _entranceController,
-                        interval: const Interval(
-                          0,
-                          .35,
-                          curve: Curves.easeOutCubic,
+            return _DashboardScope(
+              data: _dashboard,
+              child: Semantics(
+                label:
+                    'Home dashboard loaded. $streak day streak. ${recentEntries.length} recent entries.',
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await UserDataFetcher().fetchAll();
+                    await _loadDashboard();
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
+                      24,
+                      16,
+                      24,
+                      AppScaffoldPadding.tabScrollBottom(context).bottom,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_dashboardFailed) ...[
+                          _OfflineBanner(onRetry: _loadDashboard),
+                          const SizedBox(height: 16),
+                        ],
+                        const _GuestBanner(),
+                        _AnimatedIn(
+                          controller: _entranceController,
+                          interval: const Interval(
+                            0,
+                            .35,
+                            curve: Curves.easeOutCubic,
+                          ),
+                          child: const _Header(),
                         ),
-                        child: const _Header(),
-                      ),
-                      InkWell(
-                        onTap: () => context.push(AppRouter.crisisHub),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text(
-                            'Need help now?',
-                            style: AppTextStyles.body2.copyWith(
-                              fontSize: 13,
-                              color: AppColors.crisisPrimary,
-                              decoration: TextDecoration.none,
+                        InkWell(
+                          onTap: () => context.push(AppRouter.crisisHub),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'Need help now?',
+                              style: AppTextStyles.body2.copyWith(
+                                fontSize: 13,
+                                color: AppColors.crisisPrimary,
+                                decoration: TextDecoration.none,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      if (dynamicState == HomeDashboardState.firstTime)
-                        _AnimatedIn(
-                          controller: _entranceController,
-                          interval: const Interval(
-                            .14,
-                            .58,
-                            curve: Curves.easeOutCubic,
-                          ),
-                          yOffset: 16,
-                          child: const _FirstTimeHero(),
-                        )
-                      else
-                        _AnimatedIn(
-                          controller: _entranceController,
-                          interval: const Interval(
-                            .14,
-                            .58,
-                            curve: Curves.easeOutCubic,
-                          ),
-                          yOffset: 16,
-                          child: _MoodHero(hasMoodToday: hasMoodToday),
-                        ),
-                      const SizedBox(height: 16),
-                      _AnimatedIn(
-                        controller: _entranceController,
-                        interval: const Interval(
-                          .28,
-                          .68,
-                          curve: Curves.easeOutCubic,
-                        ),
-                        yOffset: 12,
-                        child: _StatsRow(isEmpty: isEmpty, streak: streak),
-                      ),
-                      const SizedBox(height: 32),
-                      if (dynamicState == HomeDashboardState.firstTime)
-                        _FirstTimeInfo(controller: _entranceController)
-                      else ...[
-                        _SectionHeader(
-                          title: 'This week',
-                          action: 'See all',
-                          onAction: () => context.push(AppRouter.moodHistory),
-                        ),
-                        const SizedBox(height: 12),
-                        _AnimatedIn(
-                          controller: _entranceController,
-                          interval: const Interval(
-                            .48,
-                            .86,
-                            curve: Curves.easeOutCubic,
-                          ),
-                          yOffset: 10,
-                          child: _MoodChart(entries: moodsThisWeek),
-                        ),
-                        const SizedBox(height: 32),
-                        _SectionHeader(
-                          title: 'Recent entries',
-                          action: 'See all',
-                          onAction: () => context.push(AppRouter.moodHistory),
-                        ),
-                        const SizedBox(height: 12),
-                        if (recentEntries.isEmpty)
-                          const _EmptyCard(
-                            icon: Icons.edit_note,
-                            title: 'Your first entry will show here',
-                            subtitle: 'Notes stay private and easy to revisit.',
+                        const SizedBox(height: 24),
+                        if (dynamicState == HomeDashboardState.firstTime)
+                          _AnimatedIn(
+                            controller: _entranceController,
+                            interval: const Interval(
+                              .14,
+                              .58,
+                              curve: Curves.easeOutCubic,
+                            ),
+                            yOffset: 16,
+                            child: const _FirstTimeHero(),
                           )
                         else
-                          ...recentEntries.asMap().entries.map(
-                            (entry) => Padding(
-                              padding: EdgeInsets.only(
-                                bottom: entry.key == recentEntries.length - 1
-                                    ? 0
-                                    : 8,
-                              ),
-                              child: _AnimatedIn(
-                                controller: _entranceController,
-                                interval: Interval(
-                                  .64 + (entry.key * .07),
-                                  1,
-                                  curve: Curves.easeOutCubic,
+                          _AnimatedIn(
+                            controller: _entranceController,
+                            interval: const Interval(
+                              .14,
+                              .58,
+                              curve: Curves.easeOutCubic,
+                            ),
+                            yOffset: 16,
+                            child: _MoodHero(hasMoodToday: hasMoodToday),
+                          ),
+                        const SizedBox(height: 16),
+                        _AnimatedIn(
+                          controller: _entranceController,
+                          interval: const Interval(
+                            .28,
+                            .68,
+                            curve: Curves.easeOutCubic,
+                          ),
+                          yOffset: 12,
+                          child: _StatsRow(isEmpty: isEmpty, streak: streak),
+                        ),
+                        const SizedBox(height: 32),
+                        if (dynamicState == HomeDashboardState.firstTime)
+                          _FirstTimeInfo(controller: _entranceController)
+                        else ...[
+                          _SectionHeader(
+                            title: 'This week',
+                            action: 'See all',
+                            onAction: () => context.push(AppRouter.moodHistory),
+                          ),
+                          const SizedBox(height: 12),
+                          _AnimatedIn(
+                            controller: _entranceController,
+                            interval: const Interval(
+                              .48,
+                              .86,
+                              curve: Curves.easeOutCubic,
+                            ),
+                            yOffset: 10,
+                            child: _MoodChart(entries: moodsThisWeek),
+                          ),
+                          const SizedBox(height: 32),
+                          _SectionHeader(
+                            title: 'Recent entries',
+                            action: 'See all',
+                            onAction: () => context.push(AppRouter.moodHistory),
+                          ),
+                          const SizedBox(height: 12),
+                          if (recentEntries.isEmpty)
+                            const _EmptyCard(
+                              icon: Icons.edit_note,
+                              title: 'Your first entry will show here',
+                              subtitle:
+                                  'Notes stay private and easy to revisit.',
+                            )
+                          else
+                            ...recentEntries.asMap().entries.map(
+                              (entry) => Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: entry.key == recentEntries.length - 1
+                                      ? 0
+                                      : 8,
                                 ),
-                                yOffset: 12,
-                                child: _EntryCard(entry: entry.value),
+                                child: _AnimatedIn(
+                                  controller: _entranceController,
+                                  interval: Interval(
+                                    .64 + (entry.key * .07),
+                                    1,
+                                    curve: Curves.easeOutCubic,
+                                  ),
+                                  yOffset: 12,
+                                  child: _EntryCard(entry: entry.value),
+                                ),
                               ),
                             ),
+                        ],
+                        const SizedBox(height: 24),
+                        _AnimatedIn(
+                          controller: _entranceController,
+                          interval: const Interval(
+                            .82,
+                            1,
+                            curve: Curves.easeOutCubic,
                           ),
+                          yOffset: 12,
+                          child: _AffirmationCard(
+                            text: _affirmations[_affirmationIndex],
+                            index: _affirmationIndex,
+                            count: _affirmations.length,
+                            onSwipe: (direction) {
+                              setState(() {
+                                _affirmationIndex =
+                                    (_affirmationIndex + direction) %
+                                    _affirmations.length;
+                                if (_affirmationIndex < 0) {
+                                  _affirmationIndex = _affirmations.length - 1;
+                                }
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                       ],
-                      const SizedBox(height: 24),
-                      _AnimatedIn(
-                        controller: _entranceController,
-                        interval: const Interval(
-                          .82,
-                          1,
-                          curve: Curves.easeOutCubic,
-                        ),
-                        yOffset: 12,
-                        child: _AffirmationCard(
-                          text: _affirmations[_affirmationIndex],
-                          index: _affirmationIndex,
-                          count: _affirmations.length,
-                          onSwipe: (direction) {
-                            setState(() {
-                              _affirmationIndex =
-                                  (_affirmationIndex + direction) %
-                                  _affirmations.length;
-                              if (_affirmationIndex < 0) {
-                                _affirmationIndex = _affirmations.length - 1;
-                              }
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -286,6 +368,15 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
   }
+}
+
+class _DashboardScope extends InheritedWidget {
+  const _DashboardScope({required this.data, required super.child});
+  final DashboardData? data;
+  static DashboardData? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_DashboardScope>()?.data;
+  @override
+  bool updateShouldNotify(_DashboardScope oldWidget) => data != oldWidget.data;
 }
 
 class _GuestBanner extends StatelessWidget {
@@ -304,15 +395,23 @@ class _GuestBanner extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: .08),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: .08),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: .18),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: .18),
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.person_outline, color: Theme.of(context).colorScheme.primary, size: 20),
+                Icon(
+                  Icons.person_outline,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -484,7 +583,9 @@ class _MoodHeroState extends State<_MoodHero>
             : .08 + (_pulseController.value * .07);
         return _WarmCard(
           color: AppColors.primarySubtle,
-          borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: borderOpacity),
+          borderColor: Theme.of(
+            context,
+          ).colorScheme.primary.withValues(alpha: borderOpacity),
           minHeight: 140,
           child: child!,
         );
@@ -494,7 +595,7 @@ class _MoodHeroState extends State<_MoodHero>
         children: [
           Text(
             widget.hasMoodToday
-                ? 'You logged: ${MoodEntry.moodEmojis['good']} Good.\nWant to add a note?'
+                ? 'You logged: ${_DashboardScope.of(context)?.todayMood?['mood'] ?? 'a mood'}.\nWant to add a note?'
                 : 'How are you feeling\nright now?',
             style: AppTextStyles.heading1.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
@@ -554,7 +655,9 @@ class _FirstTimeHero extends StatelessWidget {
             ),
             child: Icon(
               Icons.self_improvement,
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: .78),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: .78),
               size: 56,
             ),
           ),
@@ -609,6 +712,17 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final weekly = _DashboardScope.of(context)?.weeklyMoods ?? [];
+    final count = weekly.fold<int>(
+      0,
+      (sum, row) => sum + (row['count'] as num).toInt(),
+    );
+    final total = weekly.fold<double>(
+      0,
+      (sum, row) =>
+          sum +
+          (row['avg_intensity'] as num).toDouble() * (row['count'] as num),
+    );
     return Row(
       children: [
         Expanded(
@@ -626,12 +740,14 @@ class _StatsRow extends StatelessWidget {
         Expanded(
           child: _StatCard(
             icon: MoodEntry.moodEmojis['good'] ?? '',
-            title: isEmpty ? 'No moods\nthis week' : 'Good',
-            subtitle: isEmpty ? '' : 'This week',
+            title: count == 0
+                ? 'No moods\nthis week'
+                : (total / count).toStringAsFixed(1),
+            subtitle: count == 0 ? '' : 'Avg intensity',
             isEmpty: isEmpty,
             onTap: isEmpty
                 ? () => context.push(AppRouter.moodFeeling)
-                : () => _pushPage(context, const InsightsScreen()),
+                : () => context.push(AppRouter.insights),
           ),
         ),
       ],
@@ -719,7 +835,14 @@ class _MoodChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (entries.length < 3) {
+    final weekly = _DashboardScope.of(context)?.weeklyMoods;
+    final count =
+        weekly?.fold<int>(
+          0,
+          (sum, row) => sum + (row['count'] as num).toInt(),
+        ) ??
+        entries.length;
+    if (count < 3) {
       return const _EmptyCard(
         icon: Icons.show_chart,
         title: 'Log 3 moods to see trends',
@@ -727,16 +850,28 @@ class _MoodChart extends StatelessWidget {
       );
     }
 
-    final values = _weeklyValues(entries);
+    final values = weekly == null
+        ? _weeklyValues(entries)
+        : List<double>.generate(7, (index) {
+            final rows = weekly.where(
+              (row) =>
+                  DateTime.parse(row['day'] as String).weekday == index + 1,
+            );
+            return rows.isEmpty
+                ? 0
+                : ((rows.first['avg_intensity'] as num).toDouble() * 7)
+                      .clamp(0, 70)
+                      .toDouble();
+          });
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     return GestureDetector(
-      onTap: () => _pushPage(context, const InsightsScreen()),
+      onTap: () => context.push(AppRouter.insights),
       child: _WarmCard(
         color: AppColors.surfaceElevated,
         minHeight: 120,
         child: Semantics(
-          label: 'This week mood chart. Good was the most common mood.',
+          label: 'Weekly average mood intensity chart.',
           child: Column(
             children: [
               SizedBox(
@@ -753,7 +888,9 @@ class _MoodChart extends StatelessWidget {
                             child: Container(
                               height: value,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary.withValues(alpha: .78),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: .78),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
@@ -1193,6 +1330,11 @@ class _HomeErrorView extends StatelessWidget {
 class StreakDetailScreen extends StatelessWidget {
   const StreakDetailScreen({super.key});
 
+  String _milestone(BuildContext context, int goal) {
+    final streak = _DashboardScope.of(context)?.streakDays ?? 0;
+    return streak >= goal ? 'Achieved!' : '${goal - streak} to go';
+  }
+
   @override
   Widget build(BuildContext context) {
     return _DetailScaffold(
@@ -1216,7 +1358,7 @@ class StreakDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  '7',
+                  '${_DashboardScope.of(context)?.streakDays ?? 0}',
                   style: AppTextStyles.heading1.copyWith(
                     fontSize: 48,
                     color: Theme.of(context).colorScheme.primary,
@@ -1231,7 +1373,7 @@ class StreakDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  "You've logged your\nmood 7 days in a row.\nKeep it going.",
+                  "You've logged your\nmood ${_DashboardScope.of(context)?.streakDays ?? 0} days in a row.",
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body1.copyWith(
                     color: Theme.of(context).brightness == Brightness.dark
@@ -1252,9 +1394,11 @@ class StreakDetailScreen extends StatelessWidget {
               children: List.generate(
                 30,
                 (index) => Icon(
-                  index < 23 ? Icons.circle : Icons.circle_outlined,
+                  index < (_DashboardScope.of(context)?.streakDays ?? 0)
+                      ? Icons.circle
+                      : Icons.circle_outlined,
                   size: 16,
-                  color: index < 23
+                  color: index < (_DashboardScope.of(context)?.streakDays ?? 0)
                       ? Theme.of(context).colorScheme.primary
                       : AppColors.borderStrong,
                 ),
@@ -1269,11 +1413,14 @@ class StreakDetailScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const _MilestoneCard(text: '7-day streak', value: 'Achieved!'),
+          _MilestoneCard(text: '7-day streak', value: _milestone(context, 7)),
           const SizedBox(height: 8),
-          const _MilestoneCard(text: '30-day streak', value: '5 to go'),
+          _MilestoneCard(text: '30-day streak', value: _milestone(context, 30)),
           const SizedBox(height: 8),
-          const _MilestoneCard(text: '100-day streak', value: '93 to go'),
+          _MilestoneCard(
+            text: '100-day streak',
+            value: _milestone(context, 100),
+          ),
         ],
       ),
     );
@@ -1520,9 +1667,9 @@ class _SimpleAreaChart extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   height: value,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(
-                      alpha: .2 + value / 200,
-                    ),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: .2 + value / 200),
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
@@ -1634,7 +1781,8 @@ class _WarmCard extends StatelessWidget {
     final effectiveColor = isDark && color == AppColors.surfaceElevated
         ? AppColors.surfaceElevatedDark
         : color;
-    final effectiveBorder = borderColor ??
+    final effectiveBorder =
+        borderColor ??
         (isDark
             ? AppColors.borderDark.withValues(alpha: .9)
             : AppColors.border.withValues(alpha: .65));
@@ -1743,5 +1891,10 @@ class _SkeletonCircle extends StatelessWidget {
 }
 
 void _pushPage(BuildContext context, Widget page) {
-  Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+  final dashboard = _DashboardScope.of(context);
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => _DashboardScope(data: dashboard, child: page),
+    ),
+  );
 }
