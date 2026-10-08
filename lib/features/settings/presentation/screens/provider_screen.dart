@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../utils/responsive_extensions.dart';
 import '../../data/settings_service.dart';
+import 'provider_resources_screen.dart';
 
 class ProviderScreen extends StatefulWidget {
   const ProviderScreen({super.key, this.settingsService});
@@ -37,6 +38,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
   VoidCallback? _retry;
   Map<String, dynamic>? _provider;
   bool _hasProvider = false;
+  bool _showResources = false;
 
   @override
   void initState() {
@@ -661,7 +663,43 @@ class _ProviderScreenState extends State<ProviderScreen> {
 
         3.sh,
 
-        _consentToggles(),
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                onPressed: () => setState(() => _showResources = false),
+                child: Text(
+                  'Sharing',
+                  style: TextStyle(
+                    fontWeight: !_showResources
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: TextButton(
+                onPressed: () => setState(() => _showResources = true),
+                child: Text(
+                  'Resources',
+                  style: TextStyle(
+                    fontWeight: _showResources
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (_showResources)
+          ProviderResourcesScreen(
+            settingsService: _settingsService,
+            embedded: true,
+          )
+        else
+          _consentToggles(),
 
         3.sh,
 

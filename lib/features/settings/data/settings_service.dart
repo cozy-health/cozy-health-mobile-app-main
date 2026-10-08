@@ -86,6 +86,24 @@ class SettingsService {
     return responseMap(await _apiClient.get(ApiConstants.subscription));
   }
 
+  Future<Map<String, dynamic>> getProviderResources({int page = 1}) async {
+    return responseMap(
+      await _apiClient.get('/me/resources', queryParameters: {'page': page}),
+    );
+  }
+
+  Future<Map<String, dynamic>> updateProviderResource({
+    required String assignmentId,
+    required String status,
+  }) async {
+    return responseMap(
+      await _apiClient.patch(
+        '/me/resources/${Uri.encodeComponent(assignmentId)}',
+        body: {'status': status},
+      ),
+    );
+  }
+
   Future<Map<String, dynamic>> getPackages() async {
     return responseMap(await _apiClient.get(ApiConstants.subscriptionPackages));
   }
