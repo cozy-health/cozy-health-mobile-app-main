@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -10,6 +11,8 @@ import '../../../../core/repositories/mood_repository.dart';
 import '../../../../core/models/mood_entry.dart';
 import '../../../crisis/presentation/screens/crisis_screens.dart';
 import '../../../crisis/services/crisis_detector.dart';
+import '../../../../core/services/mood_draft_service.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 
 class MoodFeelingScreen extends StatefulWidget {
   const MoodFeelingScreen({super.key, this.entry});
@@ -40,6 +43,9 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   final Set<String> _coping = {};
   bool _isSaving = false;
   bool _discardDialogOpen = false;
+  final _draftService = MoodDraftService();
+  Map<String, dynamic>? _savedDraft;
+  Future<void> _draftWrites = Future.value();
 
   late final List<_MoodOption> _moods = [
     _MoodOption(
@@ -142,6 +148,73 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       _coping.addAll(entry.copingStrategies ?? const []);
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _restartEntrance());
+    if (entry == null) _loadDraft();
+  }
+
+  Future<void> _loadDraft() async {
+    try {
+      final draft = await _draftService.loadToday();
+      if (mounted) setState(() => _savedDraft = draft);
+    } catch (_) {
+      // A storage issue must not block a fresh check-in.
+    }
+  }
+
+  Map<String, dynamic> _draftData() => {
+    'step': _step,
+    'mood': _moodLabel,
+    'intensity': _intensity,
+    'body': _bodyZones.toList(),
+    'triggers': _triggers.toList(),
+    'custom_trigger': _triggerController.text,
+    'sleep': _sleepQuality,
+    'energy': _energy,
+    'note': _noteController.text,
+    'coping': _coping.toList(),
+  };
+
+  void _queueDraft() {
+    if (widget.entry != null || _savedDraft != null || !_hasDraftContent()) {
+      return;
+    }
+    final data = _draftData();
+    _draftWrites = _draftWrites.then((_) => _draftService.save(data)).catchError((
+      Object _,
+    ) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            "We couldn't save this draft. Please keep this screen open and try again.",
+          ),
+        );
+      }
+    });
+  }
+
+  void _resumeDraft() {
+    final draft = _savedDraft!;
+    setState(() {
+      _savedDraft = null;
+      _step = (draft['step'] as int? ?? 1).clamp(1, _totalSteps);
+      _moodLabel = draft['mood'] as String?;
+      _moodEmoji = MoodEntry.moodEmojis[_moodLabel];
+      _intensity = draft['intensity'] as int? ?? 5;
+      _bodyZones.addAll(List<String>.from(draft['body'] as List? ?? []));
+      _triggers.addAll(List<String>.from(draft['triggers'] as List? ?? []));
+      _triggerController.text = draft['custom_trigger'] as String? ?? '';
+      _sleepQuality = draft['sleep'] as int?;
+      _energy = draft['energy'] as int? ?? 5;
+      _noteController.text = draft['note'] as String? ?? '';
+      _coping.addAll(List<String>.from(draft['coping'] as List? ?? []));
+    });
+    _restartEntrance();
+  }
+
+  Future<void> _clearDraft() async {
+    await _draftWrites;
+    await _draftService.clear();
+    if (mounted) setState(() => _savedDraft = null);
   }
 
   @override
@@ -164,6 +237,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   void _goToStep(int step) {
     setState(() => _step = step.clamp(1, _totalSteps));
     _restartEntrance();
+    _queueDraft();
   }
 
   void _next() {
@@ -239,7 +313,9 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     }
   }
 
-  void _discardAndExit() {
+  void _discardAndExit() async {
+    await _clearDraft();
+    if (!mounted) return;
     _step = 1;
     _moodLabel = null;
     _moodEmoji = null;
@@ -268,6 +344,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   }
 
   Future<void> _saveEntry() async {
+    if (_isSaving) return;
     setState(() => _isSaving = true);
     final note = _noteController.text.trim();
     final signal = _crisisDetector.analyze(note);
@@ -293,8 +370,19 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
 
     try {
       await MoodRepository().save(entry);
-    } catch (e) {
-      // Ignored for now - LocalDbService handles offline queueing
+      if (widget.entry == null) await _clearDraft();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            "We couldn't save your check-in. Your draft is still here.",
+            onRetry: _saveEntry,
+          ),
+        );
+      }
+      return;
     }
 
     if (!mounted) return;
@@ -309,7 +397,8 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     context.go(AppRouter.moodSuccess);
   }
 
-  bool get _canContinue => _step != 1 || _moodLabel != null;
+  bool get _canContinue =>
+      _savedDraft == null && (_step != 1 || _moodLabel != null);
 
   String? get _selectedMoodLabel {
     final key = _moodLabel;
@@ -340,6 +429,20 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
         body: SafeArea(
           child: Column(
             children: [
+              if (_savedDraft != null)
+                MaterialBanner(
+                  content: const Text('You have an unsaved check-in. Resume?'),
+                  actions: [
+                    TextButton(
+                      onPressed: _resumeDraft,
+                      child: const Text('Resume'),
+                    ),
+                    TextButton(
+                      onPressed: _clearDraft,
+                      child: const Text('Discard'),
+                    ),
+                  ],
+                ),
               _MoodProgressHeader(
                 step: _step,
                 totalSteps: _totalSteps,
@@ -349,6 +452,8 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
               ),
               Expanded(
                 child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(24, 28, 24, 18),
                   child: _AnimatedStep(
                     controller: _entranceController,
@@ -832,9 +937,10 @@ class _MoodCheckInSuccessScreenState extends State<MoodCheckInSuccessScreen> {
     super.initState();
     Future<void>.delayed(const Duration(seconds: 5), () {
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      AppSnackbar.show(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Entry saved.')));
+        AppSnackbar.fromLegacy(content: Text('Entry saved.')),
+      );
     });
   }
 
@@ -966,7 +1072,7 @@ class MoodHistoryScreen extends StatelessWidget {
                 const SizedBox(height: 18),
                 if (snapshot.connectionState == ConnectionState.waiting &&
                     !snapshot.hasData)
-                  const Center(child: CircularProgressIndicator())
+                  const SizedBox(height: 320, child: ListSkeleton())
                 else if (entries.isEmpty)
                   EmptyState(
                     icon: Icons.mood_rounded,
@@ -1709,7 +1815,8 @@ class _BottomActions extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _PrimaryButton(
-            label: busy ? 'Saving...' : label,
+            isLoading: busy,
+            label: label,
             onPressed: enabled ? onContinue : null,
             disabledBackgroundColor: moodSelection
                 ? Theme.of(context).colorScheme.surfaceContainerHighest
@@ -1734,12 +1841,14 @@ class _PrimaryButton extends StatelessWidget {
     required this.onPressed,
     this.disabledBackgroundColor,
     this.disabledForegroundColor,
+    this.isLoading = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final Color? disabledBackgroundColor;
   final Color? disabledForegroundColor;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -1759,7 +1868,20 @@ class _PrimaryButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: Text(label),
+        child: isLoading
+            ? const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 12),
+                  Text('Loading...'),
+                ],
+              )
+            : Text(label),
       ),
     );
   }

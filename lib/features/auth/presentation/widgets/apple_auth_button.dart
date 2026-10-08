@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_exceptions.dart';
@@ -106,9 +107,7 @@ class _AppleAuthButtonState extends State<AppleAuthButton> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    AppSnackbar.show(context, AppSnackbar.fromLegacy(content: Text(message)));
   }
 
   @override

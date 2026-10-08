@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -37,7 +38,9 @@ class AboutScreen extends StatelessWidget {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(32),
                   ),
                   child: Icon(
@@ -177,8 +180,9 @@ class AboutScreen extends StatelessWidget {
                         icon: Icons.thumb_up_outlined,
                         label: 'Rate Cozy Health',
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                          AppSnackbar.show(
+                            context,
+                            AppSnackbar.fromLegacy(
                               content: Text('Opening app store...'),
                             ),
                           );

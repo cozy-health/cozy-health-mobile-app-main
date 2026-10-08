@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -23,9 +24,10 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
       _showDisconnectConfirmation(app);
     } else {
       setState(() => _connectedStates[app] = true);
-      ScaffoldMessenger.of(
+      AppSnackbar.show(
         context,
-      ).showSnackBar(SnackBar(content: Text('Connected to $app')));
+        AppSnackbar.fromLegacy(content: Text('Connected to $app')),
+      );
     }
   }
 
@@ -65,8 +67,11 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
               onPressed: () {
                 Navigator.of(context).pop();
                 setState(() => _connectedStates[app] = false);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Disconnected from $app')),
+                AppSnackbar.show(
+                  context,
+                  AppSnackbar.fromLegacy(
+                    content: Text('Disconnected from $app'),
+                  ),
                 );
               },
               child: Text(
@@ -284,7 +289,9 @@ class _AppRow extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(

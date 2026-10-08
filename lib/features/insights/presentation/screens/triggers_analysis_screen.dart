@@ -63,6 +63,8 @@ class _TriggersAnalysisScreenState extends State<TriggersAnalysisScreen> {
               SizedBox(height: 32),
 
               InsightsStatus(
+                onRetry: () => _feed.load(trigger: true),
+                failureCount: _feed.failures,
                 loading: _feed.loading && _feed.triggers == null,
                 failed: _feed.failed,
                 empty: (_feed.triggers ?? []).isEmpty,

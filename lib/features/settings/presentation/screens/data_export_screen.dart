@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -69,8 +70,9 @@ class DataExportScreen extends StatelessWidget {
               AppButton(
                 text: 'Request Data Export',
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                  AppSnackbar.show(
+                    context,
+                    AppSnackbar.fromLegacy(
                       content: Text('Export requested. Check your email.'),
                     ),
                   );

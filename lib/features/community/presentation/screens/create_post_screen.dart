@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -51,8 +52,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     // Check for mock keywords
     if (_textController.text.toLowerCase().contains('harm')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      AppSnackbar.show(
+        context,
+        AppSnackbar.fromLegacy(
           content: Text(
             'Your post is being reviewed. It may take a moment to appear.',
           ),
@@ -60,8 +62,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      AppSnackbar.show(
+        context,
+        AppSnackbar.fromLegacy(
           content: Text('Post published successfully.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -196,8 +199,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                     ? 'Followers only'
                                     : 'Posting anonymously',
                                 style: context.communityBody2.copyWith(
-                                  color:
-                                      context.communityMuted,
+                                  color: context.communityMuted,
                                   fontSize: 13,
                                 ),
                               ),
@@ -205,8 +207,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               Icon(
                                 Icons.keyboard_arrow_down,
                                 size: 16,
-                                color:
-                                    context.communityMuted,
+                                color: context.communityMuted,
                               ),
                             ],
                           ),

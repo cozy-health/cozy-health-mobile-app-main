@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -54,8 +55,9 @@ class _AccessibilitySettingsScreenState
   }
 
   void _testScreenReader() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+    AppSnackbar.show(
+      context,
+      AppSnackbar.fromLegacy(
         content: Semantics(
           label: 'This is a test announcement for screen readers',
           child: Text('Screen reader test played'),
@@ -126,7 +128,9 @@ class _AccessibilitySettingsScreenState
                                 min: 0.8,
                                 max: 1.5,
                                 divisions: 5,
-                                activeColor: Theme.of(context).colorScheme.primary,
+                                activeColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
                                 inactiveColor: AppColors.border,
                                 onChanged: _updateTextSize,
                                 semanticFormatterCallback: (value) =>

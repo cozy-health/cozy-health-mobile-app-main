@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -82,8 +83,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 ReportSheet.show(
                   context,
                   onSubmit: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                    AppSnackbar.show(
+                      context,
+                      AppSnackbar.fromLegacy(
                         content: Text('Report submitted. Thank you.'),
                       ),
                     );
@@ -135,7 +137,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   width: 96,
                   height: 96,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
@@ -263,7 +267,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.communityBorder.withValues(alpha: 0.7)),
+        border: Border.all(
+          color: context.communityBorder.withValues(alpha: 0.7),
+        ),
       ),
       child: Column(
         children: [

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -59,9 +60,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     if (!mounted) return;
-    ScaffoldMessenger.of(
+    AppSnackbar.show(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Profile updated')));
+      AppSnackbar.fromLegacy(content: Text('Profile updated')),
+    );
     context.pop();
   }
 
@@ -287,7 +289,9 @@ class _FormField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

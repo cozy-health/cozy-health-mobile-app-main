@@ -136,6 +136,12 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     InsightsStatus(
+                      onRetry: () => _feed.load(
+                        weekly: true,
+                        trigger: true,
+                        sleepMood: true,
+                      ),
+                      failureCount: _feed.failures,
                       loading: _feed.loading && _feed.weeks == null,
                       failed: _feed.failed,
                       empty:

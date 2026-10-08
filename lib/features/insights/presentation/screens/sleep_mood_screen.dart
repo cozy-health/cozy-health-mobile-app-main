@@ -79,6 +79,8 @@ class _SleepMoodScreenState extends State<SleepMoodScreen>
               SizedBox(height: 32),
 
               InsightsStatus(
+                onRetry: () => _feed.load(sleepMood: true),
+                failureCount: _feed.failures,
                 loading: _feed.loading && _feed.sleep == null,
                 failed: _feed.failed,
                 empty: _points.isEmpty,

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -39,8 +40,9 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
     final affirmation = _affirmations[_currentIndex];
     final text = '${affirmation['title']} ${affirmation['subtitle']}';
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+    AppSnackbar.show(
+      context,
+      AppSnackbar.fromLegacy(
         content: Text('Affirmation copied to clipboard'),
         behavior: SnackBarBehavior.floating,
       ),
@@ -123,7 +125,7 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
                 },
               ),
             ),
-            
+
             // Page dots
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -143,7 +145,7 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
               ),
             ),
             const SizedBox(height: 48),
-            
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
@@ -158,10 +160,13 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
                   AppButton(
                     text: 'Read related articles',
                     onPressed: () {
-                      context.push(AppRouter.categoryDetail, extra: {
-                        'id': 'self-compassion',
-                        'title': 'Self-compassion',
-                      });
+                      context.push(
+                        AppRouter.categoryDetail,
+                        extra: {
+                          'id': 'self-compassion',
+                          'title': 'Self-compassion',
+                        },
+                      );
                     },
                   ),
                   const SizedBox(height: 32),

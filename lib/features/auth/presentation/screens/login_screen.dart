@@ -31,7 +31,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _googleLoading = false;
   bool _appleLoading = false;
-  bool get _busy => _isLoading || _googleLoading || _appleLoading;
+  bool _biometricAvailable = false;
+  bool _biometricLoading = false;
+  bool get _busy =>
+      _isLoading || _googleLoading || _appleLoading || _biometricLoading;
   String? _emailError;
   String? _passwordError;
 
@@ -40,6 +43,27 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     _emailController.addListener(_clearErrors);
     _passwordController.addListener(_clearErrors);
+    _checkBiometric();
+  }
+
+  Future<void> _checkBiometric() async {
+    try {
+      final auth = LocalAuthentication();
+      final types = await auth.getAvailableBiometrics();
+      final token = await AuthTokenService.getToken();
+      final supported = await auth.isDeviceSupported();
+      if (mounted) {
+        setState(
+          () => _biometricAvailable =
+              supported &&
+              types.isNotEmpty &&
+              token != null &&
+              token.isNotEmpty,
+        );
+      }
+    } catch (_) {
+      // Devices without configured biometrics use the existing sign-in options.
+    }
   }
 
   void _clearErrors() {
@@ -101,12 +125,18 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       final message = _friendlyLoginError(e.message);
       setState(() => _passwordError = message);
-      showAuthToast(context, type: AuthToastType.error, title: message);
+      showAuthToast(
+        context,
+        type: AuthToastType.error,
+        onRetry: _login,
+        title: message,
+      );
     } catch (_) {
       if (!mounted) return;
       showAuthToast(
         context,
         type: AuthToastType.error,
+        onRetry: _login,
         title: "Can't reach the server. Check your connection.",
       );
     } finally {
@@ -128,10 +158,12 @@ class _LoginScreenState extends State<LoginScreen> {
     if (lower.contains('locked') || lower.contains('attempt')) {
       return 'Too many attempts. Try again in 15 minutes.';
     }
-    return message.isEmpty ? "That didn't match. Let's try again." : message;
+    return "We couldn't log you in. Check your connection and try again.";
   }
 
   Future<void> _loginWithBiometric() async {
+    if (_busy || !_biometricAvailable) return;
+    setState(() => _biometricLoading = true);
     final auth = LocalAuthentication();
 
     try {
@@ -168,6 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
+      await _authService.me();
       await TokenStorage().saveToken(token, stayLoggedIn: _stayLoggedIn);
       await GuestSessionService().exitGuestSession();
       if (mounted) context.go(AppRouter.home);
@@ -177,8 +210,11 @@ class _LoginScreenState extends State<LoginScreen> {
       showAuthToast(
         context,
         type: AuthToastType.error,
+        onRetry: _login,
         title: "Face ID isn't available right now.",
       );
+    } finally {
+      if (mounted) setState(() => _biometricLoading = false);
     }
   }
 
@@ -198,6 +234,7 @@ class _LoginScreenState extends State<LoginScreen> {
           error: _emailError,
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
           enabled: !_busy,
         ),
         const SizedBox(height: 24),
@@ -206,6 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
           error: _passwordError,
           controller: _passwordController,
           obscure: true,
+          autofillHints: const [AutofillHints.password],
           enabled: !_busy,
         ),
         const SizedBox(height: 16),
@@ -288,13 +326,15 @@ class _LoginScreenState extends State<LoginScreen> {
           onLoadingChanged: (value) => setState(() => _googleLoading = value),
         ),
         const SizedBox(height: 24),
-        AuthPrimaryButton(
-          text: Theme.of(context).platform == TargetPlatform.iOS
-              ? 'Log in with Face ID'
-              : 'Log in with fingerprint',
-          isOutlined: true,
-          onPressed: _busy ? null : _loginWithBiometric,
-        ),
+        if (_biometricAvailable)
+          AuthPrimaryButton(
+            isLoading: _biometricLoading,
+            text: Theme.of(context).platform == TargetPlatform.iOS
+                ? 'Log in with Face ID'
+                : 'Log in with fingerprint',
+            isOutlined: true,
+            onPressed: _busy ? null : _loginWithBiometric,
+          ),
       ],
     );
   }

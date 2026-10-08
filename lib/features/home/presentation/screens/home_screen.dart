@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../widgets/feature_tour.dart';
 import 'package:flutter/material.dart';
@@ -169,8 +171,9 @@ class _HomeScreenState extends State<HomeScreen>
       if (mounted) {
         setState(() => _dashboardFailed = true);
         if (_dashboard == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+          AppSnackbar.show(
+            context,
+            AppSnackbar.fromLegacy(
               content: Text(
                 'Could not refresh Home. Your saved moods are still available.',
               ),
@@ -1050,8 +1053,11 @@ class _AffirmationCard extends StatelessWidget {
         if ((details.primaryVelocity ?? 0) > 0) onSwipe(-1);
       },
       onLongPress: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Affirmation copied privately.')),
+        AppSnackbar.show(
+          context,
+          AppSnackbar.fromLegacy(
+            content: Text('Affirmation copied privately.'),
+          ),
         );
       },
       child: _WarmCard(
@@ -1868,13 +1874,7 @@ class _SkeletonBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: AppColors.border.withValues(alpha: .55),
-        borderRadius: BorderRadius.circular(radius),
-      ),
-    );
+    return SkeletonLoader(height: height, radius: radius);
   }
 }
 
@@ -1886,14 +1886,7 @@ class _SkeletonLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: AppColors.border.withValues(alpha: .55),
-        borderRadius: BorderRadius.circular(20),
-      ),
-    );
+    return SkeletonLoader(width: width, height: height, radius: 20);
   }
 }
 
@@ -1904,14 +1897,7 @@ class _SkeletonCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: AppColors.border.withValues(alpha: .55),
-        shape: BoxShape.circle,
-      ),
-    );
+    return SkeletonLoader(width: size, height: size, radius: size / 2);
   }
 }
 

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -42,18 +43,20 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
     setState(() {
       _sessions.removeWhere((s) => !s['isCurrent']);
     });
-    ScaffoldMessenger.of(
+    AppSnackbar.show(
       context,
-    ).showSnackBar(const SnackBar(content: Text('All other sessions revoked')));
+      AppSnackbar.fromLegacy(content: Text('All other sessions revoked')),
+    );
   }
 
   void _revokeSession(String id) {
     setState(() {
       _sessions.removeWhere((s) => s['id'] == id);
     });
-    ScaffoldMessenger.of(
+    AppSnackbar.show(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Session revoked')));
+      AppSnackbar.fromLegacy(content: Text('Session revoked')),
+    );
   }
 
   @override
@@ -156,15 +159,18 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.primary.withValues(
-                                          alpha: 0.1,
-                                        ),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
                                         'This device',
                                         style: AppTextStyles.body2.copyWith(
-                                          color: Theme.of(context).colorScheme.primary,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
                                         ),

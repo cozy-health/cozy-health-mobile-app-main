@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -123,8 +124,9 @@ class _BillingHistoryScreenState extends State<BillingHistoryScreen> {
                               SizedBox(height: 12),
                               InkWell(
                                 onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
+                                  AppSnackbar.show(
+                                    context,
+                                    AppSnackbar.fromLegacy(
                                       content: Text('Downloading receipt...'),
                                     ),
                                   );
@@ -135,13 +137,17 @@ class _BillingHistoryScreenState extends State<BillingHistoryScreen> {
                                     Icon(
                                       Icons.download,
                                       size: 16,
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
                                     SizedBox(width: 4),
                                     Text(
                                       'Download Receipt',
                                       style: AppTextStyles.body2.copyWith(
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),

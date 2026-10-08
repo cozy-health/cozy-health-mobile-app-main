@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -32,8 +33,9 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
 
     setState(() => _isLoading = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+    AppSnackbar.show(
+      context,
+      AppSnackbar.fromLegacy(
         content: Text('Report submitted. Thanks for helping us improve.'),
       ),
     );
@@ -161,7 +163,9 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
                 ),
@@ -190,10 +194,15 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(Icons.image, color: Theme.of(context).colorScheme.primary),
+                        child: Icon(
+                          Icons.image,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                       SizedBox(width: 16),
                       Expanded(

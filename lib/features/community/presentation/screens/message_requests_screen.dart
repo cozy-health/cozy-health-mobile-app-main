@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../community_theme.dart';
@@ -18,9 +19,10 @@ class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
     setState(() {
       _requests.removeAt(index);
     });
-    ScaffoldMessenger.of(
+    AppSnackbar.show(
       context,
-    ).showSnackBar(SnackBar(content: Text('Request $action.')));
+      AppSnackbar.fromLegacy(content: Text('Request $action.')),
+    );
   }
 
   @override
@@ -48,9 +50,7 @@ class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
     return Center(
       child: Text(
         'No message requests.',
-        style: context.communityBody1.copyWith(
-          color: context.communityMuted,
-        ),
+        style: context.communityBody1.copyWith(color: context.communityMuted),
       ),
     );
   }
@@ -79,7 +79,9 @@ class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,

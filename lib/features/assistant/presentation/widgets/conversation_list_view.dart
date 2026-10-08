@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'chat_shared_widgets.dart';
@@ -107,8 +108,9 @@ class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
           if (!context.mounted) return;
 
           setState(() => _conversations.removeAt(index));
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+          AppSnackbar.show(
+            context,
+            AppSnackbar.fromLegacy(
               content: const Text('Conversation deleted'),
               action: SnackBarAction(
                 label: 'Undo',

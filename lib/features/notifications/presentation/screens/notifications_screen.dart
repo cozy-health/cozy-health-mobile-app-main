@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
@@ -20,9 +22,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void _markAllAsRead() async {
     await NotificationRepository().markAllAsRead();
     if (mounted) {
-      ScaffoldMessenger.of(
+      AppSnackbar.show(
         context,
-      ).showSnackBar(const SnackBar(content: Text('All caught up')));
+        AppSnackbar.fromLegacy(content: Text('All caught up')),
+      );
     }
   }
 
@@ -30,8 +33,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     await NotificationRepository().deleteNotification(item.id);
     if (mounted) {
       ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      AppSnackbar.show(
+        context,
+        AppSnackbar.fromLegacy(
           content: Text('Notification dismissed'),
           duration: Duration(seconds: 2),
         ),
@@ -84,7 +88,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           stream: NotificationRepository().watchNotifications(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const ListSkeleton();
             }
             final items = snapshot.data ?? [];
             if (items.isEmpty) return _buildEmptyState();

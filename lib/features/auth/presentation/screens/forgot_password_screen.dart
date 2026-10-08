@@ -1,4 +1,4 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinput/pinput.dart';
 
@@ -87,6 +87,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       showAuthToast(
         context,
         type: AuthToastType.error,
+        onRetry: _resetPassword,
         title: "Can't reach the server. Retry?",
       );
     } finally {
@@ -146,6 +147,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       showAuthToast(
         context,
         type: AuthToastType.error,
+        onRetry: _resetPassword,
         title: e.message.isEmpty
             ? "Couldn't reset password. Retry?"
             : e.message,
@@ -155,6 +157,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       showAuthToast(
         context,
         type: AuthToastType.error,
+        onRetry: _resetPassword,
         title: "Couldn't reset password. Retry?",
       );
     } finally {
@@ -285,7 +288,9 @@ class _OtpInput extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceLight,
+          color: isDark
+              ? AppColors.surfaceElevatedDark
+              : AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color, width: width),
         ),
@@ -336,11 +341,7 @@ class _Success extends StatelessWidget {
                   color: AppColors.success.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.check,
-                  color: AppColors.success,
-                  size: 44,
-                ),
+                child: Icon(Icons.check, color: AppColors.success, size: 44),
               ),
               const SizedBox(height: 40),
               Text(

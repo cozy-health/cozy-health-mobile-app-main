@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -34,9 +35,10 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
       _isSent = true;
     });
 
-    ScaffoldMessenger.of(
+    AppSnackbar.show(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Verification email sent')));
+      AppSnackbar.fromLegacy(content: Text('Verification email sent')),
+    );
   }
 
   @override
@@ -109,7 +111,9 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -130,10 +134,14 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Column(
@@ -207,7 +215,9 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                     ),
                   ),

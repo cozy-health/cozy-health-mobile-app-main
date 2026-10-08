@@ -4,6 +4,8 @@ import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/repositories/insights_repository.dart';
 import '../../../../core/api/auth_token_service.dart';
+import '../../../../core/widgets/skeleton_loader.dart';
+import '../../../../core/widgets/friendly_error.dart';
 
 /// Keeps each screen's existing layout while handling cached-first refreshes.
 class InsightsFeed extends ChangeNotifier {
@@ -13,6 +15,7 @@ class InsightsFeed extends ChangeNotifier {
   List<Map<String, dynamic>>? sleep;
   bool loading = true;
   bool failed = false;
+  int failures = 0;
   bool _disposed = false;
 
   Future<void> load({
@@ -20,6 +23,9 @@ class InsightsFeed extends ChangeNotifier {
     bool trigger = false,
     bool sleepMood = false,
   }) async {
+    loading = true;
+    failed = false;
+    if (!_disposed) notifyListeners();
     await Future.wait([
       if (weekly)
         _load(
@@ -42,6 +48,7 @@ class InsightsFeed extends ChangeNotifier {
     ]);
     if (_disposed) return;
     loading = false;
+    failures = failed ? failures + 1 : 0;
     notifyListeners();
   }
 
@@ -83,19 +90,24 @@ class InsightsStatus extends StatelessWidget {
     required this.loading,
     required this.failed,
     required this.empty,
+    this.onRetry,
+    this.failureCount = 1,
   });
   final bool loading;
   final bool failed;
   final bool empty;
+  final VoidCallback? onRetry;
+  final int failureCount;
   @override
   Widget build(BuildContext context) {
-    if (loading) return const LinearProgressIndicator();
+    if (loading) return const SkeletonLoader(height: 160);
     if (failed) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: Text(
-          'Could not refresh insights. Saved data is shown when available.',
-        ),
+      return FriendlyError(
+        title: "We couldn't refresh your insights.",
+        message:
+            'Saved data is shown when available. Check your connection and try again.',
+        onRetry: onRetry,
+        failureCount: failureCount,
       );
     }
     if (empty) {

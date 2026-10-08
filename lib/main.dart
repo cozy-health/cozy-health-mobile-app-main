@@ -74,7 +74,19 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
                 textScaler: TextScaler.linear(textScaleFactor),
                 boldText: profile?.highContrast ?? false,
               ),
-              child: SecurityGate(child: child!),
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                child: NotificationListener<ScrollStartNotification>(
+                  onNotification: (notification) {
+                    if (notification.dragDetails != null) {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                    }
+                    return false;
+                  },
+                  child: SecurityGate(child: child!),
+                ),
+              ),
             );
           },
           routerConfig: AppRouter.router,

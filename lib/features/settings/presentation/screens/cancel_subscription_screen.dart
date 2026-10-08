@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -101,8 +102,9 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
                 if (mounted && context.mounted) {
                   Navigator.of(context).pop(); // Close dialog
                   Navigator.of(context).pop(); // Go back to subscription
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                  AppSnackbar.show(
+                    context,
+                    AppSnackbar.fromLegacy(
                       content: Text(
                         'Subscription cancelled. We will miss you!',
                       ),
@@ -237,10 +239,14 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
@@ -267,8 +273,9 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
                         text: _currentRetention!['retention_action']!,
                         onPressed: () {
                           context.pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                          AppSnackbar.show(
+                            context,
+                            AppSnackbar.fromLegacy(
                               content: Text('Offer applied successfully!'),
                             ),
                           );

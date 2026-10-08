@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -161,10 +162,14 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.3),
               ),
             ),
             child: Column(
@@ -210,8 +215,9 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
                 AppButton(
                   text: 'Download Data (ZIP)',
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                    AppSnackbar.show(
+                      context,
+                      AppSnackbar.fromLegacy(
                         content: Text(
                           'Downloading file... Check your Downloads folder.',
                         ),

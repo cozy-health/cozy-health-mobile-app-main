@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/models/user_preferences.dart';
@@ -129,8 +130,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     } catch (_) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+        AppSnackbar.show(
+          context,
+          AppSnackbar.fromLegacy(
             content: Text("We couldn't save your choices. Please try again."),
           ),
         );

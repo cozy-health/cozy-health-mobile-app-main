@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -142,8 +143,11 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
                 onTap: _canDelete
                     ? () {
                         // show dialog or perform deletion
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Account deleted.')),
+                        AppSnackbar.show(
+                          context,
+                          AppSnackbar.fromLegacy(
+                            content: Text('Account deleted.'),
+                          ),
                         );
                         // context.go(AppRouter.splash);
                       }

@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/friendly_error.dart';
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -28,6 +30,8 @@ class _ProviderScreenState extends State<ProviderScreen> {
   bool _removing = false;
 
   String? _error;
+  int _failures = 0;
+  VoidCallback? _retry;
   Map<String, dynamic>? _provider;
   bool _hasProvider = false;
 
@@ -46,6 +50,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
   }
 
   Future<void> _loadProvider() async {
+    _retry = _loadProvider;
     setState(() {
       _loading = true;
       _error = null;
@@ -54,6 +59,8 @@ class _ProviderScreenState extends State<ProviderScreen> {
     try {
       final response = await _settingsService.getProvider();
 
+      if (!mounted) return;
+      _failures = 0;
       final provider = response['provider'];
 
       setState(() {
@@ -61,10 +68,14 @@ class _ProviderScreenState extends State<ProviderScreen> {
         _hasProvider = response['has_provider'] == true;
       });
     } on ApiException catch (e) {
+      if (!mounted) return;
+      _failures++;
       setState(() {
-        _error = e.message;
+        _error = AppSnackbar.friendly(e.message);
       });
     } catch (_) {
+      if (!mounted) return;
+      _failures++;
       setState(() {
         _error = 'Unable to load provider details.';
       });
@@ -78,6 +89,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
   }
 
   Future<void> _requestProvider() async {
+    _retry = _requestProvider;
     final email = emailController.text.trim();
     final name = nameController.text.trim();
 
@@ -99,6 +111,8 @@ class _ProviderScreenState extends State<ProviderScreen> {
         providerName: name.isEmpty ? null : name,
       );
 
+      if (!mounted) return;
+      _failures = 0;
       final provider = response['provider'];
 
       setState(() {
@@ -108,14 +122,21 @@ class _ProviderScreenState extends State<ProviderScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Verification code sent to therapist.')),
+      AppSnackbar.show(
+        context,
+        AppSnackbar.fromLegacy(
+          content: Text('Verification code sent to therapist.'),
+        ),
       );
     } on ApiException catch (e) {
+      if (!mounted) return;
+      _failures++;
       setState(() {
-        _error = e.message;
+        _error = AppSnackbar.friendly(e.message);
       });
     } catch (_) {
+      if (!mounted) return;
+      _failures++;
       setState(() {
         _error = 'Unable to send provider request.';
       });
@@ -129,6 +150,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
   }
 
   Future<void> _verifyProvider() async {
+    _retry = _verifyProvider;
     final code = codeController.text.trim();
 
     if (code.isEmpty) {
@@ -146,6 +168,8 @@ class _ProviderScreenState extends State<ProviderScreen> {
     try {
       final response = await _settingsService.verifyProvider(code: code);
 
+      if (!mounted) return;
+      _failures = 0;
       final provider = response['provider'];
 
       setState(() {
@@ -155,14 +179,21 @@ class _ProviderScreenState extends State<ProviderScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Provider verified successfully.')),
+      AppSnackbar.show(
+        context,
+        AppSnackbar.fromLegacy(
+          content: Text('Provider verified successfully.'),
+        ),
       );
     } on ApiException catch (e) {
+      if (!mounted) return;
+      _failures++;
       setState(() {
-        _error = e.message;
+        _error = AppSnackbar.friendly(e.message);
       });
     } catch (_) {
+      if (!mounted) return;
+      _failures++;
       setState(() {
         _error = 'Unable to verify provider.';
       });
@@ -176,6 +207,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
   }
 
   Future<void> _removeProvider() async {
+    _retry = _removeProvider;
     setState(() {
       _removing = true;
       _error = null;
@@ -183,6 +215,8 @@ class _ProviderScreenState extends State<ProviderScreen> {
 
     try {
       await _settingsService.removeProvider();
+      if (!mounted) return;
+      _failures = 0;
 
       setState(() {
         _provider = null;
@@ -194,14 +228,19 @@ class _ProviderScreenState extends State<ProviderScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Provider removed successfully.')),
+      AppSnackbar.show(
+        context,
+        AppSnackbar.fromLegacy(content: Text('Provider removed successfully.')),
       );
     } on ApiException catch (e) {
+      if (!mounted) return;
+      _failures++;
       setState(() {
-        _error = e.message;
+        _error = AppSnackbar.friendly(e.message);
       });
     } catch (_) {
+      if (!mounted) return;
+      _failures++;
       setState(() {
         _error = 'Unable to remove provider.';
       });
@@ -262,23 +301,14 @@ class _ProviderScreenState extends State<ProviderScreen> {
                       3.sh,
 
                       if (_error != null) ...[
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(3.w),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            _error!,
-                            style: AppTextStyles.body2.copyWith(
-                              color: Colors.red,
-                            ),
-                          ),
+                        FriendlyError(
+                          title: 'Something needs another look.',
+                          message: _error!,
+                          onRetry: _retry,
+                          failureCount: _failures,
                         ),
                         3.sh,
                       ],
-
                       if (_hasProvider)
                         _therapistCard()
                       else if (_hasPendingProvider)
@@ -356,6 +386,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
         4.sh,
 
         AppButton(
+          isLoading: _sending,
           text: _sending ? 'Sending...' : 'Send Code',
           onPressed: _sending ? null : _requestProvider,
         ),
@@ -412,6 +443,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
         4.sh,
 
         AppButton(
+          isLoading: _verifying,
           text: _verifying ? 'Verifying...' : 'Verify Provider',
           onPressed: _verifying ? null : _verifyProvider,
         ),
@@ -419,6 +451,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
         2.sh,
 
         AppButton(
+          isLoading: _removing,
           text: _removing ? 'Removing...' : 'Cancel Request',
           onPressed: _removing ? null : _removeProvider,
           isOutlined: true,
@@ -445,7 +478,9 @@ class _ProviderScreenState extends State<ProviderScreen> {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.12),
                 child: Icon(
                   Icons.medical_services_outlined,
                   color: Theme.of(context).colorScheme.primary,
@@ -499,6 +534,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
         3.sh,
 
         AppButton(
+          isLoading: _removing,
           text: _removing ? 'Removing...' : 'Remove Provider',
           onPressed: _removing ? null : _removeProvider,
           isOutlined: true,

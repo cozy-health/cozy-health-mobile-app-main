@@ -15,9 +15,15 @@ class QuizResultDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final attempt = extra['attempt'] as QuizAttempt?;
-    
+
     if (attempt == null) {
-      return const Scaffold(body: Center(child: Text('Error: No attempt data')));
+      return const Scaffold(
+        body: Center(
+          child: Text(
+            'Your result is not available yet. Please return to your assessments.',
+          ),
+        ),
+      );
     }
 
     final title = attempt.quizTitle;
@@ -45,14 +51,19 @@ class QuizResultDetailScreen extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: AppTextStyles.heading2.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.heading2.copyWith(
+                  color: AppColors.textMuted,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              
+
               Text(
                 '$score',
-                style: AppTextStyles.heading1.copyWith(fontSize: 72, color: Theme.of(context).colorScheme.primary),
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 72,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 textAlign: TextAlign.center,
               ),
               Text(
@@ -61,7 +72,7 @@ class QuizResultDetailScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              
+
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -71,20 +82,29 @@ class QuizResultDetailScreen extends StatelessWidget {
                 ),
                 child: Text(
                   interpretation,
-                  style: AppTextStyles.body1.copyWith(color: AppColors.text, height: 1.5),
+                  style: AppTextStyles.body1.copyWith(
+                    color: AppColors.text,
+                    height: 1.5,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               Text('Breakdown', style: AppTextStyles.heading2),
               const SizedBox(height: 16),
-              _buildBreakdownRow('Little interest or pleasure...', score > 2 ? 'Nearly every day' : 'Not at all'),
+              _buildBreakdownRow(
+                'Little interest or pleasure...',
+                score > 2 ? 'Nearly every day' : 'Not at all',
+              ),
               const SizedBox(height: 12),
-              _buildBreakdownRow('Feeling down...', score > 2 ? 'More than half the days' : 'Several days'),
-              
+              _buildBreakdownRow(
+                'Feeling down...',
+                score > 2 ? 'More than half the days' : 'Several days',
+              ),
+
               const SizedBox(height: 48),
-              
+
               AppButton(
                 text: 'Export for provider',
                 onPressed: () async {
@@ -113,9 +133,18 @@ class QuizResultDetailScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(question, style: AppTextStyles.body2.copyWith(color: AppColors.textMuted)),
+          Text(
+            question,
+            style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+          ),
           const SizedBox(height: 4),
-          Text(answer, style: AppTextStyles.body1.copyWith(color: AppColors.text, fontWeight: FontWeight.w500)),
+          Text(
+            answer,
+            style: AppTextStyles.body1.copyWith(
+              color: AppColors.text,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

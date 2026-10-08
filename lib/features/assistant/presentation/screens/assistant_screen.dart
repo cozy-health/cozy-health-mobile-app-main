@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -490,9 +491,10 @@ class _AssistantScreenState extends State<AssistantScreen>
             onTap: () {
               Clipboard.setData(ClipboardData(text: message.text));
               Navigator.pop(context);
-              ScaffoldMessenger.of(
+              AppSnackbar.show(
                 context,
-              ).showSnackBar(const SnackBar(content: Text('Copied')));
+                AppSnackbar.fromLegacy(content: Text('Copied')),
+              );
             },
           ),
           if (message.role == ChatRole.assistant ||

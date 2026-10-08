@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -140,7 +141,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.3),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -215,8 +220,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 onPressed: () async {
                   await SubscriptionRepository().purchase('pro');
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Welcome to Cozy Pro!')),
+                    AppSnackbar.show(
+                      context,
+                      AppSnackbar.fromLegacy(
+                        content: Text('Welcome to Cozy Pro!'),
+                      ),
                     );
                   }
                 },
@@ -261,12 +269,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.5),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -277,10 +289,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.star, color: Theme.of(context).colorScheme.primary, size: 28),
+                child: Icon(
+                  Icons.star,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 28,
+                ),
               ),
               SizedBox(width: 16),
               Expanded(
@@ -374,7 +392,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary, size: 20),
+        Icon(
+          Icons.check_circle,
+          color: Theme.of(context).colorScheme.primary,
+          size: 20,
+        ),
         SizedBox(width: 12),
         Expanded(
           child: Text(

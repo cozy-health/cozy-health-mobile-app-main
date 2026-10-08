@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -72,8 +73,11 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
                 setState(() {
                   _blockedUsers.remove(username);
                 });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('@$username has been unblocked.')),
+                AppSnackbar.show(
+                  context,
+                  AppSnackbar.fromLegacy(
+                    content: Text('@$username has been unblocked.'),
+                  ),
                 );
               },
               child: Text(

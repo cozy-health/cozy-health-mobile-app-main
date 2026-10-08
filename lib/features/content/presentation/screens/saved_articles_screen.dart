@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -19,8 +21,9 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
   void _removeArticle(SavedArticle article) async {
     await ContentRepository().toggleSave({'id': article.articleId});
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      AppSnackbar.show(
+        context,
+        AppSnackbar.fromLegacy(
           content: Text('Removed from library'),
           behavior: SnackBarBehavior.floating,
           duration: Duration(seconds: 2),
@@ -48,7 +51,7 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
           stream: ContentRepository().watchSavedArticles(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const ListSkeleton();
             }
             final articles = snapshot.data ?? [];
             if (articles.isEmpty) return _buildEmptyState();

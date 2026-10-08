@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -33,8 +34,9 @@ class _DownloadMyDataScreenState extends State<DownloadMyDataScreen> {
     if (!mounted) return;
 
     setState(() => _isGenerating = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('PDF ready. Check your Downloads.')),
+    AppSnackbar.show(
+      context,
+      AppSnackbar.fromLegacy(content: Text('PDF ready. Check your Downloads.')),
     );
     context.pop();
   }

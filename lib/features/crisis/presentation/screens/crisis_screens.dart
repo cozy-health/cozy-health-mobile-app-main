@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'dart:async';
 
@@ -665,8 +666,9 @@ void showLaunchFailureSheet(
 }
 
 void _showSupportSnack(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
+  AppSnackbar.show(
+    context,
+    AppSnackbar.fromLegacy(
       content: Text(
         message,
         style: TextStyle(color: Theme.of(context).colorScheme.onInverseSurface),

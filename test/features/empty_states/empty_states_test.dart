@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
@@ -226,7 +227,7 @@ void main() {
         ),
       );
       expect(find.byType(EmptyState), findsNothing);
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byType(SkeletonLoader), findsOneWidget);
       await tester.pumpWidget(
         const MaterialApp(
           home: InsightsStatus(loading: false, failed: true, empty: true),

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -18,9 +19,10 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
 
   void _saveReminder() {
     final formattedTime = _selectedTime.format(context);
-    ScaffoldMessenger.of(
+    AppSnackbar.show(
       context,
-    ).showSnackBar(SnackBar(content: Text('Reminder set for $formattedTime.')));
+      AppSnackbar.fromLegacy(content: Text('Reminder set for $formattedTime.')),
+    );
     context.pop();
   }
 
@@ -128,7 +130,9 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                                   _selectedTime.format(context),
                                   style: AppTextStyles.heading1.copyWith(
                                     fontSize: 48,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                                 ),
                                 SizedBox(width: 12),

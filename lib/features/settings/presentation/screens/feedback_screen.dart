@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -33,8 +34,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
     setState(() => _isLoading = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Thanks. We read every message.')),
+    AppSnackbar.show(
+      context,
+      AppSnackbar.fromLegacy(content: Text('Thanks. We read every message.')),
     );
     context.pop();
   }
@@ -196,7 +198,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
                 ),

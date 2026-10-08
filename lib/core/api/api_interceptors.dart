@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -34,8 +35,9 @@ class AuthInterceptor extends Interceptor {
 
       final context = AppRouter.navigatorKey.currentContext;
       if (context != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+        AppSnackbar.show(
+          context,
+          AppSnackbar.fromLegacy(
             content: Text("Session expired. Please log in again."),
           ),
         );

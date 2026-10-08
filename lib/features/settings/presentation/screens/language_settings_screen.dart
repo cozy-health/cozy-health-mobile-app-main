@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -51,9 +52,10 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
         .key;
     ProfileRepository().updateField('language', key);
 
-    ScaffoldMessenger.of(
+    AppSnackbar.show(
       context,
-    ).showSnackBar(SnackBar(content: Text('Language changed to $lang')));
+      AppSnackbar.fromLegacy(content: Text('Language changed to $lang')),
+    );
   }
 
   @override
@@ -122,7 +124,12 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
                                     ),
                                   ),
                                   if (isSelected)
-                                    Icon(Icons.check, color: Theme.of(context).colorScheme.primary),
+                                    Icon(
+                                      Icons.check,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
                                 ],
                               ),
                             ),

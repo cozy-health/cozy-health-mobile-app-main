@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -82,11 +83,19 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.3),
+            ),
           ),
           child: Row(
             children: [
-              Icon(Icons.security, color: Theme.of(context).colorScheme.primary, size: 32),
+              Icon(
+                Icons.security,
+                color: Theme.of(context).colorScheme.primary,
+                size: 32,
+              ),
               SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -221,8 +230,11 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
                 description: 'Receive a 6-digit code via text message.',
                 icon: Icons.sms_outlined,
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('SMS method coming soon')),
+                  AppSnackbar.show(
+                    context,
+                    AppSnackbar.fromLegacy(
+                      content: Text('SMS method coming soon'),
+                    ),
                   );
                 },
               ),
@@ -239,8 +251,11 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
                 description: 'Receive a 6-digit code via email.',
                 icon: Icons.email_outlined,
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Email method coming soon')),
+                  AppSnackbar.show(
+                    context,
+                    AppSnackbar.fromLegacy(
+                      content: Text('Email method coming soon'),
+                    ),
                   );
                 },
               ),
@@ -317,7 +332,9 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
             ),
           ),
@@ -403,8 +420,9 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
               _isEnabled = true;
               _setupStep = 'methods';
             });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+            AppSnackbar.show(
+              context,
+              AppSnackbar.fromLegacy(
                 content: Text('Two-factor authentication enabled!'),
               ),
             );
@@ -450,8 +468,9 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
               onPressed: () {
                 Navigator.of(context).pop();
                 setState(() => _isEnabled = false);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                AppSnackbar.show(
+                  context,
+                  AppSnackbar.fromLegacy(
                     content: Text('Two-factor authentication disabled'),
                   ),
                 );
@@ -552,7 +571,11 @@ class _MethodRow extends StatelessWidget {
                   color: AppColors.warmBackground,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 24),
+                child: Icon(
+                  icon,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
+                ),
               ),
               SizedBox(width: 16),
               Expanded(

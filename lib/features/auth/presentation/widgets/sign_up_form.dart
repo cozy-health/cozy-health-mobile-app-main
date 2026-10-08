@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:flutter/gestures.dart';
@@ -229,7 +230,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
       context.go(AppRouter.congratulations);
     } on ApiException catch (e) {
       setState(() {
-        _generalError = e.message;
+        _generalError = AppSnackbar.friendly(e.message);
       });
     } catch (_) {
       setState(() {

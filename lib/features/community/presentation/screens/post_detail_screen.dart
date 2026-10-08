@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -93,8 +94,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 ReportSheet.show(
                   context,
                   onSubmit: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                    AppSnackbar.show(
+                      context,
+                      AppSnackbar.fromLegacy(
                         content: Text('Report submitted. Thank you.'),
                       ),
                     );
@@ -162,7 +164,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           decoration: BoxDecoration(
                             color: isAnonymous
                                 ? context.communityBorder
-                                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(alpha: 0.14),
                             shape: BoxShape.circle,
                           ),
                           alignment: Alignment.center,
@@ -196,8 +200,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                               Text(
                                 timeAgo,
                                 style: context.communityBody2.copyWith(
-                                  color:
-                                      context.communityMuted,
+                                  color: context.communityMuted,
                                 ),
                               ),
                             ],
@@ -301,7 +304,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
@@ -329,13 +334,19 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.arrow_upward, color: Theme.of(context).colorScheme.primary),
+                    icon: Icon(
+                      Icons.arrow_upward,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     onPressed: () {
                       if (_commentController.text.isNotEmpty) {
                         _commentController.clear();
                         FocusScope.of(context).unfocus();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Comment added.')),
+                        AppSnackbar.show(
+                          context,
+                          AppSnackbar.fromLegacy(
+                            content: Text('Comment added.'),
+                          ),
                         );
                       }
                     },

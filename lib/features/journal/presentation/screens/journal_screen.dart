@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'dart:async';
 
@@ -213,7 +215,7 @@ class _JournalScreenState extends State<JournalScreen>
     }).toList();
   }
 
-  Future<void> _saveEntry(JournalEntry entry) async {
+  Future<bool> _saveEntry(JournalEntry entry) async {
     final signal = _crisisDetector.analyze(entry.body);
     final shouldShowCrisisSupport = _crisisDetector.canTrigger(
       'journal',
@@ -242,20 +244,32 @@ class _JournalScreenState extends State<JournalScreen>
 
     try {
       await _repo.save(entryToSave);
-    } catch (e) {
-      // Ignored for now - LocalDbService handles offline queueing
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            "We couldn't save your entry. Your words are still here.",
+          ),
+        );
+      }
+      return false;
     }
 
-    if (!mounted) return;
+    if (!mounted) return true;
     if (shouldShowCrisisSupport) {
       _crisisDetector.markTriggered('journal');
       await showCrisisSupportOverlay(context, signal: signal);
-      return;
+      return true;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(entry.isDraft ? 'Draft saved.' : 'Entry saved.')),
+    AppSnackbar.show(
+      context,
+      AppSnackbar.fromLegacy(
+        content: Text(entry.isDraft ? 'Draft saved.' : 'Entry saved.'),
+      ),
     );
+    return true;
   }
 
   Future<void> _openEditor({
@@ -268,6 +282,7 @@ class _JournalScreenState extends State<JournalScreen>
         builder: (_) => SecurityGate(
           journal: true,
           child: JournalEditorScreen(
+            onSave: _saveEntry,
             type: type,
             prompt: prompt,
             existing: existing,
@@ -368,8 +383,11 @@ class _JournalScreenState extends State<JournalScreen>
         },
         onShare: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Provider sharing is opt-in only.')),
+          AppSnackbar.show(
+            context,
+            AppSnackbar.fromLegacy(
+              content: Text('Provider sharing is opt-in only.'),
+            ),
           );
         },
         onAddTag: () {
@@ -470,15 +488,19 @@ class _JournalScreenState extends State<JournalScreen>
     } catch (e) {
       debugPrint('Journal entry deletion failed: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to delete entry. Try again.')),
+      AppSnackbar.show(
+        context,
+        AppSnackbar.fromLegacy(
+          content: Text('Unable to delete entry. Try again.'),
+        ),
       );
       return;
     }
     if (!mounted) return;
-    ScaffoldMessenger.of(
+    AppSnackbar.show(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Entry deleted.')));
+      AppSnackbar.fromLegacy(content: Text('Entry deleted.')),
+    );
   }
 }
 
@@ -488,11 +510,13 @@ class JournalEditorScreen extends StatefulWidget {
     required this.type,
     this.prompt,
     this.existing,
+    this.onSave,
   });
 
   final String type;
   final JournalPrompt? prompt;
   final JournalEntry? existing;
+  final Future<bool> Function(JournalEntry)? onSave;
 
   @override
   State<JournalEditorScreen> createState() => _JournalEditorScreenState();
@@ -507,6 +531,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   bool _showDraftPrompt = false;
   Timer? _autoSaveTimer;
   String _saveStatus = 'No draft yet';
+  bool _saving = false;
 
   @override
   void initState() {
@@ -562,14 +587,32 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                 children: [
                   IconButton(
                     tooltip: 'Back',
-                    onPressed: _finish,
+                    onPressed: _saving ? null : _finish,
                     icon: Icon(
                       Icons.arrow_back,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const Spacer(),
-                  TextButton(onPressed: _finish, child: Text('Save')),
+                  TextButton(
+                    onPressed: _saving ? null : _finish,
+                    child: _saving
+                        ? const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text('Loading...'),
+                            ],
+                          )
+                        : const Text('Save'),
+                  ),
                 ],
               ),
             ),
@@ -718,6 +761,27 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   }
 
   Future<void> _finish() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    _autoSaveTimer?.cancel();
+    try {
+      await _finishEntry();
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            "We couldn't save your entry. Please try again.",
+            onRetry: _finish,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _finishEntry() async {
     final body = _controller.text.trim();
     if (body.isEmpty && widget.existing == null) {
       await LocalDbService.instance.deleteJournalDraft(_draftId);
@@ -726,30 +790,25 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
       return;
     }
 
-    await LocalDbService.instance.deleteJournalDraft(_draftId);
-    if (!mounted) return;
-
-    Navigator.pop(
-      context,
-      JournalEntry(
-        id:
-            widget.existing?.id ??
-            DateTime.now().microsecondsSinceEpoch.toString(),
-        type: widget.type,
-        title:
-            widget.prompt?.category ??
-            widget.existing?.title ??
-            'Journal entry',
-        body: body,
-        tags: _tags,
-        promptId: widget.prompt?.id ?? widget.existing?.promptId,
-        promptText: widget.prompt?.text ?? widget.existing?.promptText,
-        createdAt: widget.existing?.createdAt ?? DateTime.now(),
-        updatedAt: DateTime.now(),
-        isDraft: false,
-        wordCount: _wordCount,
-      ),
+    final entry = JournalEntry(
+      id:
+          widget.existing?.id ??
+          DateTime.now().microsecondsSinceEpoch.toString(),
+      type: widget.type,
+      title:
+          widget.prompt?.category ?? widget.existing?.title ?? 'Journal entry',
+      body: body,
+      tags: _tags,
+      promptId: widget.prompt?.id ?? widget.existing?.promptId,
+      promptText: widget.prompt?.text ?? widget.existing?.promptText,
+      createdAt: widget.existing?.createdAt ?? DateTime.now(),
+      updatedAt: DateTime.now(),
+      isDraft: false,
+      wordCount: _wordCount,
     );
+    if (widget.onSave != null && !await widget.onSave!(entry)) return;
+    await LocalDbService.instance.deleteJournalDraft(_draftId);
+    if (mounted) Navigator.pop(context, widget.onSave == null ? entry : null);
   }
 }
 
@@ -1002,8 +1061,9 @@ class _JournalVoiceRecordingScreenState
                   _transcriptionController.text =
                       "So today was really tough. I wanted to talk it through instead of holding it in.";
                 });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Transcription ready.')),
+                AppSnackbar.show(
+                  context,
+                  AppSnackbar.fromLegacy(content: Text('Transcription ready.')),
                 );
               },
             ),
@@ -1053,15 +1113,19 @@ class _JournalVoiceRecordingScreenState
           _isRecording = false;
           _seconds = 0;
         });
-        ScaffoldMessenger.of(
+        AppSnackbar.show(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Hold longer to record.')));
+          AppSnackbar.fromLegacy(content: Text('Hold longer to record.')),
+        );
         return;
       }
       if (path == null) {
         setState(() => _isRecording = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Couldn't save recording. Try again?")),
+        AppSnackbar.show(
+          context,
+          AppSnackbar.fromLegacy(
+            content: Text("Couldn't save recording. Try again?"),
+          ),
         );
         return;
       }
@@ -1075,8 +1139,9 @@ class _JournalVoiceRecordingScreenState
       final result = await PermissionService.requestMicrophone();
       if (!mounted) return;
       if (result == MicPermissionResult.permanentlyDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        AppSnackbar.show(
+          context,
+          AppSnackbar.fromLegacy(
             content: Text('Microphone access is needed to record.'),
             action: SnackBarAction(
               label: 'Open Settings',
@@ -1087,8 +1152,9 @@ class _JournalVoiceRecordingScreenState
         return;
       }
       if (result != MicPermissionResult.granted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+        AppSnackbar.show(
+          context,
+          AppSnackbar.fromLegacy(
             content: Text('Microphone access is needed to record.'),
           ),
         );
@@ -1098,8 +1164,11 @@ class _JournalVoiceRecordingScreenState
         await _audioRecorder.start();
       } catch (_) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Couldn't save recording. Try again?")),
+        AppSnackbar.show(
+          context,
+          AppSnackbar.fromLegacy(
+            content: Text("Couldn't save recording. Try again?"),
+          ),
         );
         return;
       }
@@ -1150,9 +1219,10 @@ class _JournalVoiceRecordingScreenState
       return;
     }
     if (path == null) {
-      ScaffoldMessenger.of(
+      AppSnackbar.show(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't play recording.")));
+        AppSnackbar.fromLegacy(content: Text("Couldn't play recording.")),
+      );
       return;
     }
     setState(() => _isPlaying = true);
@@ -1160,9 +1230,10 @@ class _JournalVoiceRecordingScreenState
       await _audioRecorder.play(path);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      AppSnackbar.show(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't play recording.")));
+        AppSnackbar.fromLegacy(content: Text("Couldn't play recording.")),
+      );
     } finally {
       if (mounted) setState(() => _isPlaying = false);
     }
@@ -1362,8 +1433,11 @@ class JournalEntryDetailScreen extends StatelessWidget {
         },
         onShare: () {
           Navigator.pop(sheetContext);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Provider sharing is opt-in only.')),
+          AppSnackbar.show(
+            context,
+            AppSnackbar.fromLegacy(
+              content: Text('Provider sharing is opt-in only.'),
+            ),
           );
         },
         onAddTag: () => Navigator.pop(sheetContext),
@@ -2700,14 +2774,7 @@ class _SkeletonBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: AppColors.border.withValues(alpha: .55),
-        borderRadius: BorderRadius.circular(radius),
-      ),
-    );
+    return SkeletonLoader(width: width, height: height, radius: radius);
   }
 }
 
@@ -2718,14 +2785,7 @@ class _SkeletonCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: AppColors.border.withValues(alpha: .55),
-        shape: BoxShape.circle,
-      ),
-    );
+    return SkeletonLoader(width: size, height: size, radius: size / 2);
   }
 }
 

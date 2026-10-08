@@ -134,6 +134,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       showAuthToast(
         context,
         type: AuthToastType.error,
+        onRetry: _submit,
         title: _friendlyError(e.message),
       );
     } catch (_) {
@@ -141,6 +142,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       showAuthToast(
         context,
         type: AuthToastType.error,
+        onRetry: _submit,
         title: "We couldn't reach the server. Retry?",
       );
     } finally {
@@ -156,7 +158,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       });
       return 'That email is already registered.';
     }
-    return message.isEmpty ? 'Unable to create account. Try again?' : message;
+    return "We couldn't create your account. Check your connection and try again.";
   }
 
   @override
@@ -186,6 +188,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               : null,
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
           enabled: !_busy,
         ),
         const SizedBox(height: 24),
@@ -194,6 +197,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           error: _passwordError,
           controller: _passwordController,
           obscure: true,
+          autofillHints: const [AutofillHints.newPassword],
           enabled: !_busy,
         ),
         const SizedBox(height: 12),
@@ -203,6 +207,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           label: 'Confirm Password',
           error: _confirmError,
           controller: _confirmController,
+          autofillHints: const [AutofillHints.newPassword],
           obscure: true,
           enabled: !_busy,
         ),

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:go_router/go_router.dart';
@@ -63,7 +64,7 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting &&
                 !snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
+              return const ListSkeleton();
             }
             if (widget.availableQuizIds.isEmpty) {
               return const EmptyState(

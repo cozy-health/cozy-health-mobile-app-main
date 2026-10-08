@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -47,7 +48,9 @@ class ReferralScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -93,8 +96,9 @@ class ReferralScreen extends StatelessWidget {
                       icon: Icon(Icons.copy, color: AppColors.textSubtle),
                       tooltip: 'Copy link',
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Link copied')),
+                        AppSnackbar.show(
+                          context,
+                          AppSnackbar.fromLegacy(content: Text('Link copied')),
                         );
                       },
                     ),
@@ -105,18 +109,25 @@ class ReferralScreen extends StatelessWidget {
               InkWell(
                 onTap: () {
                   // native share
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Opening share sheet...')),
+                  AppSnackbar.show(
+                    context,
+                    AppSnackbar.fromLegacy(
+                      content: Text('Opening share sheet...'),
+                    ),
                   );
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   height: 56,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.15),
                       width: 1,
                     ),
                   ),

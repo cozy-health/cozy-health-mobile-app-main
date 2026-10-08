@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -41,14 +42,18 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
     final articleData = {
       'id': _articleId,
       'title': _title,
-      'excerpt': 'Anxiety isn\'t weakness. It\'s your nervous system doing its job...',
+      'excerpt':
+          'Anxiety isn\'t weakness. It\'s your nervous system doing its job...',
     };
     await ContentRepository().toggleSave(articleData);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isSaved ? 'Removed from library' : 'Saved to your library'),
+      AppSnackbar.show(
+        context,
+        AppSnackbar.fromLegacy(
+          content: Text(
+            _isSaved ? 'Removed from library' : 'Saved to your library',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -60,7 +65,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
     final title = widget.extra['title'] as String? ?? 'Article';
     final category = widget.extra['category'] as String? ?? 'Anxiety';
     final readTime = widget.extra['readTime'] as String? ?? '5 min read';
-    
+
     // For body text, using a serif fallback
     const serifStyle = TextStyle(
       fontFamily: 'Georgia', // standard serif
@@ -93,21 +98,29 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                       onToggle: _toggleSave,
                       isIconOnly: true,
                     );
-                  }
+                  },
                 ),
               ],
             ),
             Expanded(
               child: SingleChildScrollView(
                 controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
@@ -120,7 +133,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     Text(
                       title,
                       style: AppTextStyles.heading1.copyWith(
@@ -129,28 +142,28 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     Text(
                       '$readTime · Sarah Chen\nOctober 1, 2026',
-                      style: AppTextStyles.body2.copyWith(color: AppColors.textMuted, height: 1.4),
+                      style: AppTextStyles.body2.copyWith(
+                        color: AppColors.textMuted,
+                        height: 1.4,
+                      ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     const Divider(color: AppColors.border),
                     const SizedBox(height: 24),
-                    
+
                     const Text(
                       'Anxiety isn\'t weakness. It\'s your nervous system doing its job — just a little too well.\n\nWhen you feel anxious, your body is trying to protect you from something it thinks is a threat. Sometimes that threat is real. Sometimes it isn\'t. Either way, the feeling is valid.',
                       style: serifStyle,
                     ),
                     const SizedBox(height: 32),
-                    
-                    Text(
-                      'What it feels like',
-                      style: AppTextStyles.heading2,
-                    ),
+
+                    Text('What it feels like', style: AppTextStyles.heading2),
                     const SizedBox(height: 16),
-                    
+
                     const Text('Anxiety can show up as:', style: serifStyle),
                     const SizedBox(height: 8),
                     _buildBullet('Racing thoughts', serifStyle),
@@ -159,26 +172,31 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                     _buildBullet('Trouble sleeping', serifStyle),
                     _buildBullet('A sense of dread', serifStyle),
                     const SizedBox(height: 32),
-                    
-                    Text(
-                      'What helps',
-                      style: AppTextStyles.heading2,
-                    ),
+
+                    Text('What helps', style: AppTextStyles.heading2),
                     const SizedBox(height: 16),
-                    const Text('You don\'t have to fix it. You just have to be with it — gently.', style: serifStyle),
+                    const Text(
+                      'You don\'t have to fix it. You just have to be with it — gently.',
+                      style: serifStyle,
+                    ),
                     const SizedBox(height: 24),
-                    
+
                     InlineCTA(
                       text: 'Try a breathing exercise',
-                      onTap: () => context.push(AppRouter.breathing), // From crisis hub/tools
+                      onTap: () => context.push(
+                        AppRouter.breathing,
+                      ), // From crisis hub/tools
                     ),
                     const SizedBox(height: 24),
-                    
-                    const Text('Remember that feelings are visitors. They don\'t stay forever, even when it feels like they might.', style: serifStyle),
+
+                    const Text(
+                      'Remember that feelings are visitors. They don\'t stay forever, even when it feels like they might.',
+                      style: serifStyle,
+                    ),
                     const SizedBox(height: 32),
                     const Divider(color: AppColors.border),
                     const SizedBox(height: 24),
-                    
+
                     Text(
                       'Take care of yourself.',
                       style: AppTextStyles.body1.copyWith(
@@ -187,7 +205,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     StreamBuilder<bool>(
                       stream: ContentRepository().isSaved(_articleId),
                       builder: (context, snapshot) {
@@ -195,13 +213,16 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                           isSaved: snapshot.data ?? false,
                           onToggle: _toggleSave,
                         );
-                      }
+                      },
                     ),
                     const SizedBox(height: 48),
-                    
-                    Text('More in $category', style: AppTextStyles.heading2.copyWith(fontSize: 18)),
+
+                    Text(
+                      'More in $category',
+                      style: AppTextStyles.heading2.copyWith(fontSize: 18),
+                    ),
                     const SizedBox(height: 16),
-                    
+
                     ArticleCardCompact(
                       title: 'The 5-4-3-2-1 Grounding Technique',
                       metadata: '4 min read',
@@ -213,7 +234,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                       metadata: '3 min read',
                       onTap: () {},
                     ),
-                    
+
                     const SizedBox(height: 64),
                   ],
                 ),

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/audio/audio_recorder_service.dart';
@@ -71,7 +72,9 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                       width: 4,
                       height: isActive ? height : 8,
                       decoration: BoxDecoration(
-                        color: isActive ? Theme.of(context).colorScheme.primary : AppColors.midGrey,
+                        color: isActive
+                            ? Theme.of(context).colorScheme.primary
+                            : AppColors.midGrey,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -97,8 +100,9 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                   final path = await _audioRecorder.stop();
                   if (!context.mounted) return;
                   if (path == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                    AppSnackbar.show(
+                      context,
+                      AppSnackbar.fromLegacy(
                         content: Text("Couldn't save recording. Try again?"),
                       ),
                     );
@@ -116,8 +120,9 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                     await _audioRecorder.start();
                   } catch (_) {
                     if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                    AppSnackbar.show(
+                      context,
+                      AppSnackbar.fromLegacy(
                         content: Text("Couldn't save recording. Try again?"),
                       ),
                     );
@@ -125,8 +130,9 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                   }
                   setState(() => isRecording = true);
                 } else if (result == MicPermissionResult.permanentlyDenied) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                  AppSnackbar.show(
+                    context,
+                    AppSnackbar.fromLegacy(
                       content: Text('Microphone access is needed to record.'),
                       action: SnackBarAction(
                         label: 'Open Settings',
@@ -135,8 +141,9 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                     ),
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                  AppSnackbar.show(
+                    context,
+                    AppSnackbar.fromLegacy(
                       content: Text('Microphone access is needed to record.'),
                     ),
                   );
@@ -148,7 +155,9 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isRecording ? Colors.red : Theme.of(context).colorScheme.primary,
+                    color: isRecording
+                        ? Colors.red
+                        : Theme.of(context).colorScheme.primary,
                     width: 4,
                   ),
                 ),
@@ -157,7 +166,9 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: isRecording ? Colors.red : Theme.of(context).colorScheme.primary,
+                      color: isRecording
+                          ? Colors.red
+                          : Theme.of(context).colorScheme.primary,
                       borderRadius: isRecording
                           ? BorderRadius.circular(4)
                           : BorderRadius.circular(20),
@@ -189,16 +200,22 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                   TextButton.icon(
                     onPressed: () {
                       if (_recordingPath == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Couldn't save recording. Try again?"),
+                        AppSnackbar.show(
+                          context,
+                          AppSnackbar.fromLegacy(
+                            content: Text(
+                              "Couldn't save recording. Try again?",
+                            ),
                           ),
                         );
                         return;
                       }
                       context.pop();
                     },
-                    icon: Icon(Icons.check, color: Theme.of(context).colorScheme.primary),
+                    icon: Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     label: Text(
                       'Save Recording',
                       style: AppTextStyles.body1.copyWith(

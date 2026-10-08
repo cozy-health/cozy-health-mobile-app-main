@@ -35,6 +35,12 @@ class _CustomTextFieldState extends State<CustomTextField> {
       controller: widget.controller,
       validator: widget.validator,
       keyboardType: widget.keyboardType,
+      autofillHints: widget.isPassword
+          ? const [AutofillHints.newPassword]
+          : widget.keyboardType == TextInputType.emailAddress
+          ? const [AutofillHints.email]
+          : null,
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       obscureText: widget.isPassword ? _obscureText : false,
       style: AppTextStyles.body1.copyWith(color: AppColors.black),
       decoration: InputDecoration(
@@ -45,14 +51,14 @@ class _CustomTextFieldState extends State<CustomTextField> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: widget.hasError ? Colors.red : AppColors.midGrey, 
+            color: widget.hasError ? Colors.red : AppColors.midGrey,
             width: 1.5,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: widget.hasError ? Colors.red : AppColors.midGrey, 
+            color: widget.hasError ? Colors.red : AppColors.midGrey,
             width: 1.5,
           ),
         ),
@@ -73,7 +79,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         suffixIcon: widget.isPassword
             ? GestureDetector(
                 onTap: () {
@@ -94,7 +103,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
                           ),
                         )
                       : SvgPicture.asset(
-                          _obscureText ? Assets.svg.padlockClosed : Assets.svg.padlockOpen,
+                          _obscureText
+                              ? Assets.svg.padlockClosed
+                              : Assets.svg.padlockOpen,
                           width: 20,
                           height: 20,
                           colorFilter: ColorFilter.mode(
@@ -105,19 +116,19 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 ),
               )
             : widget.hasError
-                ? Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: SvgPicture.asset(
-                      Assets.svg.warning,
-                      width: 20,
-                      height: 20,
-                      colorFilter: const ColorFilter.mode(
-                        Colors.red,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  )
-                : null,
+            ? Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: SvgPicture.asset(
+                  Assets.svg.warning,
+                  width: 20,
+                  height: 20,
+                  colorFilter: const ColorFilter.mode(
+                    Colors.red,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              )
+            : null,
       ),
     );
   }

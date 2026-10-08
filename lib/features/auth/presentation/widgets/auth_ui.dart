@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -98,6 +99,7 @@ class AuthTextField extends StatefulWidget {
   final bool obscure;
   final bool enabled;
   final ValueChanged<String>? onChanged;
+  final Iterable<String>? autofillHints;
 
   const AuthTextField({
     super.key,
@@ -110,6 +112,7 @@ class AuthTextField extends StatefulWidget {
     this.obscure = false,
     this.enabled = true,
     this.onChanged,
+    this.autofillHints,
   });
 
   @override
@@ -177,7 +180,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
             boxShadow: _focusNode.hasFocus
                 ? [
                     BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.08),
                       blurRadius: 0,
                       spreadRadius: 2,
                     ),
@@ -185,6 +190,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
                 : null,
           ),
           child: TextField(
+            autofillHints: widget.autofillHints,
+            onTapOutside: (_) => _focusNode.unfocus(),
+            scrollPadding: const EdgeInsets.all(48),
             controller: widget.controller,
             focusNode: _focusNode,
             enabled: widget.enabled,
@@ -212,11 +220,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
                       ),
                     )
                   : hasSuccess
-                  ? Icon(
-                      Icons.check_circle,
-                      color: AppColors.success,
-                      size: 18,
-                    )
+                  ? Icon(Icons.check_circle, color: AppColors.success, size: 18)
                   : hasError
                   ? Icon(Icons.error, color: AppColors.danger, size: 18)
                   : null,
@@ -320,7 +324,9 @@ class PasswordStrengthBar extends StatelessWidget {
                   children: [
                     Container(
                       height: 4,
-                      color: isDark ? AppColors.borderDark : AppColors.lightGrey,
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.lightGrey,
                     ),
                     AnimatedFractionallySizedBox(
                       duration: const Duration(milliseconds: 300),
@@ -458,100 +464,16 @@ void showAuthToast(
   required AuthToastType type,
   required String title,
   String? description,
+  VoidCallback? onRetry,
 }) {
-  final color = switch (type) {
-    AuthToastType.success => AppColors.success,
-    AuthToastType.error => AppColors.danger,
-    AuthToastType.info => Theme.of(context).colorScheme.primary,
-    AuthToastType.warning => AppColors.warning,
-    AuthToastType.loading => AppColors.borderStrong,
-  };
-  final icon = switch (type) {
-    AuthToastType.success => Icons.check_circle,
-    AuthToastType.error => Icons.cancel,
-    AuthToastType.info => Icons.info,
-    AuthToastType.warning => Icons.warning_amber_rounded,
-    AuthToastType.loading => Icons.sync,
-  };
-
-  final messenger = ScaffoldMessenger.of(context);
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  messenger.hideCurrentSnackBar();
-  messenger.showSnackBar(
-    SnackBar(
-      behavior: SnackBarBehavior.floating,
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      duration: type == AuthToastType.loading
-          ? const Duration(days: 1)
-          : const Duration(milliseconds: 3000),
-      margin: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        bottom: MediaQuery.viewInsetsOf(context).bottom > 0
-            ? MediaQuery.viewInsetsOf(context).bottom + 16
-            : 24,
-      ),
-      content: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.surfaceElevatedDark
-              : Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(
-                context,
-              ).colorScheme.shadow.withValues(alpha: 0.12),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (description != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      description,
-                      style: AppTextStyles.body2.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.textMutedDark
-                            : AppColors.textMutedLight,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-
-  if (type == AuthToastType.error) {
-    HapticFeedback.heavyImpact();
-  } else if (type == AuthToastType.success) {
-    HapticFeedback.mediumImpact();
-  }
+  if (type == AuthToastType.loading) return;
+  final message = description == null ? title : '$title\n$description';
+  AppSnackbar.show(context, switch (type) {
+    AuthToastType.success => AppSnackbar.success(message),
+    AuthToastType.error => AppSnackbar.error(message, onRetry: onRetry),
+    AuthToastType.warning => AppSnackbar.warning(message),
+    _ => AppSnackbar.info(message),
+  });
 }
 
 class AuthFooterLink extends StatelessWidget {

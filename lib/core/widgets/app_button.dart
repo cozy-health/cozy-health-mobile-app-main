@@ -22,6 +22,23 @@ class AppButton extends StatelessWidget {
     this.trailingIcon,
   });
 
+  Widget _loading(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: isOutlined
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.onPrimary,
+        ),
+      ),
+      const SizedBox(width: 12),
+      const Text('Loading...'),
+    ],
+  );
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -40,14 +57,7 @@ class AppButton extends StatelessWidget {
                 ),
               ),
               child: isLoading
-                  ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    )
+                  ? _loading(context)
                   : trailingIcon != null
                   ? Row(
                       mainAxisSize: MainAxisSize.min,
@@ -91,14 +101,7 @@ class AppButton extends StatelessWidget {
                 elevation: 0,
               ),
               child: isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.white,
-                      ),
-                    )
+                  ? _loading(context)
                   : trailingIcon != null
                   ? Row(
                       mainAxisSize: MainAxisSize.min,

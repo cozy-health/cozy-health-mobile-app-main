@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/security_gate.dart';
 import '../../../../core/services/security_service.dart';
 import 'package:flutter/cupertino.dart';
@@ -58,8 +59,9 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
   void _showSecurityError() {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+    AppSnackbar.show(
+      context,
+      AppSnackbar.fromLegacy(
         content: Text('Unable to update security settings. Try again.'),
       ),
     );
@@ -71,8 +73,9 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     try {
       if (!await SecurityService.instance.authenticate()) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+          AppSnackbar.show(
+            context,
+            AppSnackbar.fromLegacy(
               content: Text(
                 'Biometric verification is required. Set up Face ID or fingerprint in device settings.',
               ),

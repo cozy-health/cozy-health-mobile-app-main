@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -30,7 +31,7 @@ class QuizHistoryScreen extends StatelessWidget {
           stream: QuizRepository().watchAttempts(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const ListSkeleton();
             }
 
             final attempts = [...?snapshot.data];

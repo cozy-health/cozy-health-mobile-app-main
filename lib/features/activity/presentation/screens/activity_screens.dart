@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -67,6 +68,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
           return StreamBuilder<List<JournalEntry>>(
             stream: _journalRepo.watchJournalEntries(),
             builder: (context, journalSnapshot) {
+              if ((moodSnapshot.connectionState == ConnectionState.waiting &&
+                      !moodSnapshot.hasData) ||
+                  (journalSnapshot.connectionState == ConnectionState.waiting &&
+                      !journalSnapshot.hasData)) {
+                return const ListSkeleton();
+              }
               final stats = _ActivityStats.fromEntries(
                 moods: moodSnapshot.data ?? const [],
                 journals: journalSnapshot.data ?? const [],
