@@ -8,12 +8,14 @@ class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
   final GlobalKey? assistantTourKey;
+  final bool showAssistant;
 
   const CustomBottomNavigationBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
     this.assistantTourKey,
+    this.showAssistant = true,
   });
 
   @override
@@ -40,7 +42,8 @@ class CustomBottomNavigationBar extends StatelessWidget {
             children: [
               _buildNavItem(context, 0, 'Home', Assets.svg.home),
               _buildNavItem(context, 1, 'Activity', Assets.svg.activity),
-              _buildNavItem(context, 2, 'Assistant', Assets.svg.assistant),
+              if (showAssistant)
+                _buildNavItem(context, 2, 'Assistant', Assets.svg.assistant),
               _buildNavItem(context, 3, 'Community', Assets.svg.community),
               _buildNavItem(context, 4, 'Settings', Assets.svg.settings),
             ],

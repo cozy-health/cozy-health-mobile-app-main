@@ -1,3 +1,4 @@
+import '../../../../core/services/feature_flags_service.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
 import 'package:cozy_health/features/assistant/presentation/screens/assistant_screen.dart';
 import 'package:cozy_health/features/community/presentation/screens/community_hub_screen.dart';
@@ -34,41 +35,45 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      body: SafeArea(bottom: false, child: _screens[_currentIndex]),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          CrisisFab(key: _tourTargets.crisis),
-          const SizedBox(height: 16),
-          Semantics(
-            button: true,
-            label: 'Open quick actions',
-            child: GestureDetector(
-              onLongPress: () => context.push(AppRouter.crisisHub),
-              child: FloatingActionButton(
-                key: _tourTargets.journal,
-                heroTag: 'quick-actions',
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: AppColors.white,
-                onPressed: () => _showQuickActionsSheet(context),
-                child: Icon(Icons.add),
+    return ListenableBuilder(
+      listenable: FeatureFlagsService.instance,
+      builder: (context, _) => Scaffold(
+        extendBody: true,
+        body: SafeArea(bottom: false, child: _screens[_currentIndex]),
+        floatingActionButton: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            CrisisFab(key: _tourTargets.crisis),
+            const SizedBox(height: 16),
+            Semantics(
+              button: true,
+              label: 'Open quick actions',
+              child: GestureDetector(
+                onLongPress: () => context.push(AppRouter.crisisHub),
+                child: FloatingActionButton(
+                  key: _tourTargets.journal,
+                  heroTag: 'quick-actions',
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: AppColors.white,
+                  onPressed: () => _showQuickActionsSheet(context),
+                  child: Icon(Icons.add),
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      bottomNavigationBar: CustomBottomNavigationBar(
-        assistantTourKey: _tourTargets.assistant,
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+          ],
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        bottomNavigationBar: CustomBottomNavigationBar(
+          showAssistant: FeatureFlags.isEnabled('ai_assistant'),
+          assistantTourKey: _tourTargets.assistant,
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+        ),
       ),
     );
   }
@@ -144,14 +149,15 @@ class _MainScreenState extends State<MainScreen> {
                           context.push(AppRouter.journal);
                         },
                       ),
-                      _QuickActionTile(
-                        icon: '💬',
-                        label: 'Chat',
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          setState(() => _currentIndex = 2);
-                        },
-                      ),
+                      if (FeatureFlags.isEnabled('ai_assistant'))
+                        _QuickActionTile(
+                          icon: '💬',
+                          label: 'Chat',
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            setState(() => _currentIndex = 2);
+                          },
+                        ),
                       _QuickActionTile(
                         icon: '🌬',
                         label: 'Breathe',

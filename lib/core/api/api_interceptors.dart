@@ -28,6 +28,7 @@ class AuthInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401 &&
+        err.requestOptions.extra['skipAuth'] != true &&
         !err.requestOptions.path.endsWith('/auth/google') &&
         !err.requestOptions.path.endsWith('/auth/apple')) {
       await AuthTokenService.clearToken();

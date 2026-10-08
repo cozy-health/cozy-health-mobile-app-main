@@ -41,7 +41,6 @@ class _FeatureTourState extends State<FeatureTour> {
       if ([
         widget.targets!.hero,
         widget.targets!.journal,
-        widget.targets!.assistant,
         widget.targets!.crisis,
       ].any((key) => key.currentContext == null)) {
         return;
@@ -109,12 +108,13 @@ class _FeatureTourState extends State<FeatureTour> {
         'Tap +, then Journal to make room for your thoughts.',
         ContentAlign.top,
       ),
-      (
-        targets.assistant,
-        'Talk to your assistant',
-        'Find a space to talk in the Assistant tab.',
-        ContentAlign.top,
-      ),
+      if (targets.assistant.currentContext != null)
+        (
+          targets.assistant,
+          'Talk to your assistant',
+          'Find a space to talk in the Assistant tab.',
+          ContentAlign.top,
+        ),
       (
         targets.crisis,
         'Get help when you need it',

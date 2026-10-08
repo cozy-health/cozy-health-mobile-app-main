@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/widgets/feature_gate.dart';
 
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -20,14 +21,24 @@ import '../widgets/conversation_list_view.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/typing_indicator.dart';
 
-class AssistantScreen extends StatefulWidget {
+class AssistantScreen extends StatelessWidget {
   const AssistantScreen({super.key});
 
   @override
-  State<AssistantScreen> createState() => _AssistantScreenState();
+  Widget build(BuildContext context) => FeatureGate(
+    feature: 'ai_assistant',
+    builder: (_) => const _AssistantContent(),
+  );
 }
 
-class _AssistantScreenState extends State<AssistantScreen>
+class _AssistantContent extends StatefulWidget {
+  const _AssistantContent();
+
+  @override
+  State<_AssistantContent> createState() => _AssistantScreenState();
+}
+
+class _AssistantScreenState extends State<_AssistantContent>
     with SingleTickerProviderStateMixin {
   final CrisisDetector _crisisDetector = const CrisisDetector();
   final TextEditingController _controller = TextEditingController();

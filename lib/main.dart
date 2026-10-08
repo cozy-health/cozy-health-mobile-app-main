@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/routing/app_router.dart';
 import 'core/services/local_db_service.dart';
+import 'core/services/feature_flags_service.dart';
 import 'core/models/user_profile.dart';
 import 'core/theme/app_theme.dart';
 import 'features/settings/data/profile_repository.dart';
@@ -16,6 +17,7 @@ Future<void> main() => CrashReporting.run(_startApp);
 Future<void> _startApp() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LocalDbService().init();
+  await FeatureFlagsService.instance.initialize();
   await InstallMarkerService().clearLingeringSessionOnFreshInstall();
   AppRouter.router.routeInformationProvider.addListener(() {
     CrashReporting.tagRoute(
