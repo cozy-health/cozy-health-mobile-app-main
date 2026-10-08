@@ -11,14 +11,16 @@ import '../../../../utils/responsive_extensions.dart';
 import '../../data/settings_service.dart';
 
 class ProviderScreen extends StatefulWidget {
-  const ProviderScreen({super.key});
+  const ProviderScreen({super.key, this.settingsService});
+
+  final SettingsService? settingsService;
 
   @override
   State<ProviderScreen> createState() => _ProviderScreenState();
 }
 
 class _ProviderScreenState extends State<ProviderScreen> {
-  final SettingsService _settingsService = SettingsService();
+  late final SettingsService _settingsService;
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
@@ -28,6 +30,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
   bool _sending = false;
   bool _verifying = false;
   bool _removing = false;
+  String? _updatingConsent;
 
   String? _error;
   int _failures = 0;
@@ -38,6 +41,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
   @override
   void initState() {
     super.initState();
+    _settingsService = widget.settingsService ?? SettingsService();
     _loadProvider();
   }
 
@@ -256,6 +260,128 @@ class _ProviderScreenState extends State<ProviderScreen> {
   bool get _hasPendingProvider {
     final status = _provider?['status']?.toString();
     return _provider != null && status == 'pending';
+  }
+
+  Future<void> _updateConsent(String type, bool value) async {
+    final linkId = _provider?['link_id'] ?? _provider?['id'];
+    if (linkId == null || _updatingConsent != null || _removing) return;
+    _retry = () => _updateConsent(type, value);
+    setState(() {
+      _updatingConsent = type;
+      _error = null;
+    });
+    try {
+      await _settingsService.updateConsent(
+        linkId: linkId.toString(),
+        consentType: type,
+        value: value,
+      );
+      if (!mounted) return;
+      setState(() {
+        final flags = Map<String, dynamic>.from(
+          _provider?['consent_flags'] as Map? ?? {},
+        );
+        flags[type] = value;
+        _provider = {...?_provider, 'consent_flags': flags};
+        _failures = 0;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'Unable to save consent. Your sharing setting has not changed.';
+        _failures++;
+      });
+    } finally {
+      if (mounted) setState(() => _updatingConsent = null);
+    }
+  }
+
+  Future<void> _confirmRevoke() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Revoke provider access?'),
+        content: const Text(
+          'Your provider will lose access to your shared data and cannot add notes. You can reconnect later; all sharing choices will start off.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Revoke access'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) await _revokeAccess();
+  }
+
+  Future<void> _revokeAccess() async {
+    final linkId = _provider?['link_id'] ?? _provider?['id'];
+    if (linkId == null || _removing || _updatingConsent != null) return;
+    _retry = _confirmRevoke;
+    setState(() {
+      _removing = true;
+      _error = null;
+    });
+    try {
+      await _settingsService.revokeProviderAccess(linkId.toString());
+      if (!mounted) return;
+      setState(() {
+        _provider = null;
+        _hasProvider = false;
+      });
+      context.pop();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Unable to revoke access. Please try again.';
+        _failures++;
+      });
+    } finally {
+      if (mounted) setState(() => _removing = false);
+    }
+  }
+
+  Widget _consentToggles() {
+    final flags = _provider?['consent_flags'] as Map? ?? {};
+    const labels = {
+      'moods': 'Share mood entries',
+      'journals': 'Share journal summaries',
+      'quizzes': 'Share quiz results',
+      'notes': 'Allow provider notes',
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Choose what this provider can access until you revoke access. Turn off a switch to stop sharing that data type.',
+          style: AppTextStyles.body2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        for (final entry in labels.entries)
+          SwitchListTile.adaptive(
+            key: ValueKey('consent-${entry.key}'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(entry.value),
+            subtitle: entry.key == 'journals'
+                ? const Text(
+                    'Metadata only: title, type, word count and date. Your journal body, transcript and recordings are never shared.',
+                  )
+                : null,
+            value: flags[entry.key] == true,
+            onChanged: _updatingConsent != null || _removing
+                ? null
+                : (value) => _updateConsent(entry.key, value),
+          ),
+        if (_updatingConsent != null) const LinearProgressIndicator(),
+      ],
+    );
   }
 
   @override
@@ -518,7 +644,9 @@ class _ProviderScreenState extends State<ProviderScreen> {
                     ],
                     0.8.sh,
                     Text(
-                      'Connected',
+                      _provider?['provider_verified'] == true
+                          ? 'Link verified • Provider verified'
+                          : 'Link verified • Provider verification pending',
                       style: AppTextStyles.body2.copyWith(
                         color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
@@ -533,10 +661,16 @@ class _ProviderScreenState extends State<ProviderScreen> {
 
         3.sh,
 
+        _consentToggles(),
+
+        3.sh,
+
         AppButton(
           isLoading: _removing,
-          text: _removing ? 'Removing...' : 'Remove Provider',
-          onPressed: _removing ? null : _removeProvider,
+          text: _removing ? 'Revoking...' : 'Revoke access',
+          onPressed: _removing || _updatingConsent != null
+              ? null
+              : _confirmRevoke,
           isOutlined: true,
         ),
       ],

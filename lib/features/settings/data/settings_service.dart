@@ -5,9 +5,8 @@ import '../../../core/api/response_data.dart';
 class SettingsService {
   final ApiClient _apiClient;
 
-  SettingsService({
-    ApiClient? apiClient,
-  }) : _apiClient = apiClient ?? ApiClient();
+  SettingsService({ApiClient? apiClient})
+    : _apiClient = apiClient ?? ApiClient();
 
   Future<Map<String, dynamic>> getProfile() async {
     return responseMap(await _apiClient.get(ApiConstants.me));
@@ -18,14 +17,16 @@ class SettingsService {
     required String lastname,
     String? username,
   }) async {
-    return responseMap(await _apiClient.put(
-      ApiConstants.me,
-      body: {
-        'firstname': firstname,
-        'lastname': lastname,
-        if (username != null) 'username': username,
-      },
-    ));
+    return responseMap(
+      await _apiClient.put(
+        ApiConstants.me,
+        body: {
+          'firstname': firstname,
+          'lastname': lastname,
+          if (username != null) 'username': username,
+        },
+      ),
+    );
   }
 
   Future<Map<String, dynamic>> getProvider() async {
@@ -36,28 +37,40 @@ class SettingsService {
     required String providerEmail,
     String? providerName,
   }) async {
-    return responseMap(await _apiClient.post(
-      ApiConstants.providerRequest,
-      body: {
-        'provider_email': providerEmail,
-        if (providerName != null) 'provider_name': providerName,
-      },
-    ));
+    return responseMap(
+      await _apiClient.post(
+        ApiConstants.providerRequest,
+        body: {
+          'provider_email': providerEmail,
+          if (providerName != null) 'provider_name': providerName,
+        },
+      ),
+    );
   }
 
-  Future<Map<String, dynamic>> verifyProvider({
-    required String code,
-  }) async {
-    return responseMap(await _apiClient.post(
-      ApiConstants.providerVerify,
-      body: {
-        'code': code,
-      },
-    ));
+  Future<Map<String, dynamic>> verifyProvider({required String code}) async {
+    return responseMap(
+      await _apiClient.post(ApiConstants.providerVerify, body: {'code': code}),
+    );
   }
 
   Future<Map<String, dynamic>> removeProvider() async {
     return responseMap(await _apiClient.delete(ApiConstants.provider));
+  }
+
+  Future<void> updateConsent({
+    required String linkId,
+    required String consentType,
+    required bool value,
+  }) async {
+    await _apiClient.patch(
+      '/me/provider/${Uri.encodeComponent(linkId)}/consent',
+      body: {'consent_type': consentType, 'value': value},
+    );
+  }
+
+  Future<void> revokeProviderAccess(String linkId) async {
+    await _apiClient.delete('/me/provider/${Uri.encodeComponent(linkId)}');
   }
 
   Future<Map<String, dynamic>> getSubscription() async {
@@ -71,12 +84,12 @@ class SettingsService {
   Future<Map<String, dynamic>> activateSubscription({
     required int packageId,
   }) async {
-    return responseMap(await _apiClient.post(
-      ApiConstants.subscriptionActivate,
-      body: {
-        'package_id': packageId,
-      },
-    ));
+    return responseMap(
+      await _apiClient.post(
+        ApiConstants.subscriptionActivate,
+        body: {'package_id': packageId},
+      ),
+    );
   }
 
   Future<Map<String, dynamic>> cancelSubscription() async {
