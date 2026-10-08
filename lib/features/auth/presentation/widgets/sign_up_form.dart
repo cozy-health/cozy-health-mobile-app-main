@@ -10,7 +10,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
-import '../../../../core/widgets/apple_sign_in_button.dart';
 import '../../../../core/widgets/password_validation.dart';
 import '../../../../gen/assets.gen.dart';
 import '../../../../utils/responsive_extensions.dart';
@@ -420,11 +419,6 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
             ),
 
             SizedBox(height: 16),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [AppleSignInButton(onPressed: () {})],
-            ),
 
             SizedBox(height: 4),
 

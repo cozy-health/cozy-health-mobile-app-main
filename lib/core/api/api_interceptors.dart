@@ -27,7 +27,8 @@ class AuthInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401 &&
-        !err.requestOptions.path.endsWith('/auth/google')) {
+        !err.requestOptions.path.endsWith('/auth/google') &&
+        !err.requestOptions.path.endsWith('/auth/apple')) {
       await AuthTokenService.clearToken();
       await LocalDbService().clearAllUserData();
 
@@ -52,6 +53,8 @@ class LoggingInterceptor extends Interceptor {
 
     if (path == '/api/v1/auth/google' ||
         path == '/auth/google' ||
+        path == '/api/v1/auth/apple' ||
+        path == '/auth/apple' ||
         path == '/api/v1/auth/register' ||
         path == '/api/v1/auth/login' ||
         path == '/api/v1/auth/forgot-password' ||
@@ -135,7 +138,8 @@ class ErrorInterceptor extends Interceptor {
       final statusCode = err.response!.statusCode;
       final data = err.response!.data;
 
-      if (err.requestOptions.path.endsWith('/auth/google') &&
+      if ((err.requestOptions.path.endsWith('/auth/google') ||
+              err.requestOptions.path.endsWith('/auth/apple')) &&
           data is Map &&
           data['message'] is String) {
         return handler.reject(

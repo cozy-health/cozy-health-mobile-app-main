@@ -6,6 +6,7 @@ import '../../../../core/routing/app_router.dart';
 import '../../data/auth_service.dart';
 import '../widgets/auth_ui.dart';
 import '../widgets/google_auth_button.dart';
+import '../widgets/apple_auth_button.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -24,7 +25,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool _agreeToTerms = false;
   bool _isLoading = false;
   bool _googleLoading = false;
-  bool get _busy => _isLoading || _googleLoading;
+  bool _appleLoading = false;
+  bool get _busy => _isLoading || _googleLoading || _appleLoading;
   String? _nameError;
   String? _emailError;
   String? _passwordError;
@@ -247,6 +249,10 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         const SizedBox(height: 24),
         const Center(child: Text('or')),
         const SizedBox(height: 24),
+        AppleAuthButton(
+          enabled: !_busy,
+          onLoadingChanged: (value) => setState(() => _appleLoading = value),
+        ),
         GoogleAuthButton(
           enabled: !_busy,
           onLoadingChanged: (value) => setState(() => _googleLoading = value),

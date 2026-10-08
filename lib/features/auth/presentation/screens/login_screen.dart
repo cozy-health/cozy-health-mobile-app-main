@@ -13,6 +13,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../data/auth_service.dart';
 import '../widgets/auth_ui.dart';
 import '../widgets/google_auth_button.dart';
+import '../widgets/apple_auth_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,7 +30,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _stayLoggedIn = false;
   bool _isLoading = false;
   bool _googleLoading = false;
-  bool get _busy => _isLoading || _googleLoading;
+  bool _appleLoading = false;
+  bool get _busy => _isLoading || _googleLoading || _appleLoading;
   String? _emailError;
   String? _passwordError;
 
@@ -275,6 +277,11 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
         const SizedBox(height: 24),
+        AppleAuthButton(
+          enabled: !_busy,
+          stayLoggedIn: _stayLoggedIn,
+          onLoadingChanged: (value) => setState(() => _appleLoading = value),
+        ),
         GoogleAuthButton(
           enabled: !_busy,
           stayLoggedIn: _stayLoggedIn,
