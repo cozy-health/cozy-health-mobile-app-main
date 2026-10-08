@@ -1,10 +1,20 @@
+import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class BlockedUsersScreen extends StatefulWidget {
-  const BlockedUsersScreen({super.key});
+  const BlockedUsersScreen({
+    super.key,
+    this.blockedUsers = const [
+      'toxic_user99',
+      'spam_bot_2026',
+      'unwanted_contact',
+    ],
+  });
+
+  final List<String> blockedUsers;
 
   @override
   State<BlockedUsersScreen> createState() => _BlockedUsersScreenState();
@@ -12,11 +22,17 @@ class BlockedUsersScreen extends StatefulWidget {
 
 class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
   // Mock data
-  final List<String> _blockedUsers = [
-    'toxic_user99',
-    'spam_bot_2026',
-    'unwanted_contact',
-  ];
+  late final List<String> _blockedUsers = [...widget.blockedUsers];
+
+  @override
+  void didUpdateWidget(covariant BlockedUsersScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.blockedUsers != widget.blockedUsers) {
+      _blockedUsers
+        ..clear()
+        ..addAll(widget.blockedUsers);
+    }
+  }
 
   void _unblockUser(String username) {
     showDialog(
@@ -127,45 +143,10 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.shield_outlined,
-              size: 64,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.textSubtleDark
-                  : AppColors.textSubtleLight,
-            ),
-            SizedBox(height: 24),
-            Text(
-              'No blocked users',
-              style: AppTextStyles.heading2.copyWith(
-                fontSize: 24,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            SizedBox(height: 12),
-            Text(
-              'You\'re all caught up.',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body1.copyWith(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.textMutedDark
-                    : AppColors.textMutedLight,
-              ),
-            ),
-            SizedBox(height: 64), // Offset slightly visually
-          ],
-        ),
-      ),
-    );
-  }
-
+  Widget _buildEmptyState() => const EmptyState(
+    icon: Icons.shield_outlined,
+    title: "You haven't blocked anyone.",
+  );
   Widget _buildList() {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -185,7 +166,9 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.1),
                   child: Text(
                     username[0].toUpperCase(),
                     style: AppTextStyles.body1.copyWith(

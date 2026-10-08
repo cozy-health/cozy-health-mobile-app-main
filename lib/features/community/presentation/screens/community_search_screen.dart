@@ -1,3 +1,4 @@
+import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../community_theme.dart';
@@ -64,11 +65,7 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.search,
-                    color: context.communityMuted,
-                      size: 20,
-                    ),
+                    Icon(Icons.search, color: context.communityMuted, size: 20),
                     SizedBox(width: 12),
                     Expanded(
                       child: TextField(
@@ -77,8 +74,7 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
                         decoration: InputDecoration(
                           hintText: 'Search community...',
                           hintStyle: context.communityBody1.copyWith(
-                            color:
-                                context.communityMuted,
+                            color: context.communityMuted,
                           ),
                           border: InputBorder.none,
                           isDense: true,
@@ -98,8 +94,7 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
             TabBar(
               controller: _tabController,
               labelColor: Theme.of(context).colorScheme.primary,
-              unselectedLabelColor:
-                  context.communityMuted,
+              unselectedLabelColor: context.communityMuted,
               indicatorColor: Theme.of(context).colorScheme.primary,
               tabs: const [
                 Tab(text: 'Posts'),
@@ -111,7 +106,16 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildEmptyState('Type to search public posts.'),
+                  _searchController.text.trim().isEmpty
+                      ? _buildEmptyState('Type to search public posts.')
+                      : EmptyState(
+                          icon: Icons.search,
+                          title:
+                              "No posts match '${_searchController.text.trim()}'.",
+                          primaryCtaLabel: 'Clear search',
+                          onPrimaryCta: () =>
+                              setState(() => _searchController.clear()),
+                        ),
                   _buildEmptyState('Type to search usernames.'),
                   _buildEmptyState('Type to search topics.'),
                 ],
@@ -127,9 +131,7 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
     return Center(
       child: Text(
         message,
-        style: context.communityBody1.copyWith(
-          color: context.communityMuted,
-        ),
+        style: context.communityBody1.copyWith(color: context.communityMuted),
       ),
     );
   }

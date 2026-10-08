@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/empty_state.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -7,13 +8,21 @@ import '../widgets/article_card_featured.dart';
 import '../widgets/category_card.dart';
 
 class ContentHomeScreen extends StatefulWidget {
-  const ContentHomeScreen({super.key});
+  const ContentHomeScreen({
+    super.key,
+    this.featuredArticles = const [
+      {'title': 'The Voice in Your Head', 'readTime': '5 min read'},
+    ],
+  });
+
+  final List<Map<String, String>> featuredArticles;
 
   @override
   State<ContentHomeScreen> createState() => _ContentHomeScreenState();
 }
 
-class _ContentHomeScreenState extends State<ContentHomeScreen> with SingleTickerProviderStateMixin {
+class _ContentHomeScreenState extends State<ContentHomeScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -72,7 +81,10 @@ class _ContentHomeScreenState extends State<ContentHomeScreen> with SingleTicker
                     reduceMotion: reduceMotion,
                     animation: headerAnim,
                     offset: const Offset(0, 8),
-                    child: Text('Library', style: AppTextStyles.heading1.copyWith(fontSize: 28)),
+                    child: Text(
+                      'Library',
+                      style: AppTextStyles.heading1.copyWith(fontSize: 28),
+                    ),
                   ),
                   _animatedWidget(
                     reduceMotion: reduceMotion,
@@ -92,11 +104,26 @@ class _ContentHomeScreenState extends State<ContentHomeScreen> with SingleTicker
                 reduceMotion: reduceMotion,
                 animation: featuredAnim,
                 offset: const Offset(0, 16),
-                child: ArticleCardFeatured(
-                  title: 'The Voice in Your Head',
-                  readTime: '5 min read',
-                  onTap: () => context.push(AppRouter.articleDetail, extra: {'title': 'The Voice in Your Head'}),
-                ),
+                child: widget.featuredArticles.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.article_outlined,
+                        title: 'New articles coming soon.',
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: widget.featuredArticles
+                            .map(
+                              (article) => ArticleCardFeatured(
+                                title: article['title']!,
+                                readTime: article['readTime'] ?? '',
+                                onTap: () => context.push(
+                                  AppRouter.articleDetail,
+                                  extra: {'title': article['title']},
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
               ),
               const SizedBox(height: 32),
 
@@ -124,37 +151,64 @@ class _ContentHomeScreenState extends State<ContentHomeScreen> with SingleTicker
                     CategoryCard(
                       icon: '💛',
                       title: 'Anxiety',
-                      onTap: () => context.push(AppRouter.categoryDetail, extra: {'id': 'anxiety', 'title': 'Anxiety'}),
+                      onTap: () => context.push(
+                        AppRouter.categoryDetail,
+                        extra: {'id': 'anxiety', 'title': 'Anxiety'},
+                      ),
                     ),
                     CategoryCard(
                       icon: '🌙',
                       title: 'Sleep',
-                      onTap: () => context.push(AppRouter.categoryDetail, extra: {'id': 'sleep', 'title': 'Sleep'}),
+                      onTap: () => context.push(
+                        AppRouter.categoryDetail,
+                        extra: {'id': 'sleep', 'title': 'Sleep'},
+                      ),
                     ),
                     CategoryCard(
                       icon: '👥',
                       title: 'Relationships',
-                      onTap: () => context.push(AppRouter.categoryDetail, extra: {'id': 'relationships', 'title': 'Relationships'}),
+                      onTap: () => context.push(
+                        AppRouter.categoryDetail,
+                        extra: {
+                          'id': 'relationships',
+                          'title': 'Relationships',
+                        },
+                      ),
                     ),
                     CategoryCard(
                       icon: '🌿',
                       title: 'Self-compassion',
-                      onTap: () => context.push(AppRouter.categoryDetail, extra: {'id': 'self-compassion', 'title': 'Self-compassion'}),
+                      onTap: () => context.push(
+                        AppRouter.categoryDetail,
+                        extra: {
+                          'id': 'self-compassion',
+                          'title': 'Self-compassion',
+                        },
+                      ),
                     ),
                     CategoryCard(
                       icon: '💼',
                       title: 'Work & Life',
-                      onTap: () => context.push(AppRouter.categoryDetail, extra: {'id': 'work-life', 'title': 'Work & Life'}),
+                      onTap: () => context.push(
+                        AppRouter.categoryDetail,
+                        extra: {'id': 'work-life', 'title': 'Work & Life'},
+                      ),
                     ),
                     CategoryCard(
                       icon: '🕊',
                       title: 'Grief & Loss',
-                      onTap: () => context.push(AppRouter.categoryDetail, extra: {'id': 'grief-loss', 'title': 'Grief & Loss'}),
+                      onTap: () => context.push(
+                        AppRouter.categoryDetail,
+                        extra: {'id': 'grief-loss', 'title': 'Grief & Loss'},
+                      ),
                     ),
                     CategoryCard(
                       icon: '🧘',
                       title: 'Mindfulness',
-                      onTap: () => context.push(AppRouter.categoryDetail, extra: {'id': 'mindfulness', 'title': 'Mindfulness'}),
+                      onTap: () => context.push(
+                        AppRouter.categoryDetail,
+                        extra: {'id': 'mindfulness', 'title': 'Mindfulness'},
+                      ),
                     ),
                   ],
                 ),
@@ -180,7 +234,9 @@ class _ContentHomeScreenState extends State<ContentHomeScreen> with SingleTicker
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: AppColors.border.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -198,7 +254,11 @@ class _ContentHomeScreenState extends State<ContentHomeScreen> with SingleTicker
                             ),
                           ],
                         ),
-                        Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textSubtle),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: AppColors.textSubtle,
+                        ),
                       ],
                     ),
                   ),
@@ -229,14 +289,14 @@ class _ContentHomeScreenState extends State<ContentHomeScreen> with SingleTicker
               child: child,
             )
           : offset != Offset.zero
-              ? SlideTransition(
-                  position: Tween<Offset>(
-                    begin: Offset(offset.dx, offset.dy / 100), // simplified
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
-                )
-              : child,
+          ? SlideTransition(
+              position: Tween<Offset>(
+                begin: Offset(offset.dx, offset.dy / 100), // simplified
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            )
+          : child,
     );
   }
 }

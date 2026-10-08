@@ -1,4 +1,8 @@
+import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
+import '../../../../core/models/mood_entry.dart';
+import '../../../../core/services/local_db_service.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -20,6 +24,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
   // We'll use a staggered animation for the elements
   late AnimationController _controller;
   final _feed = InsightsFeed();
+  StreamSubscription<List<MoodEntry>>? _moodSubscription;
   void _refresh() {
     if (mounted) setState(() {});
   }
@@ -51,6 +56,9 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
   void initState() {
     super.initState();
     _feed.addListener(_refresh);
+    _moodSubscription = LocalDbService().watchMoodEntries().listen(
+      (_) => _refresh(),
+    );
     _feed.load(weekly: true, trigger: true, sleepMood: true);
     _controller = AnimationController(
       vsync: this,
@@ -62,6 +70,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
   @override
   void dispose() {
     _feed.dispose();
+    _moodSubscription?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -105,225 +114,246 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
         title: Text('Insights', style: AppTextStyles.heading2),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              InsightsStatus(
-                loading: _feed.loading && _feed.weeks == null,
-                failed: _feed.failed,
-                empty: (_feed.weeks ?? []).isEmpty,
-              ),
-              FadeTransition(
-                opacity: headerAnim,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.2),
-                    end: Offset.zero,
-                  ).animate(headerAnim),
-                  child: Text(
-                    'This week',
-                    style: AppTextStyles.heading1.copyWith(
-                      fontSize: 24,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
+      body:
+          !_feed.loading &&
+              !_feed.failed &&
+              ((_week?['entry_count'] as num?)?.toInt() ??
+                      LocalInsights.moods().length) <
+                  3
+          ? EmptyState(
+              icon: Icons.insights_outlined,
+              title: 'Log a few moods to see patterns.',
+              primaryCtaLabel: 'Log a mood',
+              onPrimaryCta: () => context.push(AppRouter.moodFeeling),
+            )
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
                 ),
-              ),
-              SizedBox(height: 8),
-              FadeTransition(
-                opacity: subtextAnim,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.2),
-                    end: Offset.zero,
-                  ).animate(subtextAnim),
-                  child: Text(
-                    'Your logged mood patterns, at your pace.',
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textMutedDark
-                          : AppColors.textMutedLight,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 24),
-              FadeTransition(
-                opacity: heroCardAnim,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.1),
-                    end: Offset.zero,
-                  ).animate(heroCardAnim),
-                  child: InsightCard(
-                    icon: '🌿',
-                    title: _week == null
-                        ? 'Your patterns will appear here.'
-                        : 'Most logged mood: ${_week!['top_mood']}',
-                    subtitle:
-                        'You logged ${_week?['entry_count'] ?? 0} entries this week.',
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-              FadeTransition(
-                opacity: statsAnim,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.1),
-                    end: Offset.zero,
-                  ).animate(statsAnim),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: StatCard(
-                          value: '${_week?['entry_count'] ?? 0}',
-                          label: 'Entries',
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: StatCard(
-                          value: _week == null
-                              ? '\u2014'
-                              : (_week!['avg_intensity'] as num)
-                                    .toStringAsFixed(1),
-                          label: 'Avg mood',
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.05),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 12),
-              FadeTransition(
-                opacity: statsAnim,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.1),
-                    end: Offset.zero,
-                  ).animate(statsAnim),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: StatCard(
-                          value: (_feed.triggers ?? []).isEmpty
-                              ? '\u2014'
-                              : _feed.triggers!.first['name'] as String,
-                          label: 'Top trigger (30d)',
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: StatCard(
-                          value: _sleepAverage?.toStringAsFixed(1) ?? '\u2014',
-                          label: 'Avg sleep (1-5)',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 32),
-              FadeTransition(
-                opacity: section1Anim,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Mood trend', style: AppTextStyles.heading2),
-                    TextButton(
-                      onPressed: () => context.push(
-                        AppRouter.insightsMoodTrend,
-                      ), // To be added
-                      child: Text(
-                        'See all',
-                        style: AppTextStyles.body2.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 12),
-              FadeTransition(
-                opacity: chartAnim,
-                child: GestureDetector(
-                  onTap: () =>
-                      context.push(AppRouter.insightsMoodTrend), // To be added
-                  child: _buildMiniChart(),
-                ),
-              ),
-              SizedBox(height: 32),
-              FadeTransition(
-                opacity: section2Anim,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'What\'s affecting your mood',
-                      style: AppTextStyles.heading2,
-                    ),
-                    TextButton(
-                      onPressed: () => context.push(
-                        AppRouter.insightsTriggers,
-                      ), // To be added
-                      child: Text(
-                        'See all',
-                        style: AppTextStyles.body2.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 12),
-              FadeTransition(
-                opacity: section2Anim,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (final row in (_feed.triggers ?? []).take(2)) ...[
-                      _buildMiniTrigger(
-                        row['name'] as String,
-                        "${row['count']} times",
-                        (row['count'] as num) /
-                            (_feed.triggers!.first['count'] as num),
+                    InsightsStatus(
+                      loading: _feed.loading && _feed.weeks == null,
+                      failed: _feed.failed,
+                      empty:
+                          (_feed.weeks ?? []).isEmpty &&
+                          LocalInsights.moods().length < 3,
+                    ),
+                    FadeTransition(
+                      opacity: headerAnim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.2),
+                          end: Offset.zero,
+                        ).animate(headerAnim),
+                        child: Text(
+                          'This week',
+                          style: AppTextStyles.heading1.copyWith(
+                            fontSize: 24,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                    ],
+                    ),
+                    SizedBox(height: 8),
+                    FadeTransition(
+                      opacity: subtextAnim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.2),
+                          end: Offset.zero,
+                        ).animate(subtextAnim),
+                        child: Text(
+                          'Your logged mood patterns, at your pace.',
+                          style: AppTextStyles.body1.copyWith(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textMutedDark
+                                : AppColors.textMutedLight,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    FadeTransition(
+                      opacity: heroCardAnim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.1),
+                          end: Offset.zero,
+                        ).animate(heroCardAnim),
+                        child: InsightCard(
+                          icon: '🌿',
+                          title: _week == null
+                              ? 'Your patterns will appear here.'
+                              : 'Most logged mood: ${_week!['top_mood']}',
+                          subtitle:
+                              'You logged ${_week?['entry_count'] ?? 0} entries this week.',
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    FadeTransition(
+                      opacity: statsAnim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.1),
+                          end: Offset.zero,
+                        ).animate(statsAnim),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: StatCard(
+                                value: '${_week?['entry_count'] ?? 0}',
+                                label: 'Entries',
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: StatCard(
+                                value: _week == null
+                                    ? '\u2014'
+                                    : (_week!['avg_intensity'] as num)
+                                          .toStringAsFixed(1),
+                                label: 'Avg mood',
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.05),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    FadeTransition(
+                      opacity: statsAnim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.1),
+                          end: Offset.zero,
+                        ).animate(statsAnim),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: StatCard(
+                                value: (_feed.triggers ?? []).isEmpty
+                                    ? '\u2014'
+                                    : _feed.triggers!.first['name'] as String,
+                                label: 'Top trigger (30d)',
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: StatCard(
+                                value:
+                                    _sleepAverage?.toStringAsFixed(1) ??
+                                    '\u2014',
+                                label: 'Avg sleep (1-5)',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 32),
+                    FadeTransition(
+                      opacity: section1Anim,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Mood trend', style: AppTextStyles.heading2),
+                          TextButton(
+                            onPressed: () => context.push(
+                              AppRouter.insightsMoodTrend,
+                            ), // To be added
+                            child: Text(
+                              'See all',
+                              style: AppTextStyles.body2.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    FadeTransition(
+                      opacity: chartAnim,
+                      child: GestureDetector(
+                        onTap: () => context.push(
+                          AppRouter.insightsMoodTrend,
+                        ), // To be added
+                        child: _buildMiniChart(),
+                      ),
+                    ),
+                    SizedBox(height: 32),
+                    FadeTransition(
+                      opacity: section2Anim,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'What\'s affecting your mood',
+                            style: AppTextStyles.heading2,
+                          ),
+                          TextButton(
+                            onPressed: () => context.push(
+                              AppRouter.insightsTriggers,
+                            ), // To be added
+                            child: Text(
+                              'See all',
+                              style: AppTextStyles.body2.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    FadeTransition(
+                      opacity: section2Anim,
+                      child: Column(
+                        children: [
+                          for (final row in (_feed.triggers ?? []).take(2)) ...[
+                            _buildMiniTrigger(
+                              row['name'] as String,
+                              "${row['count']} times",
+                              (row['count'] as num) /
+                                  (_feed.triggers!.first['count'] as num),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 32),
+                    // Monthly Report button (Bonus)
+                    FadeTransition(
+                      opacity: section2Anim,
+                      child: Center(
+                        child: TextButton(
+                          onPressed: () =>
+                              context.push(AppRouter.insightsMonthlyReport),
+                          child: Text(
+                            'View Monthly Report',
+                            style: AppTextStyles.body1.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 64),
                   ],
                 ),
               ),
-              SizedBox(height: 32),
-              // Monthly Report button (Bonus)
-              FadeTransition(
-                opacity: section2Anim,
-                child: Center(
-                  child: TextButton(
-                    onPressed: () =>
-                        context.push(AppRouter.insightsMonthlyReport),
-                    child: Text(
-                      'View Monthly Report',
-                      style: AppTextStyles.body1.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 64),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 

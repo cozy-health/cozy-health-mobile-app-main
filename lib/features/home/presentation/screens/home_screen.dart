@@ -1,3 +1,4 @@
+import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../../../core/repositories/affirmation_repository.dart';
@@ -698,72 +699,16 @@ class _MoodHeroState extends State<_MoodHero>
 
 class _FirstTimeHero extends StatelessWidget {
   const _FirstTimeHero();
-
   @override
-  Widget build(BuildContext context) {
-    return _WarmCard(
-      color: AppColors.primarySubtle,
-      borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: .15),
-      child: Column(
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.surfaceDark
-                  : AppColors.surfaceElevatedLight,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(
-              Icons.self_improvement,
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: .78),
-              size: 56,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Welcome to Cozy Health.',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.heading1.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            "Let's start with how\nyou're feeling today.",
-            textAlign: TextAlign.center,
-            style: AppTextStyles.body1.copyWith(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: () => context.push(AppRouter.moodFeeling),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: AppColors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Log your first mood'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _WarmCard(
+    color: AppColors.primarySubtle,
+    child: EmptyState(
+      icon: Icons.self_improvement,
+      title: 'Your first check-in starts here.',
+      primaryCtaLabel: 'Log your mood',
+      onPrimaryCta: () => context.push(AppRouter.moodFeeling),
+    ),
+  );
 }
 
 class _StatsRow extends StatelessWidget {

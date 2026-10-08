@@ -1,3 +1,6 @@
+import 'package:go_router/go_router.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/repositories/insights_repository.dart';
 import '../../../../core/api/auth_token_service.dart';
@@ -96,9 +99,11 @@ class InsightsStatus extends StatelessWidget {
       );
     }
     if (empty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Text('Log 3 moods to see trends'),
+      return EmptyState(
+        icon: Icons.insights_outlined,
+        title: 'Log a few moods to see patterns.',
+        primaryCtaLabel: 'Log a mood',
+        onPrimaryCta: () => context.push(AppRouter.moodFeeling),
       );
     }
     return const SizedBox.shrink();

@@ -1,3 +1,4 @@
+import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -52,7 +53,7 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
             final articles = snapshot.data ?? [];
             if (articles.isEmpty) return _buildEmptyState();
             return _buildList(articles);
-          }
+          },
         ),
       ),
     );
@@ -80,10 +81,10 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
                 title: article.title,
                 metadata: 'Saved for later', // Can format based on actual data
                 onTap: () {
-                  context.push(AppRouter.articleDetail, extra: {
-                    'id': article.articleId,
-                    'title': article.title,
-                  });
+                  context.push(
+                    AppRouter.articleDetail,
+                    extra: {'id': article.articleId, 'title': article.title},
+                  );
                 },
                 trailing: IconButton(
                   icon: Icon(Icons.close, color: AppColors.textSubtle),
@@ -99,37 +100,10 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-              ),
-              child: const Text('🔖', style: TextStyle(fontSize: 48)),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'No saved articles yet.',
-              style: AppTextStyles.heading2,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tap the bookmark icon on any article to save it for later.',
-              style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildEmptyState() => EmptyState(
+    icon: Icons.bookmark_border,
+    title: 'Save articles to read later.',
+    primaryCtaLabel: 'Explore articles',
+    onPrimaryCta: () => context.push(AppRouter.contentHome),
+  );
 }

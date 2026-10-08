@@ -1,3 +1,4 @@
+import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -14,19 +15,25 @@ class CategoryDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = extra['title'] as String? ?? 'Category';
     final id = extra['id'] as String? ?? '';
-    
+
     // Mock data based on id
     String description = 'Understanding and managing your feelings.';
     List<Map<String, String>> articles = [];
-    
+
     if (id == 'anxiety') {
       description = 'Understanding and managing anxious moments.';
       articles = [
         {'title': 'What Anxiety Actually Is', 'readTime': '5 min read'},
-        {'title': 'The 5-4-3-2-1 Grounding Technique', 'readTime': '4 min read'},
+        {
+          'title': 'The 5-4-3-2-1 Grounding Technique',
+          'readTime': '4 min read',
+        },
         {'title': 'When Worry Becomes a Loop', 'readTime': '6 min read'},
         {'title': 'Anxiety in the Body', 'readTime': '3 min read'},
-        {'title': 'Talking to Someone About Your Anxiety', 'readTime': '5 min read'},
+        {
+          'title': 'Talking to Someone About Your Anxiety',
+          'readTime': '5 min read',
+        },
       ];
     } else if (id == 'sleep') {
       description = 'Rest and recovery.';
@@ -52,26 +59,18 @@ class CategoryDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                title,
-                style: AppTextStyles.heading1.copyWith(fontSize: 28),
-              ),
+              Text(title, style: AppTextStyles.heading1.copyWith(fontSize: 28)),
               const SizedBox(height: 8),
               Text(
                 description,
                 style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
               ),
               const SizedBox(height: 32),
-              
+
               if (articles.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(
-                      'No articles yet. Check back soon.',
-                      style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
-                    ),
-                  ),
+                const EmptyState(
+                  icon: Icons.article_outlined,
+                  title: 'New articles coming soon.',
                 )
               else
                 ListView.separated(
@@ -85,16 +84,19 @@ class CategoryDetailScreen extends StatelessWidget {
                       title: article['title']!,
                       metadata: article['readTime']!,
                       onTap: () {
-                        context.push(AppRouter.articleDetail, extra: {
-                          'title': article['title'],
-                          'category': title,
-                          'readTime': article['readTime'],
-                        });
+                        context.push(
+                          AppRouter.articleDetail,
+                          extra: {
+                            'title': article['title'],
+                            'category': title,
+                            'readTime': article['readTime'],
+                          },
+                        );
                       },
                     );
                   },
                 ),
-                
+
               const SizedBox(height: 64),
             ],
           ),

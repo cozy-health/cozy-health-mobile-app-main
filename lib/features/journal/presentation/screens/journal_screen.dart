@@ -1,3 +1,4 @@
+import '../../../../core/widgets/empty_state.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -89,10 +90,11 @@ class _JournalScreenState extends State<JournalScreen>
             final entries = _filteredEntries(allEntries);
 
             if (allEntries.isEmpty) {
-              return _JournalEmptyState(
-                onFree: () => _openEditor(type: 'free'),
-                onGuided: () => _openPromptLibrary(),
-                onVoice: () => _openVoiceRecording(),
+              return EmptyState(
+                icon: Icons.menu_book_rounded,
+                title: 'A private space for your thoughts.',
+                primaryCtaLabel: 'Write your first entry',
+                onPrimaryCta: () => _openEditor(type: 'free'),
               );
             }
 
@@ -1255,13 +1257,11 @@ class _JournalSearchScreenState extends State<JournalSearchScreen> {
               onTap: _setQuery,
             ),
           ] else if (results.isEmpty)
-            Text(
-              "No entries match '$_query'",
-              style: AppTextStyles.body1.copyWith(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.textMutedDark
-                    : AppColors.textMutedLight,
-              ),
+            EmptyState(
+              icon: Icons.search,
+              title: "No entries match '$_query'.",
+              primaryCtaLabel: 'Clear search',
+              onPrimaryCta: () => _setQuery(''),
             )
           else
             for (final entry in results) ...[
@@ -1687,66 +1687,6 @@ class _DraftRestoreCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _JournalEmptyState extends StatelessWidget {
-  const _JournalEmptyState({
-    required this.onFree,
-    required this.onGuided,
-    required this.onVoice,
-  });
-
-  final VoidCallback onFree;
-  final VoidCallback onGuided;
-  final VoidCallback onVoice;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
-      children: [
-        _JournalHeader(onSearch: () {}),
-        SizedBox(height: 54),
-        Center(
-          child: Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              color: AppColors.primarySoft,
-              borderRadius: BorderRadius.circular(32),
-            ),
-            child: Icon(
-              Icons.menu_book_rounded,
-              size: 70,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-        ),
-        SizedBox(height: 30),
-        const _CenteredIntro(
-          title: 'A private space\nfor you.',
-          subtitle:
-              'Write freely, reflect, or just\nempty your mind.\nNo one else sees this.',
-        ),
-        SizedBox(height: 36),
-        _PrimaryButton(label: '✎  Write an entry', onPressed: onFree),
-        SizedBox(height: 12),
-        _EntryActionButton(
-          icon: '💡',
-          title: 'Need inspiration?',
-          subtitle: 'Try a guided prompt',
-          onTap: onGuided,
-        ),
-        SizedBox(height: 12),
-        _EntryActionButton(
-          icon: '🎤',
-          title: 'Record a voice note',
-          subtitle: '',
-          onTap: onVoice,
-        ),
-      ],
     );
   }
 }

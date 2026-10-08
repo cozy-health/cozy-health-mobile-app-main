@@ -1,3 +1,4 @@
+import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'chat_shared_widgets.dart';
 import 'message_bubble.dart';
@@ -26,24 +27,32 @@ class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
         children: [
-          WarmPanel(
-            color: AppColors.primarySubtle,
-            borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: .15),
-            padding: const EdgeInsets.all(14),
-            child: InkWell(
-              onTap: () => Navigator.pop(context, Conversation.empty()),
-              child: Text(
-                '+ New conversation',
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
+          if (_conversations.isNotEmpty)
+            WarmPanel(
+              color: AppColors.primarySubtle,
+              borderColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: .15),
+              padding: const EdgeInsets.all(14),
+              child: InkWell(
+                onTap: () => Navigator.pop(context, Conversation.empty()),
+                child: Text(
+                  '+ New conversation',
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
-          ),
           const SizedBox(height: 28),
           if (_conversations.isEmpty)
-            const ConversationEmptyState()
+            EmptyState(
+              icon: Icons.chat_bubble_outline,
+              title: 'Start your first conversation.',
+              primaryCtaLabel: 'Say hi',
+              onPrimaryCta: () => Navigator.pop(context, Conversation.empty()),
+            )
           else ...[
             HistorySection(
               title: 'Today',
@@ -90,13 +99,13 @@ class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
             (item) => item.id == conversation.id,
           );
           if (index == -1) return;
-          
+
           final repo = ChatRepository();
           await repo.deleteConversation(conversation.id);
-          
+
           if (!mounted) return;
           if (!context.mounted) return;
-          
+
           setState(() => _conversations.removeAt(index));
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -107,7 +116,7 @@ class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
                   setState(() => _conversations.insert(index, conversation));
                   repo.saveConversation(conversation.toChatConversation());
                   // also need to restore messages, but for now just saving the conversation back is enough
-                }
+                },
               ),
             ),
           );
@@ -135,10 +144,7 @@ class PastConversationScreen extends StatelessWidget {
                   .map(
                     (message) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: MessageBubble(
-                        message: message,
-                        onLongPress: null,
-                      ),
+                      child: MessageBubble(message: message, onLongPress: null),
                     ),
                   )
                   .toList(),

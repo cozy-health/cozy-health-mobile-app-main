@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/empty_state.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -8,7 +9,12 @@ import '../../data/quiz_repository.dart';
 import '../widgets/quiz_recommendation_card.dart';
 
 class QuizSelectionScreen extends StatefulWidget {
-  const QuizSelectionScreen({super.key});
+  const QuizSelectionScreen({
+    super.key,
+    this.availableQuizIds = const {'phq-9', 'gad-7', 'sleep', 'boundaries'},
+  });
+
+  final Set<String> availableQuizIds;
 
   @override
   State<QuizSelectionScreen> createState() => _QuizSelectionScreenState();
@@ -18,7 +24,12 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
   String _selectedCategory = 'All';
   final _searchController = TextEditingController();
 
-  final List<String> _categories = ['All', 'Clinical', 'Wellness', 'Reflection'];
+  final List<String> _categories = [
+    'All',
+    'Clinical',
+    'Wellness',
+    'Reflection',
+  ];
 
   @override
   void dispose() {
@@ -50,6 +61,16 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
         child: StreamBuilder<List<QuizAttempt>>(
           stream: QuizRepository().watchAttempts(),
           builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (widget.availableQuizIds.isEmpty) {
+              return const EmptyState(
+                icon: Icons.assignment_outlined,
+                title: 'Assessments coming soon.',
+              );
+            }
             final attempts = snapshot.data ?? [];
             final completedIds = attempts.map((a) => a.quizId).toSet();
 
@@ -61,7 +82,10 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                   // Recommendation
                   QuizRecommendationCard(
                     onTap: () {
-                      context.push(AppRouter.quizDetail, extra: {'type': 'clinical', 'id': 'gad-7'});
+                      context.push(
+                        AppRouter.quizDetail,
+                        extra: {'type': 'clinical', 'id': 'gad-7'},
+                      );
                     },
                   ),
                   const SizedBox(height: 32),
@@ -71,21 +95,30 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: AppColors.border.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
                         hintText: 'Search quizzes...',
-                        hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
-                        prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
+                        hintStyle: AppTextStyles.body1.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: AppColors.textMuted,
+                        ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     clipBehavior: Clip.none,
@@ -98,13 +131,21 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                             label: Text(
                               cat,
                               style: AppTextStyles.body2.copyWith(
-                                color: isSelected ? AppColors.white : AppColors.text,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                color: isSelected
+                                    ? AppColors.white
+                                    : AppColors.text,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
                               ),
                             ),
-                            backgroundColor: isSelected ? Theme.of(context).colorScheme.primary : AppColors.surface,
+                            backgroundColor: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : AppColors.surface,
                             side: BorderSide(
-                              color: isSelected ? Theme.of(context).colorScheme.primary : AppColors.border,
+                              color: isSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : AppColors.border,
                             ),
                             onPressed: () {
                               setState(() => _selectedCategory = cat);
@@ -117,7 +158,11 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                   const SizedBox(height: 32),
 
                   // Quiz List
-                  _buildQuizCategory('Clinical Assessments', 'clinical', completedIds),
+                  _buildQuizCategory(
+                    'Clinical Assessments',
+                    'clinical',
+                    completedIds,
+                  ),
                   const SizedBox(height: 24),
                   _buildQuizCategory('Wellness', 'wellness', completedIds),
                   const SizedBox(height: 24),
@@ -126,14 +171,19 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                 ],
               ),
             );
-          }
+          },
         ),
       ),
     );
   }
 
-  Widget _buildQuizCategory(String title, String type, Set<String> completedIds) {
-    if (_selectedCategory != 'All' && _selectedCategory.toLowerCase() != type.toLowerCase()) {
+  Widget _buildQuizCategory(
+    String title,
+    String type,
+    Set<String> completedIds,
+  ) {
+    if (_selectedCategory != 'All' &&
+        _selectedCategory.toLowerCase() != type.toLowerCase()) {
       return const SizedBox.shrink();
     }
 
@@ -145,7 +195,8 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
         if (type == 'clinical') ...[
           _buildQuizCard(
             title: 'PHQ-9 (Depression)',
-            description: 'A standard clinical screening tool for depression severity.',
+            description:
+                'A standard clinical screening tool for depression severity.',
             duration: '5 min',
             isClinical: true,
             isCompleted: completedIds.contains('phq-9'),
@@ -192,16 +243,24 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
     required String id,
   }) {
     // Clinical uses neutral, Wellness uses warm
-    final bgColor = isClinical ? AppColors.surface : Theme.of(context).colorScheme.primary.withValues(alpha: 0.05);
-    final borderColor = isClinical ? AppColors.border : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
+    if (!widget.availableQuizIds.contains(id)) return const SizedBox.shrink();
+    final bgColor = isClinical
+        ? AppColors.surface
+        : Theme.of(context).colorScheme.primary.withValues(alpha: 0.05);
+    final borderColor = isClinical
+        ? AppColors.border
+        : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
 
     return GestureDetector(
       onTap: () {
-        context.push(AppRouter.quizDetail, extra: {
-          'id': id,
-          'type': isClinical ? 'clinical' : 'wellness',
-          'title': title,
-        });
+        context.push(
+          AppRouter.quizDetail,
+          extra: {
+            'id': id,
+            'type': isClinical ? 'clinical' : 'wellness',
+            'title': title,
+          },
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -224,7 +283,10 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                 ),
                 if (isCompleted)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.success.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -232,7 +294,11 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.check_circle, size: 14, color: AppColors.success),
+                        Icon(
+                          Icons.check_circle,
+                          size: 14,
+                          color: AppColors.success,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           'Done',
@@ -248,7 +314,9 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                 else
                   Text(
                     duration,
-                    style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                    style: AppTextStyles.body2.copyWith(
+                      color: AppColors.textMuted,
+                    ),
                   ),
               ],
             ),

@@ -1,3 +1,4 @@
+import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -336,47 +337,47 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
         if (!didPop) _handleSystemBack();
       },
       child: Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            _MoodProgressHeader(
-              step: _step,
-              totalSteps: _totalSteps,
-              onBack: _step == 1
-                  ? () => context.pop()
-                  : () => _goToStep(_step - 1),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 18),
-                child: _AnimatedStep(
-                  controller: _entranceController,
-                  child: child,
-                ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              _MoodProgressHeader(
+                step: _step,
+                totalSteps: _totalSteps,
+                onBack: _step == 1
+                    ? () => context.pop()
+                    : () => _goToStep(_step - 1),
               ),
-            ),
-            _BottomActions(
-              moodSelection: _step == 1,
-              showSkip: _step >= 3 && _step <= 8,
-              label: _step == _totalSteps ? 'Save Entry' : 'Continue',
-              enabled: _canContinue && !_isSaving,
-              busy: _isSaving,
-              onContinue: _next,
-              onSkip: _skip,
-            ),
-            if (_step == _totalSteps)
-              TextButton(
-                onPressed: _isSaving ? null : _showDiscardDialog,
-                child: Text(
-                  'Cancel this entry',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 18),
+                  child: _AnimatedStep(
+                    controller: _entranceController,
+                    child: child,
                   ),
                 ),
               ),
-          ],
+              _BottomActions(
+                moodSelection: _step == 1,
+                showSkip: _step >= 3 && _step <= 8,
+                label: _step == _totalSteps ? 'Save Entry' : 'Continue',
+                enabled: _canContinue && !_isSaving,
+                busy: _isSaving,
+                onContinue: _next,
+                onSkip: _skip,
+              ),
+              if (_step == _totalSteps)
+                TextButton(
+                  onPressed: _isSaving ? null : _showDiscardDialog,
+                  child: Text(
+                    'Cancel this entry',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -808,7 +809,10 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.primary,
+          width: 1.5,
+        ),
       ),
     );
   }
@@ -964,37 +968,11 @@ class MoodHistoryScreen extends StatelessWidget {
                     !snapshot.hasData)
                   const Center(child: CircularProgressIndicator())
                 else if (entries.isEmpty)
-                  _WarmPanel(
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.mood_rounded,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 42,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No mood entries yet',
-                          style: AppTextStyles.heading2.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Your saved check-ins will appear here.',
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.body2.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        _PrimaryButton(
-                          label: 'Log a mood',
-                          onPressed: () => context.go(AppRouter.moodFeeling),
-                        ),
-                      ],
-                    ),
+                  EmptyState(
+                    icon: Icons.mood_rounded,
+                    title: 'Your moods will appear here.',
+                    primaryCtaLabel: 'Log a mood',
+                    onPrimaryCta: () => context.push(AppRouter.moodFeeling),
                   )
                 else ...[
                   Text(
@@ -1270,7 +1248,8 @@ class _MoodProgressHeader extends StatelessWidget {
                 minHeight: 4,
                 value: step / totalSteps,
                 backgroundColor:
-                    Theme.of(context).dividerTheme.color ?? Theme.of(context).colorScheme.outline,
+                    Theme.of(context).dividerTheme.color ??
+                    Theme.of(context).colorScheme.outline,
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
@@ -1351,7 +1330,9 @@ class _MoodCard extends StatelessWidget {
                   : Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
+                color: selected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline,
                 width: selected ? 2 : 1,
               ),
               boxShadow: selected
@@ -1441,7 +1422,10 @@ class _BodyMap extends StatelessWidget {
                 width: 106,
                 height: 260,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Theme.of(context).colorScheme.outline, width: 2),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                    width: 2,
+                  ),
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(58),
                     bottom: Radius.circular(44),
@@ -1523,7 +1507,9 @@ class _BodyZone extends StatelessWidget {
                 : Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.outline,
             ),
           ),
           child: Text(
@@ -1579,7 +1565,9 @@ class _ChipWrap extends StatelessWidget {
                   : dividerColor ?? Theme.of(context).colorScheme.outline,
             ),
             labelStyle: AppTextStyles.body2.copyWith(
-              color: selected ? Theme.of(context).colorScheme.primary : colorScheme.onSurface,
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : colorScheme.onSurface,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             ),
             shape: RoundedRectangleBorder(
@@ -1823,7 +1811,9 @@ class _WarmPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: dividerColor ?? Theme.of(context).colorScheme.outline),
+        border: Border.all(
+          color: dividerColor ?? Theme.of(context).colorScheme.outline,
+        ),
       ),
       child: child,
     );

@@ -1,6 +1,7 @@
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -94,70 +95,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.notifications_none,
-                size: 64,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'You\'re all caught up.',
-              style: AppTextStyles.heading2.copyWith(
-                fontSize: 24,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'When something happens, we\'ll let you know here.',
-              style: AppTextStyles.body1.copyWith(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.textMutedDark
-                    : AppColors.textMutedLight,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            TextButton(
-              onPressed: () => context.push(AppRouter.notificationPreferences),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Notification settings',
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(Icons.arrow_forward, size: 20, color: Theme.of(context).colorScheme.primary),
-                ],
-              ),
-            ),
-            const SizedBox(height: 64),
-          ],
-        ),
-      ),
-    );
-  }
-
+  Widget _buildEmptyState() => const EmptyState(
+    icon: Icons.notifications_none,
+    title: "You're all caught up.",
+  );
   Widget _buildList(List<AppNotification> items) {
     // Sort items latest first
     final sortedItems = List<AppNotification>.from(items)
@@ -322,20 +263,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border(
               left: BorderSide(
-                color: item.read ? Colors.transparent : Theme.of(context).colorScheme.primary,
+                color: item.read
+                    ? Colors.transparent
+                    : Theme.of(context).colorScheme.primary,
                 width: 3,
               ),
               top: BorderSide(
                 color: Theme.of(context).dividerColor,
                 width: item.read ? 1 : 0,
+                style: item.read ? BorderStyle.solid : BorderStyle.none,
               ),
               right: BorderSide(
                 color: Theme.of(context).dividerColor,
                 width: item.read ? 1 : 0,
+                style: item.read ? BorderStyle.solid : BorderStyle.none,
               ),
               bottom: BorderSide(
                 color: Theme.of(context).dividerColor,
                 width: item.read ? 1 : 0,
+                style: item.read ? BorderStyle.solid : BorderStyle.none,
               ),
             ),
           ),

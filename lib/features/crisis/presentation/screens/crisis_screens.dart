@@ -1,3 +1,4 @@
+import '../../../../core/widgets/empty_state.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -1492,26 +1493,17 @@ class PersistedSafetyPlanViewScreen extends StatelessWidget {
 
         if (plan == null) {
           return CrisisShell(
-            title: 'No safety\nplan yet.',
-            subtitle:
-                'A safety plan helps you prepare for hard moments before they happen.',
+            title: 'Safety plan',
             children: [
-              const Center(
-                child: Icon(
-                  Icons.assignment,
-                  color: AppColors.crisisPrimary,
-                  size: 88,
-                ),
-              ),
-              const SizedBox(height: 40),
-              CrisisButton(
-                label: 'Create your plan',
-                onPressed: () => context.push(AppRouter.safetyPlan),
+              EmptyState(
+                icon: Icons.assignment_outlined,
+                title: "Create a safety plan that's just for you.",
+                primaryCtaLabel: 'Create my plan',
+                onPrimaryCta: () => context.push(AppRouter.safetyPlan),
               ),
             ],
           );
         }
-
         final sections = {
           'My warning signs': plan.warningSigns,
           'What helps me': plan.copingStrategies,
@@ -1901,8 +1893,19 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen> {
   }
 }
 
-class ProfessionalHelpScreen extends StatelessWidget {
+class ProfessionalHelpScreen extends StatefulWidget {
   const ProfessionalHelpScreen({super.key});
+  @override
+  State<ProfessionalHelpScreen> createState() => _ProfessionalHelpScreenState();
+}
+
+class _ProfessionalHelpScreenState extends State<ProfessionalHelpScreen> {
+  final _searchFocus = FocusNode();
+  @override
+  void dispose() {
+    _searchFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1911,6 +1914,7 @@ class ProfessionalHelpScreen extends StatelessWidget {
       subtitle: 'These services can connect you with licensed professionals.',
       children: [
         TextField(
+          focusNode: _searchFocus,
           decoration: InputDecoration(
             prefixIcon: Icon(Icons.search),
             hintText: 'Search by name or location',
@@ -1925,6 +1929,12 @@ class ProfessionalHelpScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
+        EmptyState(
+          icon: Icons.person_search_outlined,
+          title: 'Search for providers near you.',
+          primaryCtaLabel: 'Search providers',
+          onPrimaryCta: () => _searchFocus.requestFocus(),
+        ),
         _SupportRow(
           icon: Icons.place,
           title: 'Therapists near me',
@@ -2059,6 +2069,7 @@ void showQuickCalmSheet(BuildContext context) {
               ),
             ),
             const SizedBox(height: 24),
+
             _SupportRow(
               icon: Icons.air,
               title: 'Breathe',
