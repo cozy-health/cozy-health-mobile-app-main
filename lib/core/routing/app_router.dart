@@ -67,6 +67,7 @@ import '../../features/settings/presentation/screens/terms_policies_screen.dart'
 import '../../features/settings/presentation/screens/report_problem_screen.dart';
 
 import '../../features/settings/presentation/screens/provider_screen.dart';
+import '../../features/settings/presentation/screens/provider_access_log_screen.dart';
 import '../../features/settings/presentation/screens/subscription_screen.dart';
 import '../../features/settings/presentation/screens/profile_view_screen.dart';
 import '../../features/settings/presentation/screens/notification_preferences_screen.dart';
@@ -114,6 +115,8 @@ class AppRouter {
   static const String termsPolicies = '/terms-policies';
   static const String reportProblem = '/report-problem';
   static const String provider = '/settings/provider';
+  static const String providerAccessLog =
+      '/settings/privacy/provider-access-log';
   static const String subscription = '/subscription';
   static const String profileView = '/profile-view';
   static const String notificationPreferences = '/notification-preferences';
@@ -580,6 +583,11 @@ class AppRouter {
         path: provider,
         name: 'provider',
         builder: (_, __) => const ProviderScreen(),
+      ),
+      GoRoute(
+        path: providerAccessLog,
+        name: 'providerAccessLog',
+        builder: (_, __) => const ProviderAccessLogScreen(),
       ),
       GoRoute(
         path: subscription,

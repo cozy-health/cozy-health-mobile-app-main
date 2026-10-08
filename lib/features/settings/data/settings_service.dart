@@ -73,6 +73,15 @@ class SettingsService {
     await _apiClient.delete('/me/provider/${Uri.encodeComponent(linkId)}');
   }
 
+  Future<Map<String, dynamic>> getProviderAccessLog({int page = 1}) async {
+    return responseMap(
+      await _apiClient.get(
+        '/me/provider-access-log',
+        queryParameters: {'page': page},
+      ),
+    );
+  }
+
   Future<Map<String, dynamic>> getSubscription() async {
     return responseMap(await _apiClient.get(ApiConstants.subscription));
   }

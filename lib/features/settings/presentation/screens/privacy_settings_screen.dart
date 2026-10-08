@@ -147,6 +147,18 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               SizedBox(height: 24),
 
               _SettingsSection(
+                title: 'Provider access',
+                children: [
+                  ListTile(
+                    title: const Text('Provider Access Log'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(AppRouter.providerAccessLog),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              _SettingsSection(
                 title: 'Security',
                 children: [
                   _SettingsToggleRow(

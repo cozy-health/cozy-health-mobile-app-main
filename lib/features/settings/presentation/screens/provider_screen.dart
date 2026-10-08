@@ -121,7 +121,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
 
       setState(() {
         _provider = provider is Map<String, dynamic> ? provider : null;
-        _hasProvider = false;
+        _hasProvider = response['has_provider'] == true;
       });
 
       if (!mounted) return;
