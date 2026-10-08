@@ -30,7 +30,19 @@ jobs:
         run: flutter test
 
       - name: Build iOS (no codesign)
-        run: flutter build ipa --release --no-codesign
+        run: |
+          xcodebuild -version
+          flutter build ipa --release --no-codesign
+
+      - name: Verify Sentry native SDK version
+        run: |
+          ruby -ryaml -e '
+            pods = YAML.load_file("ios/Podfile.lock").fetch("PODS")
+            names = pods.flat_map { |pod| pod.is_a?(Hash) ? pod.keys : [pod] }
+            expected = "Sentry/HybridSDK (8.46.0)"
+            abort("Expected #{expected}; got #{names.grep(/Sentry/).inspect}") unless names.include?(expected)
+            puts "Verified #{expected}"
+          '
 
       - name: Package unsigned IPA
         run: |

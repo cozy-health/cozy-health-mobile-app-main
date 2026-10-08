@@ -74,6 +74,10 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.14.4
 flutter:
+  config:
+    # Sentry 8.14.2's SwiftPM range admits an incompatible Cocoa API.
+    # CocoaPods uses the wrapper's exact Sentry/HybridSDK 8.46.0 dependency.
+    enable-swift-package-manager: false
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
