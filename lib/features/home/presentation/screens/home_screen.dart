@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import '../../../../core/repositories/affirmation_repository.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/repositories/home_repository.dart';
 import '../../../../core/api/auth_token_service.dart';
@@ -37,7 +39,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _entranceController;
   int _affirmationIndex = 0;
 
@@ -47,8 +49,14 @@ class _HomeScreenState extends State<HomeScreen>
   DashboardData? _dashboard;
   bool _loadingDashboard = true;
   bool _dashboardFailed = false;
+  final _affirmationRepo = AffirmationRepository();
+  Timer? _affirmationTimer;
+  String? _dailyAffirmation;
+  bool _loadingAffirmation = false;
 
-  final List<String> _affirmations = const [
+  List<String> get _affirmations =>
+      _dailyAffirmation == null ? _fallbackAffirmations : [_dailyAffirmation!];
+  static const _fallbackAffirmations = [
     "You're doing great.\nSmall steps count.",
     "It's okay to rest.",
     "Feelings are visitors.\nLet them come and go.",
@@ -58,7 +66,9 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
     _moodStream = _moodRepo.watchMoodEntries();
-    _loadDashboard();
+    WidgetsBinding.instance.addObserver(this);
+    _showCachedAffirmation();
+    _loadDashboard().then((_) => _loadAffirmation());
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -74,8 +84,60 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _affirmationTimer?.cancel();
     _entranceController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _loadAffirmation();
+  }
+
+  Future<void> _showCachedAffirmation() async {
+    final cached = await _affirmationRepo.getCachedToday();
+    if (mounted && cached != null) {
+      setState(() {
+        _dailyAffirmation = cached;
+        _affirmationIndex = 0;
+      });
+    }
+  }
+
+  Future<void> _loadAffirmation() async {
+    if (!mounted || _loadingAffirmation) return;
+    _loadingAffirmation = true;
+    try {
+      final cached = await _affirmationRepo.getCachedToday();
+      if (!mounted) return;
+      setState(() {
+        _dailyAffirmation = cached;
+        _affirmationIndex = 0;
+      });
+      if (!await AuthTokenService.hasToken()) return;
+      final body = await _affirmationRepo.fetchToday();
+      if (mounted) {
+        setState(() {
+          _dailyAffirmation = body;
+          _affirmationIndex = 0;
+        });
+      }
+    } catch (_) {
+      // Retain today's cached copy, or the existing offline safety net.
+    } finally {
+      _loadingAffirmation = false;
+      _affirmationTimer?.cancel();
+      if (mounted) {
+        final delay = await _affirmationRepo.untilNextDay();
+        if (mounted) {
+          _affirmationTimer = Timer(
+            delay + const Duration(seconds: 1),
+            _loadAffirmation,
+          );
+        }
+      }
+    }
   }
 
   Future<void> _loadDashboard() async {
