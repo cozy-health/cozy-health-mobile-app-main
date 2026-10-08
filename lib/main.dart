@@ -1,4 +1,5 @@
 import 'core/widgets/network_observer.dart';
+import 'core/widgets/app_availability_gate.dart';
 import 'core/services/crash_reporting.dart';
 import 'core/security_gate.dart';
 import 'core/services/install_marker_service.dart';
@@ -98,7 +99,11 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
                     }
                     return false;
                   },
-                  child: NetworkObserver(child: SecurityGate(child: child!)),
+                  child: NetworkObserver(
+                    child: AppAvailabilityGate(
+                      child: SecurityGate(child: child!),
+                    ),
+                  ),
                 ),
               ),
             );
