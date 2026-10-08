@@ -350,7 +350,7 @@ void main() {
   });
 
   test(
-    'Unsupported preference sync stays queued without a retry or upload',
+    'Saving preferences twice keeps one durable sync intent',
     () async {
       final preferences = UserPreferences(
         focusAreas: [],
@@ -362,7 +362,6 @@ void main() {
       await local.saveUserPreferences(preferences);
       await local.saveUserPreferences(preferences);
       expect(local.syncQueueBox.length, 1);
-      await local.processSyncQueue();
       final item = SyncItem.fromJson(local.syncQueueBox.values.single);
       expect(item.retryCount, 0);
       expect(item.nextRetryAt, isNull);

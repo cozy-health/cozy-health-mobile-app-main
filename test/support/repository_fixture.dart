@@ -13,6 +13,7 @@ class RepositoryFixture<T> {
   final TypeAdapter<T> adapter;
   dynamic body;
   final List<Uri> requests = [];
+  final List<dynamic> requestBodies = [];
   late Directory _directory;
   HttpOverrides? _previousOverrides;
   late Box<T> box;
@@ -24,12 +25,13 @@ class RepositoryFixture<T> {
     Hive.registerAdapter(adapter);
     box = await Hive.openBox<T>(boxName);
     _previousOverrides = HttpOverrides.current;
-    HttpOverrides.global = _ResponseOverrides(() => body, requests);
+    HttpOverrides.global = _ResponseOverrides(() => body, requests, requestBodies);
   }
 
   Future<void> reset() async {
     body = const [];
     requests.clear();
+    requestBodies.clear();
     await box.clear();
   }
 
@@ -42,19 +44,21 @@ class RepositoryFixture<T> {
 }
 
 class _ResponseOverrides extends HttpOverrides {
-  _ResponseOverrides(this.body, this.requests);
+  _ResponseOverrides(this.body, this.requests, this.requestBodies);
   final dynamic Function() body;
   final List<Uri> requests;
+  final List<dynamic> requestBodies;
 
   @override
   HttpClient createHttpClient(SecurityContext? context) =>
-      _ResponseClient(body, requests);
+      _ResponseClient(body, requests, requestBodies);
 }
 
 class _ResponseClient implements HttpClient {
-  _ResponseClient(this.body, this.requests);
+  _ResponseClient(this.body, this.requests, this.requestBodies);
   final dynamic Function() body;
   final List<Uri> requests;
+  final List<dynamic> requestBodies;
 
   @override
   Duration? connectionTimeout;
@@ -64,7 +68,7 @@ class _ResponseClient implements HttpClient {
   @override
   Future<HttpClientRequest> openUrl(String method, Uri url) async {
     requests.add(url);
-    return _ResponseRequest(body());
+    return _ResponseRequest(body(), requestBodies);
   }
 
   @override
@@ -75,8 +79,16 @@ class _ResponseClient implements HttpClient {
 }
 
 class _ResponseRequest implements HttpClientRequest {
-  _ResponseRequest(this.body);
+  _ResponseRequest(this.body, this.requestBodies);
   final dynamic body;
+  final List<dynamic> requestBodies;
+  @override
+  int contentLength = -1;
+  @override
+  Future<void> addStream(Stream<List<int>> stream) async {
+    final bytes = await stream.expand((chunk) => chunk).toList();
+    if (bytes.isNotEmpty) requestBodies.add(jsonDecode(utf8.decode(bytes)));
+  }
 
   @override
   final HttpHeaders headers = _ResponseHeaders();

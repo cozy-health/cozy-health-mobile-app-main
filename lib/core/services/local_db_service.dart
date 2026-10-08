@@ -411,7 +411,7 @@ class LocalDbService {
       payload: {'id': recordId, ...preferences.toJson()},
     );
     debugPrint(
-      'Onboarding preferences saved locally; user_preferences sync awaits backend support.',
+      'Onboarding preferences saved locally and queued for sync.',
     );
   }
 
@@ -467,8 +467,6 @@ class LocalDbService {
           _getQueuedSyncItems()
               .where(
                 (item) =>
-                    // SyncController currently returns Unknown type for preferences.
-                    item.type != 'user_preferences' &&
                     (item.nextRetryAt == null ||
                         !item.nextRetryAt!.isAfter(now)),
               )
