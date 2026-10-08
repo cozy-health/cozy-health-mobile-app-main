@@ -6,7 +6,7 @@ Sentry Flutter is installed using the version selected by the project's dependen
 
 Feature tags cover auth, mood_checkin, journal, chat, provider, crisis and app. Crisis route errors and all errors while the crisis support overlay is open are discarded. Overlay suppression restores reporting in `finally`, including when dismissal fails.
 
-Print, HTTP, interaction and native breadcrumbs are disabled. Screenshots, view hierarchy, feedback and scope sync are disabled. Native crash handling and watchdog termination reporting are disabled because native uploads bypass the Dart event filter. Performance sample rate is configured to 0.2, but transaction uploads are dropped until a separate safe transaction schema is implemented. Replay is not enabled.
+Print, HTTP, interaction and native breadcrumbs are disabled. Screenshots, view hierarchy, feedback and scope sync are disabled. Native crash handling, app-hang/ANR and watchdog termination reporting are disabled because native uploads bypass the Dart event filter. Performance sample rate is configured to 0.2, but transaction uploads are dropped until a separate safe transaction schema is implemented. Replay is not enabled.
 
 ## Phase 8.5 verification needed
 

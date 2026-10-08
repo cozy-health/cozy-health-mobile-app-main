@@ -104,7 +104,9 @@ void main() {
       final options = SentryFlutterOptions();
       CrashReporting.configure(options);
       expect(options.sendDefaultPii, isFalse);
-      expect(options.enableNativeCrashHandling, isFalse);
+    expect(options.enableNativeCrashHandling, isFalse);
+    expect(options.enableAppHangTracking, isFalse);
+    expect(options.anrEnabled, isFalse);
       expect(options.attachScreenshot, isFalse);
       expect(options.attachViewHierarchy, isFalse);
       expect(options.enablePrintBreadcrumbs, isFalse);

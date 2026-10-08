@@ -1,3 +1,4 @@
+import '../../features/settings/presentation/screens/digital_wellbeing_screen.dart';
 import '../security_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
@@ -106,6 +107,7 @@ class AppRouter {
   static const String editProfile = '/edit-profile';
   static const String privacySettings = '/privacy-settings';
   static const String helpSupport = '/help-support';
+  static const String digitalWellbeing = '/digital-wellbeing';
   static const String termsPolicies = '/terms-policies';
   static const String reportProblem = '/report-problem';
   static const String provider = '/settings/provider';
@@ -529,6 +531,11 @@ class AppRouter {
         path: privacySettings,
         name: 'privacySettings',
         builder: (_, __) => const PrivacySettingsScreen(),
+      ),
+      GoRoute(
+        path: digitalWellbeing,
+        name: 'digitalWellbeing',
+        builder: (_, __) => const DigitalWellbeingScreen(),
       ),
       GoRoute(
         path: helpSupport,

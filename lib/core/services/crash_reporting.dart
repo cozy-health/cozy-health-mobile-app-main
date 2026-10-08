@@ -58,6 +58,8 @@ class CrashReporting {
     // Native events do not pass through Dart beforeSend. Keep them disabled
     // until native redaction has been configured and verified on devices.
     options.enableNativeCrashHandling = false;
+    options.enableAppHangTracking = false;
+    options.anrEnabled = false;
     options.enableWatchdogTerminationTracking = false;
     options.enableAutoPerformanceTracing = false;
     options.beforeBreadcrumb = (_, __) => null;

@@ -190,6 +190,11 @@ class SettingsScreen extends StatelessWidget {
                     label: 'Accessibility',
                     onTap: () => context.push(AppRouter.accessibilitySettings),
                   ),
+                  _SettingsRow(
+                    icon: Icons.spa_outlined,
+                    label: 'Digital Wellbeing',
+                    onTap: () => context.push(AppRouter.digitalWellbeing),
+                  ),
                 ],
               ),
               SizedBox(height: 32),
