@@ -10,6 +10,8 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_scaffold_padding.dart';
+import '../../../../core/widgets/weekday_row.dart';
+import '../../../../core/widgets/progress_track.dart';
 
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({super.key});
@@ -45,7 +47,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
         centerTitle: false,
         titleSpacing: 24,
         title: Text(
-          'Activity',
+          'Your activity',
           style: AppTextStyles.heading2.copyWith(color: textColor),
         ),
         actions: [
@@ -83,9 +85,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
               return ListView(
                 padding: EdgeInsets.fromLTRB(
-                  24,
+                  16,
                   12,
-                  24,
+                  16,
                   AppScaffoldPadding.tabScrollBottom(context).bottom + 24,
                 ),
                 children: [
@@ -418,15 +420,15 @@ class _PeriodSelector extends StatelessWidget {
     final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
 
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(0),
       decoration: BoxDecoration(
         color: fillColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: borderColor, width: 0),
       ),
       child: Row(
         children: [
-          for (var i = 0; i < periods.length; i++)
+          for (var i = 0; i < periods.length; i++) ...[
+            if (i > 0) const SizedBox(width: 10),
             Expanded(
               child: _PeriodChip(
                 label: periods[i],
@@ -434,6 +436,7 @@ class _PeriodSelector extends StatelessWidget {
                 onTap: () => onSelected(i),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -457,21 +460,26 @@ class _PeriodChip extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(11),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         height: 38,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+          color: selected
+              ? colorScheme.primary.withValues(alpha: .08)
+              : colorScheme.surface,
+          border: Border.all(
+            color: selected ? colorScheme.primary : AppColors.borderDefault,
+          ),
+          borderRadius: BorderRadius.circular(11),
         ),
         child: Text(
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: AppTextStyles.body2.copyWith(
-            color: selected ? AppColors.white : colorScheme.onSurface,
+            color: selected ? colorScheme.primary : colorScheme.onSurface,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
@@ -529,11 +537,51 @@ class _MoodSummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 22),
           SizedBox(
-            height: 144,
+            height: 100,
             child: CustomPaint(
-              painter: _MoodChartPainter(values: stats.chartValues),
-              size: const Size(double.infinity, 144),
+              painter: _MoodChartPainter(
+                values: stats.chartValues,
+                comparison: _ActivityStats._buildChartValues(
+                  stats.previousMoods,
+                  stats.period.days,
+                  DateTime(
+                    DateTime.now().year,
+                    DateTime.now().month,
+                    DateTime.now().day,
+                  ).subtract(Duration(days: stats.period.days * 2 - 1)),
+                ),
+              ),
+              size: const Size(double.infinity, 100),
             ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              for (final day
+                  in stats.period.days == 7
+                      ? const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                      : const ['1', '2', '3', '4', '5', '6', '7'])
+                Text(day, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 16,
+            children: [
+              Text(
+                '● Current period',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: colorScheme.primary),
+              ),
+              Text(
+                '● Previous period',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.accentRose),
+              ),
+            ],
           ),
         ],
       ),
@@ -679,85 +727,32 @@ class _InsightCard extends StatelessWidget {
 
 class _CheckInDots extends StatelessWidget {
   const _CheckInDots({required this.filledCount});
-
   final int filledCount;
-
   @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(7, (index) {
-        final isFilled = index < filledCount;
-
-        return Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: isFilled
-                ? colorScheme.primary.withValues(alpha: .16)
-                : Theme.of(context).dividerTheme.color,
-            shape: BoxShape.circle,
-          ),
-          child: isFilled
-              ? Icon(Icons.check_rounded, size: 18, color: colorScheme.primary)
-              : null,
-        );
-      }),
-    );
-  }
+  Widget build(BuildContext context) => WeekdayRow(
+    days: List.generate(
+      7,
+      (index) => WeekdayItem(
+        label: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index],
+        filled: index < filledCount,
+      ),
+    ),
+  );
 }
 
 class _WritingDays extends StatelessWidget {
   const _WritingDays({required this.activeWeekdays});
-
   final Set<int> activeWeekdays;
-
   @override
-  Widget build(BuildContext context) {
-    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    final colorScheme = Theme.of(context).colorScheme;
-    final mutedColor = Theme.of(context).textTheme.bodyMedium?.color;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(days.length, (index) {
-        final isFilled = activeWeekdays.contains(index + 1);
-
-        return Column(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: isFilled
-                    ? colorScheme.primary.withValues(alpha: .16)
-                    : Theme.of(context).dividerTheme.color,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isFilled
-                    ? Icons.edit_rounded
-                    : Icons.radio_button_unchecked_rounded,
-                size: 16,
-                color: isFilled ? colorScheme.primary : mutedColor,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              days[index],
-              style: AppTextStyles.body2.copyWith(
-                color: mutedColor,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        );
-      }),
-    );
-  }
+  Widget build(BuildContext context) => WeekdayRow(
+    days: List.generate(
+      7,
+      (index) => WeekdayItem(
+        label: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index],
+        filled: activeWeekdays.contains(index + 1),
+      ),
+    ),
+  );
 }
 
 class _TriggerCard extends StatelessWidget {
@@ -850,12 +845,12 @@ class _TriggerItem extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        LinearProgressIndicator(
+        ProgressTrack(
           value: value,
-          minHeight: 8,
-          borderRadius: BorderRadius.circular(8),
-          backgroundColor: colorScheme.primary.withValues(alpha: .10),
-          valueColor: AlwaysStoppedAnimation(colorScheme.primary),
+          height: 12,
+          fillColor: value >= .6
+              ? const Color(0xFFF69258)
+              : const Color(0xFF2AC76A),
         ),
         const SizedBox(height: 4),
         Text(
@@ -887,11 +882,11 @@ class _RecommendationGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return GridView.count(
       crossAxisCount: 2,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
+      crossAxisSpacing: 20,
+      mainAxisSpacing: 17,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: .92,
+      childAspectRatio: 161 / 126,
       children: [
         _RecommendationCard(
           icon: Icons.show_chart_rounded,
@@ -937,7 +932,7 @@ class _RecommendationCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -955,11 +950,11 @@ class _RecommendationCard extends StatelessWidget {
               const Spacer(),
               Text(
                 title,
-                maxLines: 4,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.body1.copyWith(
                   color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   height: 1.25,
                 ),
               ),
@@ -990,7 +985,7 @@ class _ActivityCard extends StatelessWidget {
         color: isDark
             ? AppColors.surfaceElevatedDark
             : AppColors.surfaceElevatedLight,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
@@ -1010,9 +1005,10 @@ class _ActivityCard extends StatelessWidget {
 }
 
 class _MoodChartPainter extends CustomPainter {
-  const _MoodChartPainter({required this.values});
+  const _MoodChartPainter({required this.values, this.comparison = const []});
 
   final List<double> values;
+  final List<double> comparison;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1038,6 +1034,32 @@ class _MoodChartPainter extends CustomPainter {
       final y = size.height * i / 4;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
+    final comparisonPath = Path();
+    var drawing = false;
+    for (var i = 0; i < comparison.length; i++) {
+      if (comparison[i] == 0) {
+        drawing = false;
+        continue;
+      }
+      final point = Offset(
+        size.width * i / (comparison.length - 1),
+        size.height * (1 - (comparison[i].clamp(1, 10) - 1) / 9),
+      );
+      if (drawing) {
+        comparisonPath.lineTo(point.dx, point.dy);
+      } else {
+        comparisonPath.moveTo(point.dx, point.dy);
+        drawing = true;
+      }
+      canvas.drawCircle(point, 3, Paint()..color = AppColors.accentRose);
+    }
+    canvas.drawPath(
+      comparisonPath,
+      Paint()
+        ..color = AppColors.accentRose
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke,
+    );
 
     if (values.isEmpty || values.every((value) => value == 0)) {
       final emptyPaint = Paint()
@@ -1099,6 +1121,7 @@ class _MoodChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MoodChartPainter oldDelegate) {
+    if (oldDelegate.comparison.toString() != comparison.toString()) return true;
     if (oldDelegate.values.length != values.length) return true;
     for (var i = 0; i < values.length; i++) {
       if (oldDelegate.values[i] != values[i]) return true;
