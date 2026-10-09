@@ -52,9 +52,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
+        centerTitle: true,
+        title: Text('Notifications', style: AppTextStyles.h3),
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back,
+            Icons.chevron_left,
             color: Theme.of(context).colorScheme.onSurface,
           ),
           onPressed: () => context.pop(),
@@ -68,19 +70,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               final unreadCount = items.where((n) => !n.read).length;
               if (unreadCount == 0) return const SizedBox.shrink();
 
-              return TextButton(
+              return IconButton(
+                tooltip: 'Mark all as read',
                 onPressed: _markAllAsRead,
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                ),
-                child: Text(
-                  'Mark all as read',
-                  style: AppTextStyles.body2.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
+                icon: const Icon(Icons.done_all),
+                color: Theme.of(context).colorScheme.primary,
               );
             },
           ),
@@ -104,11 +98,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildEmptyState() => EmptyState(
-    onOfflineRetry: () => UserDataFetcher().fetchNotifications(),
-    icon: Icons.notifications_none,
-    title: "You're all caught up.",
-  );
+  Widget _buildEmptyState() {
+    final theme = Theme.of(context);
+    return Theme(
+      data: theme.copyWith(
+        colorScheme: theme.colorScheme.copyWith(
+          primary: theme.brightness == Brightness.dark
+              ? AppColors.accentSkyDark
+              : AppColors.accentSky,
+        ),
+      ),
+      child: EmptyState(
+        onOfflineRetry: () => UserDataFetcher().fetchNotifications(),
+        icon: Icons.notifications_none,
+        title: 'No new notifications for now. Check back later',
+      ),
+    );
+  }
+
   Widget _buildList(List<AppNotification> items) {
     // Sort items latest first
     final sortedItems = List<AppNotification>.from(items)
@@ -135,24 +142,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         await Future.delayed(const Duration(seconds: 1));
       },
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        itemCount: grouped.length + 1, // +1 for the header
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        itemCount: grouped.length,
         itemBuilder: (context, index) {
-          if (index == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 24),
-              child: Text(
-                'Notifications',
-                style: AppTextStyles.heading1.copyWith(
-                  fontSize: 28,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            );
-          }
-
-          final groupIndex = index - 1;
-          final dateGroup = grouped.keys.elementAt(groupIndex);
+          final dateGroup = grouped.keys.elementAt(index);
           final items = grouped[dateGroup]!;
 
           return Column(

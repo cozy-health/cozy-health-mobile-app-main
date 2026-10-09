@@ -204,7 +204,10 @@ void main() {
 
   testWidgets('Notifications empty has no CTA', (tester) async {
     await mount(tester, const NotificationsScreen());
-    expect(find.text("You're all caught up."), findsOneWidget);
+    expect(
+      find.text("No new notifications for now. Check back later"),
+      findsOneWidget,
+    );
     expect(find.byType(FilledButton), findsNothing);
   });
 
@@ -414,7 +417,10 @@ void main() {
           ),
     );
     await tester.pumpAndSettle();
-    expect(find.text("You're all caught up."), findsNothing);
+    expect(
+      find.text("No new notifications for now. Check back later"),
+      findsNothing,
+    );
     expect(find.text('A new reminder'), findsOneWidget);
   });
 
