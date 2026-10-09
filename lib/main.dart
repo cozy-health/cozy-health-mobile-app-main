@@ -4,6 +4,7 @@ import 'core/widgets/app_availability_gate.dart';
 import 'core/services/crash_reporting.dart';
 import 'core/security_gate.dart';
 import 'core/services/install_marker_service.dart';
+import 'core/storage/token_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/routing/app_router.dart';
@@ -114,20 +115,28 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
                 textScaler: TextScaler.linear(textScaleFactor),
                 boldText: profile?.highContrast ?? false,
               ),
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-                child: NotificationListener<ScrollStartNotification>(
-                  onNotification: (notification) {
-                    if (notification.dragDetails != null) {
-                      FocusManager.instance.primaryFocus?.unfocus();
-                    }
-                    return false;
-                  },
-                  child: NetworkObserver(
-                    child: AppAvailabilityGate(
-                      child: SecurityCaptureOverlay(
-                        child: SecurityGate(child: child!),
+              child: Listener(
+                onPointerDown: (_) {
+                  if (WidgetsBinding.instance.lifecycleState ==
+                      AppLifecycleState.resumed) {
+                    TokenStorage().recordActivity();
+                  }
+                },
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                  child: NotificationListener<ScrollStartNotification>(
+                    onNotification: (notification) {
+                      if (notification.dragDetails != null) {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                      }
+                      return false;
+                    },
+                    child: NetworkObserver(
+                      child: AppAvailabilityGate(
+                        child: SecurityCaptureOverlay(
+                          child: SecurityGate(child: child!),
+                        ),
                       ),
                     ),
                   ),

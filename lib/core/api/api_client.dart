@@ -39,7 +39,7 @@ class ApiClient {
     );
 
     _dio.interceptors.addAll([
-      AuthInterceptor(),
+      AuthInterceptor(dio: _dio),
       LoggingInterceptor(),
       ErrorInterceptor(),
     ]);

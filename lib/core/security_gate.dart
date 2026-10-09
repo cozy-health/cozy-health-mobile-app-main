@@ -107,7 +107,13 @@ class _SecurityGateState extends State<SecurityGate>
   }
 
   Future<void> _resume() async {
-    if (!widget.journal && TokenStorage().isSessionOnly) {
+    final path = AppRouter.router.routeInformationProvider.value.uri.path;
+    final sensitive = path.contains('crisis') || path.contains('safety-plan');
+    final expired =
+        !widget.journal &&
+        await TokenStorage().getToken() != null &&
+        await TokenStorage().inactivityExpired(sensitive: sensitive);
+    if (!widget.journal && (TokenStorage().isSessionOnly || expired)) {
       await TokenStorage().clearToken();
       _security.lockJournal();
       if (!mounted) return;

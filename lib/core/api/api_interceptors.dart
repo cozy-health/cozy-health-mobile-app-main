@@ -7,8 +7,48 @@ import 'auth_token_service.dart';
 import 'api_exceptions.dart';
 import '../routing/app_router.dart';
 import '../services/local_db_service.dart';
+import '../storage/token_storage.dart';
 
 class AuthInterceptor extends Interceptor {
+  AuthInterceptor({this.dio, this.onSessionExpired});
+  final Dio? dio;
+  final Future<void> Function()? onSessionExpired;
+  Future<String?>? _refreshing;
+  String? _rotatedFrom;
+  final _tokens = TokenStorage();
+
+  Future<String?> _refresh() async {
+    final refresh = await _tokens.getRefreshToken();
+    if (refresh == null || dio == null) return null;
+    try {
+      final previous = await _tokens.getToken();
+      final response = await dio!.post(
+        '/auth/refresh',
+        data: {'refresh_token': refresh},
+        options: Options(extra: {'skipAuth': true}),
+      );
+      final data = response.data['data'];
+      if (data is! Map ||
+          data['token'] is! String ||
+          data['refresh_token'] is! String) {
+        return null;
+      }
+      // A logout while refresh is in flight must not restore the session.
+      if (await _tokens.getRefreshToken() != refresh) {
+        return null;
+      }
+      await _tokens.saveToken(
+        data['token'],
+        stayLoggedIn: !_tokens.isSessionOnly,
+      );
+      await _tokens.saveRefreshToken(data['refresh_token']);
+      _rotatedFrom = previous;
+      return data['token'];
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Future<void> onRequest(
     RequestOptions options,
@@ -31,8 +71,44 @@ class AuthInterceptor extends Interceptor {
         err.requestOptions.extra['skipAuth'] != true &&
         !err.requestOptions.path.endsWith('/auth/google') &&
         !err.requestOptions.path.endsWith('/auth/apple')) {
+      if (dio != null && err.requestOptions.extra['refreshed'] != true) {
+        // Concurrent 401s share one rotation; late 401s use the already updated token.
+        final current = await _tokens.getToken();
+        final sent = err.requestOptions.headers['Authorization'];
+        String? token;
+        if (current != null && sent != 'Bearer $current') {
+          if (sent != 'Bearer $_rotatedFrom') return handler.next(err);
+          token = current;
+        } else {
+          _refreshing ??= _refresh();
+          final pending = _refreshing!;
+          token = await pending;
+          if (identical(_refreshing, pending)) _refreshing = null;
+        }
+        if (token != null) {
+          try {
+            final response = await dio!.fetch(
+              err.requestOptions.copyWith(
+                headers: {
+                  ...err.requestOptions.headers,
+                  'Authorization': 'Bearer $token',
+                },
+                extra: {...err.requestOptions.extra, 'refreshed': true},
+              ),
+            );
+            return handler.resolve(response);
+          } on DioException catch (retryError) {
+            return handler.next(retryError);
+          }
+        }
+      }
       await AuthTokenService.clearToken();
-      await LocalDbService().clearAllUserData();
+      // Preserve account-scoped unsynced drafts during reauthentication.
+      if (onSessionExpired != null) {
+        await onSessionExpired!();
+      } else {
+        await LocalDbService().activateGuest();
+      }
 
       final context = AppRouter.navigatorKey.currentContext;
       if (context != null && context.mounted) {

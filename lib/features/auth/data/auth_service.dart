@@ -30,7 +30,12 @@ class AuthService {
     final response = await _apiClient.post(
       ApiConstants.login,
       withAuth: false,
-      body: {'email': email, 'password': password},
+      body: {
+        'email': email,
+        'password': password,
+        'device_id': await _tokenStorage.deviceId(),
+        'device_name': defaultTargetPlatform.name,
+      },
     );
 
     final data = _payload(responseMap(response));
@@ -46,7 +51,11 @@ class AuthService {
     final response = await _apiClient.post(
       ApiConstants.googleLogin,
       withAuth: false,
-      body: {'id_token': idToken, 'device_name': defaultTargetPlatform.name},
+      body: {
+        'id_token': idToken,
+        'device_name': defaultTargetPlatform.name,
+        'device_id': await _tokenStorage.deviceId(),
+      },
     );
     final data = _payload(responseMap(response));
     await _acceptSession(data, stayLoggedIn: stayLoggedIn);
@@ -71,6 +80,7 @@ class AuthService {
         if (fullName != null && fullName.isNotEmpty) 'full_name': fullName,
         if (email != null && email.isNotEmpty) 'email': email,
         'device_name': defaultTargetPlatform.name,
+        'device_id': await _tokenStorage.deviceId(),
       },
     );
     final data = _payload(responseMap(response));
@@ -94,6 +104,8 @@ class AuthService {
         'email': email,
         'password': password,
         'password_confirmation': confirmPassword,
+        'device_id': await _tokenStorage.deviceId(),
+        'device_name': defaultTargetPlatform.name,
       },
     );
 
@@ -227,6 +239,8 @@ class AuthService {
         registration: registration,
       );
       await _tokenStorage.saveToken(token, stayLoggedIn: stayLoggedIn);
+      await _tokenStorage.saveRefreshToken(data['refresh_token']?.toString());
+      await _tokenStorage.recordActivity();
       await GuestSessionService().exitGuestSession();
       await (await local.settingsBox()).put(
         'device_user_id',

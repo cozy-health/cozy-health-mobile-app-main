@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/api/api_client.dart';
+import '../../../../core/api/api_exceptions.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -36,7 +38,31 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   Future<void> _save() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1)); // Mock network
+    try {
+      await ApiClient().post(
+        '/me/password',
+        body: {
+          'current_password': _currentController.text,
+          'password': _newController.text,
+          'password_confirmation': _confirmController.text,
+        },
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        AppSnackbar.show(
+          context,
+          AppSnackbar.fromLegacy(
+            content: Text(
+              error is ApiException
+                  ? error.message
+                  : 'Could not change password. Try again.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
     if (!mounted) return;
     setState(() => _isLoading = false);
 
