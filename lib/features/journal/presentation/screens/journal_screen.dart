@@ -72,6 +72,13 @@ class _JournalScreenState extends State<JournalScreen>
           ? AppBar(
               elevation: 0,
               leading: BackButton(),
+              actions: [
+                IconButton(
+                  tooltip: 'New journal entry',
+                  onPressed: _showEntryTypePicker,
+                  icon: const Icon(Icons.edit_square),
+                ),
+              ],
               title: Text(
                 'Journal',
                 style: AppTextStyles.heading2.copyWith(
@@ -107,7 +114,7 @@ class _JournalScreenState extends State<JournalScreen>
               onRefresh: () async =>
                   Future<void>.delayed(const Duration(milliseconds: 450)),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                 children: [
                   _AnimatedIn(
                     controller: _entranceController,
@@ -615,7 +622,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                               Text('Loading...'),
                             ],
                           )
-                        : const Text('Save'),
+                        : const Text('Done'),
                   ),
                 ],
               ),
@@ -645,7 +652,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
                     style: TextStyle(
-                      fontFamily: 'Georgia',
+                      fontFamily: 'Outfit',
                       fontSize: 18,
                       height: 1.6,
                       color: Theme.of(context).colorScheme.onSurface,
@@ -959,8 +966,8 @@ class _JournalVoiceRecordingScreenState
               child: GestureDetector(
                 onTap: _toggleRecording,
                 child: Container(
-                  width: 160,
-                  height: 160,
+                  width: 58,
+                  height: 58,
                   decoration: BoxDecoration(
                     color: _isRecording
                         ? AppColors.danger
@@ -970,7 +977,7 @@ class _JournalVoiceRecordingScreenState
                   child: Icon(
                     _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
                     color: AppColors.white,
-                    size: 58,
+                    size: 28,
                   ),
                 ),
               ),
@@ -1398,7 +1405,7 @@ class JournalEntryDetailScreen extends StatelessWidget {
               ),
             ),
           SizedBox(height: 28),
-          _TagRow(tags: entry.tags ?? [], onAddTag: () {}),
+          _TagRow(tags: entry.tags ?? [], onAddTag: () {}, compact: true),
           if (entry.type == 'voice') ...[
             SizedBox(height: 18),
             _WarmPanel(
@@ -1468,7 +1475,7 @@ class _JournalHeader extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            'Journal',
+            'Your Journal',
             style: AppTextStyles.heading1.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
               fontSize: 28,
@@ -1501,13 +1508,13 @@ class _NewEntryHero extends StatelessWidget {
       label: "What's on your mind? Start a new journal entry.",
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8),
         child: _WarmPanel(
           color: AppColors.primarySubtle,
           borderColor: Theme.of(
             context,
           ).colorScheme.primary.withValues(alpha: .15),
-          radius: 20,
+          radius: 8,
           padding: const EdgeInsets.all(18),
           child: Row(
             children: [
@@ -1593,44 +1600,51 @@ class _EntrySection extends StatelessWidget {
     required this.onTap,
     required this.onMore,
   });
-
   final String title;
   final List<JournalEntry> entries;
   final AnimationController controller;
   final double start;
   final ValueChanged<JournalEntry> onTap;
   final ValueChanged<JournalEntry> onMore;
-
   @override
   Widget build(BuildContext context) {
     if (entries.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: AppTextStyles.heading2.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 12),
+        Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.surfaceSubtleDark
+                : AppColors.surfaceSubtle,
+          ),
+          child: Column(
+            children: [
+              for (var i = 0; i < entries.length; i++) ...[
+                _AnimatedIn(
+                  controller: controller,
+                  interval: Interval(
+                    (start + i * .06).clamp(0, .95),
+                    1,
+                    curve: Curves.easeOutCubic,
+                  ),
+                  yOffset: 12,
+                  child: _JournalEntryCard(
+                    entry: entries[i],
+                    onTap: () => onTap(entries[i]),
+                    onMore: () => onMore(entries[i]),
+                  ),
+                ),
+                if (i != entries.length - 1)
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+              ],
+            ],
           ),
         ),
-        SizedBox(height: 12),
-        for (var i = 0; i < entries.length; i++) ...[
-          _AnimatedIn(
-            controller: controller,
-            interval: Interval(
-              (start + i * .06).clamp(0, .95),
-              1,
-              curve: Curves.easeOutCubic,
-            ),
-            yOffset: 12,
-            child: _JournalEntryCard(
-              entry: entries[i],
-              onTap: () => onTap(entries[i]),
-              onMore: () => onMore(entries[i]),
-            ),
-          ),
-          if (i != entries.length - 1) SizedBox(height: 12),
-        ],
       ],
     );
   }
@@ -1642,76 +1656,58 @@ class _JournalEntryCard extends StatelessWidget {
     required this.onTap,
     required this.onMore,
   });
-
   final JournalEntry entry;
   final VoidCallback onTap;
   final VoidCallback onMore;
-
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: '${_shortDate(entry.createdAt)}. ${entry.cardTitle}.',
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: '${_shortDate(entry.createdAt)}. ${entry.cardTitle}.',
+    child: Material(
+      color: Theme.of(context).brightness == Brightness.dark
+          ? AppColors.surfaceSubtleDark
+          : AppColors.surfaceSubtle,
+      borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: _WarmPanel(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        onLongPress: onMore,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 69),
+          padding: const EdgeInsets.only(left: 16, top: 10, bottom: 10),
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _detailDate(entry.createdAt),
-                      style: _captionStyle(),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.cardTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                  ),
-                  IconButton(
-                    tooltip: 'More options',
-                    onPressed: onMore,
-                    icon: Icon(
-                      Icons.more_horiz,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textMutedDark
-                          : AppColors.textMutedLight,
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_shortDate(entry.createdAt)} · ${entry.body}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 6),
-              Text(
-                entry.cardTitle,
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
+                  ],
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-              if (entry.type == 'guided' && entry.body.isNotEmpty) ...[
-                SizedBox(height: 6),
-                Text(
-                  '"${entry.body}"',
-                  style: AppTextStyles.body2.copyWith(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              if (entry.tags != null && entry.tags!.isNotEmpty) ...[
-                SizedBox(height: 14),
-                _TagRow(tags: entry.tags!, onAddTag: () {}, compact: true),
-              ],
+              IconButton(
+                tooltip: 'More options',
+                onPressed: onMore,
+                icon: const Icon(Icons.more_horiz),
+              ),
             ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _DraftRestoreCard extends StatelessWidget {
@@ -2660,7 +2656,7 @@ class _WarmPanel extends StatelessWidget {
     this.color,
     this.borderColor,
     this.padding = const EdgeInsets.all(20),
-    this.radius = 16,
+    this.radius = 8,
   });
 
   final Widget child;
