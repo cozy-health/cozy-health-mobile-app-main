@@ -311,6 +311,44 @@ void main() {
     expect(find.byType(EmptyState), findsNothing);
   });
 
+  testWidgets(
+    'Journal toolbar retains filters and composer without legacy rows',
+    (tester) async {
+      final now = DateTime.now();
+      await tester.runAsync(() async {
+        for (final type in ['free', 'voice']) {
+          await local.saveJournalEntry(
+            JournalEntry(
+              id: type,
+              type: type,
+              title: '$type entry',
+              body: '$type notes',
+              wordCount: 2,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+        }
+      });
+      await mount(tester, const JournalScreen());
+      expect(find.text('free notes'), findsOneWidget);
+      expect(find.text('🎤 Voice note'), findsOneWidget);
+      expect(find.text("What's on your mind?"), findsNothing);
+      expect(find.byType(ChoiceChip), findsNothing);
+      await tester.tap(find.byTooltip('Filter journal entries'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(CheckedPopupMenuItem<String>, 'Voice'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('free notes'), findsNothing);
+      expect(find.text('🎤 Voice note'), findsOneWidget);
+      await tester.tap(find.byTooltip('New journal entry'));
+      await tester.pumpAndSettle();
+      expect(find.text('Free write'), findsOneWidget);
+    },
+  );
+
   testWidgets('Home initial loading does not show invitation', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
     expect(find.text('Your first check-in starts here.'), findsNothing);

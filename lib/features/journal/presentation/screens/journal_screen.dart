@@ -68,25 +68,42 @@ class _JournalScreenState extends State<JournalScreen>
     }
 
     return Scaffold(
-      appBar: Navigator.of(context).canPop()
-          ? AppBar(
-              elevation: 0,
-              leading: BackButton(),
-              actions: [
-                IconButton(
-                  tooltip: 'New journal entry',
-                  onPressed: _showEntryTypePicker,
-                  icon: const Icon(Icons.edit_square),
+      appBar: AppBar(
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: Navigator.of(context).canPop() ? const BackButton() : null,
+        actions: [
+          PopupMenuButton<String>(
+            tooltip: 'Filter journal entries',
+            icon: const Icon(Icons.tune),
+            initialValue: _filter,
+            itemBuilder: (_) => [
+              for (final type in ['All', 'Free', 'Guided', 'Voice'])
+                CheckedPopupMenuItem(
+                  value: type,
+                  checked: _filter == type,
+                  child: Text(type),
                 ),
-              ],
-              title: Text(
-                'Journal',
-                style: AppTextStyles.heading2.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+              const PopupMenuItem(
+                value: 'Tags',
+                child: Text('Tags and date range'),
               ),
-            )
-          : null,
+            ],
+            onSelected: (value) {
+              if (value == 'Tags') {
+                _showFilterSheet();
+              } else {
+                setState(() => _filter = value);
+              }
+            },
+          ),
+          IconButton(
+            tooltip: 'New journal entry',
+            onPressed: _showEntryTypePicker,
+            icon: const Icon(Icons.edit_square),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: StreamBuilder<List<JournalEntry>>(
           stream: _repo.watchJournalEntries(),
@@ -101,15 +118,36 @@ class _JournalScreenState extends State<JournalScreen>
             final entries = _filteredEntries(allEntries);
 
             if (allEntries.isEmpty) {
-              return EmptyState(
-                onOfflineRetry: () => _repo.fetchJournalEntries(),
-                icon: Icons.menu_book_rounded,
-                title: 'A private space for your thoughts.',
-                primaryCtaLabel: 'Write your first entry',
-                onPrimaryCta: () => _openEditor(type: 'free'),
+              final theme = Theme.of(context);
+              final dark = theme.brightness == Brightness.dark;
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _JournalHeader(onSearch: () => _openSearch(allEntries)),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: ColoredBox(
+                          color: dark
+                              ? AppColors.surfaceSubtleDark
+                              : AppColors.surfaceSubtle,
+                          child: EmptyState(
+                            onOfflineRetry: () => _repo.fetchJournalEntries(),
+                            icon: Icons.menu_book_rounded,
+                            title: 'A private space for your thoughts.',
+                            primaryCtaLabel: 'Write your first entry',
+                            onPrimaryCta: () => _openEditor(type: 'free'),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               );
             }
-
             return RefreshIndicator(
               onRefresh: () async =>
                   Future<void>.delayed(const Duration(milliseconds: 450)),
@@ -123,38 +161,7 @@ class _JournalScreenState extends State<JournalScreen>
                       onSearch: () => _openSearch(allEntries),
                     ),
                   ),
-                  SizedBox(height: 24),
-                  _AnimatedIn(
-                    controller: _entranceController,
-                    interval: const Interval(
-                      .12,
-                      .5,
-                      curve: Curves.easeOutCubic,
-                    ),
-                    yOffset: 16,
-                    child: _NewEntryHero(onTap: _showEntryTypePicker),
-                  ),
-                  SizedBox(height: 24),
-                  _AnimatedIn(
-                    controller: _entranceController,
-                    interval: const Interval(
-                      .25,
-                      .62,
-                      curve: Curves.easeOutCubic,
-                    ),
-                    yOffset: 12,
-                    child: _FilterChips(
-                      selected: _filter,
-                      activeTags: _activeTags,
-                      onChanged: (value) {
-                        if (value == 'Tags') {
-                          _showFilterSheet();
-                        } else {
-                          setState(() => _filter = value);
-                        }
-                      },
-                    ),
-                  ),
+                  const SizedBox(height: 16),
                   if (_activeTags.isNotEmpty) ...[
                     SizedBox(height: 12),
                     Wrap(
@@ -361,21 +368,24 @@ class _JournalScreenState extends State<JournalScreen>
   void _showEntryTypePicker() {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor,
       barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: .32),
-      builder: (context) => _EntryTypePicker(
-        onFree: () {
-          Navigator.pop(context);
-          _openEditor(type: 'free');
-        },
-        onGuided: () {
-          Navigator.pop(context);
-          _openPromptLibrary();
-        },
-        onVoice: () {
-          Navigator.pop(context);
-          _openVoiceRecording();
-        },
+      builder: (context) => SingleChildScrollView(
+        child: _EntryTypePicker(
+          onFree: () {
+            Navigator.pop(context);
+            _openEditor(type: 'free');
+          },
+          onGuided: () {
+            Navigator.pop(context);
+            _openPromptLibrary();
+          },
+          onVoice: () {
+            Navigator.pop(context);
+            _openVoiceRecording();
+          },
+        ),
       ),
     );
   }
@@ -1496,101 +1506,6 @@ class _JournalHeader extends StatelessWidget {
   }
 }
 
-class _NewEntryHero extends StatelessWidget {
-  const _NewEntryHero({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: "What's on your mind? Start a new journal entry.",
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: _WarmPanel(
-          color: AppColors.primarySubtle,
-          borderColor: Theme.of(
-            context,
-          ).colorScheme.primary.withValues(alpha: .15),
-          radius: 8,
-          padding: const EdgeInsets.all(18),
-          child: Row(
-            children: [
-              Icon(
-                Icons.edit_note_rounded,
-                color: Theme.of(context).colorScheme.primary,
-                size: 30,
-              ),
-              SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  "What's on your mind?",
-                  style: AppTextStyles.body1.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Text('Start →', style: AppTextStyles.linkText),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterChips extends StatelessWidget {
-  const _FilterChips({
-    required this.selected,
-    required this.activeTags,
-    required this.onChanged,
-  });
-
-  final String selected;
-  final Set<String> activeTags;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final dividerColor = Theme.of(context).dividerTheme.color;
-    final chips = ['All', 'Free', 'Guided', 'Voice', 'Tags'];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: chips.map((chip) {
-          final isSelected =
-              selected == chip || (chip == 'Tags' && activeTags.isNotEmpty);
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(chip == 'Tags' ? 'Tags ▼' : chip),
-              selected: isSelected,
-              onSelected: (_) => onChanged(chip),
-              selectedColor: AppColors.primarySubtle,
-              backgroundColor: colorScheme.surface,
-              side: BorderSide(
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : dividerColor ?? AppColors.border,
-              ),
-              labelStyle: AppTextStyles.body2.copyWith(
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
 class _EntrySection extends StatelessWidget {
   const _EntrySection({
     required this.title,
@@ -2656,14 +2571,12 @@ class _WarmPanel extends StatelessWidget {
     this.color,
     this.borderColor,
     this.padding = const EdgeInsets.all(20),
-    this.radius = 8,
   });
 
   final Widget child;
   final Color? color;
   final Color? borderColor;
   final EdgeInsets padding;
-  final double radius;
 
   @override
   Widget build(BuildContext context) {
@@ -2675,7 +2588,7 @@ class _WarmPanel extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: color ?? colorScheme.surface,
-        borderRadius: BorderRadius.circular(radius),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: borderColor ?? dividerColor ?? AppColors.border,
         ),
