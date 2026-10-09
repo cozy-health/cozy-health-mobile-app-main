@@ -65,3 +65,16 @@ linux/flutter/generated_plugins.cmake
 macos/Flutter/GeneratedPluginRegistrant.swift
 windows/flutter/generated_plugin_registrant.cc
 windows/flutter/generated_plugins.cmake
+
+# Temporary files and generated outputs
+.env
+.env.*
+!.env.example
+analyze.txt
+analyze_*.txt
+build/
+.next/
+node_modules/
+Thumbs.db
+scratch/
+tmp/
