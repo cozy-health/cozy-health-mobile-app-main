@@ -1,7 +1,9 @@
+import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:cozy_health/core/services/feature_flags_service.dart';
 import 'package:cozy_health/core/widgets/feature_gate.dart';
@@ -22,9 +24,10 @@ void main() {
     'maintenance_mode': false,
   };
   setUp(() async {
+    FlutterSecureStorage.setMockInitialValues({});
     directory = await Directory.systemTemp.createTemp('cozy_config_test_');
     Hive.init(directory.path);
-    cache = await Hive.openBox<dynamic>('configuration_test');
+    cache = await EncryptedHive.openBox<dynamic>('configuration_test');
   });
   tearDown(() async {
     service?.dispose();

@@ -1,3 +1,4 @@
+import '../storage/encrypted_hive.dart';
 import 'dart:convert';
 import 'package:hive/hive.dart';
 import '../api/auth_token_service.dart';
@@ -10,9 +11,11 @@ class EndpointCache {
   static Future<Box<String>>? _opening;
 
   Future<Box<String>> _box() async {
-    if (Hive.isBoxOpen(boxName)) return Hive.box<String>(boxName);
+    if (EncryptedHive.isBoxOpen(boxName)) {
+      return EncryptedHive.box<String>(boxName);
+    }
     try {
-      return await (_opening ??= Hive.openBox<String>(boxName));
+      return await (_opening ??= EncryptedHive.openBox<String>(boxName));
     } finally {
       _opening = null;
     }
@@ -38,7 +41,8 @@ class EndpointCache {
       final age = now().difference(
         DateTime.parse(record['cached_at'] as String),
       );
-      if (!allowStale && (age.isNegative || age >= const Duration(minutes: 5))) {
+      if (!allowStale &&
+          (age.isNegative || age >= const Duration(minutes: 5))) {
         return null;
       }
       return Map<String, dynamic>.from(record['data'] as Map);

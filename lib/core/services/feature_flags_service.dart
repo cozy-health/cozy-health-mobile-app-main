@@ -1,3 +1,4 @@
+import '../storage/encrypted_hive.dart';
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
@@ -111,7 +112,7 @@ class FeatureFlagsService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> initialize({bool poll = true}) async {
-    _cache ??= await Hive.openBox<dynamic>('app_config');
+    _cache ??= await EncryptedHive.openBox<dynamic>('app_config');
     try {
       final stored = _cache!.get('configuration');
       if (stored is Map) {

@@ -1,6 +1,8 @@
+import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
@@ -20,12 +22,13 @@ void main() {
   final local = LocalDbService();
   late Directory directory;
   setUpAll(() async {
+    FlutterSecureStorage.setMockInitialValues({});
     GoogleFonts.config.allowRuntimeFetching = false;
     directory = await Directory.systemTemp.createTemp('cozy_onboarding_test_');
     Hive.init(directory.path);
     await local.preferencesBox();
     await local.settingsBox();
-    await Hive.openBox<String>(LocalDbService.syncQueueBoxName);
+    await EncryptedHive.openBox<String>(LocalDbService.syncQueueBoxName);
   });
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -349,22 +352,19 @@ void main() {
     expect((await local.getUserPreferences())!.toJson(), preferences.toJson());
   });
 
-  test(
-    'Saving preferences twice keeps one durable sync intent',
-    () async {
-      final preferences = UserPreferences(
-        focusAreas: [],
-        currentChallenges: [],
-        checkInFrequency: 'Daily',
-        completedAt: DateTime.now().toUtc(),
-        skipped: true,
-      );
-      await local.saveUserPreferences(preferences);
-      await local.saveUserPreferences(preferences);
-      expect(local.syncQueueBox.length, 1);
-      final item = SyncItem.fromJson(local.syncQueueBox.values.single);
-      expect(item.retryCount, 0);
-      expect(item.nextRetryAt, isNull);
-    },
-  );
+  test('Saving preferences twice keeps one durable sync intent', () async {
+    final preferences = UserPreferences(
+      focusAreas: [],
+      currentChallenges: [],
+      checkInFrequency: 'Daily',
+      completedAt: DateTime.now().toUtc(),
+      skipped: true,
+    );
+    await local.saveUserPreferences(preferences);
+    await local.saveUserPreferences(preferences);
+    expect(local.syncQueueBox.length, 1);
+    final item = SyncItem.fromJson(local.syncQueueBox.values.single);
+    expect(item.retryCount, 0);
+    expect(item.nextRetryAt, isNull);
+  });
 }

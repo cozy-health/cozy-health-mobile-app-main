@@ -20,13 +20,13 @@ void main() {
   final drafts = MoodDraftService();
   late Directory directory;
   setUpAll(() async {
+    FlutterSecureStorage.setMockInitialValues({});
     await installLocalTestFonts();
     directory = await Directory.systemTemp.createTemp('cozy_ux_');
     Hive.init(directory.path);
     await LocalDbService().settingsBox();
   });
   setUp(() async {
-    FlutterSecureStorage.setMockInitialValues({});
     SharedPreferences.setMockInitialValues({});
     await drafts.clear();
   });

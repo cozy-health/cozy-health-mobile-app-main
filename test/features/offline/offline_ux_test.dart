@@ -1,7 +1,7 @@
+import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hive/hive.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/core/models/sync_item.dart';
@@ -27,7 +27,7 @@ void main() {
     await installLocalTestFonts();
     await fixture.open();
     await local.settingsBox();
-    await Hive.openBox<String>(LocalDbService.syncQueueBoxName);
+    await EncryptedHive.openBox<String>(LocalDbService.syncQueueBoxName);
   });
   setUp(() async {
     networkOffline.value = null;

@@ -1,7 +1,9 @@
+import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:cozy_health/core/models/digital_wellbeing_preferences.dart';
 import 'package:cozy_health/core/services/digital_wellbeing_service.dart';
@@ -29,6 +31,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory directory;
   setUpAll(() async {
+    FlutterSecureStorage.setMockInitialValues({});
     directory = await Directory.systemTemp.createTemp('cozy_wellbeing_');
     Hive.init(directory.path);
   });
@@ -72,7 +75,7 @@ void main() {
         ),
         isTrue,
       );
-      expect(Hive.isBoxOpen(LocalDbService.syncQueueBoxName), isFalse);
+      expect(EncryptedHive.isBoxOpen(LocalDbService.syncQueueBoxName), isFalse);
     },
   );
   testWidgets(

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -22,6 +23,7 @@ void main() {
   late Directory directory;
   late Box<dynamic> settings;
   setUpAll(() async {
+    FlutterSecureStorage.setMockInitialValues({});
     // Use Flutter's bundled font for font aliases; tests never fetch fonts.
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
     final assets = <String, ByteData>{};
@@ -48,13 +50,14 @@ void main() {
     Hive.registerAdapter(JournalEntryAdapter());
     Hive.registerAdapter(UserProfileAdapter());
     Hive.registerAdapter(AppNotificationAdapter());
-    await Hive.openBox<MoodEntry>(LocalDbService.moodBoxName);
-    await Hive.openBox<JournalEntry>(LocalDbService.journalBoxName);
-    await Hive.openBox<UserProfile>(LocalDbService.userProfileBoxName);
-    await Hive.openBox<AppNotification>(LocalDbService.appNotificationBoxName);
+    await EncryptedHive.openBox<MoodEntry>(LocalDbService.moodBoxName);
+    await EncryptedHive.openBox<JournalEntry>(LocalDbService.journalBoxName);
+    await EncryptedHive.openBox<UserProfile>(LocalDbService.userProfileBoxName);
+    await EncryptedHive.openBox<AppNotification>(
+      LocalDbService.appNotificationBoxName,
+    );
   });
   setUp(() async {
-    FlutterSecureStorage.setMockInitialValues({});
     SharedPreferences.setMockInitialValues({});
     await settings.clear();
   });

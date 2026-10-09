@@ -1,4 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'api_transport.dart';
+import 'leaf_pin_policy.dart';
 import '../constants/api_constants.dart';
 import 'api_exceptions.dart';
 import 'api_interceptors.dart';
@@ -15,6 +18,7 @@ class ApiClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
+        followRedirects: false,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 30),
         sendTimeout: const Duration(seconds: 30),
@@ -25,12 +29,26 @@ class ApiClient {
       ),
     );
 
+    _dio.httpClientAdapter = createApiTransport(
+      LeafPinPolicy(
+        host: Uri.parse(ApiConstants.baseUrl).host,
+        current: ApiConstants.currentLeafPin,
+        next: ApiConstants.nextLeafPin,
+      ),
+    );
+
     _dio.interceptors.addAll([
       AuthInterceptor(),
       LoggingInterceptor(),
       ErrorInterceptor(),
     ]);
   }
+
+  @visibleForTesting
+  HttpClientAdapter get transportForTesting => _dio.httpClientAdapter;
+  @visibleForTesting
+  set transportForTesting(HttpClientAdapter adapter) =>
+      _dio.httpClientAdapter = adapter;
 
   Future<dynamic> get(
     String path, {

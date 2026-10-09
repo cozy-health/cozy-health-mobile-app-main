@@ -1,9 +1,13 @@
+import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
+import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'package:cozy_health/core/api/api_client.dart';
 
 /// Exercises the real API client and cache without network or platform storage.
 class RepositoryFixture<T> {
@@ -17,15 +21,22 @@ class RepositoryFixture<T> {
   late Directory _directory;
   HttpOverrides? _previousOverrides;
   late Box<T> box;
+  late HttpClientAdapter _previousTransport;
 
   Future<void> open() async {
     FlutterSecureStorage.setMockInitialValues({});
     _directory = await Directory.systemTemp.createTemp('cozy_repository_test_');
     Hive.init(_directory.path);
     Hive.registerAdapter(adapter);
-    box = await Hive.openBox<T>(boxName);
+    box = await EncryptedHive.openBox<T>(boxName);
     _previousOverrides = HttpOverrides.current;
-    HttpOverrides.global = _ResponseOverrides(() => body, requests, requestBodies);
+    HttpOverrides.global = _ResponseOverrides(
+      () => body,
+      requests,
+      requestBodies,
+    );
+    _previousTransport = ApiClient().transportForTesting;
+    ApiClient().transportForTesting = IOHttpClientAdapter();
   }
 
   Future<void> reset() async {
@@ -36,6 +47,8 @@ class RepositoryFixture<T> {
   }
 
   Future<void> close() async {
+    ApiClient().transportForTesting.close(force: true);
+    ApiClient().transportForTesting = _previousTransport;
     HttpOverrides.global = _previousOverrides;
     await Hive.close();
     Hive.resetAdapters();

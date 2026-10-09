@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
@@ -41,6 +42,7 @@ void main() {
   final local = LocalDbService();
 
   setUpAll(() async {
+    FlutterSecureStorage.setMockInitialValues({});
     GoogleFonts.config.allowRuntimeFetching = false;
     directory = await Directory.systemTemp.createTemp('cozy_empty_states_');
     Hive.init(directory.path);
@@ -51,25 +53,35 @@ void main() {
     Hive.registerAdapter(QuizAttemptAdapter());
     Hive.registerAdapter(SafetyPlanAdapter());
     Hive.registerAdapter(UserProfileAdapter());
-    await Hive.openBox<MoodEntry>(LocalDbService.moodBoxName);
-    await Hive.openBox<JournalEntry>(LocalDbService.journalBoxName);
-    await Hive.openBox<AppNotification>(LocalDbService.appNotificationBoxName);
-    await Hive.openBox<SavedArticle>(LocalDbService.savedArticleBoxName);
-    await Hive.openBox<QuizAttempt>(LocalDbService.quizAttemptBoxName);
-    await Hive.openBox<SafetyPlan>(LocalDbService.safetyPlanBoxName);
-    await Hive.openBox<UserProfile>(LocalDbService.userProfileBoxName);
+    await EncryptedHive.openBox<MoodEntry>(LocalDbService.moodBoxName);
+    await EncryptedHive.openBox<JournalEntry>(LocalDbService.journalBoxName);
+    await EncryptedHive.openBox<AppNotification>(
+      LocalDbService.appNotificationBoxName,
+    );
+    await EncryptedHive.openBox<SavedArticle>(
+      LocalDbService.savedArticleBoxName,
+    );
+    await EncryptedHive.openBox<QuizAttempt>(LocalDbService.quizAttemptBoxName);
+    await EncryptedHive.openBox<SafetyPlan>(LocalDbService.safetyPlanBoxName);
+    await EncryptedHive.openBox<UserProfile>(LocalDbService.userProfileBoxName);
   });
   setUp(() async {
     FlutterSecureStorage.setMockInitialValues({});
     SharedPreferences.setMockInitialValues({});
     await local.moodBox.clear();
     await local.journalBox.clear();
-    await Hive.box<AppNotification>(
+    await EncryptedHive.box<AppNotification>(
       LocalDbService.appNotificationBoxName,
     ).clear();
-    await Hive.box<SavedArticle>(LocalDbService.savedArticleBoxName).clear();
-    await Hive.box<QuizAttempt>(LocalDbService.quizAttemptBoxName).clear();
-    await Hive.box<SafetyPlan>(LocalDbService.safetyPlanBoxName).clear();
+    await EncryptedHive.box<SavedArticle>(
+      LocalDbService.savedArticleBoxName,
+    ).clear();
+    await EncryptedHive.box<QuizAttempt>(
+      LocalDbService.quizAttemptBoxName,
+    ).clear();
+    await EncryptedHive.box<SafetyPlan>(
+      LocalDbService.safetyPlanBoxName,
+    ).clear();
   });
   tearDownAll(() async {
     await Hive.close();
@@ -386,7 +398,9 @@ void main() {
     await mount(tester, const NotificationsScreen());
     await tester.runAsync(
       () =>
-          Hive.box<AppNotification>(LocalDbService.appNotificationBoxName).put(
+          EncryptedHive.box<AppNotification>(
+            LocalDbService.appNotificationBoxName,
+          ).put(
             'notice',
             AppNotification(
               id: 'notice',
@@ -408,17 +422,18 @@ void main() {
   ) async {
     await mount(tester, const SavedArticlesScreen());
     await tester.runAsync(
-      () => Hive.box<SavedArticle>(LocalDbService.savedArticleBoxName).put(
-        'saved',
-        SavedArticle(
-          id: 'saved',
-          articleId: 'article',
-          title: 'A gentle read',
-          excerpt: '',
-          imageUrl: '',
-          savedAt: DateTime.now(),
-        ),
-      ),
+      () => EncryptedHive.box<SavedArticle>(LocalDbService.savedArticleBoxName)
+          .put(
+            'saved',
+            SavedArticle(
+              id: 'saved',
+              articleId: 'article',
+              title: 'A gentle read',
+              excerpt: '',
+              imageUrl: '',
+              savedAt: DateTime.now(),
+            ),
+          ),
     );
     await tester.pumpAndSettle();
     expect(find.text('Save articles to read later.'), findsNothing);

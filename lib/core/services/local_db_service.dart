@@ -1,3 +1,5 @@
+import '../storage/encrypted_hive.dart';
+import '../storage/hive_files.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:async';
 import 'dart:math';
@@ -41,7 +43,7 @@ class LocalDbService {
   String boxName(String base) => _activeUser == null
       ? base
       : '${base}_user_${_activeUser!.codeUnits.map((c) => c.toRadixString(16).padLeft(2, '0')).join()}';
-  bool isBoxOpen(String base) => Hive.isBoxOpen(boxName(base));
+  bool isBoxOpen(String base) => EncryptedHive.isBoxOpen(boxName(base));
 
   Future<void> activateAccount(
     String userId, {
@@ -63,10 +65,12 @@ class LocalDbService {
     String? email,
     bool registration = false,
   }) async {
-    final registry = await Hive.openBox<dynamic>('device_registry');
+    final registry = await EncryptedHive.openBox<dynamic>('device_registry');
     if (!registry.containsKey('legacy_email')) {
-      final legacy = Hive.isBoxOpen(userProfileBoxName)
-          ? Hive.box<UserProfile>(userProfileBoxName).values.firstOrNull
+      final legacy = EncryptedHive.isBoxOpen(userProfileBoxName)
+          ? EncryptedHive.box<UserProfile>(
+              userProfileBoxName,
+            ).values.firstOrNull
           : null;
       await registry.put('legacy_email', legacy?.email.toLowerCase() ?? '');
     }
@@ -88,9 +92,11 @@ class LocalDbService {
       String base,
       T Function(Map<String, dynamic>) clone,
     ) async {
-      final target = await Hive.openBox<T>('${base}_user_$scope');
-      if (adopt && target.isEmpty && Hive.isBoxOpen(sourceName(base))) {
-        final source = Hive.box<T>(sourceName(base));
+      final target = await EncryptedHive.openBox<T>('${base}_user_$scope');
+      if (adopt &&
+          target.isEmpty &&
+          EncryptedHive.isBoxOpen(sourceName(base))) {
+        final source = EncryptedHive.box<T>(sourceName(base));
         for (final key in source.keys) {
           final dynamic value = source.get(key);
           if (value != null) {
@@ -123,39 +129,43 @@ class LocalDbService {
       SubscriptionStatus.fromJson,
     );
     if (!Hive.isAdapterRegistered(11)) {
-      Hive.registerAdapter(UserPreferencesAdapter());
+      if (!Hive.isAdapterRegistered(UserPreferencesAdapter().typeId)) {
+        Hive.registerAdapter(UserPreferencesAdapter());
+      }
     }
     await open<UserPreferences>(
       userPreferencesBoxName,
       UserPreferences.fromJson,
     );
-    final queue = await Hive.openBox<String>('${syncQueueBoxName}_user_$scope');
-    final settings = await Hive.openBox<dynamic>(
+    final queue = await EncryptedHive.openBox<String>(
+      '${syncQueueBoxName}_user_$scope',
+    );
+    final settings = await EncryptedHive.openBox<dynamic>(
       '${userSettingsBoxName}_user_$scope',
     );
     if (adopt &&
         queue.isEmpty &&
-        Hive.isBoxOpen(sourceName(syncQueueBoxName))) {
+        EncryptedHive.isBoxOpen(sourceName(syncQueueBoxName))) {
       await queue.putAll(
-        Hive.box<String>(sourceName(syncQueueBoxName)).toMap(),
+        EncryptedHive.box<String>(sourceName(syncQueueBoxName)).toMap(),
       );
     }
     if (adopt &&
         settings.isEmpty &&
-        Hive.isBoxOpen(sourceName(userSettingsBoxName))) {
+        EncryptedHive.isBoxOpen(sourceName(userSettingsBoxName))) {
       await settings.putAll(
-        Hive.box<dynamic>(sourceName(userSettingsBoxName)).toMap(),
+        EncryptedHive.box<dynamic>(sourceName(userSettingsBoxName)).toMap(),
       );
     }
     // Before login, copy onboarding answers only; guest history remains separate.
     if (!adopt &&
         !isGuest &&
         (fromGuest || (legacyEmail.isEmpty && _activeUser == null)) &&
-        Hive.isBoxOpen(sourceName(userPreferencesBoxName))) {
-      final source = Hive.box<UserPreferences>(
+        EncryptedHive.isBoxOpen(sourceName(userPreferencesBoxName))) {
+      final source = EncryptedHive.box<UserPreferences>(
         sourceName(userPreferencesBoxName),
       );
-      final target = Hive.box<UserPreferences>(
+      final target = EncryptedHive.box<UserPreferences>(
         '${userPreferencesBoxName}_user_$scope',
       );
       final preferences = source.get('current');
@@ -165,9 +175,12 @@ class LocalDbService {
           UserPreferences.fromJson(preferences.toJson()),
         );
       }
-      if (queue.isEmpty && Hive.isBoxOpen(sourceName(syncQueueBoxName))) {
-        for (final key in Hive.box<String>(sourceName(syncQueueBoxName)).keys) {
-          final value = Hive.box<String>(
+      if (queue.isEmpty &&
+          EncryptedHive.isBoxOpen(sourceName(syncQueueBoxName))) {
+        for (final key in EncryptedHive.box<String>(
+          sourceName(syncQueueBoxName),
+        ).keys) {
+          final value = EncryptedHive.box<String>(
             sourceName(syncQueueBoxName),
           ).get(key)!;
           try {
@@ -194,7 +207,7 @@ class LocalDbService {
 
   Future<void> activateGuest() async {
     await waitForSyncIdle();
-    final registry = await Hive.openBox<dynamic>('device_registry');
+    final registry = await EncryptedHive.openBox<dynamic>('device_registry');
     final epoch = registry.get('guest_epoch', defaultValue: 0) as int;
     await activateAccount('guest_$epoch');
   }
@@ -246,36 +259,80 @@ class LocalDbService {
     await Hive.initFlutter();
 
     // Register Adapters
-    Hive.registerAdapter(MoodEntryAdapter());
-    Hive.registerAdapter(JournalEntryAdapter());
-    Hive.registerAdapter(ChatMessageAdapter());
-    Hive.registerAdapter(ChatConversationAdapter());
-    Hive.registerAdapter(SafetyPlanAdapter());
-    Hive.registerAdapter(UserProfileAdapter());
-    Hive.registerAdapter(QuizAttemptAdapter());
-    Hive.registerAdapter(SavedArticleAdapter());
-    Hive.registerAdapter(AppNotificationAdapter());
-    Hive.registerAdapter(SubscriptionStatusAdapter());
-    Hive.registerAdapter(UserPreferencesAdapter());
+    if (!Hive.isAdapterRegistered(MoodEntryAdapter().typeId)) {
+      Hive.registerAdapter(MoodEntryAdapter());
+    }
+    if (!Hive.isAdapterRegistered(JournalEntryAdapter().typeId)) {
+      Hive.registerAdapter(JournalEntryAdapter());
+    }
+    if (!Hive.isAdapterRegistered(ChatMessageAdapter().typeId)) {
+      Hive.registerAdapter(ChatMessageAdapter());
+    }
+    if (!Hive.isAdapterRegistered(ChatConversationAdapter().typeId)) {
+      Hive.registerAdapter(ChatConversationAdapter());
+    }
+    if (!Hive.isAdapterRegistered(SafetyPlanAdapter().typeId)) {
+      Hive.registerAdapter(SafetyPlanAdapter());
+    }
+    if (!Hive.isAdapterRegistered(UserProfileAdapter().typeId)) {
+      Hive.registerAdapter(UserProfileAdapter());
+    }
+    if (!Hive.isAdapterRegistered(QuizAttemptAdapter().typeId)) {
+      Hive.registerAdapter(QuizAttemptAdapter());
+    }
+    if (!Hive.isAdapterRegistered(SavedArticleAdapter().typeId)) {
+      Hive.registerAdapter(SavedArticleAdapter());
+    }
+    if (!Hive.isAdapterRegistered(AppNotificationAdapter().typeId)) {
+      Hive.registerAdapter(AppNotificationAdapter());
+    }
+    if (!Hive.isAdapterRegistered(SubscriptionStatusAdapter().typeId)) {
+      Hive.registerAdapter(SubscriptionStatusAdapter());
+    }
+    if (!Hive.isAdapterRegistered(UserPreferencesAdapter().typeId)) {
+      Hive.registerAdapter(UserPreferencesAdapter());
+    }
 
     // Open Boxes
-    await Hive.openBox<MoodEntry>(moodBoxName);
-    await Hive.openBox<JournalEntry>(journalBoxName);
-    await Hive.openBox<ChatMessage>(chatMessageBoxName);
-    await Hive.openBox<ChatConversation>(chatConversationBoxName);
-    await Hive.openBox<SafetyPlan>(safetyPlanBoxName);
-    await Hive.openBox<UserProfile>(userProfileBoxName);
-    await Hive.openBox<QuizAttempt>(quizAttemptBoxName);
-    await Hive.openBox<SavedArticle>(savedArticleBoxName);
-    await Hive.openBox<AppNotification>(appNotificationBoxName);
-    await Hive.openBox<SubscriptionStatus>(subscriptionStatusBoxName);
-    await Hive.openBox<String>(syncQueueBoxName);
-    await Hive.openBox<UserPreferences>(userPreferencesBoxName);
-    await Hive.openBox<dynamic>(userSettingsBoxName);
+    await EncryptedHive.openBox<MoodEntry>(moodBoxName);
+    await EncryptedHive.openBox<JournalEntry>(journalBoxName);
+    await EncryptedHive.openBox<ChatMessage>(chatMessageBoxName);
+    await EncryptedHive.openBox<ChatConversation>(chatConversationBoxName);
+    await EncryptedHive.openBox<SafetyPlan>(safetyPlanBoxName);
+    await EncryptedHive.openBox<UserProfile>(userProfileBoxName);
+    await EncryptedHive.openBox<QuizAttempt>(quizAttemptBoxName);
+    await EncryptedHive.openBox<SavedArticle>(savedArticleBoxName);
+    await EncryptedHive.openBox<AppNotification>(appNotificationBoxName);
+    await EncryptedHive.openBox<SubscriptionStatus>(subscriptionStatusBoxName);
+    await EncryptedHive.openBox<String>(syncQueueBoxName);
+    await EncryptedHive.openBox<UserPreferences>(userPreferencesBoxName);
+    await EncryptedHive.openBox<dynamic>(userSettingsBoxName);
+    // Encrypt inactive accounts too; do not leave PHI awaiting their next login.
+    for (final name in await legacyHiveNames(moodBox.path)) {
+      Future<void> migrate<T>(String base) async {
+        if (name.startsWith('${base}_user_')) {
+          await EncryptedHive.openBox<T>(name);
+        }
+      }
+
+      await migrate<MoodEntry>(moodBoxName);
+      await migrate<JournalEntry>(journalBoxName);
+      await migrate<ChatMessage>(chatMessageBoxName);
+      await migrate<ChatConversation>(chatConversationBoxName);
+      await migrate<SafetyPlan>(safetyPlanBoxName);
+      await migrate<UserProfile>(userProfileBoxName);
+      await migrate<QuizAttempt>(quizAttemptBoxName);
+      await migrate<SavedArticle>(savedArticleBoxName);
+      await migrate<AppNotification>(appNotificationBoxName);
+      await migrate<SubscriptionStatus>(subscriptionStatusBoxName);
+      await migrate<UserPreferences>(userPreferencesBoxName);
+      await migrate<String>(syncQueueBoxName);
+      await migrate<dynamic>(userSettingsBoxName);
+    }
     Timer.periodic(const Duration(minutes: 5), (_) {
       processSyncQueue();
     });
-    final registry = await Hive.openBox<dynamic>('device_registry');
+    final registry = await EncryptedHive.openBox<dynamic>('device_registry');
     final active = registry.get('active_user_id') as String?;
     if (active != null &&
         (active.startsWith('guest_') ||
@@ -288,7 +345,8 @@ class LocalDbService {
   }
 
   // --- Moods ---
-  Box<MoodEntry> get moodBox => Hive.box<MoodEntry>(boxName(moodBoxName));
+  Box<MoodEntry> get moodBox =>
+      EncryptedHive.box<MoodEntry>(boxName(moodBoxName));
 
   Future<void> saveMoodEntry(MoodEntry entry) async {
     await moodBox.put(entry.id, entry);
@@ -308,7 +366,7 @@ class LocalDbService {
 
   // --- Journals ---
   Box<JournalEntry> get journalBox =>
-      Hive.box<JournalEntry>(boxName(journalBoxName));
+      EncryptedHive.box<JournalEntry>(boxName(journalBoxName));
 
   Future<void> saveJournalEntry(JournalEntry entry) async {
     await journalBox.put(entry.id, entry);
@@ -344,9 +402,9 @@ class LocalDbService {
 
   // --- Chat ---
   Box<ChatMessage> get chatMessageBox =>
-      Hive.box<ChatMessage>(boxName(chatMessageBoxName));
+      EncryptedHive.box<ChatMessage>(boxName(chatMessageBoxName));
   Box<ChatConversation> get chatConversationBox =>
-      Hive.box<ChatConversation>(boxName(chatConversationBoxName));
+      EncryptedHive.box<ChatConversation>(boxName(chatConversationBoxName));
 
   Future<void> saveChatMessage(ChatMessage message) async {
     await chatMessageBox.put(message.id, message);
@@ -400,7 +458,7 @@ class LocalDbService {
 
   // --- Safety Plan ---
   Box<SafetyPlan> get safetyPlanBox =>
-      Hive.box<SafetyPlan>(boxName(safetyPlanBoxName));
+      EncryptedHive.box<SafetyPlan>(boxName(safetyPlanBoxName));
 
   Future<void> saveSafetyPlan(SafetyPlan plan) async {
     await safetyPlanBox.put(plan.id, plan);
@@ -419,7 +477,7 @@ class LocalDbService {
 
   // --- User Profile ---
   Box<UserProfile> get userProfileBox =>
-      Hive.box<UserProfile>(boxName(userProfileBoxName));
+      EncryptedHive.box<UserProfile>(boxName(userProfileBoxName));
 
   bool get isUserProfileBoxOpen => isBoxOpen(userProfileBoxName);
 
@@ -436,7 +494,7 @@ class LocalDbService {
 
   UserProfile? getUserProfile() {
     final key = isBoxOpen(userSettingsBoxName)
-        ? Hive.box<dynamic>(
+        ? EncryptedHive.box<dynamic>(
             boxName(userSettingsBoxName),
           ).get('current_profile_id')
         : null;
@@ -450,7 +508,7 @@ class LocalDbService {
 
   // --- Quizzes ---
   Box<QuizAttempt> get quizAttemptBox =>
-      Hive.box<QuizAttempt>(boxName(quizAttemptBoxName));
+      EncryptedHive.box<QuizAttempt>(boxName(quizAttemptBoxName));
 
   Future<void> saveQuizAttempt(QuizAttempt attempt) async {
     await quizAttemptBox.put(attempt.id, attempt);
@@ -468,7 +526,7 @@ class LocalDbService {
 
   // --- Saved Articles ---
   Box<SavedArticle> get savedArticleBox =>
-      Hive.box<SavedArticle>(boxName(savedArticleBoxName));
+      EncryptedHive.box<SavedArticle>(boxName(savedArticleBoxName));
 
   Future<void> saveSavedArticle(SavedArticle article) async {
     await savedArticleBox.put(article.articleId, article);
@@ -492,7 +550,7 @@ class LocalDbService {
 
   // --- Notifications ---
   Box<AppNotification> get appNotificationBox =>
-      Hive.box<AppNotification>(boxName(appNotificationBoxName));
+      EncryptedHive.box<AppNotification>(boxName(appNotificationBoxName));
 
   Future<void> saveNotification(AppNotification notif) async {
     await appNotificationBox.put(notif.id, notif);
@@ -528,7 +586,7 @@ class LocalDbService {
 
   // --- Subscription ---
   Box<SubscriptionStatus> get subscriptionStatusBox =>
-      Hive.box<SubscriptionStatus>(boxName(subscriptionStatusBoxName));
+      EncryptedHive.box<SubscriptionStatus>(boxName(subscriptionStatusBoxName));
 
   Future<void> saveSubscriptionStatus(SubscriptionStatus status) async {
     await subscriptionStatusBox.put(status.id, status);
@@ -548,16 +606,20 @@ class LocalDbService {
   // --- Onboarding preferences ---
   Future<Box<UserPreferences>> preferencesBox() async {
     if (!Hive.isAdapterRegistered(11)) {
-      Hive.registerAdapter(UserPreferencesAdapter());
+      if (!Hive.isAdapterRegistered(UserPreferencesAdapter().typeId)) {
+        Hive.registerAdapter(UserPreferencesAdapter());
+      }
     }
     return isBoxOpen(userPreferencesBoxName)
-        ? Hive.box<UserPreferences>(boxName(userPreferencesBoxName))
-        : Hive.openBox<UserPreferences>(boxName(userPreferencesBoxName));
+        ? EncryptedHive.box<UserPreferences>(boxName(userPreferencesBoxName))
+        : EncryptedHive.openBox<UserPreferences>(
+            boxName(userPreferencesBoxName),
+          );
   }
 
   Future<Box<dynamic>> settingsBox() async => isBoxOpen(userSettingsBoxName)
-      ? Hive.box<dynamic>(boxName(userSettingsBoxName))
-      : Hive.openBox<dynamic>(boxName(userSettingsBoxName));
+      ? EncryptedHive.box<dynamic>(boxName(userSettingsBoxName))
+      : EncryptedHive.openBox<dynamic>(boxName(userSettingsBoxName));
 
   Future<UserPreferences?> getUserPreferences() async =>
       (await preferencesBox()).get('current');
@@ -574,7 +636,7 @@ class LocalDbService {
         settings.get('preferences_sync_id') as String? ?? const Uuid().v4();
     await settings.put('preferences_sync_id', recordId);
     if (!isBoxOpen(syncQueueBoxName)) {
-      await Hive.openBox<String>(boxName(syncQueueBoxName));
+      await EncryptedHive.openBox<String>(boxName(syncQueueBoxName));
     }
     await removeFromQueue('user_preferences', recordId);
     await enqueueSync(
@@ -587,7 +649,8 @@ class LocalDbService {
   }
 
   // --- Sync Queue ---
-  Box<String> get syncQueueBox => Hive.box<String>(boxName(syncQueueBoxName));
+  Box<String> get syncQueueBox =>
+      EncryptedHive.box<String>(boxName(syncQueueBoxName));
 
   Future<void> queueSync(String type, String id) async {
     await enqueueSync(
@@ -801,22 +864,28 @@ class LocalDbService {
   Future<void> clearAllUserData() async {
     await moodBox.clear();
     await journalBox.clear();
-    await Hive.box<ChatMessage>(boxName(chatMessageBoxName)).clear();
-    await Hive.box<ChatConversation>(boxName(chatConversationBoxName)).clear();
-    await Hive.box<SafetyPlan>(boxName(safetyPlanBoxName)).clear();
+    await EncryptedHive.box<ChatMessage>(boxName(chatMessageBoxName)).clear();
+    await EncryptedHive.box<ChatConversation>(
+      boxName(chatConversationBoxName),
+    ).clear();
+    await EncryptedHive.box<SafetyPlan>(boxName(safetyPlanBoxName)).clear();
     await userProfileBox.clear();
-    await Hive.box<QuizAttempt>(boxName(quizAttemptBoxName)).clear();
-    await Hive.box<SavedArticle>(boxName(savedArticleBoxName)).clear();
-    await Hive.box<AppNotification>(boxName(appNotificationBoxName)).clear();
-    await Hive.box<SubscriptionStatus>(
+    await EncryptedHive.box<QuizAttempt>(boxName(quizAttemptBoxName)).clear();
+    await EncryptedHive.box<SavedArticle>(boxName(savedArticleBoxName)).clear();
+    await EncryptedHive.box<AppNotification>(
+      boxName(appNotificationBoxName),
+    ).clear();
+    await EncryptedHive.box<SubscriptionStatus>(
       boxName(subscriptionStatusBoxName),
     ).clear();
     await syncQueueBox.clear();
     if (isBoxOpen(userPreferencesBoxName)) {
-      await Hive.box<UserPreferences>(boxName(userPreferencesBoxName)).clear();
+      await EncryptedHive.box<UserPreferences>(
+        boxName(userPreferencesBoxName),
+      ).clear();
     }
     if (isBoxOpen(userSettingsBoxName)) {
-      await Hive.box<dynamic>(boxName(userSettingsBoxName)).clear();
+      await EncryptedHive.box<dynamic>(boxName(userSettingsBoxName)).clear();
     }
   }
 }

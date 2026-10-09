@@ -18,8 +18,32 @@ Future<void> main() => CrashReporting.run(_startApp);
 
 Future<void> _startApp() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await LocalDbService().init();
-  await FeatureFlagsService.instance.initialize();
+  try {
+    await LocalDbService().init();
+    await FeatureFlagsService.instance.initialize();
+  } catch (_) {
+    // Never erase unsynced PHI or expose key/path details after a storage failure.
+    runApp(
+      const MaterialApp(
+        home: Scaffold(
+          body: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'We couldn’t open your saved information securely. Your local files have '
+                  'been kept. Please restart the app. If this continues, contact support '
+                  'before reinstalling.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    return;
+  }
   await InstallMarkerService().clearLingeringSessionOnFreshInstall();
   AppRouter.router.routeInformationProvider.addListener(() {
     CrashReporting.tagRoute(
