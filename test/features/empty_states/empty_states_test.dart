@@ -129,9 +129,11 @@ void main() {
 
   testWidgets('Home first check-in and affirmation fallback', (tester) async {
     await mount(tester, const HomeScreen());
-    expect(find.text('Your first check-in starts here.'), findsOneWidget);
-    expect(find.byType(EmptyState), findsOneWidget);
-    await tapCta(tester, 'Log your mood', AppRouter.moodFeeling);
+    expect(find.text('How are you feeling today?'), findsOneWidget);
+    expect(find.text('Your first check-in starts here.'), findsNothing);
+    expect(find.text('Cozy Calendar'), findsOneWidget);
+    expect(find.text('Journaling'), findsOneWidget);
+    await tapCta(tester, 'Start your streak', AppRouter.moodFeeling);
   });
 
   testWidgets('Home partial data keeps trend invitation', (tester) async {

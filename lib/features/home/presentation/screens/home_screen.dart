@@ -1,7 +1,7 @@
 import '../../../../core/widgets/sync_queue_badge.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
-import '../../../../core/widgets/empty_state.dart';
+
 import '../widgets/feature_tour.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -237,11 +237,6 @@ class _HomeScreenState extends State<HomeScreen>
               return entry.createdAt.toLocal().isAfter(weekAgo);
             }).toList();
 
-            // Determine state dynamically
-            final dynamicState = isEmpty
-                ? HomeDashboardState.firstTime
-                : HomeDashboardState.returningUser;
-
             // Compute streak
             final now = DateTime.now();
             final streak = _dashboard?.streakDays ?? _localStreak(entries);
@@ -322,116 +317,16 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                           const SizedBox(height: 24),
-                          const _HomeEmotionStrip(),
+                          _HomeEmotionStrip(key: widget.tourTargets?.hero),
                           const SizedBox(height: 16),
-                          _HomeDesignCards(entries: entries),
-                          const SizedBox(height: 24),
-                          if (dynamicState == HomeDashboardState.firstTime)
-                            _AnimatedIn(
-                              controller: _entranceController,
-                              interval: const Interval(
-                                .14,
-                                .58,
-                                curve: Curves.easeOutCubic,
-                              ),
-                              yOffset: 16,
-                              child: _FirstTimeHero(
-                                key: widget.tourTargets?.hero,
-                              ),
-                            )
-                          else
-                            _AnimatedIn(
-                              controller: _entranceController,
-                              interval: const Interval(
-                                .14,
-                                .58,
-                                curve: Curves.easeOutCubic,
-                              ),
-                              yOffset: 16,
-                              child: _MoodHero(
-                                key: widget.tourTargets?.hero,
-                                hasMoodToday: hasMoodToday,
-                              ),
-                            ),
-                          const SizedBox(height: 16),
-                          _AnimatedIn(
-                            controller: _entranceController,
-                            interval: const Interval(
-                              .28,
-                              .68,
-                              curve: Curves.easeOutCubic,
-                            ),
-                            yOffset: 12,
-                            child: _StatsRow(isEmpty: isEmpty, streak: streak),
-                          ),
-                          const SizedBox(height: 32),
-                          if (dynamicState == HomeDashboardState.firstTime)
-                            _FirstTimeInfo(controller: _entranceController)
-                          else ...[
-                            _SectionHeader(
-                              title: 'This week',
-                              action: 'See all',
-                              onAction: () =>
-                                  context.push(AppRouter.moodHistory),
-                            ),
-                            const SizedBox(height: 12),
-                            _AnimatedIn(
-                              controller: _entranceController,
-                              interval: const Interval(
-                                .48,
-                                .86,
-                                curve: Curves.easeOutCubic,
-                              ),
-                              yOffset: 10,
-                              child: _MoodChart(entries: moodsThisWeek),
-                            ),
-                            const SizedBox(height: 32),
-                            _SectionHeader(
-                              title: 'Recent entries',
-                              action: 'See all',
-                              onAction: () =>
-                                  context.push(AppRouter.moodHistory),
-                            ),
-                            const SizedBox(height: 12),
-                            if (recentEntries.isEmpty)
-                              const _EmptyCard(
-                                icon: Icons.edit_note,
-                                title: 'Your first entry will show here',
-                                subtitle:
-                                    'Notes stay private and easy to revisit.',
-                              )
-                            else
-                              ...recentEntries.asMap().entries.map(
-                                (entry) => Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom:
-                                        entry.key == recentEntries.length - 1
-                                        ? 0
-                                        : 8,
-                                  ),
-                                  child: _AnimatedIn(
-                                    controller: _entranceController,
-                                    interval: Interval(
-                                      .64 + (entry.key * .07),
-                                      1,
-                                      curve: Curves.easeOutCubic,
-                                    ),
-                                    yOffset: 12,
-                                    child: _EntryCard(entry: entry.value),
-                                  ),
-                                ),
-                              ),
-                          ],
-                          const SizedBox(height: 24),
-                          _AnimatedIn(
-                            controller: _entranceController,
-                            interval: const Interval(
-                              .82,
-                              1,
-                              curve: Curves.easeOutCubic,
-                            ),
-                            yOffset: 12,
-                            child: _AffirmationCard(
+                          _HomeDesignCards(
+                            entries: entries,
+                            recentEntries: recentEntries,
+                            moodsThisWeek: moodsThisWeek,
+                            streak: streak,
+                            isEmpty: isEmpty,
+                            hasMoodToday: hasMoodToday,
+                            affirmation: _AffirmationCard(
                               text: _affirmations[_affirmationIndex],
                               index: _affirmationIndex,
                               count: _affirmations.length,
@@ -529,7 +424,7 @@ class _GuestBanner extends StatelessWidget {
 }
 
 class _HomeEmotionStrip extends StatelessWidget {
-  const _HomeEmotionStrip();
+  const _HomeEmotionStrip({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -595,15 +490,45 @@ class _HomeEmotionStrip extends StatelessWidget {
 }
 
 class _HomeDesignCards extends StatelessWidget {
-  const _HomeDesignCards({required this.entries});
+  const _HomeDesignCards({
+    required this.entries,
+    required this.recentEntries,
+    required this.moodsThisWeek,
+    required this.streak,
+    required this.isEmpty,
+    required this.hasMoodToday,
+    required this.affirmation,
+  });
   final List<MoodEntry> entries;
+  final List<MoodEntry> recentEntries;
+  final List<MoodEntry> moodsThisWeek;
+  final int streak;
+  final bool isEmpty;
+  final bool hasMoodToday;
+  final Widget affirmation;
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final monday = today.subtract(Duration(days: today.weekday - 1));
+    final weekly = _DashboardScope.of(context)?.weeklyMoods;
+    final count =
+        weekly?.fold<int>(
+          0,
+          (sum, row) => sum + (row['count'] as num).toInt(),
+        ) ??
+        moodsThisWeek.length;
+    final total =
+        weekly?.fold<double>(
+          0,
+          (sum, row) =>
+              sum +
+              (row['avg_intensity'] as num).toDouble() * (row['count'] as num),
+        ) ??
+        moodsThisWeek.fold<double>(0, (sum, entry) => sum + entry.intensity);
     const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return Column(
       children: [
@@ -629,14 +554,13 @@ class _HomeDesignCards extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Cozy Calendar',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              Text('Cozy Calendar', style: theme.textTheme.headlineSmall),
               const SizedBox(height: 8),
               Text(
-                'A little check-in, every day.',
-                style: Theme.of(context).textTheme.bodyMedium,
+                hasMoodToday
+                    ? 'Your check-in is saved for today.'
+                    : 'A little check-in, every day.',
+                style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 12),
               WeekdayRow(
@@ -651,6 +575,45 @@ class _HomeDesignCards extends StatelessWidget {
                   return WeekdayItem(label: labels[index], filled: recorded);
                 }),
               ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  TextButton.icon(
+                    onPressed: isEmpty
+                        ? () => context.push(AppRouter.moodFeeling)
+                        : () => _pushPage(context, const StreakDetailScreen()),
+                    icon: const Icon(Icons.local_fire_department_outlined),
+                    label: Text(
+                      isEmpty ? 'Start your streak' : '$streak day streak',
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: count == 0
+                        ? () => context.push(AppRouter.moodFeeling)
+                        : () => context.push(AppRouter.insights),
+                    child: Text(
+                      count == 0
+                          ? 'No moods this week'
+                          : 'Avg intensity ${(total / count).toStringAsFixed(1)}',
+                    ),
+                  ),
+                ],
+              ),
+              if (count < 3)
+                Text(
+                  'Log 3 moods to see trends',
+                  style: theme.textTheme.bodySmall,
+                ),
+              const SizedBox(height: 12),
+              Text('Recent entries', style: theme.textTheme.titleSmall),
+              if (recentEntries.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text('Your first entry will show here'),
+                )
+              else
+                for (final entry in recentEntries) _EntryCard(entry: entry),
               TextButton(
                 onPressed: () => context.push(AppRouter.moodHistory),
                 child: const Text('View Log ›'),
@@ -659,17 +622,31 @@ class _HomeDesignCards extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        ConstrainedBox(
+        Container(
           constraints: const BoxConstraints(minHeight: 198),
-          child: IllustratedCard(
-            title: 'Journaling',
-            description: 'Make space for your thoughts. Your journal is yours.',
-            illustration: SvgPicture.asset(Assets.svg.journaling),
-            backgroundColor: dark
-                ? AppColors.accentSageDark
-                : AppColors.accentSage,
-            actionLabel: 'Start Writing',
-            onAction: () => context.push(AppRouter.journal),
+          decoration: BoxDecoration(
+            color: dark ? AppColors.accentSageDark : AppColors.accentSage,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              IllustratedCard(
+                title: 'Journaling',
+                description:
+                    'Make space for your thoughts. Your journal is yours.',
+                illustration: SvgPicture.asset(Assets.svg.journaling),
+                backgroundColor: dark
+                    ? AppColors.accentSageDark
+                    : AppColors.accentSage,
+                actionLabel: 'Start Writing',
+                onAction: () => context.push(AppRouter.journal),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: affirmation,
+              ),
+            ],
           ),
         ),
       ],
@@ -788,344 +765,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _MoodHero extends StatefulWidget {
-  const _MoodHero({super.key, required this.hasMoodToday});
-
-  final bool hasMoodToday;
-
-  @override
-  State<_MoodHero> createState() => _MoodHeroState();
-}
-
-class _MoodHeroState extends State<_MoodHero>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulseController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 4000),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
-
-    return AnimatedBuilder(
-      animation: _pulseController,
-      builder: (context, child) {
-        final borderOpacity = reduceMotion
-            ? .15
-            : .08 + (_pulseController.value * .07);
-        return _WarmCard(
-          color: AppColors.primarySubtle,
-          borderColor: Theme.of(
-            context,
-          ).colorScheme.primary.withValues(alpha: borderOpacity),
-          minHeight: 140,
-          child: child!,
-        );
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.hasMoodToday
-                ? 'You logged: ${_DashboardScope.of(context)?.todayMood?['mood'] ?? 'a mood'}.\nWant to add a note?'
-                : 'How are you feeling\nright now?',
-            style: AppTextStyles.heading1.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              height: 1.18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Semantics(
-            button: true,
-            label: widget.hasMoodToday
-                ? 'Add a note to today mood'
-                : 'Log your mood',
-            child: SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () => context.push(AppRouter.moodFeeling),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: AppColors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  widget.hasMoodToday ? 'Add a note' : 'Log your mood',
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FirstTimeHero extends StatelessWidget {
-  const _FirstTimeHero({super.key});
-  @override
-  Widget build(BuildContext context) => _WarmCard(
-    color: AppColors.primarySubtle,
-    child: EmptyState(
-      icon: Icons.self_improvement,
-      title: 'Your first check-in starts here.',
-      primaryCtaLabel: 'Log your mood',
-      onPrimaryCta: () => context.push(AppRouter.moodFeeling),
-    ),
-  );
-}
-
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.isEmpty, required this.streak});
-
-  final bool isEmpty;
-  final int streak;
-
-  @override
-  Widget build(BuildContext context) {
-    final weekly = _DashboardScope.of(context)?.weeklyMoods ?? [];
-    final count = weekly.fold<int>(
-      0,
-      (sum, row) => sum + (row['count'] as num).toInt(),
-    );
-    final total = weekly.fold<double>(
-      0,
-      (sum, row) =>
-          sum +
-          (row['avg_intensity'] as num).toDouble() * (row['count'] as num),
-    );
-    return Row(
-      children: [
-        Expanded(
-          child: _StatCard(
-            icon: '🔥',
-            title: isEmpty ? 'Start your\nstreak' : '$streak',
-            subtitle: isEmpty ? '' : 'day streak',
-            isEmpty: isEmpty,
-            onTap: isEmpty
-                ? () => context.push(AppRouter.moodFeeling)
-                : () => _pushPage(context, const StreakDetailScreen()),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatCard(
-            icon: MoodEntry.moodEmojis['good'] ?? '',
-            title: count == 0
-                ? 'No moods\nthis week'
-                : (total / count).toStringAsFixed(1),
-            subtitle: count == 0 ? '' : 'Avg intensity',
-            isEmpty: isEmpty,
-            onTap: isEmpty
-                ? () => context.push(AppRouter.moodFeeling)
-                : () => context.push(AppRouter.insights),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.isEmpty,
-    required this.onTap,
-  });
-
-  final String icon;
-  final String title;
-  final String subtitle;
-  final bool isEmpty;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: '$title $subtitle',
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 96),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isEmpty
-                  ? AppColors.borderStrong
-                  : AppColors.border.withValues(alpha: .7),
-              style: BorderStyle.solid,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(icon, style: const TextStyle(fontSize: 22)),
-              const SizedBox(height: 6),
-              Text(
-                title,
-                style: AppTextStyles.heading2.copyWith(
-                  color: isEmpty
-                      ? Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.textMutedDark
-                            : AppColors.textMutedLight
-                      : Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
-                ),
-              ),
-              if (subtitle.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: AppTextStyles.body2.copyWith(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MoodChart extends StatelessWidget {
-  const _MoodChart({required this.entries});
-
-  final List<MoodEntry> entries;
-
-  @override
-  Widget build(BuildContext context) {
-    final weekly = _DashboardScope.of(context)?.weeklyMoods;
-    final count =
-        weekly?.fold<int>(
-          0,
-          (sum, row) => sum + (row['count'] as num).toInt(),
-        ) ??
-        entries.length;
-    if (count < 3) {
-      return const _EmptyCard(
-        icon: Icons.show_chart,
-        title: 'Log 3 moods to see trends',
-        subtitle: 'Keep logging. Your patterns will appear here gently.',
-      );
-    }
-
-    final values = weekly == null
-        ? _weeklyValues(entries)
-        : List<double>.generate(7, (index) {
-            final rows = weekly.where(
-              (row) =>
-                  DateTime.parse(row['day'] as String).weekday == index + 1,
-            );
-            return rows.isEmpty
-                ? 0
-                : ((rows.first['avg_intensity'] as num).toDouble() * 7)
-                      .clamp(0, 70)
-                      .toDouble();
-          });
-    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-    return GestureDetector(
-      onTap: () => context.push(AppRouter.insights),
-      child: _WarmCard(
-        color: AppColors.surfaceElevated,
-        minHeight: 120,
-        child: Semantics(
-          label: 'Weekly average mood intensity chart.',
-          child: Column(
-            children: [
-              SizedBox(
-                height: 72,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    for (final value in values)
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.bottomCenter,
-                          child: FractionallySizedBox(
-                            widthFactor: .42,
-                            child: Container(
-                              height: value,
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primary.withValues(alpha: .78),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  for (final day in days)
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          day,
-                          style: AppTextStyles.body2.copyWith(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? AppColors.textMutedDark
-                                : AppColors.textMutedLight,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<double> _weeklyValues(List<MoodEntry> entries) {
-    final values = List<double>.filled(7, 0);
-    for (final entry in entries) {
-      final local = entry.createdAt.toLocal();
-      values[local.weekday - 1] = (entry.intensity.clamp(1, 10) * 10)
-          .toDouble();
-    }
-    return values.map((value) => value == 0 ? 12.0 : value).toList();
-  }
-}
-
 class _EntryCard extends StatelessWidget {
   const _EntryCard({required this.entry});
 
@@ -1148,9 +787,8 @@ class _EntryCard extends StatelessWidget {
       label: '${entry.mood}, ${_formatTime(entry.createdAt)}',
       child: InkWell(
         onTap: () => context.push(AppRouter.moodDetail, extra: entry),
-        borderRadius: BorderRadius.circular(16),
-        child: _WarmCard(
-          color: AppColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
@@ -1221,9 +859,8 @@ class _AffirmationCard extends StatelessWidget {
           ),
         );
       },
-      child: _WarmCard(
-        color: AppColors.warmYellow.withValues(alpha: .08),
-        borderColor: AppColors.warmYellow.withValues(alpha: .2),
+      child: Padding(
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1264,96 +901,6 @@ class _AffirmationCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FirstTimeInfo extends StatelessWidget {
-  const _FirstTimeInfo({required this.controller});
-
-  final AnimationController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final items = const [
-      (Icons.bar_chart_rounded, 'Your mood patterns', 'Over time, gently'),
-      (Icons.edit_note_rounded, 'Journal entries', 'A private space'),
-      (
-        Icons.chat_bubble_outline_rounded,
-        'AI companion',
-        'Always here to listen',
-      ),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(title: "What you'll find here"),
-        const SizedBox(height: 12),
-        for (var i = 0; i < items.length; i++)
-          Padding(
-            padding: EdgeInsets.only(bottom: i == items.length - 1 ? 0 : 8),
-            child: _AnimatedIn(
-              controller: controller,
-              interval: Interval(.5 + (i * .08), 1, curve: Curves.easeOutCubic),
-              yOffset: 12,
-              child: _InfoCard(
-                icon: items[i].$1,
-                title: items[i].$2,
-                subtitle: items[i].$3,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WarmCard(
-      color: AppColors.surfaceElevated,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Icon(icon, color: Theme.of(context).colorScheme.primary, size: 26),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.body1.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: AppTextStyles.body2.copyWith(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1873,99 +1420,18 @@ class _SimpleAreaChart extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.action, this.onAction});
-
-  final String title;
-  final String? action;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: AppTextStyles.heading2.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        if (action != null)
-          TextButton(
-            onPressed: onAction,
-            child: Text(action!, style: AppTextStyles.linkText),
-          ),
-      ],
-    );
-  }
-}
-
-class _EmptyCard extends StatelessWidget {
-  const _EmptyCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WarmCard(
-      color: AppColors.surfaceElevated,
-      child: Row(
-        children: [
-          Icon(icon, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.body1.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: AppTextStyles.body2.copyWith(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _WarmCard extends StatelessWidget {
   const _WarmCard({
     required this.child,
     this.color = AppColors.surfaceElevated,
     this.borderColor,
     this.padding = const EdgeInsets.all(20),
-    this.minHeight,
   });
 
   final Widget child;
   final Color color;
   final Color? borderColor;
   final EdgeInsets padding;
-  final double? minHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -1981,7 +1447,7 @@ class _WarmCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      constraints: BoxConstraints(minHeight: minHeight ?? 0),
+
       padding: padding,
       decoration: BoxDecoration(
         color: effectiveColor,
@@ -1998,13 +1464,11 @@ class _AnimatedIn extends StatelessWidget {
     required this.controller,
     required this.child,
     required this.interval,
-    this.yOffset = 8,
   });
 
   final AnimationController controller;
   final Widget child;
   final Interval interval;
-  final double yOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -2018,7 +1482,7 @@ class _AnimatedIn extends StatelessWidget {
         return Opacity(
           opacity: animation.value,
           child: Transform.translate(
-            offset: Offset(0, yOffset * (1 - animation.value)),
+            offset: Offset(0, 8 * (1 - animation.value)),
             child: child,
           ),
         );
