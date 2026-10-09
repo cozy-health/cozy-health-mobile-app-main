@@ -4,6 +4,9 @@ import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../widgets/feature_tour.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../core/widgets/illustrated_card.dart';
+import '../../../../core/widgets/weekday_row.dart';
 import 'dart:async';
 import '../../../../core/repositories/affirmation_repository.dart';
 import 'package:go_router/go_router.dart';
@@ -281,9 +284,9 @@ class _HomeScreenState extends State<HomeScreen>
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.fromLTRB(
-                        24,
                         16,
-                        24,
+                        16,
+                        16,
                         AppScaffoldPadding.tabScrollBottom(context).bottom,
                       ),
                       child: Column(
@@ -318,6 +321,10 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                             ),
                           ),
+                          const SizedBox(height: 24),
+                          const _HomeEmotionStrip(),
+                          const SizedBox(height: 16),
+                          _HomeDesignCards(entries: entries),
                           const SizedBox(height: 24),
                           if (dynamicState == HomeDashboardState.firstTime)
                             _AnimatedIn(
@@ -521,6 +528,155 @@ class _GuestBanner extends StatelessWidget {
   }
 }
 
+class _HomeEmotionStrip extends StatelessWidget {
+  const _HomeEmotionStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'How are you feeling today?',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 54,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: MoodEntry.moodEmojis.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final mood = MoodEntry.moodEmojis.keys.elementAt(index);
+              return Center(
+                child: Material(
+                  color: dark
+                      ? AppColors.accentWarmYellowDark
+                      : AppColors.accentWarmYellow,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => context.push(AppRouter.moodFeeling),
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        minWidth: 103,
+                        minHeight: 45,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            MoodEntry.moodEmojis[mood]!,
+                            style: const TextStyle(fontSize: 23),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${mood[0].toUpperCase()}${mood.substring(1)}',
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeDesignCards extends StatelessWidget {
+  const _HomeDesignCards({required this.entries});
+  final List<MoodEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return Column(
+      children: [
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 179),
+          child: IllustratedCard(
+            title: 'Mental Health Quiz',
+            description: 'Understand how you feel with a quick check-in.',
+            illustration: SvgPicture.asset(Assets.svg.mentalHealthQuiz),
+            actionLabel: 'Start Quiz',
+            onAction: () => context.push(AppRouter.quizSelection),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(minHeight: 179),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: dark ? AppColors.accentPeachDark : AppColors.accentPeach,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Cozy Calendar',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'A little check-in, every day.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              WeekdayRow(
+                days: List.generate(7, (index) {
+                  final date = monday.add(Duration(days: index));
+                  final recorded = entries.any((entry) {
+                    final day = entry.createdAt.toLocal();
+                    return day.year == date.year &&
+                        day.month == date.month &&
+                        day.day == date.day;
+                  });
+                  return WeekdayItem(label: labels[index], filled: recorded);
+                }),
+              ),
+              TextButton(
+                onPressed: () => context.push(AppRouter.moodHistory),
+                child: const Text('View Log ›'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 198),
+          child: IllustratedCard(
+            title: 'Journaling',
+            description: 'Make space for your thoughts. Your journal is yours.',
+            illustration: SvgPicture.asset(Assets.svg.journaling),
+            backgroundColor: dark
+                ? AppColors.accentSageDark
+                : AppColors.accentSage,
+            actionLabel: 'Start Writing',
+            onAction: () => context.push(AppRouter.journal),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   const _Header();
 
@@ -537,24 +693,29 @@ class _Header extends StatelessWidget {
             : profileName;
         final avatarUrl = profile?.avatarUrl;
 
-        final hour = DateTime.now().hour;
-        final greeting = hour < 5
-            ? 'Still up,'
-            : hour < 12
-            ? 'Good morning,'
-            : hour < 18
-            ? 'Good afternoon,'
-            : 'Good evening,';
-
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Semantics(
+              button: true,
+              label: 'Open profile',
+              child: GestureDetector(
+                onTap: () => context.push(AppRouter.editProfile),
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundImage: avatarUrl != null
+                      ? NetworkImage(avatarUrl) as ImageProvider
+                      : AssetImage(Assets.png.profilePic.path),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    greeting,
+                    'Welcome',
                     style: AppTextStyles.body1.copyWith(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? AppColors.textMutedDark
@@ -563,7 +724,7 @@ class _Header extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$name.',
+                    name.split(RegExp(r'\s+')).first,
                     style: AppTextStyles.heading1.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
@@ -582,44 +743,42 @@ class _Header extends StatelessWidget {
                       .where((n) => !n.read)
                       .length;
 
-                  return Stack(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.notifications_outlined,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                        onPressed: () => context.push(AppRouter.notifications),
+                  return IconButton(
+                    onPressed: () => context.push(AppRouter.notifications),
+                    icon: Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      if (unreadCount > 0)
-                        Positioned(
-                          right: 8,
-                          top: 8,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              shape: BoxShape.circle,
+                      child: Stack(
+                        children: [
+                          Center(
+                            child: Icon(
+                              Icons.notifications_outlined,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
-                        ),
-                    ],
+                          Positioned(
+                            right: 4,
+                            top: 4,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: unreadCount > 0
+                                    ? const Color(0xFF55D288)
+                                    : const Color(0xFFD9D9D9),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Semantics(
-              button: true,
-              label: 'Open profile',
-              child: GestureDetector(
-                onTap: () => context.push(AppRouter.editProfile),
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundImage: avatarUrl != null
-                      ? NetworkImage(avatarUrl) as ImageProvider
-                      : AssetImage(Assets.png.profilePic.path),
-                ),
               ),
             ),
           ],
