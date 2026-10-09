@@ -55,8 +55,7 @@ void main() {
     }, onError: (Object _) {});
     final clientContext = trusted
         ? (SecurityContext(withTrustedRoots: false)
-            ..setTrustedCertificates('$fixture/current.pem')
-            ..setTrustedCertificates('$fixture/next.pem'))
+            ..setTrustedCertificates('$fixture/ca.pem'))
         : null;
     final policy = LeafPinPolicy(
       host: 'localhost',
