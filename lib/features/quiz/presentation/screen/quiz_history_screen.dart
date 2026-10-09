@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/models/quiz_attempt.dart';
 import '../../data/quiz_repository.dart';
+import '../../domain/clinical_assessment.dart';
 import 'package:intl/intl.dart';
 
 class QuizHistoryScreen extends StatelessWidget {
@@ -52,14 +53,19 @@ class QuizHistoryScreen extends StatelessWidget {
               (a, b) => b.completedAt.compareTo(a.completedAt),
             ); // latest first
 
-            // Get data for trend chart (e.g., just PHQ-9 or all?) Let's do PHQ-9 (clinical)
-            final clinicalAttempts = attempts
-                .where((a) => a.quizSlug == 'clinical')
-                .toList();
-            // Trend chart expects oldest to newest
-            final trendData = clinicalAttempts.reversed
-                .map((a) => a.score.toDouble())
-                .toList();
+            // Keep every attempt in history. Trend each real instrument separately;
+            // their raw scores use different scales. Legacy results remain below.
+            final trends = {
+              for (final assessment in ClinicalAssessment.all)
+                assessment.id: attempts.reversed
+                    .where(
+                      (attempt) =>
+                          attempt.assessmentId == assessment.id &&
+                          attempt.answers.length == assessment.questions.length,
+                    )
+                    .map((attempt) => attempt.score.toDouble())
+                    .toList(),
+            };
 
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -67,41 +73,45 @@ class QuizHistoryScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Score Trend Chart
-                  if (trendData.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      margin: const EdgeInsets.only(bottom: 24),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: AppColors.border.withValues(alpha: 0.5),
+                  for (final assessment in ClinicalAssessment.all)
+                    if (trends[assessment.id]!.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        margin: const EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.border.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${assessment.id.toUpperCase()} Trend',
+                              style: AppTextStyles.body1.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.text,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: 120,
+                              child: CustomPaint(
+                                size: const Size(
+                                  double.infinity,
+                                  double.infinity,
+                                ),
+                                painter: _TrendChartPainter(
+                                  data: trends[assessment.id]!,
+                                  maximumScore: assessment.maximumScore,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'PHQ-9 Trend',
-                            style: AppTextStyles.body1.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.text,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 120,
-                            child: CustomPaint(
-                              size: const Size(
-                                double.infinity,
-                                double.infinity,
-                              ),
-                              painter: _TrendChartPainter(data: trendData),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
 
                   Text('Past attempts', style: AppTextStyles.heading2),
                   const SizedBox(height: 16),
@@ -198,13 +208,14 @@ class QuizHistoryScreen extends StatelessWidget {
 
 class _TrendChartPainter extends CustomPainter {
   final List<double> data;
+  final int maximumScore;
 
-  _TrendChartPainter({required this.data});
+  _TrendChartPainter({required this.data, required this.maximumScore});
 
   @override
   void paint(Canvas canvas, Size size) {
     if (data.isEmpty) return;
-    final maxData = 9.0; // scale based on our mock clinical out of 9
+    final maxData = maximumScore.toDouble();
 
     if (data.isEmpty) return;
 
@@ -244,5 +255,7 @@ class _TrendChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _TrendChartPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _TrendChartPainter oldDelegate) =>
+      oldDelegate.maximumScore != maximumScore ||
+      oldDelegate.data.toString() != data.toString();
 }

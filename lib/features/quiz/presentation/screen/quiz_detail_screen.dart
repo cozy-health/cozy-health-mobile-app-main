@@ -1,112 +1,123 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_button.dart';
+import '../../../../gen/assets.gen.dart';
+import '../../domain/clinical_assessment.dart';
 import '../widgets/clinical_disclaimer_sheet.dart';
 
 class QuizDetailScreen extends StatelessWidget {
-  final Map<String, dynamic> extra;
-
   const QuizDetailScreen({super.key, required this.extra});
-
+  final Map<String, dynamic> extra;
   @override
   Widget build(BuildContext context) {
-    final title = extra['title'] as String? ?? 'Quiz';
-    final type = extra['type'] as String? ?? 'wellness';
-    final isClinical = type == 'clinical';
-
+    final assessment = ClinicalAssessment.find(extra['id'] as String?);
+    final title = assessment?.title ?? extra['title'] as String? ?? 'Quiz';
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
-          onPressed: () => context.pop(),
-        ),
-      ),
+      appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (isClinical)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Text(
-                      'Clinical assessment',
-                      style: AppTextStyles.body2.copyWith(
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(title, style: Theme.of(context).textTheme.headlineMedium),
+            const SizedBox(height: 12),
+            Text(
+              assessment != null
+                  ? 'A check-in on the last two weeks'
+                  : 'Take a moment to reflect',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 20,
+              runSpacing: 8,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.schedule, size: 18),
+                    const SizedBox(width: 6),
+                    Text('${assessment?.minutes ?? 3} minutes'),
+                  ],
                 ),
-              const SizedBox(height: 16),
-              
-              Text(
-                title,
-                style: AppTextStyles.heading1.copyWith(fontSize: 32, color: AppColors.text),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.calendar_today_outlined, size: 18),
+                    const SizedBox(width: 6),
+                    Text('${assessment?.questions.length ?? 3} questions'),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(
+              height: 239,
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.accentSkyDark
+                    : AppColors.accentSky,
+                borderRadius: BorderRadius.circular(8),
               ),
-              const SizedBox(height: 16),
-              
-              Text(
-                isClinical
-                    ? 'This is a standard screening tool used by healthcare professionals to understand your symptoms over the last 2 weeks.'
-                    : 'Take a few minutes to reflect on how you are feeling. This helps us personalize your experience.',
-                style: AppTextStyles.body1.copyWith(color: AppColors.text, height: 1.5),
+              padding: const EdgeInsets.all(24),
+              child: Image.asset(
+                assessment?.id == 'gad-7'
+                    ? Assets.png.stressandanxiety.path
+                    : Assets.png.emotionalWellbeing.path,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 32),
-              
-              _buildDetailRow(Icons.help_outline, isClinical ? '9 questions' : '5 questions'),
-              const SizedBox(height: 16),
-              _buildDetailRow(Icons.timer_outlined, isClinical ? 'Estimated 5 min' : 'Estimated 3 min'),
-              
-              const Spacer(),
-              
-              AppButton(
-                text: 'Start Quiz',
-                onPressed: () async {
-                  if (isClinical) {
-                    final proceed = await ClinicalDisclaimerSheet.show(context);
-                    if (proceed == true) {
-                      if (context.mounted) {
-                        context.push(AppRouter.quizTaking, extra: extra);
-                      }
-                    }
-                  } else {
+            ),
+            const SizedBox(height: 20),
+            Text(
+              assessment != null
+                  ? ClinicalAssessment.timeframe
+                  : 'Take a few minutes to reflect on how you are feeling.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'This is not a diagnosis. Talk to a professional for clinical evaluation.',
+            ),
+            const SizedBox(height: 28),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () async {
+                try {
+                  if (assessment != null &&
+                      await ClinicalDisclaimerSheet.show(context) != true) {
+                    return;
+                  }
+                  if (context.mounted) {
                     context.push(AppRouter.quizTaking, extra: extra);
                   }
-                },
-              ),
-              const SizedBox(height: 32),
-            ],
-          ),
+                } catch (_) {
+                  if (context.mounted) {
+                    AppSnackbar.show(
+                      context,
+                      AppSnackbar.fromLegacy(
+                        content: const Text(
+                          'Could not start the assessment. Please try again.',
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Start Quiz'),
+            ),
+            TextButton(
+              onPressed: () => context.push(AppRouter.quizHistory),
+              child: const Text('See results'),
+            ),
+          ],
         ),
       ),
-    );
-  }
-
-  Widget _buildDetailRow(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, color: AppColors.textMuted, size: 20),
-        const SizedBox(width: 12),
-        Text(
-          text,
-          style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
-        ),
-      ],
     );
   }
 }

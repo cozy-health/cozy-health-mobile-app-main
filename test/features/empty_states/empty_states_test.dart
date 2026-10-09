@@ -320,7 +320,8 @@ void main() {
     expect(find.text('The Voice in Your Head'), findsOneWidget);
     expect(find.byType(EmptyState), findsNothing);
     await mount(tester, const QuizSelectionScreen());
-    expect(find.text('PHQ-9 (Depression)'), findsOneWidget);
+    expect(find.text('PHQ-9 Depression Screening'), findsOneWidget);
+    expect(find.text('GAD-7 Anxiety Assessment'), findsOneWidget);
     expect(find.byType(EmptyState), findsNothing);
   });
 

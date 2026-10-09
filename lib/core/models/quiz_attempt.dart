@@ -29,6 +29,11 @@ class QuizAttempt extends HiveObject {
   @HiveField(8)
   final DateTime completedAt;
 
+  @HiveField(9)
+  final String severityLabel;
+  String get assessmentId => quizId;
+  int get totalScore => score;
+
   QuizAttempt({
     required this.id,
     required this.quizId,
@@ -39,6 +44,7 @@ class QuizAttempt extends HiveObject {
     required this.interpretation,
     required this.isCrisisFlagged,
     required this.completedAt,
+    this.severityLabel = '',
   });
 
   Map<String, dynamic> toJson() {
@@ -51,21 +57,41 @@ class QuizAttempt extends HiveObject {
       'is_crisis_flagged': isCrisisFlagged,
       'completed_at': completedAt.toUtc().toIso8601String(),
     };
-    json['interpretation'] = interpretation;
+    // Existing backend/provider API names are retained alongside explicit aliases.
+    json['interpretation'] = severityLabel.isEmpty
+        ? interpretation
+        : severityLabel;
+    json['assessment_id'] = assessmentId;
+    json['total_score'] = totalScore;
+    json['severity_label'] = severityLabel;
     return json;
   }
 
   factory QuizAttempt.fromJson(Map<String, dynamic> json) {
     return QuizAttempt(
       id: json['id'].toString(),
-      quizId: json['quiz_id']?.toString() ?? json['quiz_slug'].toString(),
+      quizId:
+          (json['assessment_id'] ?? json['quiz_id'] ?? json['quiz_slug'])
+              ?.toString() ??
+          '',
       quizSlug: json['quiz_slug']?.toString() ?? '',
       quizTitle: json['quiz_title']?.toString() ?? '',
       answers:
           (json['answers'] as List<dynamic>?)?.map((e) => e as int).toList() ??
           [],
-      score: json['score'] as int? ?? 0,
+      score: (json['total_score'] ?? json['score']) as int? ?? 0,
       interpretation: json['interpretation'] as String? ?? '',
+      severityLabel:
+          json['severity_label'] as String? ??
+          (const [
+                'Minimal',
+                'Mild',
+                'Moderate',
+                'Moderately Severe',
+                'Severe',
+              ].contains(json['interpretation'])
+              ? json['interpretation'] as String
+              : ''),
       isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
       completedAt: json['completed_at'] != null
           ? DateTime.parse(json['completed_at'])
@@ -94,13 +120,14 @@ class QuizAttemptAdapter extends TypeAdapter<QuizAttempt> {
       interpretation: fields[6] as String,
       isCrisisFlagged: fields[7] as bool,
       completedAt: fields[8] as DateTime,
+      severityLabel: fields[9] as String? ?? '',
     );
   }
 
   @override
   void write(BinaryWriter writer, QuizAttempt obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -118,6 +145,8 @@ class QuizAttemptAdapter extends TypeAdapter<QuizAttempt> {
       ..writeByte(7)
       ..write(obj.isCrisisFlagged)
       ..writeByte(8)
-      ..write(obj.completedAt);
+      ..write(obj.completedAt)
+      ..writeByte(9)
+      ..write(obj.severityLabel);
   }
 }
