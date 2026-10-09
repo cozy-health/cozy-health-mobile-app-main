@@ -26,6 +26,7 @@ void main() {
     bool trusted = true,
     bool mismatch = false,
     bool redirect = false,
+    bool requirePins = true,
   }) async {
     requests = 0;
     final serverContext = SecurityContext()
@@ -63,9 +64,17 @@ void main() {
       current: mismatch ? '0' * 64 : pin('current'),
       next: mismatch ? '1' * 64 : pin('next'),
     );
-    dio = Dio(
-      BaseOptions(headers: {'Authorization': 'Bearer synthetic-test-token'}),
-    )..httpClientAdapter = PinnedApiAdapter(policy, context: clientContext);
+    dio =
+        Dio(
+            BaseOptions(
+              headers: {'Authorization': 'Bearer synthetic-test-token'},
+            ),
+          )
+          ..httpClientAdapter = PinnedApiAdapter(
+            policy,
+            context: clientContext,
+            requirePins: requirePins,
+          );
   }
 
   tearDown(() async {
@@ -110,6 +119,32 @@ void main() {
       },
     );
   }
+  test('debug transport permits trusted TLS without matching pins', () async {
+    await start('current', mismatch: true, requirePins: false);
+    expect(
+      (await dio.get('https://localhost:${server.port}/health')).statusCode,
+      200,
+    );
+    expect(requests, 1);
+  });
+  test('debug transport still rejects an untrusted certificate', () async {
+    await start('current', trusted: false, requirePins: false);
+    await expectLater(
+      dio.get('https://localhost:${server.port}/health'),
+      throwsA(isA<DioException>()),
+    );
+    expect(requests, 0);
+  });
+  test('debug transport still rejects cleartext and alternate hosts', () async {
+    await start('current', requirePins: false);
+    for (final url in [
+      'http://localhost:${server.port}/health',
+      'https://127.0.0.1:${server.port}/health',
+    ]) {
+      await expectLater(dio.get(url), throwsA(isA<DioException>()));
+    }
+    expect(requests, 0);
+  });
   test(
     'trusted but unpinned leaf fails before Authorization or body reaches server',
     () async {

@@ -4,17 +4,23 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'leaf_pin_policy.dart';
 
-HttpClientAdapter createApiTransport(LeafPinPolicy policy) =>
-    PinnedApiAdapter(policy);
+HttpClientAdapter createApiTransport(
+  LeafPinPolicy policy, {
+  bool requirePins = true,
+}) => PinnedApiAdapter(policy, requirePins: requirePins);
 
 class PinnedApiAdapter implements HttpClientAdapter {
-  PinnedApiAdapter(this.policy, {SecurityContext? context}) {
+  PinnedApiAdapter(
+    this.policy, {
+    SecurityContext? context,
+    this.requirePins = true,
+  }) {
     _inner = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient(context: context);
         client.findProxy = (_) => 'DIRECT';
         client.connectionFactory = (uri, proxyHost, proxyPort) async {
-          if (!policy.ready ||
+          if ((requirePins && !policy.ready) ||
               !policy.permits(uri) ||
               proxyHost != null ||
               proxyPort != null) {
@@ -30,11 +36,12 @@ class PinnedApiAdapter implements HttpClientAdapter {
             context: context,
           );
           final verified = task.socket.then<Socket>((socket) {
-            if (!policy.accepts(
-              socket.peerCertificate?.der,
-              uri.host,
-              uri.port,
-            )) {
+            if (requirePins &&
+                !policy.accepts(
+                  socket.peerCertificate?.der,
+                  uri.host,
+                  uri.port,
+                )) {
               socket.destroy();
               throw const HandshakeException('API certificate pin mismatch.');
             }
@@ -46,10 +53,11 @@ class PinnedApiAdapter implements HttpClientAdapter {
       },
       // Defense in depth; this callback alone runs after sending the request.
       validateCertificate: (cert, host, port) =>
-          policy.accepts(cert?.der, host, port),
+          !requirePins || policy.accepts(cert?.der, host, port),
     );
   }
   final LeafPinPolicy policy;
+  final bool requirePins;
   late final IOHttpClientAdapter _inner;
   @override
   Future<ResponseBody> fetch(
@@ -57,7 +65,7 @@ class PinnedApiAdapter implements HttpClientAdapter {
     Stream<Uint8List>? stream,
     Future<void>? cancelFuture,
   ) {
-    if (!policy.ready || !policy.permits(options.uri)) {
+    if ((requirePins && !policy.ready) || !policy.permits(options.uri)) {
       throw DioException.badCertificate(
         requestOptions: options,
         error: 'API pin configuration or destination is invalid.',

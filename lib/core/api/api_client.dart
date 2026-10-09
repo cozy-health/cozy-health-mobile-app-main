@@ -35,6 +35,7 @@ class ApiClient {
         current: ApiConstants.currentLeafPin,
         next: ApiConstants.nextLeafPin,
       ),
+      requirePins: !kDebugMode,
     );
 
     _dio.interceptors.addAll([

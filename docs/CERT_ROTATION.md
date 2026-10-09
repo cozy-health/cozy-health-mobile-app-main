@@ -26,7 +26,7 @@ chain, hostname and expiry verification remains enabled. A native connection
 factory checks the leaf before handing the TLS socket to HttpClient, so a
 mismatch blocks credentials and health data before transmission. Dio's response
 callback adds a second check. HTTPS API host/port checks are mandatory; redirects
-and HTTP proxies are disabled. No unpinned retry, remote pin fetch or fail-open
+and HTTP proxies are disabled. Release has no unpinned retry, remote pin fetch or fail-open
 switch exists. Web health requests are blocked because browsers do not expose
 the peer certificate to this implementation.
 
@@ -39,7 +39,7 @@ the peer certificate to this implementation.
    `--dart-define=API_CURRENT_LEAF_SHA256=<verified current>` and
    `--dart-define=API_NEXT_LEAF_SHA256=<verified next>` to APK and IPA builds.
 3. Existing CI is unchanged and passes neither define. **Default artifacts have
-   health API access blocked. Do not push/distribute this mobile change until
+   health API access blocked. Do not distribute release artifacts until
    real pins and build wiring are ready.**
 4. Recheck the live leaf with `node tool/inspect_api_certificate.mjs`, across
    relevant edges, immediately before release. Run tests/analysis and device
@@ -75,3 +75,6 @@ Those localhost test keys are not production pins. Real rotation is unverified.
 
 References: [Dio certificate validation](https://pub.dev/documentation/dio/latest/io/IOHttpClientAdapter-class.html),
 [Dart connection factory](https://api.dart.dev/dart-io/HttpClient/connectionFactory.html).
+
+
+Owner-approved source rollout: debug builds now use normal TLS validation without leaf pins. Profile/release remain fail-closed and must not be distributed without both real pins. The next pin is deferred to Phase 24; source push is authorized independently of release distribution.

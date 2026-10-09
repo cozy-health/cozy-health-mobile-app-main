@@ -1,8 +1,6 @@
 # Phase 12.2 — mobile crypto
 
-Status: local implementation. **Do not push/distribute until two actual API leaf
-pins and build wiring are ready.** Missing pins intentionally block health API
-requests. Current/next production rotation is not verified. See CERT_ROTATION.md.
+Status: source push authorized by owner. Release distribution requires two actual API leaf pins and build wiring. Missing pins block profile/release health API requests; debug uses normal TLS validation. Current/next production rotation is not verified. See CERT_ROTATION.md.
 
 ## Encryption and migration
 
@@ -41,7 +39,7 @@ client uses a native TLS connection factory to enforce normal chain/hostname/
 expiry validation plus the leaf DER SHA-256 **before HTTP headers/body are sent**.
 It rejects HTTP, alternate hosts/ports, redirects and HTTP proxies. A response
 certificate callback adds another check. Health API requests fail closed if the
-rotation set is missing, invalid or mismatched. There is no unpinned fallback.
+rotation set is missing, invalid or mismatched. Profile/release have no unpinned fallback; native debug skips leaf pinning.
 
 The production host is fixed in ApiConstants. Both public pins must be supplied
 as `API_CURRENT_LEAF_SHA256` / `API_NEXT_LEAF_SHA256` Dart defines. The current
@@ -49,7 +47,7 @@ live wildcard was inspected through verified TLS 1.3; the next actual leaf and
 rotation owner are unavailable. CERT_ROTATION.md records its hash/expiry and the
 required overlap/incident procedure. Existing CI passes neither define and is
 unchanged after approval review rejected adding an unprovisioned persistent gate.
-Default artifacts are **not API-capable releases**. Synthetic localhost TLS test
+Default release artifacts are **not API-capable releases**; debug is API-capable. Synthetic localhost TLS test
 keys are solely test fixtures, not a production backup certificate.
 
 ## Secret audit
@@ -67,7 +65,7 @@ Historical backend .env credentials are dead per owner; no rotation was performe
 - `flutter test --no-pub`: **279 passed** (263 existing + 16 added; none removed).
 - `flutter analyze --no-pub lib`: **no issues**.
 - `flutter build apk --debug --no-pub`: **passed**. This is a compilation check;
-  the artifact has no production pin defines and cannot access the health API.
+  the original artifact predates the debug-mode pinning exception.
 - Effective merged Android debug manifest: cleartext=false, backup=false,
   fullBackupContent=false, network security configuration attached; packaged XML
   denies cleartext and trusts only system anchors.
@@ -103,4 +101,9 @@ iOS and Android compilation already passed GitHub CI on 2026-10-09.
   ux/ux_test.dart; test/support/repository_fixture.dart.
 - tool/inspect_api_certificate.mjs; docs/CERT_ROTATION.md; this report.
 
-No existing tests removed; no 12.2 push or production rotation/migration performed.
+No existing tests removed; no production rotation/migration performed.
+
+
+## Owner-approved rollout update — 2026-10-09
+
+Source push is authorized. Native debug builds skip leaf pinning while retaining normal TLS chain/hostname validation, HTTPS destination restrictions and redirect rejection. Profile and release builds still require two valid pins and fail closed. Release distribution remains blocked pending real next-pin provisioning in Phase 24. Native Dart debug transport reached production `/up` with HTTP 200; physical-device API reachability remains unverified. Ten pinning regression tests passed after this change.
