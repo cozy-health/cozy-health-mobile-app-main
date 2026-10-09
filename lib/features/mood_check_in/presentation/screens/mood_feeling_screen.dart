@@ -15,6 +15,9 @@ import '../../../crisis/presentation/screens/crisis_screens.dart';
 import '../../../crisis/services/crisis_detector.dart';
 import '../../../../core/services/mood_draft_service.dart';
 import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../core/widgets/chip.dart' as design;
+import '../../../../core/widgets/icon_chip.dart';
+import '../../../../core/widgets/progress_track.dart';
 
 class MoodFeelingScreen extends StatefulWidget {
   const MoodFeelingScreen({super.key, this.entry});
@@ -455,12 +458,13 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
                 onBack: _step == 1
                     ? () => context.pop()
                     : () => _goToStep(_step - 1),
+                onClose: _showDiscardDialog,
               ),
               Expanded(
                 child: SingleChildScrollView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 18),
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 18),
                   child: _AnimatedStep(
                     controller: _entranceController,
                     child: child,
@@ -493,46 +497,83 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     );
   }
 
+  void _selectMood(_MoodOption mood) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _moodLabel = mood.key;
+      _moodEmoji = mood.emoji;
+    });
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      'Mood selected: ${mood.label}. Continue button enabled.',
+      Directionality.of(context),
+    );
+  }
+
   Widget _moodSelection() {
     final selected = _moods.where((mood) => mood.key == _moodLabel).firstOrNull;
-
+    final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
     return Column(
       children: [
         const _StepIntro(
-          title: 'How are you\nfeeling right now?',
-          subtitle: "Take your time.\nThere's no wrong answer.",
+          title: 'How would you describe how you are feeling?',
+          subtitle: "Take your time. There's no wrong answer.",
         ),
-        const SizedBox(height: 32),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _moods.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 1.3,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+        const SizedBox(height: 20),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final mood in _moods)
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: 103,
+                      minHeight: 45,
+                    ),
+                    child: design.Chip(
+                      label: mood.label,
+                      selected: mood.key == _moodLabel,
+                      leading: Text(
+                        _displayMoodEmoji(mood.emoji),
+                        style: const TextStyle(fontSize: 22),
+                      ),
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.accentWarmYellowDark
+                          : AppColors.accentWarmYellow,
+                      onTap: () => _selectMood(mood),
+                    ),
+                  ),
+                ),
+            ],
           ),
-          itemBuilder: (context, index) {
-            final mood = _moods[index];
-            final isSelected = mood.key == _moodLabel;
-            return _MoodCard(
-              mood: mood,
-              selected: isSelected,
-              onTap: () {
-                HapticFeedback.lightImpact();
-                setState(() {
-                  _moodLabel = mood.key;
-                  _moodEmoji = mood.emoji;
-                });
-                SemanticsService.sendAnnouncement(
-                  View.of(context),
-                  'Mood selected: ${mood.label}. Continue button enabled.',
-                  Directionality.of(context),
+        ),
+        const SizedBox(height: 24),
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 275),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _moods.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisExtent: 81 * (scale < 1 ? 1 : scale),
+                crossAxisSpacing: 19,
+                mainAxisSpacing: 12,
+              ),
+              itemBuilder: (context, index) {
+                final mood = _moods[index];
+                return _MoodCard(
+                  mood: mood,
+                  selected: mood.key == _moodLabel,
+                  onTap: () => _selectMood(mood),
                 );
               },
-            );
-          },
+            ),
+          ),
         ),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
@@ -547,75 +588,74 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     );
   }
 
-  Widget _intensityStep() {
-    return Column(
-      children: [
-        const _StepIntro(
-          title: 'How strong is\nthis feeling?',
-          subtitle: "There's no right\nanswer. Just notice.",
-        ),
-        const SizedBox(height: 44),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          transitionBuilder: (child, animation) {
-            return ScaleTransition(
-              scale: Tween<double>(begin: .96, end: 1).animate(animation),
-              child: FadeTransition(opacity: animation, child: child),
-            );
-          },
-          child: Text(
-            '$_intensity',
-            key: ValueKey(_intensity),
-            style: AppTextStyles.heading1.copyWith(
-              fontSize: 72,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.primary,
+  Widget _intensityStep() => Column(
+    children: [
+      const _StepIntro(
+        title: 'How strong is\nthis feeling?',
+        subtitle: "There's no right\nanswer. Just notice.",
+      ),
+      const SizedBox(height: 28),
+      Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 270, minHeight: 156),
+          child: _WarmPanel(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Text(
+                  'Intensity · $_intensity / 10',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Mild', style: _captionStyle()),
+                    Text('Strong', style: _captionStyle()),
+                  ],
+                ),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 16,
+                    activeTrackColor: Theme.of(context).colorScheme.primary,
+                    inactiveTrackColor:
+                        Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.borderSubtleDark
+                        : AppColors.borderSubtle,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 10,
+                    ),
+                  ),
+                  child: Slider(
+                    min: 1,
+                    max: 10,
+                    divisions: 9,
+                    value: _intensity.toDouble(),
+                    semanticFormatterCallback: (value) =>
+                        'Intensity ${value.round()} of 10',
+                    onChanged: (value) {
+                      final next = value.round();
+                      if (next != _intensity) HapticFeedback.selectionClick();
+                      setState(() => _intensity = next);
+                    },
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(
+                    10,
+                    (index) => Text('${index + 1}', style: _captionStyle()),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-        const SizedBox(height: 34),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Mild', style: _captionStyle()),
-            Text('Strong', style: _captionStyle()),
-          ],
-        ),
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            trackHeight: 8,
-            activeTrackColor: Theme.of(context).colorScheme.primary,
-            inactiveTrackColor: Theme.of(context).colorScheme.outline,
-            thumbColor: Theme.of(context).colorScheme.onPrimary,
-            overlayColor: AppColors.primarySoft,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14),
-          ),
-          child: Slider(
-            min: 1,
-            max: 10,
-            divisions: 9,
-            value: _intensity.toDouble(),
-            semanticFormatterCallback: (value) =>
-                'Intensity ${value.round()} of 10',
-            onChanged: (value) {
-              final next = value.round();
-              if (next != _intensity) HapticFeedback.selectionClick();
-              setState(() => _intensity = next);
-            },
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(10, (index) {
-            return Text('${index + 1}', style: _captionStyle());
-          }),
-        ),
-        const SizedBox(height: 34),
-        _MascotMessage(message: _intensityMessage),
-      ],
-    );
-  }
-
+      ),
+      const SizedBox(height: 24),
+      _MascotMessage(message: _intensityMessage),
+    ],
+  );
   Widget _bodyStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -644,26 +684,66 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   }
 
   Widget _triggerStep() {
+    // Presentation groups only: every stored trigger remains an existing option.
+    const groups = {
+      'Work': ['Work'],
+      'School': ['School'],
+      'Relationship': ['Relationships', 'Family', 'Friends'],
+      'Sleep': ['Sleep'],
+      'Health': ['Health', 'Body'],
+      'Life changes': ['Money', 'Weather', 'News', 'Self'],
+    };
+    const icons = {
+      'Work': Icons.work_outline,
+      'School': Icons.school_outlined,
+      'Relationship': Icons.people_outline,
+      'Sleep': Icons.bedtime_outlined,
+      'Health': Icons.favorite_outline,
+      'Life changes': Icons.public,
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _StepIntro(
-          title: "What's been\non your mind?",
-          subtitle: 'Choose anything\nthat fits. Or skip.',
+          title: 'What made you feel this way?',
+          subtitle: 'Choose anything that fits. Or skip.',
         ),
-        const SizedBox(height: 28),
-        _ChipWrap(
-          values: _triggerOptions,
-          selectedValues: _triggers,
-          onToggle: (value) {
-            setState(() {
-              _triggers.contains(value)
-                  ? _triggers.remove(value)
-                  : _triggers.add(value);
-            });
-          },
-        ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
+        for (final group in groups.entries) ...[
+          _WarmPanel(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(group.key, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final value in _triggerOptions.where(
+                      group.value.contains,
+                    ))
+                      IconChip(
+                        label: value,
+                        icon: Icon(icons[group.key], size: 14),
+                        selected: _triggers.contains(value),
+                        onTap: () {
+                          setState(() {
+                            _triggers.contains(value)
+                                ? _triggers.remove(value)
+                                : _triggers.add(value);
+                          });
+                        },
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        const SizedBox(height: 12),
         Text(
           'Or describe it yourself:',
           style: AppTextStyles.body1.copyWith(
@@ -1321,60 +1401,44 @@ class _MoodProgressHeader extends StatelessWidget {
     required this.step,
     required this.totalSteps,
     required this.onBack,
+    required this.onClose,
   });
-
   final int step;
   final int totalSteps;
   final VoidCallback onBack;
-
+  final VoidCallback onClose;
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 24, 0),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              SizedBox(
-                width: 48,
-                height: 48,
-                child: IconButton(
-                  tooltip: 'Back',
-                  onPressed: onBack,
-                  icon: Icon(
-                    Icons.arrow_back,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                'Step $step of $totalSteps',
-                style: AppTextStyles.body2.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                minHeight: 4,
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+    child: Column(
+      children: [
+        Row(
+          children: [
+            IconButton(
+              tooltip: 'Back',
+              onPressed: onBack,
+              icon: const Icon(Icons.chevron_left),
+            ),
+            Expanded(
+              child: ProgressTrack(
                 value: step / totalSteps,
-                backgroundColor:
-                    Theme.of(context).dividerTheme.color ??
-                    Theme.of(context).colorScheme.outline,
-                color: Theme.of(context).colorScheme.primary,
+                semanticLabel: 'Check-in progress',
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+            IconButton(
+              tooltip: 'Close check-in',
+              onPressed: onClose,
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ),
+        Text(
+          'Step $step of $totalSteps',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    ),
+  );
 }
 
 class _StepIntro extends StatelessWidget {
@@ -1385,15 +1449,16 @@ class _StepIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return Align(
+      alignment: Alignment.centerLeft,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.heading1.copyWith(
+            textAlign: TextAlign.start,
+            style: AppTextStyles.h3.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 28,
               fontWeight: FontWeight.w600,
               height: 1.12,
             ),
@@ -1402,7 +1467,7 @@ class _StepIntro extends StatelessWidget {
             const SizedBox(height: 14),
             Text(
               subtitle,
-              textAlign: TextAlign.center,
+              textAlign: TextAlign.start,
               style: AppTextStyles.body1.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 height: 1.35,
@@ -1421,66 +1486,59 @@ class _MoodCard extends StatelessWidget {
     required this.selected,
     required this.onTap,
   });
-
   final _MoodOption mood;
   final bool selected;
   final VoidCallback onTap;
-
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: mood.label,
-      child: GestureDetector(
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: selected,
+    label: mood.label,
+    child: Material(
+      color: Theme.of(context).brightness == Brightness.dark
+          ? AppColors.accentSkyDark
+          : AppColors.accentSky,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: selected
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: InkWell(
         onTap: onTap,
-        child: AnimatedScale(
-          scale: selected ? 1.02 : 1,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: selected
-                  ? AppColors.primarySubtle
-                  : Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: selected
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline,
-                width: selected ? 2 : 1,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _displayMoodEmoji(mood.emoji),
+                style: const TextStyle(fontSize: 28),
               ),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: mood.color.withValues(alpha: .14),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(mood.emoji, style: const TextStyle(fontSize: 36)),
-                const SizedBox(height: 14),
-                Text(
-                  mood.label,
-                  style: AppTextStyles.body1.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+              const SizedBox(height: 6),
+              Text(
+                mood.label,
+                style: Theme.of(context).textTheme.labelMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+// Decode legacy escape notation only for painting; persisted mood data is untouched.
+String _displayMoodEmoji(String emoji) {
+  final encoded = RegExp(r'^\\u\{([0-9A-Fa-f]+)\}$').firstMatch(emoji);
+  return encoded == null
+      ? emoji
+      : String.fromCharCode(int.parse(encoded[1]!, radix: 16));
 }
 
 class _MascotMessage extends StatelessWidget {
@@ -1649,52 +1707,25 @@ class _ChipWrap extends StatelessWidget {
     required this.selectedValues,
     required this.onToggle,
   });
-
   final List<String> values;
   final Set<String> selectedValues;
   final ValueChanged<String> onToggle;
-
   @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final dividerColor = Theme.of(context).dividerTheme.color;
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 10,
-      children: values.map((value) {
-        final selected = selectedValues.contains(value);
-        return Semantics(
-          button: true,
-          selected: selected,
+  Widget build(BuildContext context) => Wrap(
+    spacing: 8,
+    runSpacing: 10,
+    children: [
+      for (final value in values)
+        design.Chip(
           label: value,
-          child: FilterChip(
-            label: Text(value),
-            selected: selected,
-            onSelected: (_) => onToggle(value),
-            avatar: selected ? Icon(Icons.check_rounded, size: 16) : null,
-            backgroundColor: colorScheme.surface,
-            selectedColor: AppColors.primarySubtle,
-            checkmarkColor: Theme.of(context).colorScheme.primary,
-            side: BorderSide(
-              color: selected
-                  ? Theme.of(context).colorScheme.primary
-                  : dividerColor ?? Theme.of(context).colorScheme.outline,
-            ),
-            labelStyle: AppTextStyles.body2.copyWith(
-              color: selected
-                  ? Theme.of(context).colorScheme.primary
-                  : colorScheme.onSurface,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
+          selected: selectedValues.contains(value),
+          onTap: () => onToggle(value),
+          leading: selectedValues.contains(value)
+              ? const Icon(Icons.check, size: 16)
+              : null,
+        ),
+    ],
+  );
 }
 
 class _CopingCard extends StatelessWidget {
@@ -1929,23 +1960,19 @@ class _WarmPanel extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(20),
   });
-
   final Widget child;
   final EdgeInsets padding;
-
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final dividerColor = Theme.of(context).dividerTheme.color;
-
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        color: dark ? AppColors.surfaceSubtleDark : AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: dividerColor ?? Theme.of(context).colorScheme.outline,
+          color: dark ? AppColors.borderDefaultDark : AppColors.borderDefault,
         ),
       ),
       child: child,
