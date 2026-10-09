@@ -1,4 +1,6 @@
+// TODO: wire to backend when endpoint exists
 import 'package:flutter/material.dart';
+import '../community_local_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../community_theme.dart';
 
@@ -19,7 +21,9 @@ class PostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isAnonymous = post['isAnonymous'] as bool? ?? false;
-    final username = isAnonymous ? 'Anonymous' : (post['username'] as String? ?? 'user');
+    final username = isAnonymous
+        ? 'Anonymous'
+        : (post['username'] as String? ?? 'user');
     final timeAgo = post['timeAgo'] as String? ?? 'Just now';
     final content = post['content'] as String? ?? '';
     final likes = post['likes'] as int? ?? 0;
@@ -33,8 +37,10 @@ class PostCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: context.communitySurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.communityBorder.withValues(alpha: 0.7)),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: context.communityBorder.withValues(alpha: 0.7),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,12 +56,16 @@ class PostCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isAnonymous
                           ? context.communityBorder
-                          : Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
+                          : Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.14),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      isAnonymous ? '?' : username.substring(0, 1).toUpperCase(),
+                      isAnonymous
+                          ? '?'
+                          : username.substring(0, 1).toUpperCase(),
                       style: context.communityBody1.copyWith(
                         color: isAnonymous
                             ? context.communityMuted
@@ -74,7 +84,9 @@ class PostCard extends StatelessWidget {
                           style: context.communityBody1.copyWith(
                             color: context.communityText,
                             fontWeight: FontWeight.w500,
-                            fontStyle: isAnonymous ? FontStyle.italic : FontStyle.normal,
+                            fontStyle: isAnonymous
+                                ? FontStyle.italic
+                                : FontStyle.normal,
                           ),
                         ),
                         Text(
@@ -87,27 +99,47 @@ class PostCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if ((post['topic'] as String? ?? '').isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: .08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        post['topic'] as String,
+                        style: context.communityBody2.copyWith(fontSize: 12),
+                      ),
+                    ),
                 ],
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Content
             Text(
               content,
               style: context.communityBody1.copyWith(height: 1.5),
-              maxLines: 5,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 16),
-            
+
             // Reactions
             Row(
               children: [
-                _buildReaction(
-                  icon: isLiked ? Icons.favorite : Icons.favorite_border,
-                  count: likes,
-                  color: isLiked ? AppColors.danger : context.communityMuted,
+                InkWell(
+                  onTap: () => CommunityLocalState.instance.toggleLike(post),
+                  child: _buildReaction(
+                    icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                    count: likes,
+                    color: isLiked ? AppColors.danger : context.communityMuted,
+                  ),
                 ),
                 const SizedBox(width: 24),
                 _buildReaction(
@@ -123,7 +155,11 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildReaction({required IconData icon, required int count, required Color color}) {
+  Widget _buildReaction({
+    required IconData icon,
+    required int count,
+    required Color color,
+  }) {
     return Row(
       children: [
         Icon(icon, size: 20, color: color),

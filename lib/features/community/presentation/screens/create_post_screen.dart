@@ -1,3 +1,4 @@
+// TODO: wire to backend when endpoint exists
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../community_theme.dart';
 import '../widgets/visibility_sheet.dart';
+import '../community_local_state.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -62,10 +64,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
       );
     } else {
+      CommunityLocalState.instance.publish(
+        content: _textController.text.trim(),
+        topic: _selectedTopic == 'Topic (optional)' ? '' : _selectedTopic,
+        visibility: _visibility.name,
+      );
       AppSnackbar.show(
         context,
         AppSnackbar.fromLegacy(
-          content: Text('Post published successfully.'),
+          content: Text('Post added.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -104,7 +111,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 disabledBackgroundColor: context.communityBorder,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 elevation: 0,
               ),
@@ -230,18 +237,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     hintText: 'What\'s on your mind?',
                     hintStyle: context.communityBody1.copyWith(
                       color: context.communityMuted,
-                      fontFamily: 'Georgia', // Serif font
-                      fontSize: 18,
                     ),
                     border: InputBorder.none,
                   ),
-                  style: TextStyle(
-                    fontFamily: 'Georgia',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w400,
-                    height: 1.6,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+                  style: context.communityBody1.copyWith(height: 1.5),
                 ),
               ),
             ),
@@ -263,11 +262,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 children: [
                   // Topic Selector
                   GestureDetector(
-                    onTap: () {
-                      // Topic sheet/dropdown logic could go here
-                      setState(() {
-                        _selectedTopic = 'Anxiety'; // Mock toggle
-                      });
+                    onTap: () async {
+                      final topic = await Navigator.of(context).push<String>(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              _PostCategoryScreen(selected: _selectedTopic),
+                        ),
+                      );
+                      if (mounted && topic != null) {
+                        setState(() => _selectedTopic = topic);
+                      }
                     },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -366,4 +370,58 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       ),
     );
   }
+}
+
+class _PostCategoryScreen extends StatelessWidget {
+  const _PostCategoryScreen({required this.selected});
+  final String selected;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Choose a category')),
+    body: SafeArea(
+      child: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 200,
+          mainAxisExtent: 110,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 20,
+        ),
+        itemCount: CommunityLocalState.topics.length,
+        itemBuilder: (context, index) {
+          final topic = CommunityLocalState.topics[index];
+          final active = topic == selected;
+          return Material(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: .06),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                color: active
+                    ? Theme.of(context).colorScheme.primary
+                    : context.communityBorder,
+              ),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => Navigator.of(context).pop(topic),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.favorite_outline,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(topic, textAlign: TextAlign.center),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+  );
 }

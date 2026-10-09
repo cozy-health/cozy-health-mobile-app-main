@@ -1,3 +1,4 @@
+// TODO: wire to backend when endpoint exists
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../community_theme.dart';
 import '../widgets/comment_card.dart';
 import '../widgets/report_sheet.dart';
+import '../community_local_state.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -18,6 +20,7 @@ class PostDetailScreen extends StatefulWidget {
 class _PostDetailScreenState extends State<PostDetailScreen> {
   final TextEditingController _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
+  Map<String, dynamic>? _replyTo;
 
   final List<Map<String, dynamic>> _comments = [
     {
@@ -47,9 +50,23 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final saved = CommunityLocalState.instance.thread(widget.post, _comments);
+    _comments.clear();
+    _comments.addAll(saved);
+    CommunityLocalState.instance.addListener(_refreshThread);
+  }
+
+  void _refreshThread() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
     _commentController.dispose();
     _commentFocusNode.dispose();
+    CommunityLocalState.instance.removeListener(_refreshThread);
     super.dispose();
   }
 
@@ -266,17 +283,41 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     ..._comments.map(
                       (comment) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: CommentCard(
-                          comment: comment,
-                          onReplyTap: () {
-                            _commentFocusNode.requestFocus();
-                            final username = comment['username'] as String?;
-                            if (username != null && username.isNotEmpty) {
-                              _commentController.text = '@$username ';
-                            }
-                          },
-                          onAvatarTap: () {},
-                          onLongPress: () {},
+                        child: Column(
+                          children: [
+                            CommentCard(
+                              comment: comment,
+                              onReplyTap: () {
+                                setState(() => _replyTo = comment);
+                                _commentFocusNode.requestFocus();
+                                final username = comment['username'] as String?;
+                                if (username != null && username.isNotEmpty) {
+                                  _commentController.text = '@$username ';
+                                }
+                              },
+                              onAvatarTap: () {},
+                              onLongPress: () {},
+                            ),
+                            for (final reply
+                                in (comment['replies'] as List? ?? const []))
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 28,
+                                  top: 8,
+                                ),
+                                child: CommentCard(
+                                  comment: Map<String, dynamic>.from(
+                                    reply as Map,
+                                  ),
+                                  onReplyTap: () {
+                                    setState(() => _replyTo = comment);
+                                    _commentFocusNode.requestFocus();
+                                  },
+                                  onAvatarTap: () {},
+                                  onLongPress: () {},
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
@@ -286,6 +327,18 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             ),
 
             // Comment Input
+            if (_replyTo != null)
+              ListTile(
+                dense: true,
+                title: Text(
+                  'Replying to ${_replyTo!['isAnonymous'] == true ? 'Anonymous' : _replyTo!['username']}',
+                ),
+                trailing: IconButton(
+                  tooltip: 'Cancel reply',
+                  onPressed: () => setState(() => _replyTo = null),
+                  icon: const Icon(Icons.close),
+                ),
+              ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
@@ -340,6 +393,21 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     ),
                     onPressed: () {
                       if (_commentController.text.isNotEmpty) {
+                        final thread = CommunityLocalState.instance.thread(
+                          widget.post,
+                          const [],
+                        );
+                        CommunityLocalState.instance.addComment(
+                          widget.post,
+                          thread,
+                          _commentController.text,
+                          parent: _replyTo,
+                        );
+                        setState(() {
+                          _comments.clear();
+                          _comments.addAll(thread);
+                          _replyTo = null;
+                        });
                         _commentController.clear();
                         FocusScope.of(context).unfocus();
                         AppSnackbar.show(

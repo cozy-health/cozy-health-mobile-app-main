@@ -1,3 +1,4 @@
+// TODO: wire to backend when endpoint exists
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,8 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/widgets/app_scaffold_padding.dart';
 import '../community_theme.dart';
 import '../widgets/post_card.dart';
+import '../community_local_state.dart';
+import '../widgets/community_groups.dart';
 
 class CommunityHubScreen extends StatefulWidget {
   const CommunityHubScreen({super.key, this.posts});
@@ -23,6 +26,8 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
   final List<String> _filters = [
     'All',
     'Anxiety',
+    'Depression',
+    'Trauma',
     'Sleep',
     'Relationships',
     'Self-compassion',
@@ -30,7 +35,8 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
     'Grief & Loss',
   ];
 
-  List<Map<String, dynamic>> get _posts => widget.posts ?? _defaultPosts;
+  List<Map<String, dynamic>> get _posts =>
+      widget.posts ?? [...CommunityLocalState.instance.posts, ..._defaultPosts];
   final List<Map<String, dynamic>> _defaultPosts = [
     {
       'username': 'sarahchen',
@@ -69,6 +75,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
   @override
   void initState() {
     super.initState();
+    CommunityLocalState.instance.addListener(_refreshLocal);
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -79,6 +86,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
   @override
   void dispose() {
     _controller.dispose();
+    CommunityLocalState.instance.removeListener(_refreshLocal);
     super.dispose();
   }
 
@@ -89,12 +97,68 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
     );
   }
 
+  void _refreshLocal() {
+    if (mounted) setState(() {});
+  }
+
+  void _showCreateMenu() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    context.push(AppRouter.createPost);
+                  },
+                  child: const Text('Create post'),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const CreateCommunityGroupScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text('Create new group'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool reduceMotion = MediaQuery.of(context).accessibleNavigation;
 
     return Scaffold(
       backgroundColor: context.communityBackground,
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(
+          bottom: AppScaffoldPadding.tabScrollBottom(context).bottom,
+        ),
+        child: FloatingActionButton.small(
+          heroTag: 'community-create',
+          onPressed: _showCreateMenu,
+          tooltip: 'Create post or group',
+          child: const Icon(Icons.add),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -108,16 +172,41 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Community',
-                      style: context.communityHeading1.copyWith(fontSize: 28),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => context.push(AppRouter.communitySearch),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          constraints: const BoxConstraints(minHeight: 33),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: context.communityBorder),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Search',
+                                  style: context.communityBody2,
+                                ),
+                              ),
+                              const Icon(Icons.search, size: 16),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
+                    const SizedBox(width: 10),
                     IconButton(
                       icon: Icon(
-                        Icons.search,
+                        Icons.notifications_outlined,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
-                      onPressed: () => context.push(AppRouter.communitySearch),
+                      onPressed: () => context.push(AppRouter.notifications),
                     ),
                   ],
                 ),
@@ -184,11 +273,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
             SizedBox(height: 20),
 
             // Main Content (Feed)
-            Expanded(
-              child: _posts.isEmpty
-                  ? _buildEmptyState(reduceMotion)
-                  : _buildFeed(reduceMotion),
-            ),
+            Expanded(child: _buildFeed(reduceMotion)),
           ],
         ),
       ),
@@ -206,16 +291,17 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
         ? _posts
         : _posts.where((p) => p['topic'] == _selectedFilter).toList();
 
-    if (filteredPosts.isEmpty) return _buildEmptyState(reduceMotion);
-
     return ListView(
       padding: EdgeInsets.fromLTRB(
-        24,
+        16,
         0,
-        24,
+        16,
         AppScaffoldPadding.tabScrollBottom(context).bottom,
       ),
       children: [
+        Text('General Posts', style: context.communityHeading3),
+        const SizedBox(height: 12),
+        if (filteredPosts.isEmpty) _buildEmptyState(reduceMotion),
         // Compose Bar
         _animatedWidget(
           reduceMotion: reduceMotion,
@@ -265,7 +351,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
             animation: postAnim,
             offset: const Offset(0, 12),
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 10),
               child: PostCard(
                 post: post,
                 onTap: () =>
@@ -285,6 +371,8 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
             ),
           );
         }),
+        const SizedBox(height: 16),
+        const CommunityGroups(),
       ],
     );
   }
