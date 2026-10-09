@@ -11,6 +11,7 @@ import '../../../core/services/guest_session_service.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/services/restore_service.dart';
 import '../../../core/services/user_data_fetcher.dart';
+import '../../../core/services/device_integrity_service.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../settings/data/profile_repository.dart';
 
@@ -241,6 +242,7 @@ class AuthService {
       await _tokenStorage.saveToken(token, stayLoggedIn: stayLoggedIn);
       await _tokenStorage.saveRefreshToken(data['refresh_token']?.toString());
       await _tokenStorage.recordActivity();
+      unawaited(DeviceIntegrityService.instance.reportIfDetected());
       await GuestSessionService().exitGuestSession();
       await (await local.settingsBox()).put(
         'device_user_id',

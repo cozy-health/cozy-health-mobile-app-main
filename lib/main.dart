@@ -5,6 +5,7 @@ import 'core/services/crash_reporting.dart';
 import 'core/security_gate.dart';
 import 'core/services/install_marker_service.dart';
 import 'core/storage/token_storage.dart';
+import 'core/widgets/device_integrity_notice.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/routing/app_router.dart';
@@ -135,7 +136,9 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
                     child: NetworkObserver(
                       child: AppAvailabilityGate(
                         child: SecurityCaptureOverlay(
-                          child: SecurityGate(child: child!),
+                          child: SecurityGate(
+                            child: DeviceIntegrityNotice(child: child!),
+                          ),
                         ),
                       ),
                     ),

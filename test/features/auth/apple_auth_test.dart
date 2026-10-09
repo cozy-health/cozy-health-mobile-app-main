@@ -574,6 +574,7 @@ void main() {
           'full_name': 'Apple User',
           'email': 'relay@privaterelay.appleid.com',
           'device_name': 'iOS',
+          'device_id': await storage.deviceId(),
         });
         expect(await storage.getToken(), 'sanctum-token');
         expect(storage.isSessionOnly, true);
