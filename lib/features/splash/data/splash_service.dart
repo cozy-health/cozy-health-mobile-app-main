@@ -11,11 +11,9 @@ class SplashService {
   final ApiClient _apiClient;
   final TokenStorage _tokenStorage;
 
-  SplashService({
-    ApiClient? apiClient,
-    TokenStorage? tokenStorage,
-  })  : _apiClient = apiClient ?? ApiClient(),
-        _tokenStorage = tokenStorage ?? TokenStorage();
+  SplashService({ApiClient? apiClient, TokenStorage? tokenStorage})
+    : _apiClient = apiClient ?? ApiClient(),
+      _tokenStorage = tokenStorage ?? TokenStorage();
 
   Future<bool> hasStoredSession() async {
     final token = await _tokenStorage.getToken();
@@ -37,7 +35,9 @@ class SplashService {
       await LocalDbService.instance.clearAllUserData();
       return false;
     } catch (e) {
-      debugPrint('Background /me validation failed (token kept): $e');
+      debugPrint(
+        'Background /me validation failed (token kept): details withheld.',
+      );
       return true;
     }
   }

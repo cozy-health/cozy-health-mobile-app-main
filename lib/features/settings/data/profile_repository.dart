@@ -34,7 +34,7 @@ class ProfileRepository {
         return _local.getUserProfile();
       }
     } catch (e) {
-      debugPrint('Fetch profile failed: $e');
+      debugPrint('Fetch profile failed: details withheld.');
     }
     return _local.getUserProfile();
   }
@@ -72,7 +72,7 @@ class ProfileRepository {
       await fetchProfile();
       return true;
     } catch (e) {
-      debugPrint('Update preferences failed: $e');
+      debugPrint('Update preferences failed: details withheld.');
       return false;
     }
   }
@@ -86,7 +86,7 @@ class ProfileRepository {
       await fetchProfile();
       return true;
     } catch (e) {
-      debugPrint('Update notification preferences failed: $e');
+      debugPrint('Update notification preferences failed: details withheld.');
       return false;
     }
   }

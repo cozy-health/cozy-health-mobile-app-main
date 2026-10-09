@@ -212,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
         context.go(needsRestore ? AppRouter.restore : AppRouter.home);
       }
     } catch (e) {
-      debugPrint('Biometric error: $e');
+      debugPrint('Biometric error: details withheld.');
       if (!mounted) return;
       showAuthToast(
         context,

@@ -15,19 +15,24 @@ class SafetyPlanRepository {
         await _local.saveSafetyPlan(plan);
         return plan;
       }
-    } catch (e, stack) {
-      debugPrint('Caught error: $e\n$stack');
+    } catch (_) {
+      debugPrint('Caught error: details withheld.');
     }
     return _local.getSafetyPlan();
   }
-  
+
   Stream<SafetyPlan?> watchSafetyPlan() {
     return _local.watchSafetyPlan();
   }
 
   Future<SafetyPlan> saveSafetyPlan(SafetyPlan plan) async {
     await _local.saveSafetyPlan(plan);
-    await _local.enqueueSync(type: 'safety_plan', action: 'upsert', recordId: plan.id, payload: plan.toJson());
+    await _local.enqueueSync(
+      type: 'safety_plan',
+      action: 'upsert',
+      recordId: plan.id,
+      payload: plan.toJson(),
+    );
     _local.processSyncQueue();
     return plan;
   }

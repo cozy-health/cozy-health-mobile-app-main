@@ -129,7 +129,7 @@ class AuthService {
     try {
       await _apiClient.post(ApiConstants.logout);
     } catch (e) {
-      debugPrint('Logout API failed: $e');
+      debugPrint('Logout API failed: details withheld.');
     } finally {
       await _tokenStorage.clearToken();
       await GuestSessionService().exitGuestSession();

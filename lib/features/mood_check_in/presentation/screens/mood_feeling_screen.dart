@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/security_blur.dart';
 import '../../../../core/services/local_db_service.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -1200,7 +1201,10 @@ class MoodDetailViewScreen extends StatelessWidget {
   final MoodEntry? entry;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildProtected(context));
+
+  Widget _buildProtected(BuildContext context) {
     final moodEntry = entry;
     return Scaffold(
       body: SafeArea(

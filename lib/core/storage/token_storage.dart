@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class TokenStorage {
@@ -17,13 +16,11 @@ class TokenStorage {
       return;
     }
     await _storage.write(key: _tokenKey, value: token);
-    debugPrint('LOGIN_SAVED: token stored');
   }
 
   Future<String?> getToken() async {
     if (_sessionOnly) return _sessionToken;
     final result = await _storage.read(key: _tokenKey);
-    debugPrint('TOKEN_READ: ${result != null}');
     return result;
   }
 

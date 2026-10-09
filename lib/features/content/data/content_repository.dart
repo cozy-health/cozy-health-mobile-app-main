@@ -10,7 +10,9 @@ class ContentRepository {
   Future<List<SavedArticle>> fetchSavedArticles() async {
     try {
       final response = await ApiClient.instance.get('/content/saved');
-      final items = (response.data['data'] as List).map((json) => SavedArticle.fromJson(json)).toList();
+      final items = (response.data['data'] as List)
+          .map((json) => SavedArticle.fromJson(json))
+          .toList();
       for (final item in items) {
         await _local.saveSavedArticle(item);
       }
@@ -28,22 +30,24 @@ class ContentRepository {
     try {
       await ApiClient.instance.post('/content/articles/$articleId/save');
       fetchSavedArticles();
-    } catch (e, stack) {
-      debugPrint('Caught error: $e\n$stack');
+    } catch (_) {
+      debugPrint('Caught error: details withheld.');
     }
   }
-  
+
   Future<void> unsaveArticle(String articleId) async {
     try {
       await ApiClient.instance.delete('/content/articles/$articleId/save');
       fetchSavedArticles();
-    } catch (e, stack) {
-      debugPrint('Caught error: $e\n$stack');
+    } catch (_) {
+      debugPrint('Caught error: details withheld.');
     }
   }
 
   Stream<bool> isSaved(String articleId) {
-    return watchSavedArticles().map((articles) => articles.any((a) => a.articleId == articleId));
+    return watchSavedArticles().map(
+      (articles) => articles.any((a) => a.articleId == articleId),
+    );
   }
 
   Future<void> toggleSave(Map<String, dynamic> articleData) async {

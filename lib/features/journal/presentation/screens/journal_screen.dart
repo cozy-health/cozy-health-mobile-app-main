@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/security_blur.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -486,7 +487,7 @@ class _JournalScreenState extends State<JournalScreen>
     try {
       await _repo.deleteJournalEntry(entry.id);
     } catch (e) {
-      debugPrint('Journal entry deletion failed: $e');
+      debugPrint('Journal entry deletion failed: details withheld.');
       if (!mounted) return;
       AppSnackbar.show(
         context,
@@ -566,7 +567,10 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildProtected(context));
+
+  Widget _buildProtected(BuildContext context) {
     final prompt =
         widget.prompt ??
         (widget.existing?.promptText == null
@@ -1361,7 +1365,10 @@ class JournalEntryDetailScreen extends StatelessWidget {
   final JournalEntry entry;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildProtected(context));
+
+  Widget _buildProtected(BuildContext context) {
     return _JournalSubScaffold(
       action: IconButton(
         tooltip: 'More',

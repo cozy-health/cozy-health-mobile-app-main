@@ -42,8 +42,8 @@ class SafetyPlanStorage {
   Future<void> clear() async {
     try {
       await _repo.clearSafetyPlan();
-    } catch (e, stack) {
-      debugPrint('Caught error: $e\n$stack');
+    } catch (_) {
+      debugPrint('Caught error: details withheld.');
     }
   }
 

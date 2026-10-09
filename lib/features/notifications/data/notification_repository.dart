@@ -24,7 +24,9 @@ class NotificationRepository {
       final response = await ApiClient.instance.get('/notifications');
       final items = _extractListData(response.data)
           .whereType<Map>()
-          .map((json) => AppNotification.fromJson(Map<String, dynamic>.from(json)))
+          .map(
+            (json) => AppNotification.fromJson(Map<String, dynamic>.from(json)),
+          )
           .toList();
       for (final item in items) {
         await _local.saveAppNotification(item);
@@ -43,8 +45,8 @@ class NotificationRepository {
     try {
       await ApiClient.instance.patch('/notifications/$id/read');
       fetchNotifications();
-    } catch (e, stack) {
-      debugPrint('Caught error: $e\n$stack');
+    } catch (_) {
+      debugPrint('Caught error: details withheld.');
     }
   }
 
@@ -52,14 +54,19 @@ class NotificationRepository {
     try {
       await ApiClient.instance.patch('/notifications/read-all');
       fetchNotifications();
-    } catch (e, stack) {
-      debugPrint('Caught error: $e\n$stack');
+    } catch (_) {
+      debugPrint('Caught error: details withheld.');
     }
   }
 
   Future<void> deleteNotification(String id) async {
     await _local.deleteAppNotification(id);
-    await _local.enqueueSync(type: 'app_notification', action: 'delete', recordId: id, payload: null);
+    await _local.enqueueSync(
+      type: 'app_notification',
+      action: 'delete',
+      recordId: id,
+      payload: null,
+    );
     _local.processSyncQueue();
   }
 }

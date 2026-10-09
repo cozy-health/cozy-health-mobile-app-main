@@ -233,9 +233,6 @@ class _HomeScreenState extends State<HomeScreen>
             final moodsThisWeek = allMoods.where((entry) {
               return entry.createdAt.toLocal().isAfter(weekAgo);
             }).toList();
-            debugPrint(
-              'Home thisWeek: total=${allMoods.length} thisWeek=${moodsThisWeek.length}',
-            );
 
             // Determine state dynamically
             final dynamicState = isEmpty

@@ -375,7 +375,7 @@ class SettingsScreen extends StatelessWidget {
                                 try {
                                   await AuthService().logout();
                                 } catch (e) {
-                                  debugPrint('Logout error: $e');
+                                  debugPrint('Logout error: details withheld.');
                                 }
                                 if (!context.mounted) return;
                                 context.go(AppRouter.welcome);

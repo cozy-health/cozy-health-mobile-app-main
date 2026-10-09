@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/security_blur.dart';
 import '../../../../core/services/crash_reporting.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -327,7 +328,10 @@ class CrisisResourcesHubScreen extends StatelessWidget {
   const CrisisResourcesHubScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildProtected(context));
+
+  Widget _buildProtected(BuildContext context) {
     return CrisisShell(
       title: "You're not\nalone.",
       subtitle: 'Here are people who can help right now.',
@@ -684,7 +688,10 @@ class CrisisDetectionOverlayScreen extends StatelessWidget {
   const CrisisDetectionOverlayScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildProtected(context));
+
+  Widget _buildProtected(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(
         context,
@@ -1240,7 +1247,10 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildProtected(context));
+
+  Widget _buildProtected(BuildContext context) {
     if (!_loaded) {
       return Scaffold(
         backgroundColor: _crisisBg(context),
@@ -1400,7 +1410,10 @@ class SafetyPlanViewScreen extends StatelessWidget {
   const SafetyPlanViewScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildProtected(context));
+
+  Widget _buildProtected(BuildContext context) {
     final sections = {
       'My warning signs': [
         'Feeling isolated',
@@ -1482,7 +1495,10 @@ class PersistedSafetyPlanViewScreen extends StatelessWidget {
   const PersistedSafetyPlanViewScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildProtected(context));
+
+  Widget _buildProtected(BuildContext context) {
     return FutureBuilder<SafetyPlan?>(
       future: SafetyPlanStorage().load(),
       builder: (context, snapshot) {

@@ -54,7 +54,7 @@ class MoodRepository {
     } on ApiAuthException {
       rethrow;
     } catch (e) {
-      debugPrint('Fetch moods failed: $e');
+      debugPrint('Fetch moods failed: details withheld.');
       return _local.getAllMoodEntries();
     }
   }

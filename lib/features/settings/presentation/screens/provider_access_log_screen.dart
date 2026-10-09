@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/security_blur.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -105,7 +106,10 @@ class _ProviderAccessLogScreenState extends State<ProviderAccessLogScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildProtected(context));
+
+  Widget _buildProtected(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Provider Access Log')),
       body: SafeArea(

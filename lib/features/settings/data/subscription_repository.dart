@@ -26,7 +26,7 @@ class SubscriptionRepository {
         return sub;
       }
     } catch (e) {
-      debugPrint('Fetch subscription failed: $e');
+      debugPrint('Fetch subscription failed: details withheld.');
     }
     return _local.getSubscriptionStatus();
   }
@@ -41,7 +41,7 @@ class SubscriptionRepository {
       await fetchSubscription();
       return true;
     } catch (e) {
-      debugPrint('Verify receipt failed: $e');
+      debugPrint('Verify receipt failed: details withheld.');
       return false;
     }
   }
@@ -52,29 +52,32 @@ class SubscriptionRepository {
       await fetchSubscription();
       return true;
     } catch (e) {
-      debugPrint('Restore purchases failed: $e');
+      debugPrint('Restore purchases failed: details withheld.');
       return false;
     }
   }
-  
+
   Stream<SubscriptionStatus?> watchStatus() {
     return _local.watchSubscriptionStatus();
   }
 
   Future<SubscriptionStatus> purchase(String plan) async {
     final current = _local.getSubscriptionStatus();
-    final updated = (current ?? SubscriptionStatus(
-      id: 'sub_${DateTime.now().millisecondsSinceEpoch}',
-      isActive: false,
-      tier: 'free',
-      cancelAtPeriodEnd: false,
-    )).copyWith(
-      tier: plan,
-      isActive: true,
-      expiresAt: DateTime.now().add(const Duration(days: 30)).toUtc(),
-      cancelAtPeriodEnd: false,
-    );
-    
+    final updated =
+        (current ??
+                SubscriptionStatus(
+                  id: 'sub_${DateTime.now().millisecondsSinceEpoch}',
+                  isActive: false,
+                  tier: 'free',
+                  cancelAtPeriodEnd: false,
+                ))
+            .copyWith(
+              tier: plan,
+              isActive: true,
+              expiresAt: DateTime.now().add(const Duration(days: 30)).toUtc(),
+              cancelAtPeriodEnd: false,
+            );
+
     await _local.saveSubscriptionStatus(updated);
     await _local.enqueueSync(
       type: 'subscription',
@@ -83,7 +86,7 @@ class SubscriptionRepository {
       payload: updated.toJson(),
     );
     _local.processSyncQueue();
-    
+
     return updated;
   }
 

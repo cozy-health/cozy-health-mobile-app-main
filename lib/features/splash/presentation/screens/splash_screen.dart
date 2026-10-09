@@ -130,7 +130,6 @@ class _SplashScreenState extends State<SplashScreen>
 
     final hasToken = await _splashService.hasStoredSession();
     final onboardingDone = await OnboardingService().hasCompletedOnboarding();
-    debugPrint('APP_START: token present = $hasToken');
 
     _timeline.forward();
     _breathing.repeat(reverse: true);
