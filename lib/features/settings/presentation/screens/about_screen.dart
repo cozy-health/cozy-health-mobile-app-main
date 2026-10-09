@@ -1,8 +1,48 @@
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+
+class _InstalledBuildLabel extends StatefulWidget {
+  const _InstalledBuildLabel();
+
+  @override
+  State<_InstalledBuildLabel> createState() => _InstalledBuildLabelState();
+}
+
+class _InstalledBuildLabelState extends State<_InstalledBuildLabel> {
+  late final Future<PackageInfo> _info = PackageInfo.fromPlatform();
+  static const _sha = String.fromEnvironment('BUILD_SHA');
+  static const _run = String.fromEnvironment('BUILD_RUN_ID');
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<PackageInfo>(
+    future: _info,
+    builder: (context, snapshot) {
+      final info = snapshot.data;
+      final identity = [
+        if (info != null) 'Version ${info.version} (build ${info.buildNumber})',
+        if (_sha.isNotEmpty) 'Commit $_sha',
+        if (_run.isNotEmpty) 'CI run $_run',
+      ];
+      return SelectableText(
+        identity.isNotEmpty
+            ? identity.join('\n')
+            : snapshot.hasError
+            ? 'Build information unavailable'
+            : 'Loading build information…',
+        textAlign: TextAlign.center,
+        style: AppTextStyles.body2.copyWith(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.textMutedDark
+              : AppColors.textMutedLight,
+        ),
+      );
+    },
+  );
+}
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -60,15 +100,7 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 4),
-              Text(
-                'Version 1.0.0 (build 42)',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.body2.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textMutedDark
-                      : AppColors.textMutedLight,
-                ),
-              ),
+              const _InstalledBuildLabel(),
               SizedBox(height: 16),
               Center(
                 child: SizedBox(
@@ -151,12 +183,14 @@ class AboutScreen extends StatelessWidget {
                     _AboutRow(
                       icon: Icons.description_outlined,
                       label: 'Open source licenses',
-                      onTap: () {
+                      onTap: () async {
+                        final info = await PackageInfo.fromPlatform();
+                        if (!context.mounted) return;
                         // Normally this would push to the LicensePage native to Flutter
                         showLicensePage(
                           context: context,
                           applicationName: 'Cozy Health',
-                          applicationVersion: '1.0.0',
+                          applicationVersion: info.version,
                           applicationIcon: Icon(
                             Icons.favorite,
                             size: 60,

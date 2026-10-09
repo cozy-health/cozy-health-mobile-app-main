@@ -19,6 +19,21 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Record build identity
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          identity = {key: os.environ[key] for key in (
+              'GITHUB_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_NUMBER', 'GITHUB_REF_NAME')}
+          Path('build-info.json').write_text(json.dumps(identity, indent=2) + '\n')
+          PY
+          echo "Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Build number: $GITHUB_RUN_NUMBER" >> "$GITHUB_STEP_SUMMARY"
+          echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -40,11 +55,14 @@ jobs:
         run: flutter test
 
       - name: Build debug APK
-        run: flutter build apk --debug
+        run: flutter build apk --debug --build-number="$GITHUB_RUN_NUMBER" --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-debug-apk-develop
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: android-debug-apk-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            build-info.json
+          if-no-files-found: error
           retention-days: 30

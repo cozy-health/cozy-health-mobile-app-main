@@ -13,6 +13,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Record build identity
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          identity = {key: os.environ[key] for key in (
+              'GITHUB_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_NUMBER', 'GITHUB_REF_NAME')}
+          Path('build-info.json').write_text(json.dumps(identity, indent=2) + '\n')
+          PY
+          echo "Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Build number: $GITHUB_RUN_NUMBER" >> "$GITHUB_STEP_SUMMARY"
+          echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -32,7 +47,7 @@ jobs:
       - name: Build iOS (no codesign)
         run: |
           xcodebuild -version
-          flutter build ipa --release --no-codesign
+          flutter build ipa --release --no-codesign --build-number="$GITHUB_RUN_NUMBER" --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
 
       - name: Verify Sentry native SDK version
         run: |
@@ -58,7 +73,9 @@ jobs:
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-unsigned-ipa-develop
-          path: Runner-unsigned.ipa
+          name: ios-unsigned-ipa-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            Runner-unsigned.ipa
+            build-info.json
           retention-days: 30
           if-no-files-found: error
