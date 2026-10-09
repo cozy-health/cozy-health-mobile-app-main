@@ -1,6 +1,34 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
+  // Figma redesign: 12 semantic roles; artwork keeps its own palette.
+  static const Color surfaceSubtle = Color(0xFFF1F4F7);
+  static const Color textSecondary = Color(0xFF717680);
+  static const Color textTertiary = Color(0xFFA4A7AE);
+  static const Color borderSubtle = Color(0xFFD5D7DA);
+  static const Color borderDefault = Color(0xFFCDDFF7);
+  static const Color accentWarmYellow = Color(0xFFFEF4BE);
+  static const Color accentSage = Color(0xFFCCF2DB);
+  static const Color accentPeach = Color(0xFFFCDECD);
+  static const Color accentBlush = Color(0xFFF4BFC9);
+  static const Color accentSky = Color(0xFFCDDFF7);
+  static const Color accentRose = Color(0xFFF04D6E);
+  static const Color accentTeal = Color(0xFFB9EDF2);
+
+  // Parallel dark roles follow the existing warm dark surfaces and muted text.
+  static const Color surfaceSubtleDark = Color(0xFF2F2B28);
+  static const Color textSecondaryDark = Color(0xFFA8A29E);
+  static const Color textTertiaryDark = Color(0xFF9A928C);
+  static const Color borderSubtleDark = Color(0xFF3F3A36);
+  static const Color borderDefaultDark = Color(0xFF45566D);
+  static const Color accentWarmYellowDark = Color(0xFF4A4021);
+  static const Color accentSageDark = Color(0xFF243F30);
+  static const Color accentPeachDark = Color(0xFF4A3028);
+  static const Color accentBlushDark = Color(0xFF492D35);
+  static const Color accentSkyDark = Color(0xFF263B56);
+  static const Color accentRoseDark = Color(0xFFFF829B);
+  static const Color accentTealDark = Color(0xFF214247);
+
   // Light theme
   static const Color backgroundLight = Color(0xFFFDF8F3);
   static const Color surfaceLight = Color(0xFFFFFFFF);
