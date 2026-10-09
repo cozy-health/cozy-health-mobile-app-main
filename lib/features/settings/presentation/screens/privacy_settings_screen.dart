@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../data/profile_repository.dart';
+import '../widgets/marketing_consent_toggle.dart';
 
 class PrivacySettingsScreen extends StatefulWidget {
   const PrivacySettingsScreen({super.key});
@@ -173,6 +174,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 32),
+              const MarketingConsentToggle(),
               const SizedBox(height: 32),
               _SettingsSection(
                 title: 'Profile visibility',
