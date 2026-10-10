@@ -1,7 +1,6 @@
 import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'dart:io';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/src/google_fonts_base.dart' as font_test;

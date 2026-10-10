@@ -65,7 +65,7 @@ class FakeApi {
     calls.update(path, (count) => count + 1, ifAbsent: () => 1);
     if (failures.contains(path)) throw StateError('Unavailable');
     if (path == '/user/profile') return profile();
-    if (path == '/safety-plan')
+    if (path == '/safety-plan') {
       return {
         'data': {
           'id': 'plan-1',
@@ -77,6 +77,7 @@ class FakeApi {
           ],
         },
       };
+    }
     return page(rows[path] ?? []);
   }
 }
@@ -209,6 +210,14 @@ void main() {
           'completed_at': date.toIso8601String(),
         },
       ],
+      '/content/saved': [
+        {
+          'id': 'saved-1',
+          'article_id': 'breathing',
+          'title': 'Breathing',
+          'saved_at': date.toIso8601String(),
+        },
+      ],
       '/notifications': [
         {
           'id': 'n1',
@@ -231,7 +240,7 @@ void main() {
     await restore.run();
     expect(restore.failed, isEmpty);
     expect(restore.progress, 1);
-    expect(restore.restored, 10);
+    expect(restore.restored, 11);
     expect(local.getUserProfile()?.id, 'profile-1');
     expect((await local.getUserPreferences())?.focusAreas, ['sleep']);
     expect(
@@ -241,12 +250,14 @@ void main() {
     expect(local.moodBox.length, 2);
     expect(local.journalBox.get('j1')?.createdAt.toUtc(), date);
     expect(local.quizAttemptBox.length, 1);
+    expect(local.savedArticleBox.get('breathing')?.title, 'Breathing');
+    expect(restore.unavailable, isNot(contains('Saved articles')));
     expect(local.appNotificationBox.get('n1')?.read, isTrue);
     expect(local.chatConversationBox.length, 1);
     expect(local.chatMessageBox, isEmpty);
     expect(api.calls.keys.any((path) => path.contains('/messages')), isFalse);
     expect(api.calls.containsKey('/emergency-contacts'), isFalse);
-    expect(api.calls.containsKey('/content/saved'), isFalse);
+    expect(api.calls.containsKey('/content/saved'), isTrue);
     restore.dispose();
   });
   test(
@@ -322,8 +333,9 @@ void main() {
         now: date,
         get: (path, query) async {
           if (path != '/mood-entries') return api.get(path, query);
-          if (query['page'] == 2 && failSecond)
+          if (query['page'] == 2 && failSecond) {
             throw StateError('Temporary failure');
+          }
           return page([mood('m${query['page']}')], last: 2);
         },
       );
@@ -473,8 +485,9 @@ void main() {
         if (path != '/user/profile') return api.get(path, query);
         profileCalls++;
         final value = profile();
-        if (broken)
+        if (broken) {
           (value['data']['preferences'] as Map)['completed_at'] = 'invalid';
+        }
         return value;
       },
     );

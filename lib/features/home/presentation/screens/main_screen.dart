@@ -46,19 +46,19 @@ class _MainScreenState extends State<MainScreen> {
               if (MediaQuery.viewInsetsOf(context).bottom == 0)
                 Padding(
                   // Keep the controls outside the page's content bounds.
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Align(
                     alignment: Alignment.centerRight,
-                    child: Flex(
-                      direction: MediaQuery.sizeOf(context).height < 700
-                          ? Axis.horizontal
-                          : Axis.vertical,
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         CrisisFab(key: _tourTargets.crisis),
-                        const SizedBox(height: 16, width: 16),
+                        const SizedBox(width: 16),
                         Semantics(
                           button: true,
                           label: 'Open quick actions',

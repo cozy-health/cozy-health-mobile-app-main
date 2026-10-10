@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
-import '../lib/core/api/api_transport_io.dart';
-import '../lib/core/api/leaf_pin_policy.dart';
+import 'package:flutter/foundation.dart';
+import 'package:cozy_health/core/api/api_transport_io.dart';
+import 'package:cozy_health/core/api/leaf_pin_policy.dart';
 
 Future<void> main() async {
   final uri = Uri.parse('https://cozy-health-api-production.up.railway.app/up');
@@ -11,7 +12,7 @@ Future<void> main() async {
     );
   try {
     final response = await dio.getUri(uri);
-    print('Native debug transport /up: HTTP ${response.statusCode}');
+    debugPrint('Native debug transport /up: HTTP ${response.statusCode}');
   } finally {
     dio.close(force: true);
   }

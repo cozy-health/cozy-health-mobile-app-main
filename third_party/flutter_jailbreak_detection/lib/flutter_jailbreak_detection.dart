@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 
 class FlutterJailbreakDetection {
   static const MethodChannel _channel =
-      const MethodChannel('flutter_jailbreak_detection');
+      MethodChannel('flutter_jailbreak_detection');
 
   static Future<bool> get jailbroken async {
     bool? jailbroken = await _channel.invokeMethod<bool>('jailbroken');

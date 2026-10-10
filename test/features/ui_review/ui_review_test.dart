@@ -179,9 +179,11 @@ void main() {
           expect(quick.size, const Size(56, 56));
           expect(page.bottom, lessThan(crisis.top));
           expect(crisis.overlaps(quick), isFalse);
-          if (size.height >= 700) {
-            expect(crisis.bottom, lessThan(quick.top));
-          }
+          expect(crisis.top, quick.top);
+          expect(crisis.right, lessThan(quick.left));
+          // The controls must not grow into the 160px stacked panel on tall
+          // phones. Only one button height plus 8px above/below is reserved.
+          expect(navigation.top - page.bottom, closeTo(72, 0.01));
           expect(quick.bottom, lessThan(navigation.top));
           expect(tester.takeException(), isNull, reason: 'Tab $index');
         }

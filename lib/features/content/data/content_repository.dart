@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import '../../../core/models/saved_article.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_exceptions.dart';
+import '../../../core/services/user_data_merge.dart';
 
 class ContentRepository {
   ContentRepository({bool? usePlaceholderData})
@@ -26,16 +28,49 @@ class ContentRepository {
 
   Future<List<SavedArticle>> fetchSavedArticles() async {
     if (usePlaceholderData) return List.of(DemoMode.instance.savedArticles);
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
+    bool active() =>
+        scope == _local.boxName(LocalDbService.userSettingsBoxName);
     try {
-      final response = await ApiClient.instance.get('/content/saved');
-      final items = (response.data['data'] as List)
-          .map((json) => SavedArticle.fromJson(json))
-          .toList();
-      for (final item in items) {
-        await _local.saveSavedArticle(item);
-      }
-      return items;
-    } catch (e) {
+      var page = 1;
+      var lastPage = 1;
+      do {
+        final response = await ApiClient.instance.get(
+          '/content/saved',
+          queryParameters: {'page': page, 'per_page': 100},
+        );
+        if (!active()) return const [];
+        dynamic payload = response.data;
+        if (payload is Map) payload = payload['data'];
+        if (payload is Map) {
+          final last = payload['last_page'];
+          if (last is! int || last < page) {
+            throw const FormatException('Invalid saved-content pagination');
+          }
+          lastPage = last;
+          payload = payload['data'];
+        }
+        if (payload is! List) {
+          throw const FormatException('Invalid saved-content response');
+        }
+        for (final raw in payload) {
+          if (raw is! Map) {
+            throw const FormatException('Invalid saved article');
+          }
+          await UserDataMerge().apply(
+            'saved_article',
+            Map<String, dynamic>.from(raw),
+            isActive: active,
+          );
+          if (!active()) return const [];
+        }
+        page++;
+      } while (page <= lastPage);
+      return _local.getAllSavedArticles();
+    } on ApiAuthException {
+      rethrow;
+    } catch (_) {
+      if (!active()) return const [];
       return _local.getAllSavedArticles();
     }
   }

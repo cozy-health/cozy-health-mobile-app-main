@@ -72,7 +72,7 @@ class RestoreController extends ChangeNotifier {
   final _merge = UserDataMerge();
   final _completed = <String>{};
   final failed = <String>{};
-  final unavailable = <String>{'Saved articles'};
+  final unavailable = <String>{};
   final _seen = <String>{};
   Map<String, dynamic>? _profile;
   bool busy = false;
@@ -221,7 +221,7 @@ class RestoreController extends ChangeNotifier {
       case 'Quiz attempts':
         await _list('/quiz-attempts', 'quiz_attempt');
       case 'Saved articles':
-        break; // Missing route, reported separately from failures.
+        await _list('/content/saved', 'saved_article');
       case 'Notifications':
         await _list('/notifications', 'app_notification');
       case 'Conversations':

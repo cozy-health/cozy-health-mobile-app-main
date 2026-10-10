@@ -3,6 +3,11 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+class _ObservedErrorHandler extends ErrorInterceptorHandler {
+  Future<void> get completion =>
+      future.then<void>((_) {}, onError: (Object _) {});
+}
+
 void main() {
   test(
     'API logging never includes bodies, headers, query strings or errors',
@@ -31,11 +36,8 @@ void main() {
           ),
           ResponseInterceptorHandler(),
         );
-        final handler = ErrorInterceptorHandler();
-        final completed = handler.future.then<void>(
-          (_) {},
-          onError: (Object _) {},
-        );
+        final handler = _ObservedErrorHandler();
+        final completed = handler.completion;
         logging.onError(
           DioException(
             requestOptions: options,

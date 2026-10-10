@@ -98,23 +98,22 @@ void main() {
       expect(CrashReporting.featureForRoute('/login'), 'auth');
     },
   );
-  test(
-    'telemetry configuration blocks user interaction and native bypasses',
-    () {
-      final options = SentryFlutterOptions();
-      CrashReporting.configure(options);
-      expect(options.sendDefaultPii, isFalse);
+  test('telemetry configuration blocks user interaction and native bypasses', () {
+    final options = SentryFlutterOptions();
+    CrashReporting.configure(options);
+    expect(options.sendDefaultPii, isFalse);
     expect(options.enableNativeCrashHandling, isFalse);
     expect(options.enableAppHangTracking, isFalse);
     expect(options.anrEnabled, isFalse);
-      expect(options.attachScreenshot, isFalse);
-      expect(options.attachViewHierarchy, isFalse);
-      expect(options.enablePrintBreadcrumbs, isFalse);
-      expect(options.enableUserInteractionBreadcrumbs, isFalse);
-      expect(options.tracesSampleRate, 0.2);
-      expect(options.beforeSend, isNotNull);
-    },
-  );
+    expect(options.attachScreenshot, isFalse);
+    // Verify the SDK's experimental hierarchy capture stays disabled for privacy.
+    // ignore: experimental_member_use
+    expect(options.attachViewHierarchy, isFalse);
+    expect(options.enablePrintBreadcrumbs, isFalse);
+    expect(options.enableUserInteractionBreadcrumbs, isFalse);
+    expect(options.tracesSampleRate, 0.2);
+    expect(options.beforeSend, isNotNull);
+  });
   test('missing DSN runs app without initializing telemetry', () async {
     var called = false;
     await CrashReporting.run(() async => called = true);
