@@ -5,6 +5,203 @@ import 'app_text_styles.dart';
 import 'cozy_colors.dart';
 
 class AppTheme {
+  /// Derive after accent selection, keeping semantic foregrounds readable.
+  static ThemeData highContrast(ThemeData base) {
+    final dark = base.brightness == Brightness.dark;
+    final surface = dark ? Colors.black : Colors.white;
+    final foreground = dark ? Colors.white : Colors.black;
+    Color readable(Color color) {
+      final backdrop = surface.computeLuminance();
+      double ratio(Color candidate) {
+        final value = candidate.computeLuminance();
+        return value > backdrop
+            ? (value + .05) / (backdrop + .05)
+            : (backdrop + .05) / (value + .05);
+      }
+
+      var adjusted = color;
+      for (var step = 0; step < 100 && ratio(adjusted) < 4.5; step++) {
+        adjusted = Color.lerp(adjusted, foreground, .08)!;
+      }
+      return adjusted;
+    }
+
+    final primary = readable(base.colorScheme.primary);
+    final secondary = readable(base.colorScheme.secondary);
+    final tertiary = readable(base.colorScheme.tertiary);
+    final error = readable(base.colorScheme.error);
+    Color onColor(Color color) =>
+        color.computeLuminance() > .179 ? Colors.black : Colors.white;
+    final onPrimary = primary.computeLuminance() > .179
+        ? Colors.black
+        : Colors.white;
+    final scheme = base.colorScheme.copyWith(
+      primary: primary,
+      onPrimary: onPrimary,
+      primaryContainer: surface,
+      onPrimaryContainer: primary,
+      secondary: secondary,
+      onSecondary: onColor(secondary),
+      secondaryContainer: surface,
+      onSecondaryContainer: foreground,
+      tertiary: tertiary,
+      onTertiary: onColor(tertiary),
+      tertiaryContainer: surface,
+      onTertiaryContainer: foreground,
+      surface: surface,
+      surfaceDim: surface,
+      surfaceBright: surface,
+      surfaceContainerLowest: surface,
+      surfaceContainerLow: surface,
+      surfaceContainer: surface,
+      surfaceContainerHigh: surface,
+      surfaceContainerHighest: surface,
+      onSurface: foreground,
+      onSurfaceVariant: foreground,
+      outline: foreground,
+      outlineVariant: foreground,
+      error: error,
+      onError: onColor(error),
+      errorContainer: surface,
+      onErrorContainer: foreground,
+    );
+    final extension = base.extension<CozyColors>() ?? CozyColors.light;
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: foreground, width: 2),
+    );
+    final buttonStyle = ButtonStyle(
+      backgroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.disabled)
+            ? foreground.withValues(alpha: .6)
+            : primary,
+      ),
+      foregroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.disabled) ? surface : onPrimary,
+      ),
+    );
+    return base.copyWith(
+      colorScheme: scheme,
+      primaryColor: primary,
+      scaffoldBackgroundColor: surface,
+      canvasColor: surface,
+      disabledColor: foreground.withValues(alpha: .6),
+      dividerColor: foreground,
+      dividerTheme: DividerThemeData(color: foreground, thickness: 2),
+      textTheme: base.textTheme.apply(
+        bodyColor: foreground,
+        displayColor: foreground,
+      ),
+      primaryTextTheme: base.primaryTextTheme.apply(
+        bodyColor: onPrimary,
+        displayColor: onPrimary,
+      ),
+      iconTheme: base.iconTheme.copyWith(color: foreground),
+      appBarTheme: base.appBarTheme.copyWith(
+        backgroundColor: surface,
+        foregroundColor: foreground,
+      ),
+      cardTheme: base.cardTheme.copyWith(
+        color: surface,
+        surfaceTintColor: Colors.transparent,
+      ),
+      dialogTheme: base.dialogTheme.copyWith(backgroundColor: surface),
+      bottomSheetTheme: base.bottomSheetTheme.copyWith(
+        backgroundColor: surface,
+      ),
+      bottomNavigationBarTheme: base.bottomNavigationBarTheme.copyWith(
+        backgroundColor: surface,
+        selectedItemColor: primary,
+        unselectedItemColor: foreground,
+      ),
+      snackBarTheme: base.snackBarTheme.copyWith(
+        backgroundColor: surface,
+        contentTextStyle: TextStyle(color: foreground),
+        actionTextColor: primary,
+      ),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        fillColor: surface,
+        labelStyle: TextStyle(color: foreground),
+        hintStyle: TextStyle(color: foreground),
+        floatingLabelStyle: TextStyle(color: primary),
+        border: border,
+        enabledBorder: border,
+        focusedBorder: border.copyWith(
+          borderSide: BorderSide(color: primary, width: 2),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style:
+            base.elevatedButtonTheme.style?.merge(buttonStyle) ?? buttonStyle,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: base.filledButtonTheme.style?.merge(buttonStyle) ?? buttonStyle,
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: primary),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: primary,
+          side: BorderSide(color: primary, width: 2),
+        ),
+      ),
+      chipTheme: base.chipTheme.copyWith(
+        backgroundColor: surface,
+        selectedColor: surface,
+        labelStyle: TextStyle(color: foreground),
+        side: BorderSide(color: foreground, width: 2),
+      ),
+      tabBarTheme: base.tabBarTheme.copyWith(
+        labelColor: primary,
+        unselectedLabelColor: foreground,
+        indicatorColor: primary,
+      ),
+      progressIndicatorTheme: base.progressIndicatorTheme.copyWith(
+        color: primary,
+      ),
+      sliderTheme: base.sliderTheme.copyWith(
+        activeTrackColor: primary,
+        thumbColor: primary,
+      ),
+      checkboxTheme: base.checkboxTheme.copyWith(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? primary : null,
+        ),
+        checkColor: WidgetStateProperty.all(onPrimary),
+      ),
+      radioTheme: base.radioTheme.copyWith(
+        fillColor: WidgetStateProperty.all(primary),
+      ),
+      switchTheme: base.switchTheme.copyWith(
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? primary : surface,
+        ),
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? onPrimary : foreground,
+        ),
+      ),
+      floatingActionButtonTheme: base.floatingActionButtonTheme.copyWith(
+        backgroundColor: primary,
+        foregroundColor: onPrimary,
+      ),
+      extensions: [
+        for (final value in base.extensions.values)
+          if (value is! CozyColors) value,
+        extension.copyWith(
+          calendarBg: surface,
+          journalingBg: surface,
+          quizBg: surface,
+          crisis: readable(extension.crisis),
+          triggerLow: readable(extension.triggerLow),
+          triggerMed: readable(extension.triggerMed),
+          triggerHigh: readable(extension.triggerHigh),
+        ),
+      ],
+    );
+  }
+
   static ThemeData get light => ThemeData(
     brightness: Brightness.light,
     extensions: const [CozyColors.light],

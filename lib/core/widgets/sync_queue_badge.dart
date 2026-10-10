@@ -17,6 +17,9 @@ class SyncQueueBadge extends StatelessWidget {
         label: Text('${items.length} pending'),
         onPressed: () => showModalBottomSheet<void>(
           context: context,
+          sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
+              ? AnimationStyle.noAnimation
+              : null,
           isScrollControlled: true,
           builder: (_) => const _QueueSheet(),
         ),

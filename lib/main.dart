@@ -15,6 +15,8 @@ import 'core/services/local_db_service.dart';
 import 'core/services/feature_flags_service.dart';
 import 'core/models/user_profile.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/appearance_preferences.dart';
+import 'core/utils/motion.dart';
 import 'features/settings/data/profile_repository.dart';
 import 'utils/screen_util.dart';
 
@@ -70,11 +72,17 @@ class CozyHealthApp extends StatefulWidget {
 class _CozyHealthAppState extends State<CozyHealthApp> {
   late final ProfileRepository _profileRepository;
   late final Stream<UserProfile?> _profileStream;
+  UserProfile? _cachedProfile;
 
   @override
   void initState() {
     super.initState();
     _profileRepository = ProfileRepository();
+    try {
+      _cachedProfile = LocalDbService().getUserProfile();
+    } catch (_) {
+      // Lightweight widget tests can start without initialized profile storage.
+    }
     _profileStream = _profileRepository.watchProfile();
   }
 
@@ -82,6 +90,7 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
   Widget build(BuildContext context) {
     return StreamBuilder<UserProfile?>(
       stream: _profileStream,
+      initialData: _cachedProfile,
       builder: (context, snapshot) {
         final profile = snapshot.data;
         final themeMode = _themeModeFromString(profile?.theme ?? 'system');
@@ -89,14 +98,30 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
         final accent = _accentColorFromString(profile?.accentColor);
         final lightTheme = _themeWithAccent(AppTheme.light, accent);
         final darkTheme = _themeWithAccent(AppTheme.dark, accent);
+        final lightHighContrast = AppTheme.highContrast(lightTheme);
+        final darkHighContrast = AppTheme.highContrast(darkTheme);
+        final highContrast = profile?.highContrast ?? false;
 
         return MaterialApp.router(
           title: 'Cozy Health',
           themeMode: themeMode,
-          theme: lightTheme,
-          darkTheme: darkTheme,
+          theme: highContrast ? lightHighContrast : lightTheme,
+          darkTheme: highContrast ? darkHighContrast : darkTheme,
+          highContrastTheme: lightHighContrast,
+          highContrastDarkTheme: darkHighContrast,
+          themeAnimationDuration: Duration.zero,
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
+            final media = appearanceMediaQuery(
+              MediaQuery.of(context),
+              textMultiplier: textScaleFactor,
+              highContrast: highContrast,
+              reduceMotion: profile?.reduceMotion ?? false,
+            );
+            final currentTheme = motionTheme(
+              Theme.of(context),
+              media.disableAnimations,
+            );
             ScreenUtil.init(context);
             final brightness = Theme.of(context).brightness;
             final isDark = brightness == Brightness.dark;
@@ -114,33 +139,40 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
               ),
             );
             return MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: TextScaler.linear(textScaleFactor),
-                boldText: profile?.highContrast ?? false,
-              ),
-              child: Listener(
-                onPointerDown: (_) {
-                  if (WidgetsBinding.instance.lifecycleState ==
-                      AppLifecycleState.resumed) {
-                    TokenStorage().recordActivity();
-                  }
-                },
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-                  child: NotificationListener<ScrollStartNotification>(
-                    onNotification: (notification) {
-                      if (notification.dragDetails != null) {
-                        FocusManager.instance.primaryFocus?.unfocus();
-                      }
-                      return false;
-                    },
-                    child: NetworkObserver(
-                      child: AppAvailabilityGate(
-                        child: SecurityCaptureOverlay(
-                          child: SecurityGate(
-                            child: ConsentGate(
-                              child: DeviceIntegrityNotice(child: child!),
+              data: media,
+              child: Theme(
+                data: currentTheme,
+                child: LiveAppearanceTheme(
+                  theme: currentTheme,
+                  child: HeroMode(
+                    enabled: !media.disableAnimations,
+                    child: Listener(
+                      onPointerDown: (_) {
+                        if (WidgetsBinding.instance.lifecycleState ==
+                            AppLifecycleState.resumed) {
+                          TokenStorage().recordActivity();
+                        }
+                      },
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
+                        child: NotificationListener<ScrollStartNotification>(
+                          onNotification: (notification) {
+                            if (notification.dragDetails != null) {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                            }
+                            return false;
+                          },
+                          child: NetworkObserver(
+                            child: AppAvailabilityGate(
+                              child: SecurityCaptureOverlay(
+                                child: SecurityGate(
+                                  child: ConsentGate(
+                                    child: DeviceIntegrityNotice(child: child!),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -172,11 +204,11 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
     if (theme.brightness == Brightness.dark && accent == AppColors.primary) {
       accent = AppColors.primaryDark;
     }
-    final onAccent =
-        ThemeData.estimateBrightnessForColor(accent) == Brightness.light
-        ? AppColors.backgroundDark
+    final onAccent = accent.computeLuminance() > .179
+        ? Colors.black
         : Colors.white;
     return theme.copyWith(
+      primaryColor: accent,
       colorScheme: theme.colorScheme.copyWith(
         primary: accent,
         onPrimary: onAccent,
@@ -216,7 +248,7 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
           return null;
         }),
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return Colors.white;
+          if (states.contains(WidgetState.selected)) return onAccent;
           return null;
         }),
       ),
@@ -225,7 +257,7 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
           if (states.contains(WidgetState.selected)) return accent;
           return null;
         }),
-        checkColor: WidgetStateProperty.all(Colors.white),
+        checkColor: WidgetStateProperty.all(onAccent),
       ),
       radioTheme: theme.radioTheme.copyWith(
         fillColor: WidgetStateProperty.resolveWith((states) {
@@ -264,6 +296,7 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
       ),
       floatingActionButtonTheme: theme.floatingActionButtonTheme.copyWith(
         backgroundColor: accent,
+        foregroundColor: onAccent,
       ),
       progressIndicatorTheme: theme.progressIndicatorTheme.copyWith(
         color: accent,

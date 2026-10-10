@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../routing/app_router.dart';
 import '../services/local_db_service.dart';
+import '../utils/motion.dart';
 
 enum _NoticeKind { success, error, info, warning }
 
@@ -119,43 +120,57 @@ class _Notice extends SnackBar {
         elevation: 3,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0, end: 1),
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeInOut,
-          builder: (_, value, child) => Opacity(opacity: value, child: child),
-          child: Row(
-            children: [
-              Icon(switch (kind) {
-                _NoticeKind.success => Icons.check_circle_outline,
-                _NoticeKind.error => Icons.error_outline,
-                _NoticeKind.info => Icons.info_outline,
-                _NoticeKind.warning => Icons.warning_amber_rounded,
-              }, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (kind == _NoticeKind.error)
-                      const Text(
-                        "Let's try that again.",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    message,
-                    if (support != null)
-                      TextButton(
-                        onPressed: support,
-                        child: const Text(
-                          'Help & Support',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                  ],
+        content: Builder(
+          builder: (context) => TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: motionDuration(
+              context,
+              const Duration(milliseconds: 150),
+            ),
+            curve: Curves.easeInOut,
+            builder: (_, value, child) => Opacity(opacity: value, child: child),
+            child: Row(
+              children: [
+                Icon(
+                  switch (kind) {
+                    _NoticeKind.success => Icons.check_circle_outline,
+                    _NoticeKind.error => Icons.error_outline,
+                    _NoticeKind.info => Icons.info_outline,
+                    _NoticeKind.warning => Icons.warning_amber_rounded,
+                  },
+                  color: Theme.of(
+                    context,
+                  ).snackBarTheme.contentTextStyle?.color,
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (kind == _NoticeKind.error)
+                        const Text(
+                          "Let's try that again.",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      message,
+                      if (support != null)
+                        TextButton(
+                          onPressed: support,
+                          child: Text(
+                            'Help & Support',
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).snackBarTheme.contentTextStyle?.color,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );

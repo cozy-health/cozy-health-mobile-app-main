@@ -74,6 +74,9 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
   Future<void> _review(ConsentDocument doc) async {
     await showDialog<void>(
       context: context,
+      animationStyle: MediaQuery.disableAnimationsOf(context)
+          ? AnimationStyle.noAnimation
+          : null,
       builder: (context) => AlertDialog(
         title: Text(doc.title),
         content: SingleChildScrollView(

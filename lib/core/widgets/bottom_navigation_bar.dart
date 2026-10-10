@@ -80,11 +80,15 @@ class CustomBottomNavigationBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 200),
                 width: 42,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primarySoft : null,
+                  color: isSelected
+                      ? selectedColor.withValues(alpha: .12)
+                      : null,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Center(

@@ -243,6 +243,9 @@ Future<bool> journalPinDialog(
 }) async {
   return await showDialog<bool>(
         context: context,
+        animationStyle: MediaQuery.disableAnimationsOf(context)
+            ? AnimationStyle.noAnimation
+            : null,
         builder: (_) => _PinDialog(setup: setup),
       ) ??
       false;

@@ -1,4 +1,5 @@
 import 'package:cozy_health/core/theme/app_colors.dart';
+import 'package:cozy_health/core/theme/app_theme.dart';
 import 'package:cozy_health/core/widgets/progress_track.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -68,7 +69,7 @@ void main() {
     );
     expect(
       (tester.widget<DecoratedBox>(fill()).decoration as BoxDecoration).color,
-      AppColors.primary,
+      AppTheme.dark.colorScheme.primary,
     );
     await pumpSharedWidget(
       tester,
