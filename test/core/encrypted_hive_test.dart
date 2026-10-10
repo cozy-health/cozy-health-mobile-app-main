@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:crypto/crypto.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +15,8 @@ void main() {
   const secure = FlutterSecureStorage();
   setUp(() async {
     FlutterSecureStorage.setMockInitialValues({});
-    EncryptedHive.prepareInstall(markerSet: true, hasLocalFiles: false);
+    SharedPreferences.setMockInitialValues({});
+    await EncryptedHive.prepareInstall(markerSet: true, hasLocalFiles: false);
     directory = await Directory.systemTemp.createTemp('cozy_crypto_');
     Hive.init(directory.path);
     Hive.registerAdapter(JournalEntryAdapter());
@@ -33,7 +35,10 @@ void main() {
       await original.close();
       final before = await secure.readAll();
       await Hive.deleteBoxFromDisk(EncryptedHive.physicalName('queue'));
-      EncryptedHive.prepareInstall(markerSet: false, hasLocalFiles: false);
+      await EncryptedHive.prepareInstall(
+        markerSet: false,
+        hasLocalFiles: false,
+      );
       expect((await EncryptedHive.openBox<String>('queue')).isEmpty, isTrue);
       expect(await secure.readAll(), before);
     },
@@ -44,7 +49,7 @@ void main() {
       'missing box blocks when marker or other local files exist: $hasFiles',
       () async {
         await secure.write(key: 'hive_migrated_v1_queue', value: '1');
-        EncryptedHive.prepareInstall(
+        await EncryptedHive.prepareInstall(
           markerSet: !hasFiles,
           hasLocalFiles: hasFiles,
         );
@@ -56,6 +61,42 @@ void main() {
       },
     );
   }
+
+  test(
+    'account boxes reopen after reinstall then restart before login',
+    () async {
+      final base = await EncryptedHive.openBox<String>('queue');
+      final account = await EncryptedHive.openBox<String>('queue_user_31');
+      await base.close();
+      await account.close();
+      final retained = await secure.readAll();
+      await Hive.deleteBoxFromDisk(EncryptedHive.physicalName('queue'));
+      await Hive.deleteBoxFromDisk(EncryptedHive.physicalName('queue_user_31'));
+      await EncryptedHive.prepareInstall(
+        markerSet: false,
+        hasLocalFiles: false,
+      );
+      await (await EncryptedHive.openBox<String>('queue')).close();
+      // A later launch has an install marker and base files, but the account
+      // databases have not been recreated yet because login has not happened.
+      await EncryptedHive.prepareInstall(markerSet: true, hasLocalFiles: true);
+      final recreated = await EncryptedHive.openBox<String>('queue_user_31');
+      await recreated.put('pending', 'new local data');
+      await recreated.close();
+      expect(await secure.readAll(), retained);
+      await EncryptedHive.prepareInstall(markerSet: true, hasLocalFiles: true);
+      expect(
+        (await EncryptedHive.openBox<String>('queue_user_31')).get('pending'),
+        'new local data',
+      );
+      await Hive.close();
+      await Hive.deleteBoxFromDisk(EncryptedHive.physicalName('queue_user_31'));
+      await expectLater(
+        EncryptedHive.openBox<String>('queue_user_31'),
+        throwsStateError,
+      );
+    },
+  );
 
   test(
     'legacy drafts and queue payloads migrate with keys and content intact',

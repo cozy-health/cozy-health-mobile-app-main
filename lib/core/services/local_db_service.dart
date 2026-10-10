@@ -293,7 +293,7 @@ class LocalDbService {
   Future<void> init() async {
     await Hive.initFlutter();
     final installPrefs = await SharedPreferences.getInstance();
-    EncryptedHive.prepareInstall(
+    await EncryptedHive.prepareInstall(
       markerSet: installPrefs.getBool('install_marker_set') ?? false,
       hasLocalFiles: await hasLocalHiveFiles(),
     );

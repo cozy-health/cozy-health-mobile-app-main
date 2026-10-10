@@ -9,19 +9,35 @@ import 'package:hive/src/binary/binary_writer_impl.dart';
 import 'package:hive/src/binary/binary_reader_impl.dart';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Never falls back to plaintext or deletes data when a key cannot be read.
 class EncryptedHive {
   static const _storage = FlutterSecureStorage();
-  static bool _freshInstallWithoutFiles = false;
+  static const _reinstallBoxesKey = 'hive_reinstall_pending_boxes_v1';
+  static Set<String> _reinstallBoxes = {};
 
   /// Retain secure storage, which can survive an iOS uninstall. A confirmed
   /// empty fresh installation may recreate boxes using their retained keys.
-  static void prepareInstall({
+  static Future<void> prepareInstall({
     required bool markerSet,
     required bool hasLocalFiles,
-  }) {
-    _freshInstallWithoutFiles = !markerSet && !hasLocalFiles;
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!markerSet && !hasLocalFiles) {
+      final values = await _storage.readAll();
+      final names = values.entries
+          .where(
+            (entry) =>
+                entry.key.startsWith('hive_migrated_v1_') && entry.value == '1',
+          )
+          .map((entry) => entry.key.substring('hive_migrated_v1_'.length))
+          .toList();
+      if (!await prefs.setStringList(_reinstallBoxesKey, names)) {
+        throw StateError('Unable to persist reinstall storage status.');
+      }
+    }
+    _reinstallBoxes = (prefs.getStringList(_reinstallBoxesKey) ?? []).toSet();
   }
 
   static final _opening = <String, Future<Box<dynamic>>>{};
@@ -59,7 +75,7 @@ class EncryptedHive {
     final complete = await _storage.read(key: completeName) == '1';
     if (complete &&
         !await Hive.boxExists(targetName) &&
-        !_freshInstallWithoutFiles) {
+        !_reinstallBoxes.contains(name)) {
       throw StateError('Encrypted local data is missing. Recovery required.');
     }
     var encoded = await _storage.read(key: keyName);
@@ -140,6 +156,18 @@ class EncryptedHive {
           );
         }
         await Hive.deleteBoxFromDisk(name);
+      }
+      if (_reinstallBoxes.contains(name)) {
+        // Retire the exception only after this box is durable. Other account
+        // boxes may not be opened until the user logs in after a later restart.
+        await target.flush();
+        final prefs = await SharedPreferences.getInstance();
+        final pending = (prefs.getStringList(_reinstallBoxesKey) ?? []).toSet()
+          ..remove(name);
+        if (!await prefs.setStringList(_reinstallBoxesKey, pending.toList())) {
+          throw StateError('Unable to persist recreated local storage status.');
+        }
+        _reinstallBoxes.remove(name);
       }
       return target;
     } catch (_) {
