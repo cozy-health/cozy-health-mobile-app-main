@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -107,7 +108,8 @@ class AuthInterceptor extends Interceptor {
       if (onSessionExpired != null) {
         await onSessionExpired!();
       } else {
-        await LocalDbService().activateGuest();
+        // A sync request must finish before account switching waits for it.
+        unawaited(LocalDbService().activateGuestAfterSync());
       }
 
       final context = AppRouter.navigatorKey.currentContext;
@@ -157,7 +159,9 @@ class ErrorInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) {
     ApiException exception;
 
-    if (err.type == DioExceptionType.connectionTimeout ||
+    if (err.type == DioExceptionType.badCertificate) {
+      exception = ApiSecureConnectionException();
+    } else if (err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.receiveTimeout ||
         err.type == DioExceptionType.sendTimeout) {
       exception = ApiTimeoutException();

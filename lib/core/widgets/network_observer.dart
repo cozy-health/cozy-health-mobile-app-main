@@ -75,6 +75,7 @@ class _NetworkObserverState extends State<NetworkObserver> {
         _offline = offline;
       });
       networkOffline.value = offline;
+      if (!offline) _retry();
       return;
     }
     if (offline) {

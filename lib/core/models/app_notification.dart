@@ -23,7 +23,9 @@ class AppNotification extends HiveObject {
   @HiveField(6)
   final DateTime createdAt;
 
+  @HiveField(7)
   final String? deepLink;
+  @HiveField(8)
   final DateTime? readAt;
 
   AppNotification({
@@ -114,13 +116,15 @@ class AppNotificationAdapter extends TypeAdapter<AppNotification> {
       read: fields[4] as bool,
       payload: (fields[5] as Map?)?.cast<String, dynamic>(),
       createdAt: fields[6] as DateTime,
+      deepLink: fields[7] as String?,
+      readAt: fields[8] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, AppNotification obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -134,6 +138,10 @@ class AppNotificationAdapter extends TypeAdapter<AppNotification> {
       ..writeByte(5)
       ..write(obj.payload)
       ..writeByte(6)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(7)
+      ..write(obj.deepLink)
+      ..writeByte(8)
+      ..write(obj.readAt);
   }
 }

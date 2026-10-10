@@ -39,7 +39,12 @@ class _QueueSheetState extends State<_QueueSheet> {
   Future<void> _retry() async {
     setState(() => _retrying = true);
     try {
-      await LocalDbService().processSyncQueue(force: true);
+      final result = await LocalDbService().processSyncQueue(force: true);
+      if (mounted &&
+          result.failed == 0 &&
+          LocalDbService().pendingItems.isEmpty) {
+        Navigator.of(context).pop();
+      }
     } finally {
       if (mounted) setState(() => _retrying = false);
     }
@@ -83,9 +88,10 @@ class _QueueSheetState extends State<_QueueSheet> {
                       leading: const Icon(Icons.cloud_upload_outlined),
                       title: Text(_label(item.type)),
                       subtitle: Text(
-                        item.action == 'delete'
-                            ? 'Removal pending'
-                            : 'Saved on this device',
+                        _failureLabel(item.lastErrorCode) ??
+                            (item.action == 'delete'
+                                ? 'Removal pending'
+                                : 'Saved on this device'),
                       ),
                     ),
                 ],
@@ -96,9 +102,26 @@ class _QueueSheetState extends State<_QueueSheet> {
               isLoading: _retrying,
               onPressed: _retrying ? null : _retry,
             ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
           ],
         ),
       ),
     ),
   );
+
+  String? _failureLabel(String? code) => const {
+    'session_expired': 'Log in again to upload this change.',
+    'access_denied': 'This account cannot sync right now. Contact support.',
+    'connection': 'Waiting for a connection.',
+    'server': 'Sync is temporarily unavailable.',
+    'secure_connection':
+        'Secure connection unavailable. Check for an app update.',
+    'invalid_payload': 'This change needs review before it can sync.',
+    'ownership_conflict': 'This change could not be linked to your account.',
+    'dependency_missing': 'Waiting for its related record to sync.',
+    'database': 'The server could not save this change. Retry later.',
+  }[code];
 }

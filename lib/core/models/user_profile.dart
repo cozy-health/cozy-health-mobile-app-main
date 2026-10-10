@@ -262,7 +262,7 @@ class UserProfile extends HiveObject {
       reduceMotion: json['reduce_motion'] as bool? ?? false,
       highContrast: json['high_contrast'] as bool? ?? false,
       hapticsEnabled: json['haptics_enabled'] as bool? ?? true,
-      textSize: (json['text_size'] as num?)?.toDouble() ?? 1.0,
+      textSize: double.tryParse(json['text_size']?.toString() ?? '') ?? 1.0,
       showStats: json['show_stats'] as bool? ?? false,
       showUsername: json['show_username'] as bool? ?? true,
       notificationsMaster: json['notifications_master'] as bool? ?? true,

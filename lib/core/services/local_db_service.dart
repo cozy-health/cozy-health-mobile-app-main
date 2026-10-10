@@ -31,11 +31,13 @@ class LocalDbService {
   static LocalDbService get instance => _instance;
   bool _isProcessingSyncQueue = false;
   bool syncPaused = false;
+  bool _forceSyncRequested = false;
   Future<void> waitForSyncIdle() async {
     await _currentSync;
   }
 
   Future<SyncSummary>? _currentSync;
+  Future<void> _accountActivation = Future.value();
   final _syncResults = StreamController<SyncSummary>.broadcast();
   Stream<SyncSummary> get syncResults => _syncResults.stream;
   String? _activeUser;
@@ -49,15 +51,33 @@ class LocalDbService {
     String userId, {
     String? email,
     bool registration = false,
-  }) async {
-    final wasPaused = syncPaused;
-    syncPaused = true;
-    await waitForSyncIdle();
-    try {
-      await _activateAccount(userId, email: email, registration: registration);
-    } finally {
-      syncPaused = wasPaused;
-    }
+    String? expiredAccount,
+  }) {
+    final task = _accountActivation.then((_) async {
+      if (expiredAccount != null &&
+          (syncPaused ||
+              _activeUser != expiredAccount ||
+              await TokenStorage().getToken() != null)) {
+        return;
+      }
+      final wasPaused = syncPaused;
+      syncPaused = true;
+      await waitForSyncIdle();
+      try {
+        await _activateAccount(
+          userId,
+          email: email,
+          registration: registration,
+        );
+      } finally {
+        syncPaused = wasPaused;
+      }
+    });
+    _accountActivation = task.then<void>(
+      (_) {},
+      onError: (Object error, StackTrace stack) {},
+    );
+    return task;
   }
 
   Future<void> _activateAccount(
@@ -210,6 +230,20 @@ class LocalDbService {
     final registry = await EncryptedHive.openBox<dynamic>('device_registry');
     final epoch = registry.get('guest_epoch', defaultValue: 0) as int;
     await activateAccount('guest_$epoch');
+  }
+
+  Future<void> activateGuestAfterSync() async {
+    final account = _activeUser;
+    if (account == null || account.startsWith('guest_')) return;
+    await waitForSyncIdle();
+    // A new login while the expired request completes must retain its account.
+    if (!syncPaused &&
+        account == _activeUser &&
+        await TokenStorage().getToken() == null) {
+      final registry = await EncryptedHive.openBox<dynamic>('device_registry');
+      final epoch = registry.get('guest_epoch', defaultValue: 0) as int;
+      await activateAccount('guest_$epoch', expiredAccount: account);
+    }
   }
 
   Stream<T> _watchScoped<T>(
@@ -462,6 +496,9 @@ class LocalDbService {
 
   Future<void> saveSafetyPlan(SafetyPlan plan) async {
     await safetyPlanBox.put(plan.id, plan);
+    for (final key in safetyPlanBox.keys.toList()) {
+      if (key != plan.id) await safetyPlanBox.delete(key);
+    }
   }
 
   Stream<SafetyPlan?> watchSafetyPlan() =>
@@ -667,6 +704,7 @@ class LocalDbService {
     required String recordId,
     required dynamic payload,
   }) async {
+    final predecessors = pendingItems;
     final item = SyncItem(
       id: const Uuid().v4(),
       type: type,
@@ -677,6 +715,18 @@ class LocalDbService {
       createdAt: DateTime.now().toUtc(),
     );
     await syncQueueBox.put(item.id, item.toJson());
+    // Keep the newest intent for a record, including an in-flight predecessor.
+    // Write first so a crash cannot erase the only durable queued change.
+    if (action == 'upsert' || action == 'delete') {
+      for (final old in predecessors) {
+        if (old.id != item.id &&
+            old.type == type &&
+            old.recordId == recordId &&
+            (old.action == 'upsert' || old.action == 'delete')) {
+          await syncQueueBox.delete(old.id);
+        }
+      }
+    }
   }
 
   Future<void> removeFromQueue(String type, String id) async {
@@ -701,10 +751,13 @@ class LocalDbService {
       : Stream.value([]);
 
   Future<SyncSummary> processSyncQueue({bool force = false}) {
-    if (syncPaused || !isBoxOpen(syncQueueBoxName)) {
+    if (syncPaused ||
+        _activeUser?.startsWith('guest_') == true ||
+        !isBoxOpen(syncQueueBoxName)) {
       return Future.value(const SyncSummary());
     }
     if (_isProcessingSyncQueue) {
+      _forceSyncRequested |= force;
       return _currentSync ?? Future.value(const SyncSummary());
     }
     _currentSync = _processSyncQueue(force: force);
@@ -715,49 +768,105 @@ class LocalDbService {
     _isProcessingSyncQueue = true;
     var synced = 0;
     var failed = 0;
+    String? errorCode;
+    final attempted = <String>{};
     try {
-      final now = DateTime.now().toUtc();
-      final dueItems =
-          _getQueuedSyncItems()
-              .where(
-                (item) =>
-                    (force ||
-                    item.nextRetryAt == null ||
-                    !item.nextRetryAt!.isAfter(now)),
-              )
-              .toList()
-            ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      // Repair duplicate intents already stored by older app versions.
+      final latest = <String, SyncItem>{};
+      final stored = pendingItems
+        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      for (final item in stored) {
+        if (item.action != 'upsert' && item.action != 'delete') continue;
+        final key = '${item.type}:${item.recordId}';
+        final old = latest[key];
+        if (old != null) await syncQueueBox.delete(old.id);
+        latest[key] = item;
+      }
+      while (!syncPaused) {
+        final now = DateTime.now().toUtc();
+        final forcePass = force || _forceSyncRequested;
+        _forceSyncRequested = false;
+        final dueItems =
+            _getQueuedSyncItems()
+                .where(
+                  (item) =>
+                      !attempted.contains(item.id) &&
+                      (forcePass ||
+                          item.nextRetryAt == null ||
+                          !item.nextRetryAt!.isAfter(now)),
+                )
+                .toList()
+              ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        if (dueItems.isEmpty) break;
 
-      for (var start = 0; start < dueItems.length; start += 50) {
-        final batch = dueItems.sublist(start, min(start + 50, dueItems.length));
-        try {
-          final response = await ApiClient.instance.post(
-            '/sync/batch',
-            data: {'operations': batch.map(_operationForSyncItem).toList()},
-          );
-          final result = await _applyBatchResult(batch, response.data);
-          synced += result.synced;
-          failed += result.failed;
-        } on ApiAuthException {
-          failed += dueItems.length - start;
-          break;
-        } on ApiNetworkException {
-          failed += dueItems.length - start;
-          break;
-        } on ApiTimeoutException {
-          failed += dueItems.length - start;
-          break;
-        } catch (error) {
-          failed += batch.length;
-          for (final item in batch) {
-            await _scheduleRetry(item);
+        for (var start = 0; start < dueItems.length; start += 50) {
+          if (syncPaused) break;
+          final batch = dueItems
+              .sublist(start, min(start + 50, dueItems.length))
+              .where((item) => syncQueueBox.containsKey(item.id))
+              .toList();
+          if (batch.isEmpty) continue;
+          attempted.addAll(batch.map((item) => item.id));
+          try {
+            final response = await ApiClient.instance.post(
+              '/sync/batch',
+              data: {'operations': batch.map(_operationForSyncItem).toList()},
+            );
+            final result = await _applyBatchResult(batch, response.data);
+            synced += result.synced;
+            failed += result.failed;
+            errorCode ??= result.errorCode;
+          } on ApiAuthException catch (error) {
+            failed += dueItems.length - start;
+            errorCode = error.statusCode == 403
+                ? 'access_denied'
+                : 'session_expired';
+            for (final item in batch) {
+              await _scheduleRetry(item, errorCode: errorCode);
+            }
+            return _publishSyncSummary(synced, failed, errorCode);
+          } on ApiNetworkException {
+            failed += dueItems.length - start;
+            errorCode = 'connection';
+            for (final item in batch) {
+              await _scheduleRetry(item, errorCode: errorCode);
+            }
+            return _publishSyncSummary(synced, failed, errorCode);
+          } on ApiTimeoutException {
+            failed += dueItems.length - start;
+            errorCode = 'connection';
+            for (final item in batch) {
+              await _scheduleRetry(item, errorCode: errorCode);
+            }
+            return _publishSyncSummary(synced, failed, errorCode);
+          } catch (error) {
+            failed += batch.length;
+            errorCode = error is ApiSecureConnectionException
+                ? 'secure_connection'
+                : error is ApiServerException
+                ? 'server'
+                : error is ApiValidationException
+                ? 'invalid_payload'
+                : 'unknown';
+            for (final item in batch) {
+              await _scheduleRetry(item, errorCode: errorCode);
+            }
           }
         }
       }
     } finally {
       _isProcessingSyncQueue = false;
     }
-    final summary = SyncSummary(synced: synced, failed: failed);
+    failed = pendingItems.where((item) => attempted.contains(item.id)).length;
+    return _publishSyncSummary(synced, failed, errorCode);
+  }
+
+  SyncSummary _publishSyncSummary(int synced, int failed, String? errorCode) {
+    final summary = SyncSummary(
+      synced: synced,
+      failed: failed,
+      errorCode: errorCode,
+    );
     if (summary.attempted > 0) _syncResults.add(summary);
     return summary;
   }
@@ -791,13 +900,59 @@ class LocalDbService {
   }
 
   Map<String, dynamic> _operationForSyncItem(SyncItem item) {
+    final payload = item.payload ?? _cachedSyncPayload(item);
     return {
       'client_operation_id': item.id,
       'type': item.type,
       'action': item.action,
-      if (item.action == 'delete' || item.payload == null) 'id': item.recordId,
-      if (item.action != 'delete' && item.payload != null) 'data': item.payload,
+      if (item.action == 'delete' || payload == null) 'id': item.recordId,
+      if (item.action != 'delete' && payload != null) 'data': payload,
     };
+  }
+
+  Map<String, dynamic>? _cachedSyncPayload(SyncItem item) {
+    final boxes = {
+      'mood_entry': moodBoxName,
+      'journal_entry': journalBoxName,
+      'chat_conversation': chatConversationBoxName,
+      'chat_message': chatMessageBoxName,
+      'safety_plan': safetyPlanBoxName,
+      'user_profile': userProfileBoxName,
+      'quiz_attempt': quizAttemptBoxName,
+      'saved_article': savedArticleBoxName,
+      'app_notification': appNotificationBoxName,
+      'subscription': subscriptionStatusBoxName,
+      'subscription_status': subscriptionStatusBoxName,
+      'user_preferences': userPreferencesBoxName,
+    };
+    final base = boxes[item.type];
+    if (base == null || !isBoxOpen(base)) return null;
+    final Iterable<dynamic> records = switch (item.type) {
+      'mood_entry' => moodBox.values,
+      'journal_entry' => journalBox.values,
+      'chat_conversation' => chatConversationBox.values,
+      'chat_message' => chatMessageBox.values,
+      'safety_plan' => safetyPlanBox.values,
+      'user_profile' => userProfileBox.values,
+      'quiz_attempt' => quizAttemptBox.values,
+      'saved_article' => savedArticleBox.values,
+      'app_notification' => appNotificationBox.values,
+      'subscription' || 'subscription_status' => subscriptionStatusBox.values,
+      'user_preferences' => EncryptedHive.box<UserPreferences>(
+        boxName(base),
+      ).values,
+      _ => const [],
+    };
+    for (final dynamic value in records) {
+      final json = Map<String, dynamic>.from(value.toJson() as Map);
+      if (json['id']?.toString() == item.recordId ||
+          (item.type == 'saved_article' &&
+              json['article_id']?.toString() == item.recordId) ||
+          item.type == 'user_preferences') {
+        return {'id': item.recordId, ...json};
+      }
+    }
+    return null;
   }
 
   Future<SyncSummary> _applyBatchResult(
@@ -806,19 +961,26 @@ class LocalDbService {
   ) async {
     final results = _extractBatchResults(data);
     var synced = 0;
+    String? errorCode;
     for (final item in batch) {
       final result = results?[item.id] ?? results?[item.recordId];
-      if (result == true) {
+      if (result?['success'] == true || result?['status'] == 'success') {
         synced++;
         await syncQueueBox.delete(item.id);
       } else {
-        await _scheduleRetry(item);
+        final code = _safeSyncError(result?['error_code']);
+        errorCode ??= code;
+        await _scheduleRetry(item, errorCode: code);
       }
     }
-    return SyncSummary(synced: synced, failed: batch.length - synced);
+    return SyncSummary(
+      synced: synced,
+      failed: batch.length - synced,
+      errorCode: errorCode,
+    );
   }
 
-  Map<String, bool>? _extractBatchResults(dynamic data) {
+  Map<String, Map>? _extractBatchResults(dynamic data) {
     final payload = data is Map && data['data'] is Map ? data['data'] : data;
     final rawResults = payload is Map
         ? payload['results'] ?? payload['operations']
@@ -830,16 +992,30 @@ class LocalDbService {
         if (result is Map)
           (result['client_operation_id'] ?? result['id'] ?? result['record_id'])
                   .toString():
-              result['success'] == true || result['status'] == 'success',
+              result,
     };
   }
 
-  Future<void> _scheduleRetry(SyncItem item) async {
+  String? _safeSyncError(dynamic code) =>
+      const {
+        'invalid_payload',
+        'unknown_type',
+        'unknown_action',
+        'ownership_conflict',
+        'dependency_missing',
+        'database',
+      }.contains(code)
+      ? code as String
+      : null;
+
+  Future<void> _scheduleRetry(SyncItem item, {String? errorCode}) async {
+    if (!syncQueueBox.containsKey(item.id)) return;
     final nextRetryCount = item.retryCount + 1;
     final retryAt = _nextRetryAt(nextRetryCount);
     final updated = item.copyWith(
       retryCount: nextRetryCount,
       nextRetryAt: retryAt,
+      lastErrorCode: errorCode,
     );
     await syncQueueBox.put(updated.id, updated.toJson());
   }

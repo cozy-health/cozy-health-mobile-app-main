@@ -10,7 +10,7 @@ const fixture = 'test/fixtures/tls';
 String pin(String name) {
   final pem = File('$fixture/$name.pem').readAsStringSync();
   final body = pem
-      .split('\n')
+      .split(RegExp(r'\r?\n'))
       .where((line) => !line.startsWith('-----'))
       .join();
   return sha256.convert(base64Decode(body)).toString();

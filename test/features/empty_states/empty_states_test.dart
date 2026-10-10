@@ -19,6 +19,7 @@ import 'package:cozy_health/core/models/user_profile.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/core/routing/app_router.dart';
 import 'package:cozy_health/features/home/presentation/screens/home_screen.dart';
+import 'package:cozy_health/features/home/presentation/widgets/mood_chips_row.dart';
 import 'package:cozy_health/features/mood_check_in/presentation/screens/mood_feeling_screen.dart';
 import 'package:cozy_health/features/journal/presentation/screens/journal_screen.dart';
 import 'package:cozy_health/features/notifications/presentation/screens/notifications_screen.dart';
@@ -129,7 +130,7 @@ void main() {
 
   testWidgets('Home first check-in and affirmation fallback', (tester) async {
     await mount(tester, const HomeScreen());
-    expect(find.text('How are you feeling today?'), findsOneWidget);
+    expect(find.byType(MoodChipsRow), findsOneWidget);
     expect(find.text('Your first check-in starts here.'), findsNothing);
     expect(find.text('Cozy Calendar'), findsOneWidget);
     expect(find.text('Journaling'), findsOneWidget);
@@ -423,7 +424,10 @@ void main() {
 
   testWidgets('Community empty topic invites sharing', (tester) async {
     await mount(tester, const CommunityHubScreen());
-    final sleepFilter = find.descendant(of: find.byType(ListView).first, matching: find.text('Sleep'));
+    final sleepFilter = find.descendant(
+      of: find.byType(ListView).first,
+      matching: find.text('Sleep'),
+    );
     await tester.ensureVisible(sleepFilter);
     await tester.tap(sleepFilter);
     await tester.pumpAndSettle();

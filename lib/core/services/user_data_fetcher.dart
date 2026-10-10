@@ -17,6 +17,7 @@ class UserDataFetcher {
     fetchProfile(),
     fetchSafetyPlan(),
     fetchQuizAttempts(),
+    fetchSavedArticles(),
     fetchSubscription(),
   ]);
   Future<void> fetchMoods() => _list('/mood-entries', 'mood_entry');
@@ -26,9 +27,8 @@ class UserDataFetcher {
   Future<void> fetchNotifications() =>
       _list('/notifications', 'app_notification');
   Future<void> fetchQuizAttempts() => _list('/quiz-attempts', 'quiz_attempt');
-  Future<void> fetchSavedArticles() async {
-    /* No backend route exists yet. */
-  }
+  Future<void> fetchSavedArticles() =>
+      _list('/saved-articles', 'saved_article');
   Future<void> fetchProfile() => _single('/user/profile', 'user_profile');
   Future<void> fetchSafetyPlan() => _single('/safety-plan', 'safety_plan');
   Future<void> fetchSubscription() async {

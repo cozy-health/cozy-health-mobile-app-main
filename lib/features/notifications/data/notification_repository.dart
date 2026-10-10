@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../core/models/app_notification.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/services/user_data_merge.dart';
 
 class NotificationRepository {
   NotificationRepository({bool? usePlaceholderData})
@@ -30,18 +31,18 @@ class NotificationRepository {
 
   Future<List<AppNotification>> fetchNotifications() async {
     if (usePlaceholderData) return currentEntries();
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.get('/notifications');
-      final items = _extractListData(response.data)
-          .whereType<Map>()
-          .map(
-            (json) => AppNotification.fromJson(Map<String, dynamic>.from(json)),
-          )
-          .toList();
-      for (final item in items) {
-        await _local.saveAppNotification(item);
+      for (final raw in _extractListData(response.data).whereType<Map>()) {
+        await UserDataMerge().apply(
+          'app_notification',
+          Map<String, dynamic>.from(raw),
+          isActive: () =>
+              scope == _local.boxName(LocalDbService.userSettingsBoxName),
+        );
       }
-      return items;
+      return _local.getAllAppNotifications();
     } catch (e) {
       return _local.getAllAppNotifications();
     }
@@ -70,9 +71,16 @@ class NotificationRepository {
     }
     final item = currentEntries().where((item) => item.id == id).firstOrNull;
     if (item != null) {
-      await _local.saveAppNotification(
-        item.copyWith(read: true, readAt: DateTime.now()),
+      final updated = item.copyWith(read: true, readAt: DateTime.now());
+      await _local.saveAppNotification(updated);
+      await _local.enqueueSync(
+        type: 'app_notification',
+        action: 'upsert',
+        recordId: updated.id,
+        payload: updated.toJson(),
       );
+      await _local.processSyncQueue();
+      return;
     }
     try {
       await ApiClient.instance.patch('/notifications/$id/read');
@@ -92,16 +100,16 @@ class NotificationRepository {
       return;
     }
     for (final item in currentEntries().where((item) => !item.read)) {
-      await _local.saveAppNotification(
-        item.copyWith(read: true, readAt: DateTime.now()),
+      final updated = item.copyWith(read: true, readAt: DateTime.now());
+      await _local.saveAppNotification(updated);
+      await _local.enqueueSync(
+        type: 'app_notification',
+        action: 'upsert',
+        recordId: updated.id,
+        payload: updated.toJson(),
       );
     }
-    try {
-      await ApiClient.instance.patch('/notifications/read-all');
-      fetchNotifications();
-    } catch (_) {
-      debugPrint('Caught error: details withheld.');
-    }
+    await _local.processSyncQueue();
   }
 
   Future<void> deleteNotification(String id) async {

@@ -9,6 +9,7 @@ class SyncItem {
   final int retryCount;
   final DateTime? nextRetryAt;
   final DateTime createdAt;
+  final String? lastErrorCode;
 
   SyncItem({
     required this.id,
@@ -19,11 +20,13 @@ class SyncItem {
     required this.retryCount,
     this.nextRetryAt,
     required this.createdAt,
+    this.lastErrorCode,
   });
 
   SyncItem copyWith({
     int? retryCount,
     DateTime? nextRetryAt,
+    String? lastErrorCode,
   }) {
     return SyncItem(
       id: id,
@@ -34,6 +37,7 @@ class SyncItem {
       retryCount: retryCount ?? this.retryCount,
       nextRetryAt: nextRetryAt ?? this.nextRetryAt,
       createdAt: createdAt,
+      lastErrorCode: lastErrorCode ?? this.lastErrorCode,
     );
   }
 
@@ -47,6 +51,7 @@ class SyncItem {
       'retryCount': retryCount,
       'nextRetryAt': nextRetryAt?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
+      'lastErrorCode': lastErrorCode,
     };
   }
 
@@ -56,13 +61,19 @@ class SyncItem {
       type: map['type'],
       action: map['action'],
       recordId: map['recordId'],
-      payload: map['payload'] != null ? Map<String, dynamic>.from(map['payload']) : null,
+      payload: map['payload'] != null
+          ? Map<String, dynamic>.from(map['payload'])
+          : null,
       retryCount: map['retryCount'] ?? 0,
-      nextRetryAt: map['nextRetryAt'] != null ? DateTime.parse(map['nextRetryAt']) : null,
+      nextRetryAt: map['nextRetryAt'] != null
+          ? DateTime.parse(map['nextRetryAt'])
+          : null,
       createdAt: DateTime.parse(map['createdAt']),
+      lastErrorCode: map['lastErrorCode'] as String?,
     );
   }
 
   String toJson() => json.encode(toMap());
-  factory SyncItem.fromJson(String source) => SyncItem.fromMap(json.decode(source));
+  factory SyncItem.fromJson(String source) =>
+      SyncItem.fromMap(json.decode(source));
 }

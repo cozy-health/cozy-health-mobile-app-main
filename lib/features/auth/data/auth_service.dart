@@ -128,14 +128,17 @@ class AuthService {
     }
     final local = LocalDbService();
     local.syncPaused = true;
+    bool? restore;
     try {
       await local.waitForSyncIdle();
       await local.activateAccount(userId, email: profile['email']?.toString());
       await GuestSessionService().exitGuestSession();
-      return await RestoreService.prepare(userId);
+      restore = await RestoreService.prepare(userId);
     } finally {
       local.syncPaused = false;
     }
+    unawaited(local.processSyncQueue(force: true));
+    return restore;
   }
 
   Future<void> logout() async {
@@ -258,6 +261,7 @@ class AuthService {
       local.syncPaused = false;
     }
     if (!await RestoreService.required) _syncUserDataInBackground();
+    unawaited(local.processSyncQueue(force: true));
   }
 
   void _syncUserDataInBackground() {

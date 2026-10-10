@@ -211,6 +211,45 @@ void main() {
     },
   );
 
+  testWidgets('successful retry closes the pending sheet', (tester) async {
+    final item = await tester.runAsync(() => queue('pending'));
+    fixture.body = {
+      'data': {
+        'results': [
+          {'client_operation_id': item!.id, 'success': true},
+        ],
+      },
+    };
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: SyncQueueBadge())),
+    );
+    await tester.tap(find.text('1 pending'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Retry sync'));
+      await local.waitForSyncIdle();
+    });
+    await tester.pumpAndSettle();
+    expect(local.pendingItems, isEmpty);
+    expect(find.text('Waiting to sync'), findsNothing);
+  });
+
+  testWidgets(
+    'failed pending sheet can be closed while retaining saved changes',
+    (tester) async {
+      await tester.runAsync(() => queue('pending'));
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: SyncQueueBadge())),
+      );
+      await tester.tap(find.text('1 pending'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      expect(find.text('Waiting to sync'), findsNothing);
+      expect(local.pendingItems.length, 1);
+    },
+  );
+
   Future<StreamController<List<ConnectivityResult>>> mountNetwork(
     WidgetTester tester, {
     required void Function() sound,
