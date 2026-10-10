@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 class AppScaffoldPadding {
   static EdgeInsets tabScrollBottom(BuildContext context) {
-    final safe = MediaQuery.of(context).padding.bottom;
-    return EdgeInsets.only(bottom: 88 + safe);
+    // MainScreen reserves space for actions and navigation outside the body.
+    return const EdgeInsets.only(bottom: 24);
   }
 }

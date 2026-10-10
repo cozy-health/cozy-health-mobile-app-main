@@ -89,10 +89,10 @@ class AppTheme {
     useMaterial3: true,
     scaffoldBackgroundColor: AppColors.backgroundDark,
     colorScheme: const ColorScheme.dark(
-      primary: AppColors.primary,
+      primary: AppColors.primaryDark,
       surface: AppColors.surfaceDark,
       error: AppColors.danger,
-      onPrimary: Colors.white,
+      onPrimary: AppColors.backgroundDark,
       onSurface: AppColors.textDark,
       onSurfaceVariant: AppColors.textMutedDark,
       outline: AppColors.borderStrongDark,
@@ -102,7 +102,7 @@ class AppTheme {
     textTheme: AppTextStyles.getTextTheme(Brightness.dark),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: AppColors.navBarDark,
-      selectedItemColor: AppColors.primary,
+      selectedItemColor: AppColors.primaryDark,
       unselectedItemColor: AppColors.textMutedDark,
       elevation: 0,
       type: BottomNavigationBarType.fixed,
@@ -145,7 +145,7 @@ class AppTheme {
       fillColor: AppColors.surfaceDark,
       labelStyle: const TextStyle(color: AppColors.textDark),
       hintStyle: TextStyle(color: AppColors.textDark.withValues(alpha: 0.5)),
-      floatingLabelStyle: const TextStyle(color: AppColors.primary),
+      floatingLabelStyle: const TextStyle(color: AppColors.primaryDark),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.borderDark),

@@ -8,6 +8,7 @@ import 'core/storage/token_storage.dart';
 import 'core/widgets/device_integrity_notice.dart';
 import 'core/widgets/consent_gate.dart';
 import 'package:flutter/material.dart';
+import 'core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'core/routing/app_router.dart';
 import 'core/services/local_db_service.dart';
@@ -168,17 +169,27 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
   }
 
   ThemeData _themeWithAccent(ThemeData theme, Color accent) {
+    if (theme.brightness == Brightness.dark && accent == AppColors.primary) {
+      accent = AppColors.primaryDark;
+    }
+    final onAccent =
+        ThemeData.estimateBrightnessForColor(accent) == Brightness.light
+        ? AppColors.backgroundDark
+        : Colors.white;
     return theme.copyWith(
-      colorScheme: theme.colorScheme.copyWith(primary: accent),
+      colorScheme: theme.colorScheme.copyWith(
+        primary: accent,
+        onPrimary: onAccent,
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style:
             theme.elevatedButtonTheme.style?.copyWith(
               backgroundColor: WidgetStateProperty.all(accent),
-              foregroundColor: WidgetStateProperty.all(Colors.white),
+              foregroundColor: WidgetStateProperty.all(onAccent),
             ) ??
             ElevatedButton.styleFrom(
               backgroundColor: accent,
-              foregroundColor: Colors.white,
+              foregroundColor: onAccent,
             ),
       ),
       textButtonTheme: TextButtonThemeData(

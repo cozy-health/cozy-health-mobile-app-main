@@ -43,37 +43,40 @@ class _MainScreenState extends State<MainScreen> {
           child: Column(
             children: [
               Expanded(child: _screens[_currentIndex]),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    CrisisFab(key: _tourTargets.crisis),
-                    if (_currentIndex < 3) ...[
-                      SizedBox(width: 16),
-                      Semantics(
-                        button: true,
-                        label: 'Open quick actions',
-                        child: GestureDetector(
-                          onLongPress: () => context.push(AppRouter.crisisHub),
-                          child: FloatingActionButton(
-                            key: _tourTargets.journal,
-                            heroTag: 'quick-actions',
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primary,
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onPrimary,
-                            onPressed: () => _showQuickActionsSheet(context),
-                            child: Icon(Icons.add),
+              if (MediaQuery.viewInsetsOf(context).bottom == 0)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      CrisisFab(key: _tourTargets.crisis),
+                      if (_currentIndex < 3) ...[
+                        SizedBox(width: 16),
+                        Semantics(
+                          button: true,
+                          label: 'Open quick actions',
+                          child: GestureDetector(
+                            onLongPress: () =>
+                                context.push(AppRouter.crisisHub),
+                            child: FloatingActionButton.small(
+                              key: _tourTargets.journal,
+                              heroTag: 'quick-actions',
+                              tooltip: 'Quick actions',
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onPrimary,
+                              onPressed: () => _showQuickActionsSheet(context),
+                              child: Icon(Icons.add),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),

@@ -291,12 +291,7 @@ class _HomeScreenState extends State<HomeScreen>
                     },
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        16,
-                        16,
-                        140 + MediaQuery.paddingOf(context).bottom,
-                      ),
+                      padding: EdgeInsets.fromLTRB(16, 16, 16, 24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

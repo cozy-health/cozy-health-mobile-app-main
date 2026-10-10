@@ -121,10 +121,10 @@ class _CrisisFabState extends State<CrisisFab>
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.crisisPrimary.withValues(
-                      alpha: .6 + .3 * _pulse.value,
+                      alpha: .15 + .1 * _pulse.value,
                     ),
-                    blurRadius: 8,
-                    spreadRadius: 1,
+                    blurRadius: 4,
+                    spreadRadius: 0,
                   ),
                 ],
               ),
@@ -133,8 +133,9 @@ class _CrisisFabState extends State<CrisisFab>
           ),
           child: GestureDetector(
             onLongPress: _showQuickCalm,
-            child: FloatingActionButton(
+            child: FloatingActionButton.small(
               heroTag: 'crisis-support',
+              tooltip: 'Crisis support',
               backgroundColor: AppColors.crisisPrimary,
               foregroundColor: AppColors.crisisTextOnDark,
               shape: const CircleBorder(),

@@ -51,12 +51,13 @@ class AppColors {
   static const Color dialogDark = Color(0xFF2F2B28);
   static const Color textDark = Color(0xFFF5F0E8);
   static const Color textMutedDark = Color(0xFFA8A29E);
-  static const Color textSubtleDark = Color(0xFF78716C);
+  static const Color textSubtleDark = Color(0xFFB5ADA6);
   static const Color borderDark = Color(0xFF3F3A36);
   static const Color borderStrongDark = Color(0xFF5C5551);
 
   // Shared accents
   static const Color primary = Color(0xFF0460D8);
+  static const Color primaryDark = Color(0xFF79B4FF);
   static const Color primaryHover = Color(0xFF0450B8);
   static const Color primarySubtle = Color(0x140460D8);
   static const Color primarySoft = Color(0x140460D8);
