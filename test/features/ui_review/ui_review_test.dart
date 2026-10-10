@@ -13,11 +13,16 @@ import 'package:cozy_health/core/models/journal_entry.dart';
 import 'package:cozy_health/core/models/app_notification.dart';
 import 'package:cozy_health/core/models/saved_article.dart';
 import 'package:cozy_health/core/models/quiz_attempt.dart';
+import 'package:cozy_health/core/models/chat_message.dart';
+import 'package:cozy_health/core/models/chat_conversation.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'package:cozy_health/core/theme/app_theme.dart';
 import 'package:cozy_health/core/routing/app_router.dart';
 import 'package:cozy_health/features/home/presentation/screens/home_screen.dart';
+import 'package:cozy_health/features/home/presentation/screens/main_screen.dart';
+import 'package:cozy_health/core/widgets/bottom_navigation_bar.dart';
+import 'package:cozy_health/features/crisis/presentation/widgets/crisis_fab.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
 import 'package:cozy_health/features/community/presentation/screens/community_hub_screen.dart';
 import 'package:cozy_health/features/community/presentation/screens/post_detail_screen.dart';
@@ -49,6 +54,12 @@ void main() {
     Hive.registerAdapter(AppNotificationAdapter());
     Hive.registerAdapter(SavedArticleAdapter());
     Hive.registerAdapter(QuizAttemptAdapter());
+    Hive.registerAdapter(ChatMessageAdapter());
+    Hive.registerAdapter(ChatConversationAdapter());
+    await EncryptedHive.openBox<ChatMessage>(LocalDbService.chatMessageBoxName);
+    await EncryptedHive.openBox<ChatConversation>(
+      LocalDbService.chatConversationBoxName,
+    );
     await EncryptedHive.openBox<UserProfile>(LocalDbService.userProfileBoxName);
     await EncryptedHive.openBox<MoodEntry>(LocalDbService.moodBoxName);
     await EncryptedHive.openBox<JournalEntry>(LocalDbService.journalBoxName);
@@ -96,6 +107,9 @@ void main() {
           AppRouter.notificationDetail,
           AppRouter.communityHub,
           AppRouter.contentSearch,
+          AppRouter.crisisHub,
+          AppRouter.breathing,
+          AppRouter.grounding,
         })
           GoRoute(
             path: route,
@@ -121,6 +135,120 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
   }
+
+  for (final size in [
+    const Size(320, 568),
+    const Size(667, 375),
+    const Size(430, 932),
+  ]) {
+    for (final dark in [false, true]) {
+      testWidgets('Main controls stay clear of all tabs: $size dark=$dark', (
+        tester,
+      ) async {
+        final settings = await LocalDbService().settingsBox();
+        await tester.runAsync(() => settings.put('has_seen_tour', true));
+        await mount(tester, const MainScreen(), dark: dark, size: size);
+        final nav = tester.widget<CustomBottomNavigationBar>(
+          find.byType(CustomBottomNavigationBar),
+        );
+        for (final index in [0, 1, 2, 3, 4]) {
+          nav.onTap(index);
+          await tester.pump(const Duration(milliseconds: 500));
+          final buttons = find.byType(FloatingActionButton);
+          expect(buttons, findsNWidgets(2));
+          final crisis = tester.getRect(find.byType(CrisisFab));
+          final quick = tester.getRect(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is FloatingActionButton &&
+                  widget.heroTag == 'quick-actions',
+            ),
+          );
+          final page = tester.getRect(
+            find
+                .descendant(
+                  of: find.byType(MainScreen),
+                  matching: find.byType(Expanded),
+                )
+                .first,
+          );
+          final navigation = tester.getRect(
+            find.byType(CustomBottomNavigationBar),
+          );
+          expect(crisis.size, const Size(56, 56));
+          expect(quick.size, const Size(56, 56));
+          expect(page.bottom, lessThan(crisis.top));
+          expect(crisis.overlaps(quick), isFalse);
+          if (size.height >= 700) {
+            expect(crisis.bottom, lessThan(quick.top));
+          }
+          expect(quick.bottom, lessThan(navigation.top));
+          expect(tester.takeException(), isNull, reason: 'Tab $index');
+        }
+        await tester.tap(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is FloatingActionButton &&
+                widget.heroTag == 'quick-actions',
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(find.text('What would you\nlike to do?'), findsOneWidget);
+        await tester.ensureVisible(find.text('Journal'));
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.tap(find.text('Journal'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(find.text('destination:${AppRouter.journal}'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        GoRouter.of(
+          tester.element(find.text('destination:${AppRouter.journal}')),
+        ).pop();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.longPress(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is FloatingActionButton &&
+                widget.heroTag == 'quick-actions',
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(find.text('destination:${AppRouter.crisisHub}'), findsOneWidget);
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+    }
+  }
+
+  testWidgets('Crisis tap and long press restore support and calm routes', (
+    tester,
+  ) async {
+    await mount(
+      tester,
+      const Scaffold(body: Center(child: CrisisFab())),
+      dark: false,
+    );
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('destination:${AppRouter.crisisHub}'), findsOneWidget);
+    GoRouter.of(
+      tester.element(find.text('destination:${AppRouter.crisisHub}')),
+    ).pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.longPress(find.byType(FloatingActionButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('I need a moment.'), findsOneWidget);
+    await tester.tap(find.text('Ground'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('destination:${AppRouter.grounding}'), findsOneWidget);
+    expect(find.text('I need a moment.'), findsNothing);
+  });
 
   final screens = <String, Widget Function()>{
     'Home': () => const HomeScreen(),

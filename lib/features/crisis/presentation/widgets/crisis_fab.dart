@@ -65,37 +65,39 @@ class _CrisisFabState extends State<CrisisFab>
         }
 
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'I need a moment.',
-                  style: Theme.of(sheetContext).textTheme.titleLarge,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'I need a moment.',
+                    style: Theme.of(sheetContext).textTheme.titleLarge,
+                  ),
                 ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.air),
-                title: const Text('Breathe'),
-                onTap: () => open(AppRouter.breathing),
-              ),
-              ListTile(
-                leading: const Icon(Icons.spa_outlined),
-                title: const Text('Ground'),
-                onTap: () => open(AppRouter.grounding),
-              ),
-              ListTile(
-                leading: const Icon(Icons.phone_outlined),
-                title: const Text('Call for help'),
-                onTap: () => open(AppRouter.crisisHub),
-              ),
-              ListTile(
-                leading: const Icon(Icons.close),
-                title: const Text('Close'),
-                onTap: () => Navigator.of(sheetContext).pop(),
-              ),
-            ],
+                ListTile(
+                  leading: const Icon(Icons.air),
+                  title: const Text('Breathe'),
+                  onTap: () => open(AppRouter.breathing),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.spa_outlined),
+                  title: const Text('Ground'),
+                  onTap: () => open(AppRouter.grounding),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.phone_outlined),
+                  title: const Text('Call for help'),
+                  onTap: () => open(AppRouter.crisisHub),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.close),
+                  title: const Text('Close'),
+                  onTap: () => Navigator.of(sheetContext).pop(),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -121,10 +123,10 @@ class _CrisisFabState extends State<CrisisFab>
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.crisisPrimary.withValues(
-                      alpha: .15 + .1 * _pulse.value,
+                      alpha: .6 + .3 * _pulse.value,
                     ),
-                    blurRadius: 4,
-                    spreadRadius: 0,
+                    blurRadius: 8,
+                    spreadRadius: 1,
                   ),
                 ],
               ),
@@ -133,9 +135,8 @@ class _CrisisFabState extends State<CrisisFab>
           ),
           child: GestureDetector(
             onLongPress: _showQuickCalm,
-            child: FloatingActionButton.small(
+            child: FloatingActionButton(
               heroTag: 'crisis-support',
-              tooltip: 'Crisis support',
               backgroundColor: AppColors.crisisPrimary,
               foregroundColor: AppColors.crisisTextOnDark,
               shape: const CircleBorder(),

@@ -45,23 +45,29 @@ class _MainScreenState extends State<MainScreen> {
               Expanded(child: _screens[_currentIndex]),
               if (MediaQuery.viewInsetsOf(context).bottom == 0)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      CrisisFab(key: _tourTargets.crisis),
-                      if (_currentIndex < 3) ...[
-                        SizedBox(width: 16),
+                  // Keep the controls outside the page's content bounds.
+                  padding: const EdgeInsets.all(16),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Flex(
+                      direction: MediaQuery.sizeOf(context).height < 700
+                          ? Axis.horizontal
+                          : Axis.vertical,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        CrisisFab(key: _tourTargets.crisis),
+                        const SizedBox(height: 16, width: 16),
                         Semantics(
                           button: true,
                           label: 'Open quick actions',
                           child: GestureDetector(
                             onLongPress: () =>
                                 context.push(AppRouter.crisisHub),
-                            child: FloatingActionButton.small(
+                            child: FloatingActionButton(
                               key: _tourTargets.journal,
                               heroTag: 'quick-actions',
-                              tooltip: 'Quick actions',
                               backgroundColor: Theme.of(
                                 context,
                               ).colorScheme.primary,
@@ -69,12 +75,12 @@ class _MainScreenState extends State<MainScreen> {
                                 context,
                               ).colorScheme.onPrimary,
                               onPressed: () => _showQuickActionsSheet(context),
-                              child: Icon(Icons.add),
+                              child: const Icon(Icons.add),
                             ),
                           ),
                         ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
             ],
@@ -104,109 +110,113 @@ class _MainScreenState extends State<MainScreen> {
         final colorScheme = Theme.of(context).colorScheme;
 
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color:
-                      Theme.of(context).dividerTheme.color ?? AppColors.border,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color:
+                        Theme.of(context).dividerTheme.color ??
+                        AppColors.border,
+                  ),
                 ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 42,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.borderStrong,
-                        borderRadius: BorderRadius.circular(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 42,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.borderStrong,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'What would you\nlike to do?',
-                    style: AppTextStyles.heading2.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      height: 1.15,
+                    const SizedBox(height: 20),
+                    Text(
+                      'What would you\nlike to do?',
+                      style: AppTextStyles.heading2.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        height: 1.15,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 18),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.16,
-                    children: [
-                      _QuickActionTile(
-                        icon: MoodEntry.moodEmojis['good'] ?? '',
-                        label: 'Log mood',
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          context.push(AppRouter.moodFeeling);
-                        },
-                      ),
-                      _QuickActionTile(
-                        icon: '📝',
-                        label: 'Journal',
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          context.push(AppRouter.journal);
-                        },
-                      ),
-                      if (FeatureFlags.isEnabled('ai_assistant'))
+                    const SizedBox(height: 18),
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      mainAxisExtent:
+                          96 + MediaQuery.textScalerOf(context).scale(18) * 4,
+                      children: [
                         _QuickActionTile(
-                          icon: '💬',
-                          label: 'Chat',
+                          icon: MoodEntry.moodEmojis['good'] ?? '',
+                          label: 'Log mood',
                           onTap: () {
                             Navigator.of(context).pop();
-                            setState(() => _currentIndex = 2);
+                            context.push(AppRouter.moodFeeling);
                           },
                         ),
-                      _QuickActionTile(
-                        icon: '🌬',
-                        label: 'Breathe',
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          context.push(AppRouter.breathing);
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSurface,
-                        side: BorderSide(
-                          color:
-                              Theme.of(context).dividerTheme.color ??
-                              AppColors.border,
+                        _QuickActionTile(
+                          icon: '📝',
+                          label: 'Journal',
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            context.push(AppRouter.journal);
+                          },
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        if (FeatureFlags.isEnabled('ai_assistant'))
+                          _QuickActionTile(
+                            icon: '💬',
+                            label: 'Chat',
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              setState(() => _currentIndex = 2);
+                            },
+                          ),
+                        _QuickActionTile(
+                          icon: '🌬',
+                          label: 'Breathe',
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            context.push(AppRouter.breathing);
+                          },
                         ),
-                      ),
-                      child: const Text('Cancel'),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onSurface,
+                          side: BorderSide(
+                            color:
+                                Theme.of(context).dividerTheme.color ??
+                                AppColors.border,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -71,7 +71,7 @@ class SettingsScreen extends StatelessWidget {
                           },
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
-                            height: 88,
+                            constraints: const BoxConstraints(minHeight: 88),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
@@ -79,7 +79,7 @@ class SettingsScreen extends StatelessWidget {
                                 width: 1,
                               ),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
                                 Container(
@@ -530,8 +530,8 @@ class _SettingsRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: subtitle == null ? 56 : 72,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          constraints: BoxConstraints(minHeight: subtitle == null ? 56 : 72),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Icon(icon, size: 24, color: iconColor),

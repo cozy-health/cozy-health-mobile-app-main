@@ -36,7 +36,13 @@ class CustomBottomNavigationBar extends StatelessWidget {
         top: false,
         bottom: true,
         child: SizedBox(
-          height: 72,
+          height:
+              72 +
+              (MediaQuery.textScalerOf(context).scale(11) - 11).clamp(
+                    0,
+                    double.infinity,
+                  ) *
+                  2,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [

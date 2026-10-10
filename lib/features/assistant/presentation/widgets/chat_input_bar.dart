@@ -56,6 +56,7 @@ class ChatInputBar extends StatelessWidget {
                 },
                 decoration: InputDecoration(
                   hintText: 'Message Cozy Assistant...',
+                  hintMaxLines: 1,
                   hintStyle: AppTextStyles.body1.copyWith(color: subtleColor),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
