@@ -8,7 +8,7 @@ import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../widgets/feature_tour.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../../../core/widgets/illustrated_card.dart';
+import '../widgets/home_quiz_card.dart';
 import '../widgets/cozy_calendar.dart';
 import '../widgets/journaling_card.dart';
 import 'dart:async';
@@ -29,7 +29,6 @@ import '../../../../core/models/user_profile.dart';
 import '../../../../features/settings/data/profile_repository.dart';
 import '../../../../core/models/app_notification.dart';
 import '../../../../features/notifications/data/notification_repository.dart';
-import '../../../../gen/assets.gen.dart';
 
 enum HomeDashboardState {
   returningUser,
@@ -434,8 +433,11 @@ class _HomeEmotionStrip extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        'How are you feeling today?',
-        style: Theme.of(context).textTheme.titleLarge,
+        'Tell cozy how you are feeling today?',
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+        ),
       ),
       SizedBox(height: 16),
       const MoodChipsRow(),
@@ -480,16 +482,7 @@ class _HomeDesignCards extends StatelessWidget {
         moodsThisWeek.fold<double>(0, (sum, entry) => sum + entry.intensity);
     return Column(
       children: [
-        ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 179),
-          child: IllustratedCard(
-            title: 'Mental Health Quiz',
-            description: 'Understand how you feel with a quick check-in.',
-            illustration: SvgPicture.asset(Assets.svg.mentalHealthQuiz),
-            actionLabel: 'Start Quiz',
-            onAction: () => context.push(AppRouter.quizSelection),
-          ),
-        ),
+        const HomeQuizCard(),
         SizedBox(height: 16),
         CozyCalendar(
           entries: entries,
@@ -591,35 +584,29 @@ class _Header extends StatelessWidget {
 
                   return IconButton(
                     onPressed: () => context.push(AppRouter.notifications),
-                    icon: Container(
+                    icon: SizedBox(
                       width: 30,
                       height: 30,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
                       child: Stack(
                         children: [
-                          Center(
-                            child: Icon(
-                              Icons.notifications_outlined,
-                              size: 20,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+                          SvgPicture.asset(
+                            'assets/svg/home_notification_bell.svg',
+                            width: 30,
+                            height: 30,
+                            excludeFromSemantics: true,
                           ),
-                          Positioned(
-                            right: 4,
-                            top: 4,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: unreadCount > 0
-                                    ? const Color(0xFF55D288)
-                                    : const Color(0xFFD9D9D9),
-                                shape: BoxShape.circle,
+                          if (unreadCount > 0)
+                            const Positioned(
+                              left: 16,
+                              top: 4,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF55D288),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: SizedBox(width: 8, height: 8),
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ),

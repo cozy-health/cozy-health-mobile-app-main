@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+
 import 'package:go_router/go_router.dart';
 import '../../../../core/models/mood_entry.dart';
 import '../../../../core/routing/app_router.dart';
@@ -14,12 +14,12 @@ class MoodChipsRow extends StatefulWidget {
 class _MoodChipsRowState extends State<MoodChipsRow> {
   String? _selected;
   static const moods = [
+    'angry',
+    'sad',
     'good',
     'calm',
     'okay',
     'anxious',
-    'sad',
-    'angry',
     'tired',
     'excited',
   ];
@@ -29,7 +29,7 @@ class _MoodChipsRowState extends State<MoodChipsRow> {
     final theme = Theme.of(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: EdgeInsets.zero,
       child: Row(
         children: [
           for (final mood in moods)
@@ -43,48 +43,59 @@ class _MoodChipsRowState extends State<MoodChipsRow> {
                 child: Material(
                   color: theme.brightness == Brightness.dark
                       ? AppColors.accentWarmYellowDark
-                      : AppColors.accentWarmYellow,
+                      : const Color(0xFFFEF4BE),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
                       color: _selected == mood
                           ? theme.colorScheme.primary
-                          : theme.colorScheme.outlineVariant,
+                          : Colors.transparent,
                       width: _selected == mood ? 2 : 1,
                     ),
                   ),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     onTap: () {
                       setState(() => _selected = mood);
                       context.push('${AppRouter.moodFeeling}?mood=$mood');
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                        horizontal: 10,
+                        vertical: 0,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (['good', 'sad', 'angry'].contains(mood))
-                            SvgPicture.asset(
-                              'assets/svg/$mood.svg',
-                              width: 24,
-                              height: 24,
-                              excludeFromSemantics: true,
-                            )
-                          else
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: 83,
+                          minHeight: 45,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (['good', 'sad', 'angry'].contains(mood))
+                              Image.asset(
+                                'assets/png/home_mood_$mood.png',
+                                width: 42,
+                                height: 45,
+                                excludeFromSemantics: true,
+                              )
+                            else
+                              Text(
+                                MoodEntry.moodEmojis[mood]!,
+                                style: const TextStyle(fontSize: 23),
+                              ),
+                            const SizedBox(width: 2),
                             Text(
-                              MoodEntry.moodEmojis[mood]!,
-                              style: const TextStyle(fontSize: 23),
+                              '${mood[0].toUpperCase()}${mood.substring(1)}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontSize: 12,
+                                color: theme.brightness == Brightness.dark
+                                    ? theme.colorScheme.onSurface
+                                    : const Color(0xFF454545),
+                              ),
                             ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${mood[0].toUpperCase()}${mood.substring(1)}',
-                            style: theme.textTheme.labelMedium,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
