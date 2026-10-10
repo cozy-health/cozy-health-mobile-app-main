@@ -1,7 +1,9 @@
 class ApiConstants {
   // Release gate: both independently verified leaf fingerprints must be supplied.
   // No single-pin rollout and no remote/unpinned fallback. See CERT_ROTATION.md.
-  static const currentLeafPin = String.fromEnvironment('API_CURRENT_LEAF_SHA256');
+  static const currentLeafPin = String.fromEnvironment(
+    'API_CURRENT_LEAF_SHA256',
+  );
   static const nextLeafPin = String.fromEnvironment('API_NEXT_LEAF_SHA256');
   static const String baseUrl =
       'https://cozy-health-api-production.up.railway.app/api/v1';
@@ -94,21 +96,6 @@ class ApiConstants {
   |--------------------------------------------------------------------------
   */
   static const String safetyPlan = '/safety-plan';
-
-  /*
-  |--------------------------------------------------------------------------
-  | Activity
-  |--------------------------------------------------------------------------
-  */
-  static const String activityOverview = '/activity/overview';
-
-  static const String activityMoodChart = '/activity/mood-chart';
-
-  static const String activityCommonTriggers = '/activity/common-triggers';
-
-  static const String activityJournalStats = '/activity/journal-stats';
-
-  static const String activityRecommendations = '/activity/recommendations';
 
   /*
   |--------------------------------------------------------------------------

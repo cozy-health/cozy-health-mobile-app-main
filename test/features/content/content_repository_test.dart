@@ -2,8 +2,29 @@ import 'package:cozy_health/core/models/saved_article.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/features/content/data/content_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive/hive.dart';
+import 'package:cozy_health/core/storage/encrypted_hive.dart';
 
 import '../../support/repository_fixture.dart';
+
+class _LegacySavedArticleAdapter extends SavedArticleAdapter {
+  @override
+  void write(BinaryWriter writer, SavedArticle obj) {
+    final fields = [
+      obj.id,
+      obj.articleId,
+      obj.title,
+      obj.excerpt,
+      obj.imageUrl,
+      obj.savedAt,
+    ];
+    writer.writeByte(fields.length);
+    for (var i = 0; i < fields.length; i++) {
+      writer.writeByte(i);
+      writer.write(fields[i]);
+    }
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -67,4 +88,55 @@ void main() {
     final result = await repository.fetchSavedArticles();
     expect(result.single.articleId, 'offline');
   });
+
+  test(
+    'article metadata and offline body survive encrypted cache reopening',
+    () async {
+      fixture.body = {
+        'data': {
+          'data': [
+            {
+              ...article('one'),
+              'article_slug': 'sleep',
+              'category': 'sleep',
+              'read_time_minutes': 5,
+              'body': 'Saved reading body',
+            },
+          ],
+          'last_page': 1,
+        },
+      };
+      await repository.fetchSavedArticles();
+      await fixture.box.close();
+      fixture.box = await EncryptedHive.openBox<SavedArticle>(
+        LocalDbService.savedArticleBoxName,
+      );
+      final saved = fixture.box.get('one')!;
+      expect(saved.articleSlug, 'sleep');
+      expect(saved.category, 'sleep');
+      expect(saved.readTimeMinutes, 5);
+      expect(saved.body, 'Saved reading body');
+    },
+  );
+
+  test(
+    'old six-field saved articles remain readable after adapter upgrade',
+    () async {
+      Hive.registerAdapter<SavedArticle>(
+        _LegacySavedArticleAdapter(),
+        override: true,
+      );
+      await fixture.box.put('old', SavedArticle.fromJson(article('old')));
+      await fixture.box.close();
+      Hive.registerAdapter<SavedArticle>(SavedArticleAdapter(), override: true);
+      fixture.box = await EncryptedHive.openBox<SavedArticle>(
+        LocalDbService.savedArticleBoxName,
+      );
+      final saved = fixture.box.get('old')!;
+      expect(saved.articleId, 'old');
+      expect(saved.title, 'Article old');
+      expect(saved.articleSlug, isNull);
+      expect(saved.body, isNull);
+    },
+  );
 }

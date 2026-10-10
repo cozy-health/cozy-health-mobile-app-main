@@ -44,7 +44,7 @@ class ContentRepository {
         if (payload is Map) payload = payload['data'];
         if (payload is Map) {
           final last = payload['last_page'];
-          if (last is! int || last < page) {
+          if (last is! int || last < page || last > 1000) {
             throw const FormatException('Invalid saved-content pagination');
           }
           lastPage = last;
@@ -93,8 +93,10 @@ class ContentRepository {
       return;
     }
     try {
-      await ApiClient.instance.post('/content/articles/$articleId/save');
-      fetchSavedArticles();
+      await ApiClient.instance.post(
+        '/content/articles/${Uri.encodeComponent(articleId)}/bookmark',
+      );
+      await fetchSavedArticles();
     } catch (_) {
       debugPrint('Caught error: details withheld.');
     }
@@ -109,8 +111,11 @@ class ContentRepository {
       return;
     }
     try {
-      await ApiClient.instance.delete('/content/articles/$articleId/save');
-      fetchSavedArticles();
+      await ApiClient.instance.delete(
+        '/content/articles/${Uri.encodeComponent(articleId)}/bookmark',
+      );
+      await _local.deleteSavedArticle(articleId);
+      await fetchSavedArticles();
     } catch (_) {
       debugPrint('Caught error: details withheld.');
     }
@@ -164,6 +169,7 @@ class ContentRepository {
         readTimeMinutes: articleData['read_time_minutes'] as int?,
         excerpt: articleData['excerpt'] as String? ?? '',
         imageUrl: articleData['image_url'] as String? ?? '',
+        body: articleData['body'] as String?,
         savedAt: DateTime.now().toUtc(),
       );
       await _local.saveSavedArticle(article);

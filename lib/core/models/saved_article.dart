@@ -20,9 +20,14 @@ class SavedArticle extends HiveObject {
   @HiveField(5)
   final DateTime savedAt;
 
+  @HiveField(6)
   final String? articleSlug;
+  @HiveField(7)
   final String? category;
+  @HiveField(8)
   final int? readTimeMinutes;
+  @HiveField(9)
+  final String? body;
 
   SavedArticle({
     required this.id,
@@ -34,6 +39,7 @@ class SavedArticle extends HiveObject {
     this.articleSlug,
     this.category,
     this.readTimeMinutes,
+    this.body,
   });
 
   Map<String, dynamic> toJson() {
@@ -48,6 +54,7 @@ class SavedArticle extends HiveObject {
     if (articleSlug != null) json['article_slug'] = articleSlug;
     if (category != null) json['category'] = category;
     if (readTimeMinutes != null) json['read_time_minutes'] = readTimeMinutes;
+    if (body != null) json['body'] = body;
     return json;
   }
 
@@ -59,6 +66,7 @@ class SavedArticle extends HiveObject {
       title: json['title']?.toString() ?? '',
       category: json['category']?.toString(),
       readTimeMinutes: json['read_time_minutes'] as int?,
+      body: json['body'] as String?,
       excerpt: json['excerpt'] as String? ?? '',
       imageUrl: json['image_url'] as String? ?? '',
       savedAt: json['saved_at'] != null
@@ -85,13 +93,17 @@ class SavedArticleAdapter extends TypeAdapter<SavedArticle> {
       excerpt: fields[3] as String,
       imageUrl: fields[4] as String,
       savedAt: fields[5] as DateTime,
+      articleSlug: fields[6] as String?,
+      category: fields[7] as String?,
+      readTimeMinutes: fields[8] as int?,
+      body: fields[9] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, SavedArticle obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -103,6 +115,14 @@ class SavedArticleAdapter extends TypeAdapter<SavedArticle> {
       ..writeByte(4)
       ..write(obj.imageUrl)
       ..writeByte(5)
-      ..write(obj.savedAt);
+      ..write(obj.savedAt)
+      ..writeByte(6)
+      ..write(obj.articleSlug)
+      ..writeByte(7)
+      ..write(obj.category)
+      ..writeByte(8)
+      ..write(obj.readTimeMinutes)
+      ..writeByte(9)
+      ..write(obj.body);
   }
 }
