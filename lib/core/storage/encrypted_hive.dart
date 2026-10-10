@@ -13,6 +13,17 @@ import 'package:crypto/crypto.dart';
 /// Never falls back to plaintext or deletes data when a key cannot be read.
 class EncryptedHive {
   static const _storage = FlutterSecureStorage();
+  static bool _freshInstallWithoutFiles = false;
+
+  /// Retain secure storage, which can survive an iOS uninstall. A confirmed
+  /// empty fresh installation may recreate boxes using their retained keys.
+  static void prepareInstall({
+    required bool markerSet,
+    required bool hasLocalFiles,
+  }) {
+    _freshInstallWithoutFiles = !markerSet && !hasLocalFiles;
+  }
+
   static final _opening = <String, Future<Box<dynamic>>>{};
   static String physicalName(String name) => '${name.toLowerCase()}_aes256_v1';
   static bool isBoxOpen(String name) =>
@@ -46,7 +57,9 @@ class EncryptedHive {
     final digestName = 'hive_key_digest_v1_$name';
     final sourceDigestName = 'hive_legacy_digest_v1_$name';
     final complete = await _storage.read(key: completeName) == '1';
-    if (complete && !await Hive.boxExists(targetName)) {
+    if (complete &&
+        !await Hive.boxExists(targetName) &&
+        !_freshInstallWithoutFiles) {
       throw StateError('Encrypted local data is missing. Recovery required.');
     }
     var encoded = await _storage.read(key: keyName);

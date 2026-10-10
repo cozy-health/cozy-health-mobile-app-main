@@ -1,5 +1,6 @@
 import '../storage/encrypted_hive.dart';
 import '../storage/hive_files.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:async';
 import 'dart:math';
@@ -291,6 +292,11 @@ class LocalDbService {
 
   Future<void> init() async {
     await Hive.initFlutter();
+    final installPrefs = await SharedPreferences.getInstance();
+    EncryptedHive.prepareInstall(
+      markerSet: installPrefs.getBool('install_marker_set') ?? false,
+      hasLocalFiles: await hasLocalHiveFiles(),
+    );
 
     // Register Adapters
     if (!Hive.isAdapterRegistered(MoodEntryAdapter().typeId)) {

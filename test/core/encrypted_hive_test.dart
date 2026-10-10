@@ -14,6 +14,7 @@ void main() {
   const secure = FlutterSecureStorage();
   setUp(() async {
     FlutterSecureStorage.setMockInitialValues({});
+    EncryptedHive.prepareInstall(markerSet: true, hasLocalFiles: false);
     directory = await Directory.systemTemp.createTemp('cozy_crypto_');
     Hive.init(directory.path);
     Hive.registerAdapter(JournalEntryAdapter());
@@ -24,6 +25,37 @@ void main() {
     Hive.resetAdapters();
     await directory.delete(recursive: true);
   });
+
+  test(
+    'empty reinstall reuses retained keys without deleting secure metadata',
+    () async {
+      final original = await EncryptedHive.openBox<String>('queue');
+      await original.close();
+      final before = await secure.readAll();
+      await Hive.deleteBoxFromDisk(EncryptedHive.physicalName('queue'));
+      EncryptedHive.prepareInstall(markerSet: false, hasLocalFiles: false);
+      expect((await EncryptedHive.openBox<String>('queue')).isEmpty, isTrue);
+      expect(await secure.readAll(), before);
+    },
+  );
+
+  for (final hasFiles in [false, true]) {
+    test(
+      'missing box blocks when marker or other local files exist: $hasFiles',
+      () async {
+        await secure.write(key: 'hive_migrated_v1_queue', value: '1');
+        EncryptedHive.prepareInstall(
+          markerSet: !hasFiles,
+          hasLocalFiles: hasFiles,
+        );
+        await expectLater(
+          EncryptedHive.openBox<String>('queue'),
+          throwsStateError,
+        );
+        expect(await secure.read(key: 'hive_migrated_v1_queue'), '1');
+      },
+    );
+  }
 
   test(
     'legacy drafts and queue payloads migrate with keys and content intact',
