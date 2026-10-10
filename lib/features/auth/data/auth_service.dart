@@ -15,6 +15,13 @@ import '../../../core/services/device_integrity_service.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../settings/data/profile_repository.dart';
 
+class AuthLocalDataException implements Exception {
+  const AuthLocalDataException();
+  String get message =>
+      'Your sign-in was accepted, but this device could not open your saved data. '
+      'Please contact support before reinstalling.';
+}
+
 class AuthService {
   final ApiClient _apiClient;
   final TokenStorage _tokenStorage;
@@ -131,7 +138,10 @@ class AuthService {
     bool? restore;
     try {
       await local.waitForSyncIdle();
-      await local.activateAccount(userId, email: profile['email']?.toString());
+      await _activateAuthenticatedAccount(
+        userId,
+        email: profile['email']?.toString(),
+      );
       await GuestSessionService().exitGuestSession();
       restore = await RestoreService.prepare(userId);
     } finally {
@@ -237,7 +247,7 @@ class AuthService {
     local.syncPaused = true;
     try {
       await local.waitForSyncIdle();
-      await local.activateAccount(
+      await _activateAuthenticatedAccount(
         user['id'].toString(),
         email: user['email']?.toString(),
         registration: registration,
@@ -262,6 +272,24 @@ class AuthService {
     }
     if (!await RestoreService.required) _syncUserDataInBackground();
     unawaited(local.processSyncQueue(force: true));
+  }
+
+  Future<void> _activateAuthenticatedAccount(
+    String userId, {
+    String? email,
+    bool registration = false,
+  }) async {
+    try {
+      final local = LocalDbService();
+      await local.prepareAuthenticatedAccount(userId);
+      await local.activateAccount(
+        userId,
+        email: email,
+        registration: registration,
+      );
+    } catch (_) {
+      throw const AuthLocalDataException();
+    }
   }
 
   void _syncUserDataInBackground() {

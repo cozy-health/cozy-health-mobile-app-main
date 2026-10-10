@@ -1,5 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cozy_health/core/api/api_client.dart';
+import 'package:cozy_health/core/storage/encrypted_hive.dart';
+import 'package:cozy_health/features/auth/data/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -110,6 +115,27 @@ class WidgetController extends RestoreController {
   }
 }
 
+class SuccessfulLoginApi extends Fake implements ApiClient {
+  @override
+  Future<Response<dynamic>> post(
+    String path, {
+    dynamic data,
+    dynamic body,
+    Map<String, dynamic>? queryParameters,
+    bool withAuth = true,
+    Options? options,
+  }) async => Response<dynamic>(
+    requestOptions: RequestOptions(path: path),
+    statusCode: 200,
+    data: {
+      'data': {
+        'token': 'test-session',
+        'user': {'id': '42', 'name': 'Test User', 'email': 'test@example.test'},
+      },
+    },
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final local = LocalDbService();
@@ -170,6 +196,48 @@ void main() {
     expect(await RestoreService.prepare('1'), isTrue);
     expect(await RestoreService.required, isTrue);
   });
+  test(
+    'successful server login recovers absent account cache from older reinstall',
+    () async {
+      SharedPreferences.setMockInitialValues({'install_marker_set': true});
+      await EncryptedHive.prepareInstall(markerSet: true, hasLocalFiles: true);
+      await local.activateAccount('42', email: 'test@example.test');
+      final boxes = [
+        local.moodBox,
+        local.journalBox,
+        local.chatMessageBox,
+        local.chatConversationBox,
+        local.safetyPlanBox,
+        local.userProfileBox,
+        local.quizAttemptBox,
+        local.savedArticleBox,
+        local.appNotificationBox,
+        local.subscriptionStatusBox,
+        local.syncQueueBox,
+        await local.preferencesBox(),
+        await local.settingsBox(),
+      ];
+      await local.activateAccount('1', email: 'sample@example.test');
+      for (final box in boxes) {
+        final name = box.name;
+        await box.close();
+        await Hive.deleteBoxFromDisk(name);
+      }
+      await expectLater(local.activateAccount('42'), throwsStateError);
+      await AuthService(apiClient: SuccessfulLoginApi()).login(
+        email: 'test@example.test',
+        password: 'test-password',
+        stayLoggedIn: true,
+      );
+      expect(await TokenStorage().getToken(), 'test-session');
+      expect((await local.settingsBox()).get('device_user_id'), '42');
+      expect(local.getUserProfile()!.email, 'test@example.test');
+      expect(await RestoreService.required, isTrue);
+      await local.waitForSyncIdle();
+      local.syncPaused = true;
+      await local.activateAccount('1', email: 'sample@example.test');
+    },
+  );
   test('completed restore skips subsequent login', () async {
     final restore = controller();
     await RestoreService.prepare('1');

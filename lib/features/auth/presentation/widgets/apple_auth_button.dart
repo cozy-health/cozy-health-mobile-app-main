@@ -94,6 +94,8 @@ class _AppleAuthButtonState extends State<AppleAuthButton> {
           );
         }
       }
+    } on AuthLocalDataException catch (error) {
+      if (mounted) _showError(error.message);
     } on ApiException catch (error) {
       if (mounted) {
         _showError(

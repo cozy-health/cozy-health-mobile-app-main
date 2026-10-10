@@ -48,6 +48,30 @@ class LocalDbService {
       : '${base}_user_${_activeUser!.codeUnits.map((c) => c.toRadixString(16).padLeft(2, '0')).join()}';
   bool isBoxOpen(String base) => EncryptedHive.isBoxOpen(boxName(base));
 
+  Future<void> prepareAuthenticatedAccount(String userId) async {
+    final scope = userId.codeUnits
+        .map((c) => c.toRadixString(16).padLeft(2, '0'))
+        .join();
+    await EncryptedHive.prepareAuthenticatedAccount([
+      for (final base in [
+        moodBoxName,
+        journalBoxName,
+        chatMessageBoxName,
+        chatConversationBoxName,
+        safetyPlanBoxName,
+        userProfileBoxName,
+        quizAttemptBoxName,
+        savedArticleBoxName,
+        appNotificationBoxName,
+        subscriptionStatusBoxName,
+        syncQueueBoxName,
+        userPreferencesBoxName,
+        userSettingsBoxName,
+      ])
+        '${base}_user_$scope',
+    ]);
+  }
+
   Future<void> activateAccount(
     String userId, {
     String? email,

@@ -99,6 +99,54 @@ void main() {
   );
 
   test(
+    'authenticated recovery recreates absent account cache on older installs',
+    () async {
+      final names = ['journals_user_31', 'queue_user_31'];
+      for (final name in names) {
+        await (await EncryptedHive.openBox<String>(name)).close();
+        await Hive.deleteBoxFromDisk(EncryptedHive.physicalName(name));
+      }
+      final before = await secure.readAll();
+      await EncryptedHive.prepareInstall(markerSet: true, hasLocalFiles: true);
+      await expectLater(
+        EncryptedHive.openBox<String>(names.first),
+        throwsStateError,
+      );
+      await EncryptedHive.prepareAuthenticatedAccount(names);
+      for (final name in names) {
+        expect((await EncryptedHive.openBox<String>(name)).isEmpty, isTrue);
+      }
+      expect(await secure.readAll(), before);
+    },
+  );
+
+  for (final legacy in [false, true]) {
+    test(
+      'authenticated recovery preserves partially present account: legacy=$legacy',
+      () async {
+        final names = ['journals_user_31', 'queue_user_31'];
+        final journal = legacy
+            ? await Hive.openBox<String>(names.first)
+            : await EncryptedHive.openBox<String>(names.first);
+        await journal.put('draft', 'unsynced words');
+        await journal.flush();
+        final file = File(journal.path!);
+        final bytes = await file.readAsBytes();
+        await journal.close();
+        await secure.write(key: 'hive_migrated_v1_${names.last}', value: '1');
+        final before = await secure.readAll();
+        await EncryptedHive.prepareAuthenticatedAccount(names);
+        await expectLater(
+          EncryptedHive.openBox<String>(names.last),
+          throwsStateError,
+        );
+        expect(await file.readAsBytes(), bytes);
+        expect(await secure.readAll(), before);
+      },
+    );
+  }
+
+  test(
     'legacy drafts and queue payloads migrate with keys and content intact',
     () async {
       final legacy = await Hive.openBox<JournalEntry>('journals_user_31');

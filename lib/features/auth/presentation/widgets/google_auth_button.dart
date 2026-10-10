@@ -68,6 +68,8 @@ class _GoogleAuthButtonState extends State<GoogleAuthButton> {
           );
         }
       }
+    } on AuthLocalDataException catch (error) {
+      if (mounted) _showError(error.message);
     } on ApiException catch (error) {
       if (mounted) {
         _showError(error.message);

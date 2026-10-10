@@ -41,6 +41,34 @@ class EncryptedHive {
   }
 
   static final _opening = <String, Future<Box<dynamic>>>{};
+
+  /// A successful server login can recover an entirely absent account cache
+  /// left by an older reinstall build. Never repair a partially present cache.
+  static Future<void> prepareAuthenticatedAccount(List<String> names) async {
+    if (names.isEmpty) return;
+    for (final name in names) {
+      if (_opening.containsKey(name) ||
+          await Hive.boxExists(name) ||
+          await Hive.boxExists(physicalName(name))) {
+        return;
+      }
+    }
+    final retained = <String>[];
+    for (final name in names) {
+      if (await _storage.read(key: 'hive_migrated_v1_$name') == '1') {
+        retained.add(name);
+      }
+    }
+    if (retained.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final pending = (prefs.getStringList(_reinstallBoxesKey) ?? []).toSet()
+      ..addAll(retained);
+    if (!await prefs.setStringList(_reinstallBoxesKey, pending.toList())) {
+      throw StateError('Unable to persist account recovery status.');
+    }
+    _reinstallBoxes.addAll(retained);
+  }
+
   static String physicalName(String name) => '${name.toLowerCase()}_aes256_v1';
   static bool isBoxOpen(String name) =>
       !_opening.containsKey(name.toLowerCase()) &&

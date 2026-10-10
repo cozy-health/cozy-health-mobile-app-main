@@ -126,6 +126,14 @@ class _LoginScreenState extends State<LoginScreen> {
             ? AppRouter.home
             : AppRouter.personalization,
       );
+    } on AuthLocalDataException catch (e) {
+      if (!mounted) return;
+      showAuthToast(
+        context,
+        type: AuthToastType.error,
+        onRetry: _login,
+        title: e.message,
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       final message = e is ApiSecureConnectionException
