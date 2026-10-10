@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class StatCard extends StatelessWidget {
@@ -19,10 +18,12 @@ class StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppColors.surface,
+        color: backgroundColor ?? Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.border.withValues(alpha: 0.5),
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -33,7 +34,7 @@ class StatCard extends StatelessWidget {
             value,
             style: AppTextStyles.heading1.copyWith(
               fontSize: 28,
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.1,
             ),
           ),
@@ -41,7 +42,7 @@ class StatCard extends StatelessWidget {
           Text(
             label,
             style: AppTextStyles.body2.copyWith(
-              color: AppColors.textMuted,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w500,
             ),
           ),

@@ -17,10 +17,16 @@ class MonthlyReportScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
-        title: Text('Monthly report', style: AppTextStyles.heading2),
+        title: Text(
+          'Monthly report',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -34,18 +40,24 @@ class MonthlyReportScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.chevron_left, color: AppColors.text),
+                    icon: Icon(
+                      Icons.chevron_left,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     onPressed: () {},
                   ),
                   Text(
                     DateFormat('MMMM yyyy').format(DateTime.now()),
                     style: AppTextStyles.body1.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.chevron_right, color: AppColors.textMuted),
+                    icon: Icon(
+                      Icons.chevron_right,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                     onPressed: () {},
                   ),
                 ],
@@ -56,7 +68,7 @@ class MonthlyReportScreen extends StatelessWidget {
                 'Your month,\nat your pace.',
                 style: AppTextStyles.heading1.copyWith(
                   fontSize: 24,
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   height: 1.2,
                 ),
               ),
@@ -66,26 +78,31 @@ class MonthlyReportScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildStatRow(
+                      context,
                       LocalInsights.moods(month: true).length.toString(),
                       'entries',
                     ),
                     SizedBox(height: 12),
                     _buildStatRow(
+                      context,
                       LocalInsights.averageText(month: true),
                       'avg intensity',
                     ),
                     SizedBox(height: 12),
                     _buildStatRow(
+                      context,
                       LocalInsights.averageSleep(
                             month: true,
                           )?.toStringAsFixed(1) ??
@@ -94,6 +111,7 @@ class MonthlyReportScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
                     _buildStatRow(
+                      context,
                       '${LocalInsights.longestStreak()}-day',
                       'longest streak',
                     ),
@@ -104,12 +122,14 @@ class MonthlyReportScreen extends StatelessWidget {
 
               // Full width chart
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Column(
@@ -119,7 +139,7 @@ class MonthlyReportScreen extends StatelessWidget {
                       'Mood trend over the month',
                       style: AppTextStyles.body1.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     SizedBox(height: 16),
@@ -139,12 +159,14 @@ class MonthlyReportScreen extends StatelessWidget {
 
               // Top Triggers
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Column(
@@ -154,14 +176,14 @@ class MonthlyReportScreen extends StatelessWidget {
                       'Top triggers',
                       style: AppTextStyles.body1.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     SizedBox(height: 8),
                     Text(
                       LocalInsights.topTriggers(),
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -171,12 +193,14 @@ class MonthlyReportScreen extends StatelessWidget {
 
               // What helped
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Column(
@@ -186,7 +210,7 @@ class MonthlyReportScreen extends StatelessWidget {
                       'What helped',
                       style: AppTextStyles.body1.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     SizedBox(height: 8),
@@ -207,7 +231,7 @@ class MonthlyReportScreen extends StatelessWidget {
                                 .toSet()
                                 .join(', '),
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -239,20 +263,22 @@ class MonthlyReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatRow(String value, String label) {
+  Widget _buildStatRow(BuildContext context, String value, String label) {
     return Row(
       children: [
         Text(
           value,
           style: AppTextStyles.body1.copyWith(
             fontWeight: FontWeight.w600,
-            color: AppColors.text,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         SizedBox(width: 8),
         Text(
           label,
-          style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+          style: AppTextStyles.body1.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );

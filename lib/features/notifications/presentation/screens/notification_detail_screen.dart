@@ -1,93 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_button.dart';
+import '../../../../core/models/app_notification.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../data/notification_repository.dart';
 
 class NotificationDetailScreen extends StatelessWidget {
-  const NotificationDetailScreen({super.key});
+  const NotificationDetailScreen({super.key, this.notification});
+  final AppNotification? notification;
 
   @override
   Widget build(BuildContext context) {
+    final item = notification;
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 32),
-
-              // Centered Illustration/Icon
-              Center(
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text('🏆', style: TextStyle(fontSize: 64)),
-                ),
-              ),
-              const SizedBox(height: 48),
-
-              // Title
-              Text(
-                '7-day streak!',
-                style: AppTextStyles.heading1.copyWith(
-                  fontSize: 28,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-
-              // Body
-              Text(
-                'You\'ve logged your mood 7 days in a row.\nThat\'s real dedication to yourself.',
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textMutedDark
-                      : AppColors.textMutedLight,
-                  height: 1.6,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 64),
-
-              // Actions
-              AppButton(
-                text: 'View in Achievements',
-                onPressed: () {
-                  // Navigate to achievements feature
-                  context.pop();
-                },
-                trailingIcon: Icons.arrow_forward,
-              ),
-              const SizedBox(height: 16),
-              AppButton(
-                text: 'Dismiss',
-                onPressed: () => context.pop(),
-                isOutlined: true,
-              ),
-            ],
-          ),
-        ),
-      ),
+      appBar: AppBar(title: const Text('Notification')),
+      body: item == null
+          ? const EmptyState(
+              icon: Icons.notifications_none,
+              title: 'This notification is no longer available.',
+            )
+          : StreamBuilder<List<AppNotification>>(
+              stream: NotificationRepository().watchNotifications(),
+              builder: (context, snapshot) {
+                final current =
+                    (snapshot.data ?? [])
+                        .where((row) => row.id == item.id)
+                        .firstOrNull ??
+                    item;
+                final theme = Theme.of(context);
+                final destination = switch (current.type) {
+                  'reply' || 'like' => AppRouter.communityHub,
+                  'crisis' => AppRouter.crisisHub,
+                  'journal' => AppRouter.journal,
+                  _ => AppRouter.moodHistory,
+                };
+                return ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    Icon(
+                      Icons.notifications_outlined,
+                      size: 80,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(current.title, style: theme.textTheme.headlineMedium),
+                    const SizedBox(height: 12),
+                    Text(current.body, style: theme.textTheme.bodyLarge),
+                    const SizedBox(height: 16),
+                    Text(
+                      MaterialLocalizations.of(
+                        context,
+                      ).formatMediumDate(current.createdAt.toLocal()),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: () => context.push(destination),
+                      child: const Text('View related activity'),
+                    ),
+                    if (!current.read)
+                      OutlinedButton(
+                        onPressed: () =>
+                            NotificationRepository().markAsRead(current.id),
+                        child: const Text('Mark as read'),
+                      ),
+                  ],
+                );
+              },
+            ),
     );
   }
 }

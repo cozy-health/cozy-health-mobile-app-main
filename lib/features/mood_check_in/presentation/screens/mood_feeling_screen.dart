@@ -20,9 +20,10 @@ import '../../../../core/widgets/icon_chip.dart';
 import '../../../../core/widgets/progress_track.dart';
 
 class MoodFeelingScreen extends StatefulWidget {
-  const MoodFeelingScreen({super.key, this.entry});
+  const MoodFeelingScreen({super.key, this.entry, this.initialMood});
 
   final MoodEntry? entry;
+  final String? initialMood;
 
   @override
   State<MoodFeelingScreen> createState() => _MoodFeelingScreenState();
@@ -52,7 +53,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   Map<String, dynamic>? _savedDraft;
   Future<void> _draftWrites = Future.value();
 
-  late final List<_MoodOption> _moods = [
+  List<_MoodOption> get _moods => [
     _MoodOption(
       MoodEntry.moodEmojis['good']!,
       'good',
@@ -94,6 +95,27 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       'Angry',
       AppColors.danger,
       "That's valid. Let's work through it.",
+    ),
+    _MoodOption(
+      MoodEntry.moodEmojis['sad']!,
+      'sad',
+      'Sad',
+      Theme.of(context).colorScheme.primary,
+      'You can take this one step at a time.',
+    ),
+    _MoodOption(
+      MoodEntry.moodEmojis['tired']!,
+      'tired',
+      'Tired',
+      Theme.of(context).colorScheme.onSurfaceVariant,
+      'It is okay to make space for rest.',
+    ),
+    _MoodOption(
+      MoodEntry.moodEmojis['excited']!,
+      'excited',
+      'Excited',
+      AppColors.success,
+      'Let us make a note of this moment.',
     ),
   ];
 
@@ -140,6 +162,10 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       duration: const Duration(milliseconds: 900),
     );
     final entry = widget.entry;
+    if (entry == null && MoodEntry.moodEmojis.containsKey(widget.initialMood)) {
+      _moodLabel = widget.initialMood;
+      _moodEmoji = MoodEntry.moodEmojis[_moodLabel];
+    }
     if (entry != null) {
       _moodLabel = MoodEntry.normalizeMoodKey(entry.mood);
       _moodEmoji = entry.emoji;
@@ -560,7 +586,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
               itemCount: _moods.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                mainAxisExtent: 81 * (scale < 1 ? 1 : scale),
+                mainAxisExtent: 110 * (scale < 1 ? 1 : scale),
                 crossAxisSpacing: 19,
                 mainAxisSpacing: 12,
               ),
@@ -1113,7 +1139,8 @@ class _MoodCheckInSuccessScreenState extends State<MoodCheckInSuccessScreen> {
 }
 
 class MoodHistoryScreen extends StatelessWidget {
-  const MoodHistoryScreen({super.key});
+  const MoodHistoryScreen({super.key, this.selectedDay});
+  final DateTime? selectedDay;
 
   @override
   Widget build(BuildContext context) {
@@ -1123,7 +1150,15 @@ class MoodHistoryScreen extends StatelessWidget {
           stream: MoodRepository().watchMoodEntries(),
           initialData: LocalDbService().getAllMoodEntries(),
           builder: (context, snapshot) {
-            final entries = snapshot.data ?? const <MoodEntry>[];
+            final entries = (snapshot.data ?? const <MoodEntry>[]).where((
+              entry,
+            ) {
+              if (selectedDay == null) return true;
+              final day = entry.createdAt.toLocal();
+              return day.year == selectedDay!.year &&
+                  day.month == selectedDay!.month &&
+                  day.day == selectedDay!.day;
+            }).toList();
 
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),

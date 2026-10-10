@@ -74,7 +74,10 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
           ),
           onPressed: () => context.pop(),
         ),
-        title: Text('Mood trend', style: AppTextStyles.heading2),
+        title: Text(
+          'Mood trend',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -91,7 +94,9 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
@@ -116,7 +121,7 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
                                   : FontWeight.w500,
                               color: isSelected
                                   ? AppColors.white
-                                  : AppColors.text,
+                                  : Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ),
@@ -170,7 +175,9 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Column(
@@ -178,7 +185,7 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
                   children: [
                     Text(
                       _selectedRange == '7 days' ? 'This week' : 'This period',
-                      style: AppTextStyles.heading2,
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     SizedBox(height: 16),
                     _buildSummaryRow(

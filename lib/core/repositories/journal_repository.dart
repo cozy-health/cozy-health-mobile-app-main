@@ -1,3 +1,4 @@
+import '../data/demo_mode.dart';
 import '../services/user_data_merge.dart';
 import 'package:flutter/foundation.dart';
 
@@ -7,6 +8,14 @@ import '../api/api_client.dart';
 import '../constants/api_constants.dart';
 
 class JournalRepository {
+  JournalRepository({bool? usePlaceholderData})
+    : _placeholderOverride = usePlaceholderData;
+  final bool? _placeholderOverride;
+  bool get usePlaceholderData =>
+      _placeholderOverride ?? DemoMode.instance.enabled;
+  List<JournalEntry> currentEntries() => usePlaceholderData
+      ? List.of(DemoMode.instance.journals)
+      : _local.getAllJournalEntries();
   final LocalDbService _local = LocalDbService();
 
   List<dynamic> _extractListData(dynamic data) {
@@ -28,6 +37,7 @@ class JournalRepository {
     int page = 1,
     int perPage = 50,
   }) async {
+    if (usePlaceholderData) return currentEntries();
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.get(
@@ -53,11 +63,15 @@ class JournalRepository {
   }
 
   Stream<List<JournalEntry>> watchJournalEntries() {
-    return _local.watchJournalEntries();
+    return DemoMode.instance.selectStream(
+      useDemo: () => usePlaceholderData,
+      real: _local.watchJournalEntries,
+      demo: () => DemoMode.instance.journals,
+    );
   }
 
   Stream<JournalEntry?> watchEntryById(String id) {
-    return _local.watchJournalEntries().map(
+    return watchJournalEntries().map(
       (entries) => entries.cast<JournalEntry?>().firstWhere(
         (e) => e?.id == id,
         orElse: () => null,
@@ -66,6 +80,10 @@ class JournalRepository {
   }
 
   Future<JournalEntry> saveJournalEntry(JournalEntry entry) async {
+    if (usePlaceholderData) {
+      DemoMode.instance.upsertJournal(entry);
+      return entry;
+    }
     await _local.saveJournalEntry(entry);
     await _local.enqueueSync(
       type: 'journal_entry',
@@ -82,6 +100,11 @@ class JournalRepository {
   }
 
   Future<void> deleteJournalEntry(String id) async {
+    if (usePlaceholderData) {
+      DemoMode.instance.journals.removeWhere((entry) => entry.id == id);
+      DemoMode.instance.changed();
+      return;
+    }
     await _local.deleteJournalEntry(id);
     await _local.enqueueSync(
       type: 'journal_entry',

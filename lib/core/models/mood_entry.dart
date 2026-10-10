@@ -9,6 +9,9 @@ class MoodEntry extends HiveObject {
     'low': '\u{1F614}',
     'anxious': '\u{1F630}',
     'angry': '\u{1F621}',
+    'sad': '\u{1F622}',
+    'tired': '\u{1F634}',
+    'excited': '\u{1F929}',
   };
 
   static String normalizeMoodKey(String raw) => raw.toLowerCase().trim();

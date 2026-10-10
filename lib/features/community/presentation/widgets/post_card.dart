@@ -65,7 +65,9 @@ class PostCard extends StatelessWidget {
                     child: Text(
                       isAnonymous
                           ? '?'
-                          : username.substring(0, 1).toUpperCase(),
+                          : (username.isEmpty
+                                ? '?'
+                                : username.characters.first.toUpperCase()),
                       style: context.communityBody1.copyWith(
                         color: isAnonymous
                             ? context.communityMuted
@@ -100,20 +102,24 @@ class PostCard extends StatelessWidget {
                     ),
                   ),
                   if ((post['topic'] as String? ?? '').isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: .08),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        post['topic'] as String,
-                        style: context.communityBody2.copyWith(fontSize: 12),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: .08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          post['topic'] as String,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.communityBody2.copyWith(fontSize: 12),
+                        ),
                       ),
                     ),
                 ],
@@ -122,11 +128,34 @@ class PostCard extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Content
-            Text(
-              content,
-              style: context.communityBody1.copyWith(height: 1.5),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final style = context.communityBody1.copyWith(height: 1.5);
+                final layout = TextPainter(
+                  text: TextSpan(text: content, style: style),
+                  maxLines: 6,
+                  textDirection: Directionality.of(context),
+                  textScaler: MediaQuery.textScalerOf(context),
+                )..layout(maxWidth: constraints.maxWidth);
+                final truncated = layout.didExceedMaxLines;
+                layout.dispose();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      content,
+                      style: style,
+                      maxLines: 6,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (truncated)
+                      TextButton(
+                        onPressed: onTap,
+                        child: const Text('Read more'),
+                      ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 16),
 
@@ -135,17 +164,34 @@ class PostCard extends StatelessWidget {
               children: [
                 InkWell(
                   onTap: () => CommunityLocalState.instance.toggleLike(post),
-                  child: _buildReaction(
-                    icon: isLiked ? Icons.favorite : Icons.favorite_border,
-                    count: likes,
-                    color: isLiked ? AppColors.danger : context.communityMuted,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 4,
+                    ),
+                    child: _buildReaction(
+                      icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                      count: likes,
+                      color: isLiked
+                          ? AppColors.danger
+                          : context.communityMuted,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 24),
-                _buildReaction(
-                  icon: Icons.chat_bubble_outline,
-                  count: comments,
-                  color: context.communityMuted,
+                InkWell(
+                  onTap: onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 4,
+                    ),
+                    child: _buildReaction(
+                      icon: Icons.chat_bubble_outline,
+                      count: comments,
+                      color: context.communityMuted,
+                    ),
+                  ),
                 ),
               ],
             ),

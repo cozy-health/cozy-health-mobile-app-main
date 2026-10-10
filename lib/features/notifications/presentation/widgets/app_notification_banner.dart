@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class AppNotificationBanner extends StatefulWidget {
@@ -36,18 +35,21 @@ class _AppNotificationBannerState extends State<AppNotificationBanner>
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-    
-    _slideAnimation = Tween<Offset>(
-      begin: widget.isTop ? const Offset(0, -1) : const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    ));
+
+    _slideAnimation =
+        Tween<Offset>(
+          begin: widget.isTop ? const Offset(0, -1) : const Offset(0, 1),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        );
 
     _controller.forward();
-    
+
     // Auto dismiss
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
@@ -80,7 +82,9 @@ class _AppNotificationBannerState extends State<AppNotificationBanner>
           opacity: _controller,
           child: Dismissible(
             key: const Key('notification_banner'),
-            direction: widget.isTop ? DismissDirection.up : DismissDirection.down,
+            direction: widget.isTop
+                ? DismissDirection.up
+                : DismissDirection.down,
             onDismissed: (_) => widget.onDismiss(),
             child: Material(
               color: Colors.transparent,
@@ -91,13 +95,18 @@ class _AppNotificationBannerState extends State<AppNotificationBanner>
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.black.withValues(alpha: 0.1),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.1),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -116,21 +125,29 @@ class _AppNotificationBannerState extends State<AppNotificationBanner>
                             Text(
                               widget.title,
                               style: AppTextStyles.body1.copyWith(
-                                color: AppColors.text,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               widget.body,
-                              style: AppTextStyles.body2.copyWith(color: AppColors.textMuted),
+                              style: AppTextStyles.body2.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        icon: Icon(Icons.close, size: 20, color: AppColors.textSubtle),
+                        icon: Icon(
+                          Icons.close,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         onPressed: _dismiss,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),

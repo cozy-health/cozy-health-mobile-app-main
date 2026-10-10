@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class InsightCard extends StatelessWidget {
@@ -35,7 +34,7 @@ class InsightCard extends StatelessWidget {
             title,
             style: AppTextStyles.heading2.copyWith(
               fontSize: 20,
-              color: AppColors.text,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.3,
             ),
           ),
@@ -44,7 +43,7 @@ class InsightCard extends StatelessWidget {
             Text(
               subtitle!,
               style: AppTextStyles.body1.copyWith(
-                color: AppColors.textMuted,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],

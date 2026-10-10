@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class ArticleCardCompact extends StatelessWidget {
@@ -24,9 +23,13 @@ class ArticleCardCompact extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 88),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          border: Border.all(
+            color: Theme.of(
+              context,
+            ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
         child: Row(
           children: [
@@ -39,7 +42,7 @@ class ArticleCardCompact extends StatelessWidget {
                     title,
                     style: AppTextStyles.body1.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -47,7 +50,7 @@ class ArticleCardCompact extends StatelessWidget {
                     metadata,
                     style: AppTextStyles.body2.copyWith(
                       fontSize: 13,
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -58,7 +61,11 @@ class ArticleCardCompact extends StatelessWidget {
               trailing!,
             ] else ...[
               const SizedBox(width: 16),
-              Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textSubtle),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ],
           ],
         ),

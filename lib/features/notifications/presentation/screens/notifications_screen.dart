@@ -1,5 +1,4 @@
 import '../../../../core/services/user_data_fetcher.dart';
-import '../../../../core/services/local_db_service.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/routing/app_router.dart';
@@ -53,7 +52,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: true,
-        title: Text('Notifications', style: AppTextStyles.h3),
+        title: Text(
+          'Notifications',
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
         leading: IconButton(
           icon: Icon(
             Icons.chevron_left,
@@ -64,7 +66,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         actions: [
           StreamBuilder<List<AppNotification>>(
             stream: NotificationRepository().watchNotifications(),
-            initialData: LocalDbService().getNotifications(),
+            initialData: NotificationRepository().currentEntries(),
             builder: (context, snapshot) {
               final items = snapshot.data ?? [];
               final unreadCount = items.where((n) => !n.read).length;
@@ -83,7 +85,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: SafeArea(
         child: StreamBuilder<List<AppNotification>>(
           stream: NotificationRepository().watchNotifications(),
-          initialData: LocalDbService().getNotifications(),
+          initialData: NotificationRepository().currentEntries(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting &&
                 !snapshot.hasData) {
@@ -199,10 +201,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: GestureDetector(
         onTap: () async {
           await NotificationRepository().markAsRead(item.id);
-          if (item.type == 'achievement' && mounted) {
-            context.push(AppRouter.notificationDetail);
-          } else {
-            // Navigation to other routes based on type
+          if (mounted) {
+            context.push(
+              AppRouter.notificationDetail,
+              extra: item.copyWith(read: true),
+            );
           }
         },
         onLongPress: () {
@@ -261,31 +264,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           constraints: const BoxConstraints(minHeight: 72),
           decoration: BoxDecoration(
             color: item.read
-                ? AppColors.surface
+                ? Theme.of(context).colorScheme.surface
                 : Theme.of(context).colorScheme.primary.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(12),
-            border: Border(
-              left: BorderSide(
-                color: item.read
-                    ? Colors.transparent
-                    : Theme.of(context).colorScheme.primary,
-                width: 3,
-              ),
-              top: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: item.read ? 1 : 0,
-                style: item.read ? BorderStyle.solid : BorderStyle.none,
-              ),
-              right: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: item.read ? 1 : 0,
-                style: item.read ? BorderStyle.solid : BorderStyle.none,
-              ),
-              bottom: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: item.read ? 1 : 0,
-                style: item.read ? BorderStyle.solid : BorderStyle.none,
-              ),
+            border: Border.all(
+              color: item.read
+                  ? Theme.of(context).dividerColor
+                  : Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: .25),
             ),
           ),
           padding: const EdgeInsets.all(16),

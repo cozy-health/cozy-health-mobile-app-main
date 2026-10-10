@@ -6,7 +6,6 @@ import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/models/saved_article.dart';
 import '../../data/content_repository.dart';
@@ -42,10 +41,13 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
-        title: Text('Saved', style: AppTextStyles.heading2),
+        title: Text('Saved', style: Theme.of(context).textTheme.headlineMedium),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -74,7 +76,10 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
         children: [
           Text(
             'Saved articles',
-            style: AppTextStyles.heading1.copyWith(fontSize: 28),
+            style: AppTextStyles.heading1.copyWith(
+              fontSize: 28,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 24),
           ListView.separated(
@@ -94,7 +99,10 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
                   );
                 },
                 trailing: IconButton(
-                  icon: Icon(Icons.close, color: AppColors.textSubtle),
+                  icon: Icon(
+                    Icons.close,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   onPressed: () => _removeArticle(article),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),

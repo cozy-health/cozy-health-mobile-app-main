@@ -1,6 +1,7 @@
 // TODO: wire to backend when endpoint exists
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/services/local_db_service.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -21,7 +22,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   String _selectedTopic = 'Topic (optional)';
   bool _isPublishing = false;
 
-  final int _maxLength = 2000;
+  final int _maxLength = 500;
 
   @override
   void initState() {
@@ -38,7 +39,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   bool get _canPost {
-    final length = _textController.text.length;
+    final length = _textController.text.trim().length;
     return length > 0 && length <= _maxLength && !_isPublishing;
   }
 
@@ -81,6 +82,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     context.pop();
   }
 
+  String get _authorName {
+    final name = LocalDbService.instance.getUserProfile()?.name.trim() ?? '';
+    return name.isEmpty ? 'you' : name;
+  }
+
+  String get _authorInitial => _authorName.characters.first.toUpperCase();
+
   @override
   Widget build(BuildContext context) {
     final textLength = _textController.text.length;
@@ -90,6 +98,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     return Scaffold(
       backgroundColor: context.communityBackground,
       appBar: AppBar(
+        title: const Text('Create Post'),
         backgroundColor: context.communityBackground,
         elevation: 0,
         leading: TextButton(
@@ -136,7 +145,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
+        child: ListView(
           children: [
             // Author Row
             GestureDetector(
@@ -171,7 +180,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        _visibility == PostVisibility.anonymous ? '?' : 'S',
+                        _visibility == PostVisibility.anonymous
+                            ? '?'
+                            : _authorInitial,
                         style: context.communityBody1.copyWith(
                           color: _visibility == PostVisibility.anonymous
                               ? context.communityMuted
@@ -188,7 +199,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           Text(
                             _visibility == PostVisibility.anonymous
                                 ? 'Anonymous'
-                                : '@sarahchen',
+                                : '@$_authorName',
                             style: context.communityBody1.copyWith(
                               color: context.communityText,
                               fontWeight: FontWeight.w500,
@@ -199,15 +210,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           ),
                           Row(
                             children: [
-                              Text(
-                                _visibility == PostVisibility.public
-                                    ? 'Posting publicly'
-                                    : _visibility == PostVisibility.followers
-                                    ? 'Followers only'
-                                    : 'Posting anonymously',
-                                style: context.communityBody2.copyWith(
-                                  color: context.communityMuted,
-                                  fontSize: 13,
+                              Flexible(
+                                child: Text(
+                                  _visibility == PostVisibility.public
+                                      ? 'Posting publicly'
+                                      : _visibility == PostVisibility.followers
+                                      ? 'Followers only'
+                                      : 'Posting anonymously',
+                                  style: context.communityBody2.copyWith(
+                                    color: context.communityMuted,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
                               SizedBox(width: 4),
@@ -226,22 +239,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               ),
             ),
 
-            // Text Area
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: TextField(
-                  controller: _textController,
-                  maxLines: null,
-                  decoration: InputDecoration(
-                    hintText: 'What\'s on your mind?',
-                    hintStyle: context.communityBody1.copyWith(
-                      color: context.communityMuted,
-                    ),
-                    border: InputBorder.none,
-                  ),
-                  style: context.communityBody1.copyWith(height: 1.5),
+            // Text area shares the scroll view with its accessories, including above the keyboard.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: TextField(
+                controller: _textController,
+                minLines: 5,
+                maxLines: null,
+                maxLength: _maxLength,
+                decoration: InputDecoration(
+                  hintText: "What's on your mind?",
+                  border: InputBorder.none,
                 ),
+                style: context.communityBody1.copyWith(height: 1.5),
               ),
             ),
 
@@ -276,7 +286,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(_selectedTopic, style: context.communityBody1),
+                        Expanded(
+                          child: Text(
+                            _selectedTopic,
+                            style: context.communityBody1,
+                          ),
+                        ),
                         Icon(
                           Icons.keyboard_arrow_down,
                           color: Theme.of(context).colorScheme.onSurface,
@@ -290,15 +305,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.image_outlined,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          SizedBox(width: 12),
-                          Text('Add image', style: context.communityBody1),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.image_outlined,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            SizedBox(width: 12),
+                            Flexible(
+                              child: Text(
+                                'Add image',
+                                style: context.communityBody1,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

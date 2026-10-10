@@ -1,3 +1,4 @@
+import '../data/demo_mode.dart';
 import '../services/user_data_merge.dart';
 import 'package:flutter/foundation.dart';
 import '../models/mood_entry.dart';
@@ -13,6 +14,14 @@ class MoodStats {
 }
 
 class MoodRepository {
+  MoodRepository({bool? usePlaceholderData})
+    : _placeholderOverride = usePlaceholderData;
+  final bool? _placeholderOverride;
+  bool get usePlaceholderData =>
+      _placeholderOverride ?? DemoMode.instance.enabled;
+  List<MoodEntry> currentEntries() => usePlaceholderData
+      ? List.of(DemoMode.instance.moods)
+      : _local.getAllMoodEntries();
   final LocalDbService _local = LocalDbService();
 
   List<dynamic> _extractListData(dynamic data) {
@@ -32,6 +41,7 @@ class MoodRepository {
     int page = 1,
     int perPage = 50,
   }) async {
+    if (usePlaceholderData) return currentEntries();
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.get(
@@ -59,11 +69,17 @@ class MoodRepository {
     }
   }
 
-  Stream<List<MoodEntry>> watchMoodEntries() async* {
-    yield* _local.watchMoodEntries();
-  }
+  Stream<List<MoodEntry>> watchMoodEntries() => DemoMode.instance.selectStream(
+    useDemo: () => usePlaceholderData,
+    real: _local.watchMoodEntries,
+    demo: () => DemoMode.instance.moods,
+  );
 
   Future<MoodEntry> saveMoodEntry(MoodEntry entry) async {
+    if (usePlaceholderData) {
+      DemoMode.instance.upsertMood(entry);
+      return entry;
+    }
     await _local.saveMoodEntry(entry);
     await _local.enqueueSync(
       type: 'mood_entry',
@@ -80,6 +96,11 @@ class MoodRepository {
   }
 
   Future<void> deleteMoodEntry(String id) async {
+    if (usePlaceholderData) {
+      DemoMode.instance.moods.removeWhere((entry) => entry.id == id);
+      DemoMode.instance.changed();
+      return;
+    }
     await _local.deleteMoodEntry(id);
     await _local.enqueueSync(
       type: 'mood_entry',

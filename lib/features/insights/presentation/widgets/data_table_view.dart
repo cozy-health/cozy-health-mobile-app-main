@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class DataTableView extends StatelessWidget {
@@ -22,10 +21,13 @@ class DataTableView extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(title, style: AppTextStyles.heading2),
+        title: Text(title, style: Theme.of(context).textTheme.headlineMedium),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -34,10 +36,12 @@ class DataTableView extends StatelessWidget {
           child: Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.border.withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outlineVariant.withValues(alpha: 0.5),
               ),
             ),
             child: SingleChildScrollView(
@@ -45,10 +49,10 @@ class DataTableView extends StatelessWidget {
               child: DataTable(
                 headingTextStyle: AppTextStyles.body2.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 dataTextStyle: AppTextStyles.body1.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 columns: columns,
                 rows: rows,

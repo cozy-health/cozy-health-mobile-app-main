@@ -423,17 +423,18 @@ void main() {
 
   testWidgets('Community empty topic invites sharing', (tester) async {
     await mount(tester, const CommunityHubScreen());
-    await tester.ensureVisible(find.text('Sleep'));
-    await tester.tap(find.text('Sleep'));
+    final sleepFilter = find.descendant(of: find.byType(ListView).first, matching: find.text('Sleep'));
+    await tester.ensureVisible(sleepFilter);
+    await tester.tap(sleepFilter);
     await tester.pumpAndSettle();
-    expect(find.text('Be the first to share.'), findsOneWidget);
-    await tapCta(tester, 'Share something', AppRouter.createPost);
+    expect(find.text('No posts yet. Be the first to share.'), findsOneWidget);
+    await tapCta(tester, 'Create Post', AppRouter.createPost);
   });
 
   testWidgets('Community empty feed invites sharing', (tester) async {
     await mount(tester, const CommunityHubScreen(posts: []));
-    expect(find.text('Be the first to share.'), findsOneWidget);
-    await tapCta(tester, 'Share something', AppRouter.createPost);
+    expect(find.text('No posts yet. Be the first to share.'), findsOneWidget);
+    await tapCta(tester, 'Create Post', AppRouter.createPost);
   });
 
   testWidgets('Notifications invitation disappears when notification arrives', (

@@ -1,9 +1,18 @@
+import '../../../core/data/demo_mode.dart';
 import 'package:flutter/foundation.dart';
 import '../../../core/models/app_notification.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/api/api_client.dart';
 
 class NotificationRepository {
+  NotificationRepository({bool? usePlaceholderData})
+    : _placeholderOverride = usePlaceholderData;
+  final bool? _placeholderOverride;
+  bool get usePlaceholderData =>
+      _placeholderOverride ?? DemoMode.instance.enabled;
+  List<AppNotification> currentEntries() => usePlaceholderData
+      ? List.of(DemoMode.instance.notifications)
+      : _local.getAllAppNotifications();
   final LocalDbService _local = LocalDbService();
 
   List<dynamic> _extractListData(dynamic data) {
@@ -20,6 +29,7 @@ class NotificationRepository {
   }
 
   Future<List<AppNotification>> fetchNotifications() async {
+    if (usePlaceholderData) return currentEntries();
     try {
       final response = await ApiClient.instance.get('/notifications');
       final items = _extractListData(response.data)
@@ -38,10 +48,32 @@ class NotificationRepository {
   }
 
   Stream<List<AppNotification>> watchNotifications() {
-    return _local.watchAppNotifications();
+    return DemoMode.instance.selectStream(
+      useDemo: () => usePlaceholderData,
+      real: _local.watchAppNotifications,
+      demo: () => DemoMode.instance.notifications,
+    );
   }
 
   Future<void> markAsRead(String id) async {
+    if (usePlaceholderData) {
+      final items = DemoMode.instance.notifications;
+      final index = items.indexWhere((item) => item.id == id);
+      if (index >= 0) {
+        items[index] = items[index].copyWith(
+          read: true,
+          readAt: DateTime.now(),
+        );
+      }
+      DemoMode.instance.changed();
+      return;
+    }
+    final item = currentEntries().where((item) => item.id == id).firstOrNull;
+    if (item != null) {
+      await _local.saveAppNotification(
+        item.copyWith(read: true, readAt: DateTime.now()),
+      );
+    }
     try {
       await ApiClient.instance.patch('/notifications/$id/read');
       fetchNotifications();
@@ -51,6 +83,19 @@ class NotificationRepository {
   }
 
   Future<void> markAllAsRead() async {
+    if (usePlaceholderData) {
+      final items = DemoMode.instance.notifications;
+      for (var i = 0; i < items.length; i++) {
+        items[i] = items[i].copyWith(read: true, readAt: DateTime.now());
+      }
+      DemoMode.instance.changed();
+      return;
+    }
+    for (final item in currentEntries().where((item) => !item.read)) {
+      await _local.saveAppNotification(
+        item.copyWith(read: true, readAt: DateTime.now()),
+      );
+    }
     try {
       await ApiClient.instance.patch('/notifications/read-all');
       fetchNotifications();
@@ -60,6 +105,11 @@ class NotificationRepository {
   }
 
   Future<void> deleteNotification(String id) async {
+    if (usePlaceholderData) {
+      DemoMode.instance.notifications.removeWhere((entry) => entry.id == id);
+      DemoMode.instance.changed();
+      return;
+    }
     await _local.deleteAppNotification(id);
     await _local.enqueueSync(
       type: 'app_notification',

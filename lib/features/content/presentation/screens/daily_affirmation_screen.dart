@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 
@@ -63,7 +62,10 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
       ),
@@ -90,9 +92,13 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
                           width: 88,
                           height: 88,
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: Theme.of(context).colorScheme.surface,
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.border),
+                            border: Border.all(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outlineVariant,
+                            ),
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -106,6 +112,7 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
                           style: AppTextStyles.heading1.copyWith(
                             fontSize: 28,
                             height: 1.3,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -115,7 +122,9 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
                           style: AppTextStyles.body1.copyWith(
                             fontSize: 18,
                             fontStyle: FontStyle.italic,
-                            color: AppColors.textMuted,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -139,7 +148,7 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
                     shape: BoxShape.circle,
                     color: _currentIndex == index
                         ? Theme.of(context).colorScheme.primary
-                        : AppColors.border,
+                        : Theme.of(context).colorScheme.outlineVariant,
                   ),
                 ),
               ),

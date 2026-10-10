@@ -6,6 +6,7 @@ import '../services/connection_sound.dart';
 import '../models/sync_summary.dart';
 import '../services/network_status.dart';
 import 'app_snackbar.dart';
+import 'offline_status_banner.dart';
 
 class NetworkObserver extends StatefulWidget {
   const NetworkObserver({
@@ -108,53 +109,14 @@ class _NetworkObserverState extends State<NetworkObserver> {
 
   @override
   Widget build(BuildContext context) {
-    final reduce =
-        MediaQuery.of(context).disableAnimations ||
-        MediaQuery.of(context).accessibleNavigation;
-    final warning = Theme.of(context).colorScheme.tertiary;
-    final banner = Semantics(
-      liveRegion: true,
-      child: Container(
-        height: 40,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: warning.withValues(alpha: 0.15),
-          border: Border.all(color: warning.withValues(alpha: 0.4)),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Row(
-          children: [
-            const Icon(Icons.cloud_off, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                "You're offline. Changes will sync when you reconnect.",
-                style: Theme.of(context).textTheme.bodySmall,
-                maxLines: 2,
-              ),
-            ),
-          ],
-        ),
-      ),
+    final visibleBanner = OfflineStatusBanner(
+      onRetry: () async {
+        final results =
+            await (widget.check?.call() ?? Connectivity().checkConnectivity());
+        _changed(results);
+        if (!results.contains(ConnectivityResult.none)) _retry();
+      },
     );
-    final visibleBanner = reduce
-        ? (_offline ? banner : const SizedBox(width: double.infinity))
-        : TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: _offline ? 1 : 0),
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            child: ExcludeSemantics(excluding: !_offline, child: banner),
-            builder: (_, value, child) => ClipRect(
-              child: Align(
-                heightFactor: value,
-                alignment: Alignment.topCenter,
-                child: Transform.translate(
-                  offset: Offset(0, -40 * (1 - value)),
-                  child: child,
-                ),
-              ),
-            ),
-          );
     return Column(
       children: [
         SafeArea(top: _offline, bottom: false, child: visibleBanner),

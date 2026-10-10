@@ -26,7 +26,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  static const Duration _brandMomentDuration = Duration(milliseconds: 2500);
+  static const Duration _brandMomentDuration = Duration(milliseconds: 1500);
   static const Duration _fadeOutDuration = Duration(milliseconds: 500);
 
   final SplashService _splashService = SplashService();
@@ -194,94 +194,103 @@ class _SplashScreenState extends State<SplashScreen>
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: SafeArea(
           child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 220,
-                  height: 220,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      FadeTransition(
-                        opacity: reduceMotion
-                            ? const AlwaysStoppedAnimation(1)
-                            : _glowOpacity,
-                        child: BreathingGlow(
-                          size: 220,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      FadeTransition(
-                        opacity: reduceMotion
-                            ? const AlwaysStoppedAnimation(1)
-                            : _logoOpacity,
-                        child: ScaleTransition(
-                          scale: reduceMotion
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 220,
+                    height: 220,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        FadeTransition(
+                          opacity: reduceMotion
                               ? const AlwaysStoppedAnimation(1)
-                              : _logoScale,
-                          child: AnimatedBuilder(
-                            animation: _logoBreathScale,
-                            builder: (_, child) => Transform.scale(
-                              scale: reduceMotion ? 1 : _logoBreathScale.value,
-                              child: child,
-                            ),
-                            child: SvgPicture.asset(
-                              Assets.svg.logo,
-                              width: 140,
-                              height: 140,
+                              : _glowOpacity,
+                          child: BreathingGlow(
+                            size: 220,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        FadeTransition(
+                          opacity: reduceMotion
+                              ? const AlwaysStoppedAnimation(1)
+                              : _logoOpacity,
+                          child: ScaleTransition(
+                            scale: reduceMotion
+                                ? const AlwaysStoppedAnimation(1)
+                                : _logoScale,
+                            child: AnimatedBuilder(
+                              animation: _logoBreathScale,
+                              builder: (_, child) => Transform.scale(
+                                scale: reduceMotion
+                                    ? 1
+                                    : _logoBreathScale.value,
+                                child: child,
+                              ),
+                              child: SvgPicture.asset(
+                                Assets.svg.logo,
+                                width: 140,
+                                height: 140,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 40),
-                FadeTransition(
-                  opacity: reduceMotion
-                      ? const AlwaysStoppedAnimation(1)
-                      : _headlineOpacity,
-                  child: SlideTransition(
-                    position: reduceMotion
-                        ? const AlwaysStoppedAnimation(Offset.zero)
-                        : _headlineOffset,
-                    child: Text(
-                      'COZY HEALTH',
-                      style: GoogleFonts.outfit(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.primary,
-                        letterSpacing: 2,
-                        height: 1.2,
+                  const SizedBox(height: 40),
+                  FadeTransition(
+                    opacity: reduceMotion
+                        ? const AlwaysStoppedAnimation(1)
+                        : _headlineOpacity,
+                    child: SlideTransition(
+                      position: reduceMotion
+                          ? const AlwaysStoppedAnimation(Offset.zero)
+                          : _headlineOffset,
+                      child: Text(
+                        'COZY HEALTH',
+                        style: GoogleFonts.outfit(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.primary,
+                          letterSpacing: 2,
+                          height: 1.2,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                FadeTransition(
-                  opacity: reduceMotion
-                      ? const AlwaysStoppedAnimation(1)
-                      : _taglineOpacity,
-                  child: SlideTransition(
-                    position: reduceMotion
-                        ? const AlwaysStoppedAnimation(Offset.zero)
-                        : _taglineOffset,
-                    child: Text(
-                      'Breathe. Reflect. Grow.',
-                      style: GoogleFonts.outfit(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.72),
-                        letterSpacing: 0.5,
-                        height: 1.4,
+                  const SizedBox(height: 12),
+                  FadeTransition(
+                    opacity: reduceMotion
+                        ? const AlwaysStoppedAnimation(1)
+                        : _taglineOpacity,
+                    child: SlideTransition(
+                      position: reduceMotion
+                          ? const AlwaysStoppedAnimation(Offset.zero)
+                          : _taglineOffset,
+                      child: Text(
+                        'Breathe. Reflect. Grow.',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.72),
+                          letterSpacing: 0.5,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  const CircularProgressIndicator(
+                    semanticsLabel: 'Opening Cozy Health',
+                  ),
+                ],
+              ),
             ),
           ),
         ),

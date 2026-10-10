@@ -63,7 +63,10 @@ class _SleepMoodScreenState extends State<SleepMoodScreen>
           ),
           onPressed: () => context.pop(),
         ),
-        title: Text('Sleep & mood', style: AppTextStyles.heading2),
+        title: Text(
+          'Sleep & mood',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -144,13 +147,18 @@ class _SleepMoodScreenState extends State<SleepMoodScreen>
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('What we noticed', style: AppTextStyles.heading2),
+                    Text(
+                      'What we noticed',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
                     SizedBox(height: 16),
                     Text(
                       'Each point shows average mood intensity for a sleep quality rating. These are patterns, not causes.',
@@ -285,7 +293,7 @@ class _DualLineChartPainter extends CustomPainter {
       canvas.drawCircle(
         Offset(0, size.height - sleepData[0] / maxData * size.height),
         4,
-        Paint()..color = const Color(0xFFA78BC7),
+        Paint()..color = Color(0xFFA78BC7),
       );
     }
     _drawSleepLine(canvas, size, maxData, pointWidth);
@@ -340,7 +348,7 @@ class _DualLineChartPainter extends CustomPainter {
     }
 
     final sleepPaint = Paint()
-      ..color = const Color(0xFFA78BC7)
+      ..color = Color(0xFFA78BC7)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;

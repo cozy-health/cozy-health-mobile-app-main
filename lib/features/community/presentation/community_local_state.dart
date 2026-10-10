@@ -1,5 +1,6 @@
 // TODO: wire to backend when endpoint exists
 import 'package:flutter/foundation.dart';
+import '../../../core/data/demo_mode.dart';
 
 class CommunityGroup {
   CommunityGroup({
@@ -31,6 +32,8 @@ class CommunityLocalState extends ChangeNotifier {
     'Self-compassion',
     'Work & Life',
     'Grief & Loss',
+    'Work',
+    'Self-care',
   ];
   final List<CommunityGroup> groups = [
     CommunityGroup(
@@ -58,6 +61,24 @@ class CommunityLocalState extends ChangeNotifier {
     ),
   ];
   final List<Map<String, dynamic>> posts = [];
+  final Set<String> _blockedUsers = {};
+  final Set<String> _hiddenPosts = {};
+
+  bool isVisible(Map<String, dynamic> post) =>
+      !_hiddenPosts.contains(postKey(post)) &&
+      (post['isAnonymous'] == true ||
+          !_blockedUsers.contains(post['username']));
+
+  void blockUser(String username) {
+    if (username.isNotEmpty) _blockedUsers.add(username);
+    notifyListeners();
+  }
+
+  void hidePost(Map<String, dynamic> post) {
+    _hiddenPosts.add(postKey(post));
+    notifyListeners();
+  }
+
   final Map<String, List<Map<String, dynamic>>> _threads = {};
   int _sequence = 0;
 
@@ -88,7 +109,7 @@ class CommunityLocalState extends ChangeNotifier {
     required String topic,
     required String visibility,
   }) {
-    posts.insert(0, {
+    (DemoMode.instance.enabled ? DemoMode.instance.posts : posts).insert(0, {
       'id': 'local-post-${++_sequence}',
       'username': 'you',
       'isAnonymous': visibility == 'anonymous',

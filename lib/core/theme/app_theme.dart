@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 import 'app_text_styles.dart';
+import 'cozy_colors.dart';
 
 class AppTheme {
   static ThemeData get light => ThemeData(
     brightness: Brightness.light,
+    extensions: const [CozyColors.light],
     useMaterial3: true,
     scaffoldBackgroundColor: AppColors.backgroundLight,
     colorScheme: const ColorScheme.light(
@@ -14,6 +16,9 @@ class AppTheme {
       error: AppColors.danger,
       onPrimary: Colors.white,
       onSurface: AppColors.textLight,
+      onSurfaceVariant: AppColors.textMutedLight,
+      outline: AppColors.borderStrongLight,
+      outlineVariant: AppColors.borderLight,
       onError: Colors.white,
     ),
     textTheme: AppTextStyles.getTextTheme(Brightness.light),
@@ -80,6 +85,7 @@ class AppTheme {
 
   static ThemeData get dark => ThemeData(
     brightness: Brightness.dark,
+    extensions: const [CozyColors.dark],
     useMaterial3: true,
     scaffoldBackgroundColor: AppColors.backgroundDark,
     colorScheme: const ColorScheme.dark(
@@ -88,6 +94,9 @@ class AppTheme {
       error: AppColors.danger,
       onPrimary: Colors.white,
       onSurface: AppColors.textDark,
+      onSurfaceVariant: AppColors.textMutedDark,
+      outline: AppColors.borderStrongDark,
+      outlineVariant: AppColors.borderDark,
       onError: Colors.white,
     ),
     textTheme: AppTextStyles.getTextTheme(Brightness.dark),

@@ -1,7 +1,7 @@
+import '../../data/content_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../widgets/article_card_compact.dart';
 
@@ -47,7 +47,10 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
       ),
@@ -62,13 +65,21 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.search, color: AppColors.textMuted, size: 20),
+                    Icon(
+                      Icons.search,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
@@ -77,12 +88,16 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
                         onChanged: _onSearchChanged,
                         decoration: InputDecoration(
                           hintText: 'Search library...',
-                          hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                          hintStyle: AppTextStyles.body1.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
-                        style: AppTextStyles.body1,
+                        style: Theme.of(context).textTheme.bodyLarge,
                       ),
                     ),
                     if (_query.isNotEmpty)
@@ -91,13 +106,17 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
                           _searchController.clear();
                           _onSearchChanged('');
                         },
-                        child: Icon(Icons.close, color: AppColors.textMuted, size: 20),
+                        child: Icon(
+                          Icons.close,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          size: 20,
+                        ),
                       ),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               Expanded(
                 child: _query.isEmpty ? _buildSuggestions() : _buildResults(),
               ),
@@ -113,7 +132,10 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Recent searches', style: AppTextStyles.heading2),
+          Text(
+            'Recent searches',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,
@@ -125,7 +147,7 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
             ],
           ),
           const SizedBox(height: 32),
-          Text('Popular', style: AppTextStyles.heading2),
+          Text('Popular', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,
@@ -150,40 +172,67 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          border: Border.all(
+            color: Theme.of(
+              context,
+            ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
-        child: Text(label, style: AppTextStyles.body1.copyWith(color: AppColors.text)),
+        child: Text(
+          label,
+          style: AppTextStyles.body1.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildResults() {
     final queryLower = _query.toLowerCase();
-    
+
     // Very basic mock search
-    final allArticles = [
-      {'title': 'What Anxiety Actually Is', 'meta': 'Anxiety · 5 min read'},
-      {'title': 'The 5-4-3-2-1 Grounding Technique', 'meta': 'Anxiety · 4 min read'},
-      {'title': 'Why Sleep Affects Mood', 'meta': 'Sleep · 4 min read'},
-      {'title': 'It\'s Okay to Rest', 'meta': 'Self-compassion · 3 min read'},
-    ];
-    
-    final results = allArticles.where((a) => 
-      a['title']!.toLowerCase().contains(queryLower) || 
-      a['meta']!.toLowerCase().contains(queryLower)
-    ).toList();
-    
+    final allArticles = ContentRepository().usePlaceholderData
+        ? ContentRepository().catalog
+              .map((a) => {...a, 'meta': "${a['category']} ? ${a['readTime']}"})
+              .toList()
+        : [
+            {
+              'title': 'What Anxiety Actually Is',
+              'meta': 'Anxiety · 5 min read',
+            },
+            {
+              'title': 'The 5-4-3-2-1 Grounding Technique',
+              'meta': 'Anxiety · 4 min read',
+            },
+            {'title': 'Why Sleep Affects Mood', 'meta': 'Sleep · 4 min read'},
+            {
+              'title': 'It\'s Okay to Rest',
+              'meta': 'Self-compassion · 3 min read',
+            },
+          ];
+
+    final results = allArticles
+        .where(
+          (a) =>
+              a['title']!.toLowerCase().contains(queryLower) ||
+              a['meta']!.toLowerCase().contains(queryLower),
+        )
+        .toList();
+
     if (results.isEmpty) {
       return Center(
         child: Text(
           'No articles match "$_query"',
-          style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+          style: AppTextStyles.body1.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       );
     }
-    
+
     return ListView.separated(
       itemCount: results.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -193,9 +242,7 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
           title: article['title']!,
           metadata: article['meta']!,
           onTap: () {
-            context.push(AppRouter.articleDetail, extra: {
-              'title': article['title'],
-            });
+            context.push(AppRouter.articleDetail, extra: article);
           },
         );
       },

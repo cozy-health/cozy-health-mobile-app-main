@@ -2,7 +2,7 @@ import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../../../core/models/mood_entry.dart';
-import '../../../../core/services/local_db_service.dart';
+import '../../../../core/repositories/mood_repository.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -29,8 +29,24 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
     if (mounted) setState(() {});
   }
 
-  List<Map<String, dynamic>> get _daily => LocalInsights.daily();
+  bool _monthly = false;
+  List<Map<String, dynamic>> get _daily => LocalInsights.daily(month: _monthly);
   Map<String, dynamic>? get _week {
+    if (_monthly) {
+      final entries = LocalInsights.moods(month: true);
+      if (entries.isEmpty) return null;
+      final counts = <String, int>{};
+      for (final entry in entries) {
+        counts[entry.mood] = (counts[entry.mood] ?? 0) + 1;
+      }
+      final names = counts.keys.toList()
+        ..sort((a, b) => counts[b]!.compareTo(counts[a]!));
+      return {
+        'entry_count': entries.length,
+        'avg_intensity': LocalInsights.average(entries),
+        'top_mood': names.first,
+      };
+    }
     final rows = _feed.weeks ?? [];
     if (rows.isEmpty) return null;
     return rows.last;
@@ -56,7 +72,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
   void initState() {
     super.initState();
     _feed.addListener(_refresh);
-    _moodSubscription = LocalDbService().watchMoodEntries().listen(
+    _moodSubscription = MoodRepository().watchMoodEntries().listen(
       (_) => _refresh(),
     );
     _feed.load(weekly: true, trigger: true, sleepMood: true);
@@ -111,7 +127,10 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
           ),
           onPressed: () => context.pop(),
         ),
-        title: Text('Insights', style: AppTextStyles.heading2),
+        title: Text(
+          'Insights',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
         centerTitle: true,
       ),
       body:
@@ -135,6 +154,18 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        for (final month in [false, true])
+                          ChoiceChip(
+                            label: Text(month ? 'Monthly' : 'Weekly'),
+                            selected: _monthly == month,
+                            onSelected: (_) => setState(() => _monthly = month),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     InsightsStatus(
                       onRetry: () => _feed.load(
                         weekly: true,
@@ -156,7 +187,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                           end: Offset.zero,
                         ).animate(headerAnim),
                         child: Text(
-                          'This week',
+                          _monthly ? 'This month' : 'This week',
                           style: AppTextStyles.heading1.copyWith(
                             fontSize: 24,
                             color: Theme.of(context).colorScheme.onSurface,
@@ -164,12 +195,12 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                         ),
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     FadeTransition(
                       opacity: subtextAnim,
                       child: SlideTransition(
                         position: Tween<Offset>(
-                          begin: const Offset(0, 0.2),
+                          begin: Offset(0, 0.2),
                           end: Offset.zero,
                         ).animate(subtextAnim),
                         child: Text(
@@ -197,7 +228,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                               ? 'Your patterns will appear here.'
                               : 'Most logged mood: ${_week!['top_mood']}',
                           subtitle:
-                              'You logged ${_week?['entry_count'] ?? 0} entries this week.',
+                              'You logged ${_week?['entry_count'] ?? 0} entries this ${_monthly ? 'month' : 'week'}.',
                         ),
                       ),
                     ),
@@ -206,7 +237,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                       opacity: statsAnim,
                       child: SlideTransition(
                         position: Tween<Offset>(
-                          begin: const Offset(0, 0.1),
+                          begin: Offset(0, 0.1),
                           end: Offset.zero,
                         ).animate(statsAnim),
                         child: Row(
@@ -217,7 +248,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                                 label: 'Entries',
                               ),
                             ),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: StatCard(
                                 value: _week == null
@@ -239,7 +270,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                       opacity: statsAnim,
                       child: SlideTransition(
                         position: Tween<Offset>(
-                          begin: const Offset(0, 0.1),
+                          begin: Offset(0, 0.1),
                           end: Offset.zero,
                         ).animate(statsAnim),
                         child: Row(
@@ -271,7 +302,12 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Mood trend', style: AppTextStyles.heading2),
+                          Expanded(
+                            child: Text(
+                              'Mood trend',
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                          ),
                           TextButton(
                             onPressed: () => context.push(
                               AppRouter.insightsMoodTrend,
@@ -302,9 +338,11 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'What\'s affecting your mood',
-                            style: AppTextStyles.heading2,
+                          Expanded(
+                            child: Text(
+                              'Common triggers',
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
                           ),
                           TextButton(
                             onPressed: () => context.push(
@@ -332,13 +370,27 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                               (row['count'] as num) /
                                   (_feed.triggers!.first['count'] as num),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                           ],
                         ],
                       ),
                     ),
                     SizedBox(height: 32),
-                    // Monthly Report button (Bonus)
+                    Text(
+                      'Recommended actions',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.edit_note),
+                      title: const Text('Make space for your thoughts'),
+                      onTap: () => context.push(AppRouter.journal),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.self_improvement),
+                      title: const Text('Try a breathing exercise'),
+                      onTap: () => context.push(AppRouter.breathing),
+                    ),
+                    // Full report
                     FadeTransition(
                       opacity: section2Anim,
                       child: Center(
@@ -346,7 +398,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
                           onPressed: () =>
                               context.push(AppRouter.insightsMonthlyReport),
                           child: Text(
-                            'View Monthly Report',
+                            'View full report',
                             style: AppTextStyles.body1.copyWith(
                               color: Theme.of(context).colorScheme.primary,
                               fontWeight: FontWeight.w500,
@@ -366,16 +418,21 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
   Widget _buildMiniChart() {
     if (_daily.isEmpty) return const Text('Log 3 moods to see trends');
     return Container(
-      height: 120,
       padding: const EdgeInsets.only(top: 24, left: 16, right: 16, bottom: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       child: Column(
         children: [
-          Expanded(
+          SizedBox(
+            height: 80,
+            width: double.infinity,
             child: CustomPaint(
               size: const Size(double.infinity, double.infinity),
               painter: _MiniAreaChartPainter(
@@ -393,13 +450,18 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
             children: _daily
                 .map((row) => (row['day'] as String).substring(5))
                 .map((day) {
-                  return Text(
-                    day,
-                    style: AppTextStyles.body2.copyWith(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textSubtleDark
-                          : AppColors.textSubtleLight,
-                      fontSize: 12,
+                  return Expanded(
+                    child: Text(
+                      day,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.body2.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textSubtleDark
+                            : AppColors.textSubtleLight,
+                        fontSize: 12,
+                      ),
                     ),
                   );
                 })
@@ -410,59 +472,25 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
     );
   }
 
-  Widget _buildMiniTrigger(String title, String frequency, double progress) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: AppTextStyles.body1.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w500,
-            ),
+  Widget _buildMiniTrigger(String title, String frequency, double progress) =>
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: progress.clamp(0, 1),
+                minHeight: 8,
+              ),
+              const SizedBox(height: 8),
+              Text(frequency, style: Theme.of(context).textTheme.bodySmall),
+            ],
           ),
-          SizedBox(width: 16),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return Container(
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    width: constraints.maxWidth * progress,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          SizedBox(width: 16),
-          Text(
-            frequency,
-            style: AppTextStyles.body2.copyWith(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      );
 }
 
 class _MiniAreaChartPainter extends CustomPainter {

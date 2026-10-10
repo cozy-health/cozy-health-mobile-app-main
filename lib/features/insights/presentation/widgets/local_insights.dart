@@ -1,3 +1,4 @@
+import '../../../../core/data/demo_mode.dart';
 import '../../../../core/models/mood_entry.dart';
 import '../../../../core/models/journal_entry.dart';
 import '../../../../core/services/local_db_service.dart';
@@ -5,14 +6,18 @@ import '../../../../core/services/local_db_service.dart';
 /// Metrics without a matching Insights endpoint use the existing offline records.
 class LocalInsights {
   static List<MoodEntry> moods({int days = 7, bool month = false}) {
-    if (!LocalDbService().isBoxOpen(LocalDbService.moodBoxName)) return [];
+    if (!DemoMode.instance.enabled &&
+        !LocalDbService().isBoxOpen(LocalDbService.moodBoxName)) {
+      return [];
+    }
     final now = DateTime.now();
     final start = month
         ? DateTime(now.year, now.month)
         : DateTime(now.year, now.month, now.day - days + 1);
     final end = DateTime(now.year, now.month, now.day + 1);
-    return LocalDbService.instance
-        .getAllMoodEntries()
+    return (DemoMode.instance.enabled
+            ? DemoMode.instance.moods
+            : LocalDbService.instance.getAllMoodEntries())
         .where(
           (entry) =>
               !entry.createdAt.toLocal().isBefore(start) &&
@@ -61,14 +66,18 @@ class LocalInsights {
   }
 
   static List<JournalEntry> journals({int days = 7, bool month = false}) {
-    if (!LocalDbService().isBoxOpen(LocalDbService.journalBoxName)) return [];
+    if (!DemoMode.instance.enabled &&
+        !LocalDbService().isBoxOpen(LocalDbService.journalBoxName)) {
+      return [];
+    }
     final now = DateTime.now();
     final start = month
         ? DateTime(now.year, now.month)
         : DateTime(now.year, now.month, now.day - days + 1);
     final end = DateTime(now.year, now.month, now.day + 1);
-    return LocalDbService.instance
-        .getAllJournalEntries()
+    return (DemoMode.instance.enabled
+            ? DemoMode.instance.journals
+            : LocalDbService.instance.getAllJournalEntries())
         .where(
           (entry) =>
               !entry.createdAt.toLocal().isBefore(start) &&

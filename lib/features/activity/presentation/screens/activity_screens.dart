@@ -1,3 +1,6 @@
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/data/demo_mode.dart';
+import '../../../../core/data/placeholder_data.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -117,7 +120,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                   const SizedBox(height: 12),
                   _InsightCard(
                     icon: Icons.favorite_rounded,
-                    title: 'Mood check-ins',
+                    title: 'Cozy Calendar',
                     subtitle: stats.checkInSubtitle,
                     body: _CheckInDots(filledCount: stats.checkInDotCount),
                     actionLabel: 'View log',
@@ -231,7 +234,18 @@ class _ActivityStats {
       journals: filteredJournals,
       previousMoods: previousMoods,
       chartValues: _buildChartValues(sortedMoods, period.days, start),
-      topTriggers: _buildTopTriggers(sortedMoods),
+      topTriggers: DemoMode.instance.enabled
+          ? (PlaceholderData.activity['triggers'] as List)
+                .map(
+                  (row) => _TriggerStat(
+                    label: row['name'] as String,
+                    count: 0,
+                    share: (row['percent'] as int) / 100,
+                    impactOverride: row['impact'] as String,
+                  ),
+                )
+                .toList()
+          : _buildTopTriggers(sortedMoods),
       writingWeekdays: filteredJournals
           .map((entry) => entry.createdAt.toLocal().weekday)
           .toSet(),
@@ -314,6 +328,7 @@ class _ActivityStats {
   }
 
   String get moodTrendValue {
+    if (DemoMode.instance.enabled) return "+15%";
     if (moods.isEmpty) return 'No data';
     if (previousMoods.isEmpty) return averageMood.toStringAsFixed(1);
     final change =
@@ -361,6 +376,7 @@ class _ActivityStats {
   }
 
   String get writingStreakValue {
+    if (DemoMode.instance.enabled) return "3 days";
     if (journals.isEmpty) return '0 days';
     final days = journals.map((entry) {
       final local = entry.createdAt.toLocal();
@@ -387,13 +403,16 @@ class _TriggerStat {
     required this.label,
     required this.count,
     required this.share,
+    this.impactOverride,
   });
 
   final String label;
   final int count;
   final double share;
+  final String? impactOverride;
 
   String get impact {
+    if (impactOverride != null) return impactOverride!;
     if (share >= .6) return 'High impact';
     if (share >= .3) return 'Medium impact';
     return 'Low impact';
@@ -425,19 +444,20 @@ class _PeriodSelector extends StatelessWidget {
         color: fillColor,
         border: Border.all(color: borderColor, width: 0),
       ),
-      child: Row(
-        children: [
-          for (var i = 0; i < periods.length; i++) ...[
-            if (i > 0) const SizedBox(width: 10),
-            Expanded(
-              child: _PeriodChip(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (var i = 0; i < periods.length; i++) ...[
+              if (i > 0) const SizedBox(width: 10),
+              _PeriodChip(
                 label: periods[i],
                 selected: selectedIndex == i,
                 onTap: () => onSelected(i),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -463,14 +483,15 @@ class _PeriodChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(11),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        height: 38,
+        constraints: const BoxConstraints(minHeight: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: selected
               ? colorScheme.primary.withValues(alpha: .08)
               : colorScheme.surface,
           border: Border.all(
-            color: selected ? colorScheme.primary : AppColors.borderDefault,
+            color: selected ? colorScheme.primary : colorScheme.outline,
           ),
           borderRadius: BorderRadius.circular(11),
         ),
@@ -540,6 +561,10 @@ class _MoodSummaryCard extends StatelessWidget {
             height: 100,
             child: CustomPaint(
               painter: _MoodChartPainter(
+                primary: colorScheme.primary,
+                previous: context.cozyColors.triggerHigh,
+                grid: colorScheme.outlineVariant,
+                surface: colorScheme.surface,
                 values: stats.chartValues,
                 comparison: _ActivityStats._buildChartValues(
                   stats.previousMoods,
@@ -562,7 +587,13 @@ class _MoodSummaryCard extends StatelessWidget {
                   in stats.period.days == 7
                       ? const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
                       : const ['1', '2', '3', '4', '5', '6', '7'])
-                Text(day, style: Theme.of(context).textTheme.bodySmall),
+                Expanded(
+                  child: Text(
+                    day,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -577,9 +608,9 @@ class _MoodSummaryCard extends StatelessWidget {
               ),
               Text(
                 '● Previous period',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.accentRose),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: context.cozyColors.triggerHigh,
+                ),
               ),
             ],
           ),
@@ -848,9 +879,11 @@ class _TriggerItem extends StatelessWidget {
         ProgressTrack(
           value: value,
           height: 12,
-          fillColor: value >= .6
-              ? const Color(0xFFF69258)
-              : const Color(0xFF2AC76A),
+          fillColor: impact.toLowerCase().startsWith('high')
+              ? context.cozyColors.triggerHigh
+              : impact.toLowerCase().startsWith('medium')
+              ? context.cozyColors.triggerMed
+              : context.cozyColors.triggerLow,
         ),
         const SizedBox(height: 4),
         Text(
@@ -880,35 +913,44 @@ class _RecommendationGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 20,
-      mainAxisSpacing: 17,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 161 / 126,
-      children: [
-        _RecommendationCard(
-          icon: Icons.show_chart_rounded,
-          title: 'Review your mood trend',
-          onTap: onMoodTrend,
-        ),
-        _RecommendationCard(
-          icon: Icons.bedtime_rounded,
-          title: 'Check sleep and mood patterns',
-          onTap: onSleep,
-        ),
-        _RecommendationCard(
-          icon: Icons.directions_walk_rounded,
-          title: 'Compare activity and mood',
-          onTap: onActivity,
-        ),
-        _RecommendationCard(
-          icon: Icons.spa_rounded,
-          title: 'Reflect in your journal',
-          onTap: onJournal,
-        ),
-      ],
+    final cards = [
+      _RecommendationCard(
+        icon: Icons.show_chart_rounded,
+        title: 'Review your mood trend',
+        onTap: onMoodTrend,
+      ),
+      _RecommendationCard(
+        icon: Icons.bedtime_rounded,
+        title: 'Check sleep and mood patterns',
+        onTap: onSleep,
+      ),
+      _RecommendationCard(
+        icon: Icons.directions_walk_rounded,
+        title: 'Compare activity and mood',
+        onTap: onActivity,
+      ),
+      _RecommendationCard(
+        icon: Icons.spa_rounded,
+        title: 'Reflect in your journal',
+        onTap: onJournal,
+      ),
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final single =
+            constraints.maxWidth < 320 ||
+            MediaQuery.textScalerOf(context).scale(1) > 1.3;
+        final width = single
+            ? constraints.maxWidth
+            : (constraints.maxWidth - 20) / 2;
+        return Wrap(
+          spacing: 20,
+          runSpacing: 17,
+          children: [
+            for (final card in cards) SizedBox(width: width, child: card),
+          ],
+        );
+      },
     );
   }
 }
@@ -947,11 +989,9 @@ class _RecommendationCard extends StatelessWidget {
                 ),
                 child: Icon(icon, color: colorScheme.primary),
               ),
-              const Spacer(),
+              const SizedBox(height: 16),
               Text(
                 title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.body1.copyWith(
                   color: colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
@@ -1005,7 +1045,15 @@ class _ActivityCard extends StatelessWidget {
 }
 
 class _MoodChartPainter extends CustomPainter {
-  const _MoodChartPainter({required this.values, this.comparison = const []});
+  const _MoodChartPainter({
+    required this.values,
+    this.comparison = const [],
+    required this.primary,
+    required this.previous,
+    required this.grid,
+    required this.surface,
+  });
+  final Color primary, previous, grid, surface;
 
   final List<double> values;
   final List<double> comparison;
@@ -1013,10 +1061,10 @@ class _MoodChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final gridPaint = Paint()
-      ..color = const Color(0xFFE5E7EB)
+      ..color = grid
       ..strokeWidth = 1;
     final linePaint = Paint()
-      ..color = AppColors.primary
+      ..color = primary
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -1024,10 +1072,7 @@ class _MoodChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [
-          AppColors.primary.withValues(alpha: .18),
-          AppColors.primary.withValues(alpha: 0),
-        ],
+        colors: [primary.withValues(alpha: .18), primary.withValues(alpha: 0)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     for (var i = 1; i <= 3; i++) {
@@ -1051,19 +1096,19 @@ class _MoodChartPainter extends CustomPainter {
         comparisonPath.moveTo(point.dx, point.dy);
         drawing = true;
       }
-      canvas.drawCircle(point, 3, Paint()..color = AppColors.accentRose);
+      canvas.drawCircle(point, 3, Paint()..color = previous);
     }
     canvas.drawPath(
       comparisonPath,
       Paint()
-        ..color = AppColors.accentRose
+        ..color = previous
         ..strokeWidth = 2
         ..style = PaintingStyle.stroke,
     );
 
     if (values.isEmpty || values.every((value) => value == 0)) {
       final emptyPaint = Paint()
-        ..color = AppColors.primary.withValues(alpha: .18)
+        ..color = primary.withValues(alpha: .18)
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round;
       canvas.drawLine(
@@ -1111,8 +1156,8 @@ class _MoodChartPainter extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, linePaint);
 
-    final dotPaint = Paint()..color = AppColors.primary;
-    final dotBorderPaint = Paint()..color = AppColors.white;
+    final dotPaint = Paint()..color = primary;
+    final dotBorderPaint = Paint()..color = surface;
     for (final point in points) {
       canvas.drawCircle(point, 6, dotBorderPaint);
       canvas.drawCircle(point, 4, dotPaint);
@@ -1121,6 +1166,12 @@ class _MoodChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MoodChartPainter oldDelegate) {
+    if (oldDelegate.primary != primary ||
+        oldDelegate.previous != previous ||
+        oldDelegate.grid != grid ||
+        oldDelegate.surface != surface) {
+      return true;
+    }
     if (oldDelegate.comparison.toString() != comparison.toString()) return true;
     if (oldDelegate.values.length != values.length) return true;
     for (var i = 0; i < values.length; i++) {

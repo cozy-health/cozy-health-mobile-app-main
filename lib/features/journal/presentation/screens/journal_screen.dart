@@ -16,6 +16,7 @@ import '../../../crisis/presentation/screens/crisis_screens.dart';
 import '../../../crisis/services/crisis_detector.dart';
 import '../../../../core/repositories/journal_repository.dart';
 import '../../../../core/models/journal_entry.dart';
+import '../../../../core/repositories/mood_repository.dart';
 import '../../../../core/services/local_db_service.dart';
 
 enum JournalViewState { populated, empty, loading }
@@ -114,7 +115,7 @@ class _JournalScreenState extends State<JournalScreen>
               return const _JournalLoading();
             }
 
-            final allEntries = snapshot.data ?? [];
+            final allEntries = snapshot.data ?? const [];
             final entries = _filteredEntries(allEntries);
 
             if (allEntries.isEmpty) {
@@ -152,7 +153,7 @@ class _JournalScreenState extends State<JournalScreen>
               onRefresh: () async =>
                   Future<void>.delayed(const Duration(milliseconds: 450)),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 28),
                 children: [
                   _AnimatedIn(
                     controller: _entranceController,
@@ -163,7 +164,7 @@ class _JournalScreenState extends State<JournalScreen>
                   ),
                   const SizedBox(height: 16),
                   if (_activeTags.isNotEmpty) ...[
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       children: _activeTags
@@ -188,6 +189,7 @@ class _JournalScreenState extends State<JournalScreen>
                       start: .45,
                       onTap: _openEntryDetail,
                       onMore: _showEntryMenu,
+                      onDelete: _deleteEntry,
                     ),
                     if (entries.length > 3) ...[
                       SizedBox(height: 32),
@@ -198,6 +200,7 @@ class _JournalScreenState extends State<JournalScreen>
                         start: .65,
                         onTap: _openEntryDetail,
                         onMore: _showEntryMenu,
+                        onDelete: _deleteEntry,
                       ),
                     ],
                   ],
@@ -517,7 +520,24 @@ class _JournalScreenState extends State<JournalScreen>
     if (!mounted) return;
     AppSnackbar.show(
       context,
-      AppSnackbar.fromLegacy(content: Text('Entry deleted.')),
+      SnackBar(
+        content: const Text('Entry deleted.'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () async {
+            try {
+              await _repo.saveJournalEntry(entry);
+            } catch (_) {
+              if (mounted) {
+                AppSnackbar.show(
+                  context,
+                  AppSnackbar.error('Unable to restore entry. Try again.'),
+                );
+              }
+            }
+          },
+        ),
+      ),
     );
   }
 }
@@ -641,7 +661,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
                 children: [
-                  Text(_dateStamp(), style: _captionStyle()),
+                  Text(_dateStamp(), style: _captionStyle(context)),
                   if (prompt != null) ...[
                     SizedBox(height: 18),
                     _PromptPinnedCard(prompt: prompt),
@@ -706,7 +726,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
       _controller.text = draft.body;
       _tags
         ..clear()
-        ..addAll(draft.tags ?? const <String>[]);
+        ..addAll(draft.tags ?? <String>[]);
       _showDraftPrompt = false;
       _saveStatus = 'Draft restored';
     });
@@ -1003,7 +1023,7 @@ class _JournalVoiceRecordingScreenState
             SizedBox(height: 8),
             Text(
               _isRecording ? 'Recording...' : 'Tap to start',
-              style: _captionStyle(),
+              style: _captionStyle(context),
             ),
             SizedBox(height: 34),
             _Waveform(active: _isRecording),
@@ -1024,7 +1044,7 @@ class _JournalVoiceRecordingScreenState
     return _JournalSubScaffold(
       action: TextButton(onPressed: _rerecord, child: Text('Re-record')),
       child: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         children: [
           SizedBox(height: 50),
           Center(
@@ -1061,7 +1081,7 @@ class _JournalVoiceRecordingScreenState
             caption: '0:14 / ${_formatDuration(_seconds)}',
           ),
           SizedBox(height: 18),
-          _TagRow(tags: const [], onAddTag: () {}),
+          _TagRow(tags: [], onAddTag: () {}),
           SizedBox(height: 12),
           _WarmPanel(
             child: ListTile(
@@ -1102,10 +1122,13 @@ class _JournalVoiceRecordingScreenState
               controller: _transcriptionController,
               minLines: 6,
               maxLines: 8,
-              decoration: _inputDecoration(''),
+              decoration: _inputDecoration(context, ''),
             ),
             SizedBox(height: 8),
-            Text('AI-generated. Edit as needed.', style: _captionStyle()),
+            Text(
+              'AI-generated. Edit as needed.',
+              style: _captionStyle(context),
+            ),
           ],
           SizedBox(height: 28),
           _PrimaryButton(label: 'Save entry', onPressed: _saveVoice),
@@ -1268,7 +1291,7 @@ class _JournalVoiceRecordingScreenState
         type: 'voice',
         title: 'Voice note',
         body: _transcriptionController.text.trim(),
-        tags: const [],
+        tags: [],
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         wordCount: 0,
@@ -1318,12 +1341,13 @@ class _JournalSearchScreenState extends State<JournalSearchScreen> {
 
     return _JournalSubScaffold(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        padding: EdgeInsets.fromLTRB(24, 20, 24, 24),
         children: [
           TextField(
             controller: _controller,
             autofocus: true,
             decoration: _inputDecoration(
+              context,
               'Search journal...',
             ).copyWith(prefixIcon: Icon(Icons.search_rounded)),
             onChanged: (value) => setState(() => _query = value),
@@ -1386,16 +1410,27 @@ class JournalEntryDetailScreen extends StatelessWidget {
       SecurityBlur(child: _buildProtected(context));
 
   Widget _buildProtected(BuildContext context) {
+    final linked = MoodRepository().currentEntries().where(
+      (mood) => mood.id == entry.linkedMoodEntryId,
+    );
+    final mood = linked.isEmpty ? null : linked.first;
     return _JournalSubScaffold(
       action: IconButton(
         tooltip: 'More',
         onPressed: () => _showMenu(context),
-        icon: Icon(Icons.more_horiz),
+        icon: const Icon(Icons.more_horiz),
       ),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
         children: [
-          Text(_detailDate(entry.createdAt), style: _captionStyle()),
+          Text(_detailDate(entry.createdAt), style: _captionStyle(context)),
+          if (mood != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              '${mood.emoji} ${mood.mood} | Intensity ${mood.intensity}/10',
+              style: _captionStyle(context),
+            ),
+          ],
           SizedBox(height: 34),
           if (entry.body.isNotEmpty)
             Text(
@@ -1439,7 +1474,24 @@ class JournalEntryDetailScreen extends StatelessWidget {
           SizedBox(height: 32),
           Text(
             'Last edited ${_detailDate(entry.updatedAt)}',
-            style: _captionStyle(),
+            style: _captionStyle(context),
+          ),
+          Wrap(
+            spacing: 12,
+            children: [
+              TextButton.icon(
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Edit'),
+                onPressed: () =>
+                    Navigator.pop(context, const _EntryAction('edit')),
+              ),
+              TextButton.icon(
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Delete'),
+                onPressed: () =>
+                    Navigator.pop(context, const _EntryAction('delete')),
+              ),
+            ],
           ),
         ],
       ),
@@ -1514,6 +1566,7 @@ class _EntrySection extends StatelessWidget {
     required this.start,
     required this.onTap,
     required this.onMore,
+    required this.onDelete,
   });
   final String title;
   final List<JournalEntry> entries;
@@ -1521,6 +1574,7 @@ class _EntrySection extends StatelessWidget {
   final double start;
   final ValueChanged<JournalEntry> onTap;
   final ValueChanged<JournalEntry> onMore;
+  final ValueChanged<JournalEntry> onDelete;
   @override
   Widget build(BuildContext context) {
     if (entries.isEmpty) return const SizedBox.shrink();
@@ -1548,10 +1602,24 @@ class _EntrySection extends StatelessWidget {
                     curve: Curves.easeOutCubic,
                   ),
                   yOffset: 12,
-                  child: _JournalEntryCard(
-                    entry: entries[i],
-                    onTap: () => onTap(entries[i]),
-                    onMore: () => onMore(entries[i]),
+                  child: Dismissible(
+                    key: ValueKey(entries[i].id),
+                    direction: DismissDirection.endToStart,
+                    onDismissed: (_) => onDelete(entries[i]),
+                    background: Container(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.all(16),
+                      child: Icon(
+                        Icons.delete_outline,
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
+                    ),
+                    child: _JournalEntryCard(
+                      entry: entries[i],
+                      onTap: () => onTap(entries[i]),
+                      onMore: () => onMore(entries[i]),
+                    ),
                   ),
                 ),
                 if (i != entries.length - 1)
@@ -1615,7 +1683,7 @@ class _JournalEntryCard extends StatelessWidget {
               IconButton(
                 tooltip: 'More options',
                 onPressed: onMore,
-                icon: const Icon(Icons.more_horiz),
+                icon: Icon(Icons.more_horiz),
               ),
             ],
           ),
@@ -1691,12 +1759,12 @@ class _JournalLoading extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-          children: const [
+          padding: EdgeInsets.fromLTRB(24, 24, 24, 24),
+          children: [
             Row(
               children: [
                 _SkeletonBox(width: 120, height: 32),
-                Spacer(),
+                const Spacer(),
                 _SkeletonCircle(size: 24),
               ],
             ),
@@ -1871,7 +1939,7 @@ class _PromptCategories extends StatelessWidget {
           side: BorderSide(
             color: active
                 ? Theme.of(context).colorScheme.primary
-                : dividerColor ?? AppColors.border,
+                : dividerColor ?? Theme.of(context).colorScheme.outlineVariant,
           ),
         );
       }).toList(),
@@ -2034,7 +2102,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                           : Icons.radio_button_off,
                       color: _dateRange == range
                           ? Theme.of(context).colorScheme.primary
-                          : AppColors.textMuted,
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     SizedBox(width: 12),
                     Text(
@@ -2208,7 +2276,7 @@ class _AddTagSheet extends StatelessWidget {
             TextField(
               controller: controller,
               autofocus: true,
-              decoration: _inputDecoration('#tag'),
+              decoration: _inputDecoration(context, '#tag'),
             ),
             SizedBox(height: 14),
             _PrimaryButton(label: 'Add tag', onPressed: onAdd),
@@ -2327,9 +2395,9 @@ class _EditorFooter extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                Text('$wordCount words', style: _captionStyle()),
-                const Spacer(),
-                Text(status, style: _captionStyle()),
+                Text('$wordCount words', style: _captionStyle(context)),
+                Spacer(),
+                Text(status, style: _captionStyle(context)),
               ],
             ),
           ),
@@ -2357,7 +2425,7 @@ class _Waveform extends StatelessWidget {
         decoration: BoxDecoration(
           color: active
               ? Theme.of(context).colorScheme.primary
-              : AppColors.borderStrong,
+              : Theme.of(context).colorScheme.outline,
           borderRadius: BorderRadius.circular(8),
         ),
       );
@@ -2376,7 +2444,7 @@ class _Waveform extends StatelessWidget {
           ),
           if (caption != null) ...[
             SizedBox(height: 8),
-            Text(caption!, style: _captionStyle()),
+            Text(caption!, style: _captionStyle(context)),
           ],
         ],
       ),
@@ -2439,7 +2507,10 @@ class _BottomSheetFrame extends StatelessWidget {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: dividerColor ?? AppColors.border),
+            border: Border.all(
+              color:
+                  dividerColor ?? Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
           child: child,
         ),
@@ -2464,11 +2535,18 @@ class _SheetTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: danger ? AppColors.danger : AppColors.text),
+      leading: Icon(
+        icon,
+        color: danger
+            ? AppColors.danger
+            : Theme.of(context).colorScheme.onSurface,
+      ),
       title: Text(
         label,
         style: AppTextStyles.body1.copyWith(
-          color: danger ? AppColors.danger : AppColors.text,
+          color: danger
+              ? AppColors.danger
+              : Theme.of(context).colorScheme.onSurface,
         ),
       ),
       onTap: onTap,
@@ -2549,7 +2627,7 @@ class _DashedAction extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppColors.borderStrong,
+            color: Theme.of(context).colorScheme.outline,
             style: BorderStyle.solid,
           ),
         ),
@@ -2590,7 +2668,10 @@ class _WarmPanel extends StatelessWidget {
         color: color ?? colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: borderColor ?? dividerColor ?? AppColors.border,
+          color:
+              borderColor ??
+              dividerColor ??
+              Theme.of(context).colorScheme.outlineVariant,
         ),
       ),
       child: child,
@@ -2734,22 +2815,26 @@ class _EntryAction {
   final String action;
 }
 
-TextStyle _captionStyle() => AppTextStyles.body2.copyWith(
-  color: AppColors.textMuted,
+TextStyle _captionStyle(BuildContext context) => AppTextStyles.body2.copyWith(
+  color: Theme.of(context).colorScheme.onSurfaceVariant,
   fontSize: 13,
   fontWeight: FontWeight.w500,
 );
 
-InputDecoration _inputDecoration(String hint) {
+InputDecoration _inputDecoration(BuildContext context, String hint) {
   return InputDecoration(
     hintText: hint,
-    hintStyle: AppTextStyles.body1.copyWith(color: AppColors.textSubtle),
+    hintStyle: AppTextStyles.body1.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    ),
     filled: true,
-    fillColor: AppColors.surfaceElevated,
-    contentPadding: const EdgeInsets.all(16),
+    fillColor: Theme.of(context).colorScheme.surfaceContainer,
+    contentPadding: EdgeInsets.all(16),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide(color: AppColors.border),
+      borderSide: BorderSide(
+        color: Theme.of(context).colorScheme.outlineVariant,
+      ),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),

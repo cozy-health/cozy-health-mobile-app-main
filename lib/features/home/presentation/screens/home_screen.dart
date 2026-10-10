@@ -1,3 +1,6 @@
+import '../../../../core/data/demo_mode.dart';
+import '../widgets/mood_chips_row.dart';
+import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/sync_queue_badge.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
@@ -6,7 +9,8 @@ import '../widgets/feature_tour.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/widgets/illustrated_card.dart';
-import '../../../../core/widgets/weekday_row.dart';
+import '../widgets/cozy_calendar.dart';
+import '../widgets/journaling_card.dart';
 import 'dart:async';
 import '../../../../core/repositories/affirmation_repository.dart';
 import 'package:go_router/go_router.dart';
@@ -19,7 +23,6 @@ import '../../../../core/services/local_db_service.dart';
 import '../../../../core/services/user_data_fetcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_scaffold_padding.dart';
 import '../../../../core/repositories/mood_repository.dart';
 import '../../../../core/models/mood_entry.dart';
 import '../../../../core/models/user_profile.dart';
@@ -61,7 +64,6 @@ class _HomeScreenState extends State<HomeScreen>
   late final Stream<List<MoodEntry>> _moodStream;
   DashboardData? _dashboard;
   bool _loadingDashboard = true;
-  bool _dashboardFailed = false;
   final _affirmationRepo = AffirmationRepository();
   Timer? _affirmationTimer;
   String? _dailyAffirmation;
@@ -109,6 +111,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _showCachedAffirmation() async {
+    if (DemoMode.instance.enabled) return;
     final cached = await _affirmationRepo.getCachedToday();
     if (mounted && cached != null) {
       setState(() {
@@ -119,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _loadAffirmation() async {
+    if (DemoMode.instance.enabled) return;
     if (!mounted || _loadingAffirmation) return;
     _loadingAffirmation = true;
     try {
@@ -154,6 +158,15 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _loadDashboard() async {
+    if (DemoMode.instance.enabled) {
+      if (mounted) {
+        setState(() {
+          _dashboard = null;
+          _loadingDashboard = false;
+        });
+      }
+      return;
+    }
     final cached = await _homeRepo.getCachedDashboard();
     final offline =
         cached ?? await _homeRepo.getCachedDashboard(allowStale: true);
@@ -168,12 +181,10 @@ class _HomeScreenState extends State<HomeScreen>
       if (mounted) {
         setState(() {
           _dashboard = fresh;
-          _dashboardFailed = false;
         });
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _dashboardFailed = true);
         if (_dashboard == null) {
           AppSnackbar.show(
             context,
@@ -216,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen>
       body: SafeArea(
         child: StreamBuilder<List<MoodEntry>>(
           stream: _moodStream,
-          initialData: LocalDbService().getAllMoodEntries(),
+          initialData: _moodRepo.currentEntries(),
           builder: (context, snapshot) {
             if ((_loadingDashboard &&
                     _dashboard == null &&
@@ -231,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ? entries.isEmpty
                 : _dashboard!.recentEntries.isEmpty &&
                       _dashboard!.todayMood == null;
-            final allMoods = LocalDbService.instance.getAllMoodEntries();
+            final allMoods = entries;
             final weekAgo = DateTime.now().subtract(const Duration(days: 7));
             final moodsThisWeek = allMoods.where((entry) {
               return entry.createdAt.toLocal().isAfter(weekAgo);
@@ -241,9 +252,9 @@ class _HomeScreenState extends State<HomeScreen>
             final now = DateTime.now();
             final streak = _dashboard?.streakDays ?? _localStreak(entries);
 
-            // Recent 2 entries
+            // Up to three recent entries
             final recentEntries =
-                _dashboard?.recentEntries.take(2).map((row) {
+                _dashboard?.recentEntries.take(3).map((row) {
                   final local = entries
                       .where((entry) => entry.id == row['id'])
                       .firstOrNull;
@@ -256,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen>
                             row['client_created_at'] ?? row['created_at'],
                       });
                 }).toList() ??
-                entries.take(2).toList();
+                entries.take(3).toList();
             final hasMoodToday = _dashboard != null
                 ? _dashboard!.todayMood != null
                 : entries.isNotEmpty &&
@@ -273,7 +284,9 @@ class _HomeScreenState extends State<HomeScreen>
                       'Home dashboard loaded. $streak day streak. ${recentEntries.length} recent entries.',
                   child: RefreshIndicator(
                     onRefresh: () async {
-                      await UserDataFetcher().fetchAll();
+                      if (!DemoMode.instance.enabled) {
+                        await UserDataFetcher().fetchAll();
+                      }
                       await _loadDashboard();
                     },
                     child: SingleChildScrollView(
@@ -282,15 +295,11 @@ class _HomeScreenState extends State<HomeScreen>
                         16,
                         16,
                         16,
-                        AppScaffoldPadding.tabScrollBottom(context).bottom,
+                        140 + MediaQuery.paddingOf(context).bottom,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (_dashboardFailed) ...[
-                            _OfflineBanner(onRetry: _loadDashboard),
-                            const SizedBox(height: 16),
-                          ],
                           const _GuestBanner(),
                           const SyncQueueBadge(),
                           _AnimatedIn(
@@ -310,15 +319,15 @@ class _HomeScreenState extends State<HomeScreen>
                                 'Need help now?',
                                 style: AppTextStyles.body2.copyWith(
                                   fontSize: 13,
-                                  color: AppColors.crisisPrimary,
+                                  color: context.cozyColors.crisis,
                                   decoration: TextDecoration.none,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24),
                           _HomeEmotionStrip(key: widget.tourTargets?.hero),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           _HomeDesignCards(
                             entries: entries,
                             recentEntries: recentEntries,
@@ -343,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen>
                               },
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24),
                         ],
                       ),
                     ),
@@ -400,7 +409,7 @@ class _GuestBanner extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                   size: 20,
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     "You're browsing as a guest",
@@ -412,7 +421,7 @@ class _GuestBanner extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () => context.go(AppRouter.createAccount),
-                  child: const Text('Create Account'),
+                  child: Text('Create Account'),
                 ),
               ],
             ),
@@ -425,68 +434,18 @@ class _GuestBanner extends StatelessWidget {
 
 class _HomeEmotionStrip extends StatelessWidget {
   const _HomeEmotionStrip({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'How are you feeling today?',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 54,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: MoodEntry.moodEmojis.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              final mood = MoodEntry.moodEmojis.keys.elementAt(index);
-              return Center(
-                child: Material(
-                  color: dark
-                      ? AppColors.accentWarmYellowDark
-                      : AppColors.accentWarmYellow,
-                  borderRadius: BorderRadius.circular(16),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () => context.push(AppRouter.moodFeeling),
-                    child: Container(
-                      constraints: const BoxConstraints(
-                        minWidth: 103,
-                        minHeight: 45,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            MoodEntry.moodEmojis[mood]!,
-                            style: const TextStyle(fontSize: 23),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${mood[0].toUpperCase()}${mood.substring(1)}',
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        'How are you feeling today?',
+        style: Theme.of(context).textTheme.titleLarge,
+      ),
+      SizedBox(height: 16),
+      const MoodChipsRow(),
+    ],
+  );
 }
 
 class _HomeDesignCards extends StatelessWidget {
@@ -509,11 +468,6 @@ class _HomeDesignCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final monday = today.subtract(Duration(days: today.weekday - 1));
     final weekly = _DashboardScope.of(context)?.weeklyMoods;
     final count =
         weekly?.fold<int>(
@@ -529,7 +483,6 @@ class _HomeDesignCards extends StatelessWidget {
               (row['avg_intensity'] as num).toDouble() * (row['count'] as num),
         ) ??
         moodsThisWeek.fold<double>(0, (sum, entry) => sum + entry.intensity);
-    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return Column(
       children: [
         ConstrainedBox(
@@ -542,113 +495,20 @@ class _HomeDesignCards extends StatelessWidget {
             onAction: () => context.push(AppRouter.quizSelection),
           ),
         ),
-        const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 179),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: dark ? AppColors.accentPeachDark : AppColors.accentPeach,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Cozy Calendar', style: theme.textTheme.headlineSmall),
-              const SizedBox(height: 8),
-              Text(
-                hasMoodToday
-                    ? 'Your check-in is saved for today.'
-                    : 'A little check-in, every day.',
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 12),
-              WeekdayRow(
-                days: List.generate(7, (index) {
-                  final date = monday.add(Duration(days: index));
-                  final recorded = entries.any((entry) {
-                    final day = entry.createdAt.toLocal();
-                    return day.year == date.year &&
-                        day.month == date.month &&
-                        day.day == date.day;
-                  });
-                  return WeekdayItem(label: labels[index], filled: recorded);
-                }),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  TextButton.icon(
-                    onPressed: isEmpty
-                        ? () => context.push(AppRouter.moodFeeling)
-                        : () => _pushPage(context, const StreakDetailScreen()),
-                    icon: const Icon(Icons.local_fire_department_outlined),
-                    label: Text(
-                      isEmpty ? 'Start your streak' : '$streak day streak',
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: count == 0
-                        ? () => context.push(AppRouter.moodFeeling)
-                        : () => context.push(AppRouter.insights),
-                    child: Text(
-                      count == 0
-                          ? 'No moods this week'
-                          : 'Avg intensity ${(total / count).toStringAsFixed(1)}',
-                    ),
-                  ),
-                ],
-              ),
-              if (count < 3)
-                Text(
-                  'Log 3 moods to see trends',
-                  style: theme.textTheme.bodySmall,
-                ),
-              const SizedBox(height: 12),
-              Text('Recent entries', style: theme.textTheme.titleSmall),
-              if (recentEntries.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text('Your first entry will show here'),
-                )
-              else
-                for (final entry in recentEntries) _EntryCard(entry: entry),
-              TextButton(
-                onPressed: () => context.push(AppRouter.moodHistory),
-                child: const Text('View Log ›'),
-              ),
-            ],
-          ),
+        SizedBox(height: 16),
+        CozyCalendar(
+          entries: entries,
+          recentEntries: recentEntries,
+          streak: streak,
+          weeklyCount: count,
+          weeklyIntensityTotal: total,
+          hasMoodToday: hasMoodToday,
+          onStreak: isEmpty
+              ? () => context.push(AppRouter.moodFeeling)
+              : () => _pushPage(context, StreakDetailScreen(streak: streak)),
         ),
-        const SizedBox(height: 16),
-        Container(
-          constraints: const BoxConstraints(minHeight: 198),
-          decoration: BoxDecoration(
-            color: dark ? AppColors.accentSageDark : AppColors.accentSage,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              IllustratedCard(
-                title: 'Journaling',
-                description:
-                    'Make space for your thoughts. Your journal is yours.',
-                illustration: SvgPicture.asset(Assets.svg.journaling),
-                backgroundColor: dark
-                    ? AppColors.accentSageDark
-                    : AppColors.accentSage,
-                actionLabel: 'Start Writing',
-                onAction: () => context.push(AppRouter.journal),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: affirmation,
-              ),
-            ],
-          ),
-        ),
+        SizedBox(height: 16),
+        JournalingCard(affirmation: affirmation),
       ],
     );
   }
@@ -666,7 +526,7 @@ class _Header extends StatelessWidget {
         final profile = snapshot.data;
         final profileName = profile?.name.trim();
         final name = profileName == null || profileName.isEmpty
-            ? 'there'
+            ? ''
             : profileName;
         final avatarUrl = profile?.avatarUrl;
 
@@ -680,13 +540,26 @@ class _Header extends StatelessWidget {
                 onTap: () => context.push(AppRouter.editProfile),
                 child: CircleAvatar(
                   radius: 20,
-                  backgroundImage: avatarUrl != null
-                      ? NetworkImage(avatarUrl) as ImageProvider
-                      : AssetImage(Assets.png.profilePic.path),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer,
+                  foregroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onPrimaryContainer,
+                  backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                      ? NetworkImage(avatarUrl)
+                      : null,
+                  child: avatarUrl != null && avatarUrl.isNotEmpty
+                      ? null
+                      : Text(
+                          name.isEmpty
+                              ? '?'
+                              : name.characters.first.toUpperCase(),
+                        ),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -699,14 +572,15 @@ class _Header extends StatelessWidget {
                           : AppColors.textMutedLight,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    name.split(RegExp(r'\s+')).first,
-                    style: AppTextStyles.heading1.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
+                  if (name.isNotEmpty) SizedBox(height: 4),
+                  if (name.isNotEmpty)
+                    Text(
+                      name.split(RegExp(r'\s+')).first,
+                      style: AppTextStyles.heading1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -765,72 +639,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _EntryCard extends StatelessWidget {
-  const _EntryCard({required this.entry});
-
-  final MoodEntry entry;
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    if (now.year == time.year &&
-        now.month == time.month &&
-        now.day == time.day) {
-      return 'Today, ${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-    }
-    return '${time.month}/${time.day}, ${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: '${entry.mood}, ${_formatTime(entry.createdAt)}',
-      child: InkWell(
-        onTap: () => context.push(AppRouter.moodDetail, extra: entry),
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Text(entry.emoji, style: const TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry.mood,
-                      style: AppTextStyles.body1.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatTime(entry.createdAt),
-                      style: AppTextStyles.body2.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.textMutedDark
-                            : AppColors.textMutedLight,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.textMutedDark
-                    : AppColors.textMutedLight,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _AffirmationCard extends StatelessWidget {
   const _AffirmationCard({
     required this.text,
@@ -867,8 +675,8 @@ class _AffirmationCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('💛', style: TextStyle(fontSize: 22)),
-                const SizedBox(width: 10),
+                Text('💛', style: TextStyle(fontSize: 22)),
+                SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     text,
@@ -881,7 +689,7 @@ class _AffirmationCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            SizedBox(height: 18),
             Row(
               children: List.generate(
                 count,
@@ -893,7 +701,7 @@ class _AffirmationCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: dot == index
                         ? AppColors.warmYellow
-                        : AppColors.borderStrong,
+                        : Theme.of(context).colorScheme.outline,
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
@@ -901,46 +709,6 @@ class _AffirmationCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _OfflineBanner extends StatelessWidget {
-  const _OfflineBanner({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WarmCard(
-      color: AppColors.warning.withValues(alpha: .12),
-      borderColor: AppColors.warning.withValues(alpha: .3),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        children: [
-          Icon(Icons.warning_amber_rounded, color: AppColors.warning),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              "You're offline. Showing your last data.",
-              style: AppTextStyles.body2.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Re-check connection',
-            onPressed: onRetry,
-            icon: Icon(
-              Icons.refresh,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -957,7 +725,7 @@ class _HomeSkeleton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _SkeletonLine(width: 130),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Row(
             children: const [
               _SkeletonLine(width: 110, height: 24),
@@ -965,25 +733,25 @@ class _HomeSkeleton extends StatelessWidget {
               _SkeletonCircle(size: 40),
             ],
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           const _SkeletonBox(height: 140, radius: 20),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
-            children: const [
+            children: [
               Expanded(child: _SkeletonBox(height: 96, radius: 16)),
               SizedBox(width: 12),
               Expanded(child: _SkeletonBox(height: 96, radius: 16)),
             ],
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
           const _SkeletonLine(width: 100),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           const _SkeletonBox(height: 120, radius: 16),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
           const _SkeletonLine(width: 130),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           const _SkeletonBox(height: 72, radius: 16),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           const _SkeletonBox(height: 72, radius: 16),
         ],
       ),
@@ -1010,7 +778,7 @@ class _HomeErrorView extends StatelessWidget {
                   width: 88,
                   height: 88,
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceElevated,
+                    color: Theme.of(context).colorScheme.surfaceContainer,
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: Icon(
@@ -1021,15 +789,16 @@ class _HomeErrorView extends StatelessWidget {
                         : AppColors.textMutedLight,
                   ),
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: 28),
                 Text(
                   "We couldn't load\nyour home screen.",
                   textAlign: TextAlign.center,
                   style: AppTextStyles.heading1.copyWith(
                     fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
                   'Check your connection\nand try again.',
                   textAlign: TextAlign.center,
@@ -1040,7 +809,7 @@ class _HomeErrorView extends StatelessWidget {
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: 28),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -1054,7 +823,7 @@ class _HomeErrorView extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Try again'),
+                    child: Text('Try again'),
                   ),
                 ),
               ],
@@ -1067,10 +836,10 @@ class _HomeErrorView extends StatelessWidget {
 }
 
 class StreakDetailScreen extends StatelessWidget {
-  const StreakDetailScreen({super.key});
+  const StreakDetailScreen({super.key, required this.streak});
+  final int streak;
 
   String _milestone(BuildContext context, int goal) {
-    final streak = _DashboardScope.of(context)?.streakDays ?? 0;
     return streak >= goal ? 'Achieved!' : '${goal - streak} to go';
   }
 
@@ -1095,9 +864,9 @@ class StreakDetailScreen extends StatelessWidget {
                     child: Text('🔥', style: TextStyle(fontSize: 44)),
                   ),
                 ),
-                const SizedBox(height: 18),
+                SizedBox(height: 18),
                 Text(
-                  '${_DashboardScope.of(context)?.streakDays ?? 0}',
+                  '$streak',
                   style: AppTextStyles.heading1.copyWith(
                     fontSize: 48,
                     color: Theme.of(context).colorScheme.primary,
@@ -1110,9 +879,9 @@ class StreakDetailScreen extends StatelessWidget {
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 18),
+                SizedBox(height: 18),
                 Text(
-                  "You've logged your\nmood ${_DashboardScope.of(context)?.streakDays ?? 0} days in a row.",
+                  "You've logged your\nmood $streak days in a row.",
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body1.copyWith(
                     color: Theme.of(context).brightness == Brightness.dark
@@ -1124,38 +893,36 @@ class StreakDetailScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
           _WarmCard(
-            color: AppColors.surfaceElevated,
+            color: Theme.of(context).colorScheme.surfaceContainer,
             child: Wrap(
               spacing: 12,
               runSpacing: 12,
               children: List.generate(
                 30,
                 (index) => Icon(
-                  index < (_DashboardScope.of(context)?.streakDays ?? 0)
-                      ? Icons.circle
-                      : Icons.circle_outlined,
+                  index < (streak) ? Icons.circle : Icons.circle_outlined,
                   size: 16,
-                  color: index < (_DashboardScope.of(context)?.streakDays ?? 0)
+                  color: index < (streak)
                       ? Theme.of(context).colorScheme.primary
-                      : AppColors.borderStrong,
+                      : Theme.of(context).colorScheme.outline,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           Text(
             'Milestones',
             style: AppTextStyles.heading2.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _MilestoneCard(text: '7-day streak', value: _milestone(context, 7)),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           _MilestoneCard(text: '30-day streak', value: _milestone(context, 30)),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           _MilestoneCard(
             text: '100-day streak',
             value: _milestone(context, 100),
@@ -1183,9 +950,10 @@ class InsightsScreen extends StatelessWidget {
                   'This week',
                   style: AppTextStyles.heading1.copyWith(
                     fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Text(
                   'You felt calmer\nthan last week.',
                   textAlign: TextAlign.center,
@@ -1199,9 +967,9 @@ class InsightsScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           _WarmCard(
-            color: AppColors.surfaceElevated,
+            color: Theme.of(context).colorScheme.surfaceContainer,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1212,12 +980,12 @@ class InsightsScreen extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 18),
+                SizedBox(height: 18),
                 const _SimpleAreaChart(),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -1235,14 +1003,14 @@ class InsightsScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           Text(
             'What helped',
             style: AppTextStyles.heading2.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             '• Breathing (4 times)\n• Journaling (2 times)',
             style: AppTextStyles.body1.copyWith(
@@ -1252,14 +1020,14 @@ class InsightsScreen extends StatelessWidget {
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           Text(
             'Gentle note',
             style: AppTextStyles.heading2.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             "You logged 12 entries this week. That's a lot of self-awareness.",
             style: AppTextStyles.body1.copyWith(
@@ -1307,7 +1075,7 @@ class _DetailScaffold extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               child,
             ],
           ),
@@ -1326,12 +1094,12 @@ class _MilestoneCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _WarmCard(
-      color: AppColors.surfaceElevated,
+      color: Theme.of(context).colorScheme.surfaceContainer,
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          const Text('🏆', style: TextStyle(fontSize: 22)),
-          const SizedBox(width: 12),
+          Text('🏆', style: TextStyle(fontSize: 22)),
+          SizedBox(width: 12),
           Expanded(
             child: Text(
               text,
@@ -1364,7 +1132,7 @@ class _BreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _WarmCard(
-      color: AppColors.surfaceElevated,
+      color: Theme.of(context).colorScheme.surfaceContainer,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1376,7 +1144,7 @@ class _BreakdownCard extends StatelessWidget {
                   : AppColors.textMutedLight,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Text(
             value,
             style: AppTextStyles.heading2.copyWith(
@@ -1423,27 +1191,22 @@ class _SimpleAreaChart extends StatelessWidget {
 class _WarmCard extends StatelessWidget {
   const _WarmCard({
     required this.child,
-    this.color = AppColors.surfaceElevated,
-    this.borderColor,
+    this.color,
     this.padding = const EdgeInsets.all(20),
   });
 
   final Widget child;
-  final Color color;
-  final Color? borderColor;
+  final Color? color;
   final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveColor = isDark && color == AppColors.surfaceElevated
-        ? AppColors.surfaceElevatedDark
-        : color;
-    final effectiveBorder =
-        borderColor ??
-        (isDark
-            ? AppColors.borderDark.withValues(alpha: .9)
-            : AppColors.border.withValues(alpha: .65));
+    final effectiveColor =
+        color ?? Theme.of(context).colorScheme.surfaceContainer;
+    final effectiveBorder = (isDark
+        ? AppColors.borderDark.withValues(alpha: .9)
+        : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .65));
 
     return Container(
       width: double.infinity,

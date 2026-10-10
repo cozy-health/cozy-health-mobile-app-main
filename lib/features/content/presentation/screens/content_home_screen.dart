@@ -1,21 +1,17 @@
+import '../../data/content_repository.dart';
+import '../../../../core/data/demo_mode.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../widgets/article_card_featured.dart';
 import '../widgets/category_card.dart';
 
 class ContentHomeScreen extends StatefulWidget {
-  const ContentHomeScreen({
-    super.key,
-    this.featuredArticles = const [
-      {'title': 'The Voice in Your Head', 'readTime': '5 min read'},
-    ],
-  });
+  const ContentHomeScreen({super.key, this.featuredArticles});
 
-  final List<Map<String, String>> featuredArticles;
+  final List<Map<String, String>>? featuredArticles;
 
   @override
   State<ContentHomeScreen> createState() => _ContentHomeScreenState();
@@ -24,10 +20,15 @@ class ContentHomeScreen extends StatefulWidget {
 class _ContentHomeScreenState extends State<ContentHomeScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  String _selectedCategory = "All";
+  void _refreshCatalog() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
+    DemoMode.instance.addListener(_refreshCatalog);
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -38,6 +39,7 @@ class _ContentHomeScreenState extends State<ContentHomeScreen>
   @override
   void dispose() {
     _controller.dispose();
+    DemoMode.instance.removeListener(_refreshCatalog);
     super.dispose();
   }
 
@@ -50,6 +52,14 @@ class _ContentHomeScreenState extends State<ContentHomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final allArticles = widget.featuredArticles ?? ContentRepository().catalog;
+    final featured = allArticles
+        .where(
+          (article) =>
+              _selectedCategory == 'All' ||
+              article['category'] == _selectedCategory,
+        )
+        .toList();
     final bool reduceMotion = MediaQuery.of(context).accessibleNavigation;
 
     // Header: 0 - 400ms (0.0 - 0.33)
@@ -77,13 +87,18 @@ class _ContentHomeScreenState extends State<ContentHomeScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _animatedWidget(
-                    reduceMotion: reduceMotion,
-                    animation: headerAnim,
-                    offset: const Offset(0, 8),
-                    child: Text(
-                      'Library',
-                      style: AppTextStyles.heading1.copyWith(fontSize: 28),
+                  Expanded(
+                    child: _animatedWidget(
+                      reduceMotion: reduceMotion,
+                      animation: headerAnim,
+                      offset: const Offset(0, 8),
+                      child: Text(
+                        'Library',
+                        style: AppTextStyles.heading1.copyWith(
+                          fontSize: 28,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                     ),
                   ),
                   _animatedWidget(
@@ -91,7 +106,11 @@ class _ContentHomeScreenState extends State<ContentHomeScreen>
                     animation: searchAnim,
                     isScale: true,
                     child: IconButton(
-                      icon: Icon(Icons.search, size: 24, color: AppColors.text),
+                      icon: Icon(
+                        Icons.search,
+                        size: 24,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       onPressed: () => context.push(AppRouter.contentSearch),
                     ),
                   ),
@@ -99,26 +118,50 @@ class _ContentHomeScreenState extends State<ContentHomeScreen>
               ),
               const SizedBox(height: 24),
 
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final category in {
+                      'All',
+                      ...allArticles.map((a) => a['category'] ?? 'Wellbeing'),
+                    })
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(category),
+                          selected: _selectedCategory == category,
+                          onSelected: (_) =>
+                              setState(() => _selectedCategory = category),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               // Featured
               _animatedWidget(
                 reduceMotion: reduceMotion,
                 animation: featuredAnim,
                 offset: const Offset(0, 16),
-                child: widget.featuredArticles.isEmpty
+                child: featured.isEmpty
                     ? const EmptyState(
                         icon: Icons.article_outlined,
                         title: 'New articles coming soon.',
                       )
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: widget.featuredArticles
+                        children: featured
                             .map(
                               (article) => ArticleCardFeatured(
                                 title: article['title']!,
                                 readTime: article['readTime'] ?? '',
+                                category: article['category'],
+                                imageAsset: article['image'],
+                                preview: article['excerpt'],
                                 onTap: () => context.push(
                                   AppRouter.articleDetail,
-                                  extra: {'title': article['title']},
+                                  extra: article,
                                 ),
                               ),
                             )
@@ -131,7 +174,10 @@ class _ContentHomeScreenState extends State<ContentHomeScreen>
               _animatedWidget(
                 reduceMotion: reduceMotion,
                 animation: catHeaderAnim,
-                child: Text('Categories', style: AppTextStyles.heading2),
+                child: Text(
+                  'Categories',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -140,13 +186,9 @@ class _ContentHomeScreenState extends State<ContentHomeScreen>
                 reduceMotion: reduceMotion,
                 animation: gridAnim,
                 offset: const Offset(0, 12),
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: 1.5,
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
                     CategoryCard(
                       icon: '💛',
@@ -219,45 +261,48 @@ class _ContentHomeScreenState extends State<ContentHomeScreen>
               _animatedWidget(
                 reduceMotion: reduceMotion,
                 animation: savedAnim,
-                child: Text('Saved', style: AppTextStyles.heading2),
+                child: Text(
+                  'Saved',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
               ),
               const SizedBox(height: 16),
               _animatedWidget(
                 reduceMotion: reduceMotion,
                 animation: savedAnim,
-                offset: const Offset(0, 8),
+                offset: Offset(0, 8),
                 child: GestureDetector(
                   onTap: () => context.push(AppRouter.savedArticles),
                   child: Container(
-                    height: 56,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    constraints: const BoxConstraints(minHeight: 56),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.border.withValues(alpha: 0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                       ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            const Text('🔖', style: TextStyle(fontSize: 20)),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Your saved articles',
-                              style: AppTextStyles.body1.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.text,
-                              ),
-                            ),
-                          ],
+                        const Icon(Icons.bookmark_outline),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Your saved articles',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         ),
                         Icon(
                           Icons.arrow_forward_ios,
                           size: 16,
-                          color: AppColors.textSubtle,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ],
                     ),

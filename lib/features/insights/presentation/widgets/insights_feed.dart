@@ -1,3 +1,5 @@
+import '../../../../core/data/demo_mode.dart';
+import 'local_insights.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -23,6 +25,44 @@ class InsightsFeed extends ChangeNotifier {
     bool trigger = false,
     bool sleepMood = false,
   }) async {
+    if (DemoMode.instance.enabled) {
+      final entries = LocalInsights.moods();
+      weeks = [
+        {
+          'entry_count': entries.length,
+          'top_mood': 'good',
+          'avg_intensity': LocalInsights.average(entries),
+        },
+      ];
+      final names = entries.expand((e) => e.triggers ?? <String>[]).toSet();
+      triggers = [
+        for (final name in names)
+          {
+            'name': name,
+            'count': entries
+                .where((e) => e.triggers?.contains(name) == true)
+                .length,
+            'avg_intensity': LocalInsights.average(
+              entries.where((e) => e.triggers?.contains(name) == true).toList(),
+            ),
+          },
+      ]..sort((a, b) => (b['count'] as int).compareTo(a['count'] as int));
+      sleep = [
+        for (var quality = 1; quality <= 5; quality++)
+          if (entries.any((e) => e.sleepQuality == quality))
+            {
+              'sleep_quality': quality,
+              'count': entries.where((e) => e.sleepQuality == quality).length,
+              'avg_intensity': LocalInsights.average(
+                entries.where((e) => e.sleepQuality == quality).toList(),
+              ),
+            },
+      ];
+      loading = false;
+      failed = false;
+      if (!_disposed) notifyListeners();
+      return;
+    }
     loading = true;
     failed = false;
     if (!_disposed) notifyListeners();

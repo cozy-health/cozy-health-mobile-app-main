@@ -3,6 +3,7 @@ import '../services/restore_service.dart';
 import '../../features/settings/presentation/screens/digital_wellbeing_screen.dart';
 import '../security_gate.dart';
 import 'package:flutter/material.dart';
+import '../models/app_notification.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_detail_screen.dart';
@@ -279,7 +280,11 @@ class AppRouter {
       GoRoute(
         path: notificationDetail,
         name: 'notificationDetail',
-        builder: (_, __) => const NotificationDetailScreen(),
+        builder: (_, state) => NotificationDetailScreen(
+          notification: state.extra is AppNotification
+              ? state.extra as AppNotification
+              : null,
+        ),
       ),
       GoRoute(
         path: insights,
@@ -316,6 +321,7 @@ class AppRouter {
         name: 'moodFeeling',
         builder: (_, state) => MoodFeelingScreen(
           entry: state.extra is MoodEntry ? state.extra as MoodEntry : null,
+          initialMood: state.uri.queryParameters['mood'],
         ),
       ),
       GoRoute(
@@ -326,7 +332,9 @@ class AppRouter {
       GoRoute(
         path: moodHistory,
         name: 'moodHistory',
-        builder: (_, __) => const MoodHistoryScreen(),
+        builder: (_, state) => MoodHistoryScreen(
+          selectedDay: state.extra is DateTime ? state.extra as DateTime : null,
+        ),
       ),
       GoRoute(
         path: moodDetail,

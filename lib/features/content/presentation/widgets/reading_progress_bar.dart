@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class ReadingProgressBar extends StatelessWidget {
   final ScrollController scrollController;
 
-  const ReadingProgressBar({
-    super.key,
-    required this.scrollController,
-  });
+  const ReadingProgressBar({super.key, required this.scrollController});
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +18,13 @@ class ReadingProgressBar extends StatelessWidget {
             progress = (currentScroll / maxScroll).clamp(0.0, 1.0);
           }
         }
-        
+
         return Container(
           height: 3,
           width: double.infinity,
-          color: AppColors.border.withValues(alpha: 0.4),
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.4),
           alignment: Alignment.centerLeft,
           child: LayoutBuilder(
             builder: (context, constraints) {

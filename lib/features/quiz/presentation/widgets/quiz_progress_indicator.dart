@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 
 class QuizProgressIndicator extends StatelessWidget {
@@ -24,7 +23,7 @@ class QuizProgressIndicator extends StatelessWidget {
             Text(
               'Question $currentIndex of $totalQuestions',
               style: AppTextStyles.body2.copyWith(
-                color: AppColors.textMuted,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -34,15 +33,12 @@ class QuizProgressIndicator extends StatelessWidget {
         TweenAnimationBuilder<double>(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
-          tween: Tween<double>(
-            begin: 0,
-            end: progress,
-          ),
+          tween: Tween<double>(begin: 0, end: progress),
           builder: (context, value, _) => LayoutBuilder(
             builder: (context, constraints) => Container(
               height: 6,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: Theme.of(context).colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(3),
               ),
               alignment: Alignment.centerLeft,

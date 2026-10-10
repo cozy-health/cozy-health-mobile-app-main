@@ -16,21 +16,31 @@ class QuizBackConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text('Leave the quiz?', style: AppTextStyles.heading2),
       content: Text(
         'Your progress will be lost.',
-        style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+        style: AppTextStyles.body1.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
       actions: [
         TextButton(
           onPressed: () => context.pop(false),
-          child: Text('Continue', style: AppTextStyles.body1.copyWith(color: AppColors.text)),
+          child: Text(
+            'Continue',
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
         ),
         TextButton(
           onPressed: () => context.pop(true),
-          child: Text('Leave', style: AppTextStyles.body1.copyWith(color: AppColors.danger)),
+          child: Text(
+            'Leave',
+            style: AppTextStyles.body1.copyWith(color: AppColors.danger),
+          ),
         ),
       ],
     );

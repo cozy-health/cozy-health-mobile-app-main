@@ -53,7 +53,10 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
           ),
           onPressed: () => context.pop(),
         ),
-        title: Text('Activity & mood', style: AppTextStyles.heading2),
+        title: Text(
+          'Activity & mood',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -136,13 +139,18 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('What we noticed', style: AppTextStyles.heading2),
+                    Text(
+                      'What we noticed',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
                     SizedBox(height: 16),
                     Text(
                       LocalInsights.activityComparison(),
@@ -320,7 +328,7 @@ class _DualLineChartPainter extends CustomPainter {
     }
 
     final activityPaint = Paint()
-      ..color = const Color(0xFFE85D3A)
+      ..color = Color(0xFFE85D3A)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;

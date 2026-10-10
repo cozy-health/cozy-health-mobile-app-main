@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 
@@ -11,7 +10,7 @@ class NotificationDeniedSheet extends StatelessWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -32,18 +31,24 @@ class NotificationDeniedSheet extends StatelessWidget {
             Icon(
               Icons.notifications_off_outlined,
               size: 48,
-              color: AppColors.textSubtle,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 24),
             Text(
               'Notifications are turned off.',
-              style: AppTextStyles.heading2.copyWith(fontSize: 24, color: AppColors.text, height: 1.2),
+              style: AppTextStyles.heading2.copyWith(
+                fontSize: 24,
+                color: Theme.of(context).colorScheme.onSurface,
+                height: 1.2,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
               'To receive reminders, turn them on in your device settings.',
-              style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+              style: AppTextStyles.body1.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),

@@ -43,7 +43,10 @@ class _TriggersAnalysisScreenState extends State<TriggersAnalysisScreen> {
           ),
           onPressed: () => context.pop(),
         ),
-        title: Text('Triggers', style: AppTextStyles.heading2),
+        title: Text(
+          'Triggers',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -120,7 +123,11 @@ class _TriggersAnalysisScreenState extends State<TriggersAnalysisScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -151,7 +158,7 @@ class _TriggersAnalysisScreenState extends State<TriggersAnalysisScreen> {
                   return Container(
                     height: 8,
                     decoration: BoxDecoration(
-                      color: AppColors.border,
+                      color: Theme.of(context).colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     alignment: Alignment.centerLeft,

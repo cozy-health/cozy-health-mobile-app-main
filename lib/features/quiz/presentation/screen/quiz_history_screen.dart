@@ -5,7 +5,6 @@ import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/models/quiz_attempt.dart';
 import '../../data/quiz_repository.dart';
@@ -23,10 +22,16 @@ class QuizHistoryScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
-        title: Text('Quiz History', style: AppTextStyles.heading2),
+        title: Text(
+          'Quiz History',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -79,10 +84,12 @@ class QuizHistoryScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(20),
                         margin: const EdgeInsets.only(bottom: 24),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: AppColors.border.withValues(alpha: 0.5),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                           ),
                         ),
                         child: Column(
@@ -92,7 +99,7 @@ class QuizHistoryScreen extends StatelessWidget {
                               '${assessment.id.toUpperCase()} Trend',
                               style: AppTextStyles.body1.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.text,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -106,6 +113,12 @@ class QuizHistoryScreen extends StatelessWidget {
                                 painter: _TrendChartPainter(
                                   data: trends[assessment.id]!,
                                   maximumScore: assessment.maximumScore,
+                                  surfaceColor: Theme.of(
+                                    context,
+                                  ).colorScheme.surface,
+                                  primaryColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary,
                                 ),
                               ),
                             ),
@@ -113,14 +126,17 @@ class QuizHistoryScreen extends StatelessWidget {
                         ),
                       ),
 
-                  Text('Past attempts', style: AppTextStyles.heading2),
+                  Text(
+                    'Past attempts',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
                   const SizedBox(height: 16),
 
                   if (attempts.isEmpty)
                     Text(
                       'No attempts yet.',
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.textMuted,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     )
                   else
@@ -156,9 +172,13 @@ class QuizHistoryScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          border: Border.all(
+            color: Theme.of(
+              context,
+            ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
         child: Row(
           children: [
@@ -169,7 +189,7 @@ class QuizHistoryScreen extends StatelessWidget {
                   Text(
                     title,
                     style: AppTextStyles.body1.copyWith(
-                      color: AppColors.text,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -177,7 +197,7 @@ class QuizHistoryScreen extends StatelessWidget {
                   Text(
                     date,
                     style: AppTextStyles.body2.copyWith(
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -209,8 +229,15 @@ class QuizHistoryScreen extends StatelessWidget {
 class _TrendChartPainter extends CustomPainter {
   final List<double> data;
   final int maximumScore;
+  final Color surfaceColor;
+  final Color primaryColor;
 
-  _TrendChartPainter({required this.data, required this.maximumScore});
+  _TrendChartPainter({
+    required this.data,
+    required this.maximumScore,
+    required this.surfaceColor,
+    required this.primaryColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -231,7 +258,7 @@ class _TrendChartPainter extends CustomPainter {
     }
 
     final paint = Paint()
-      ..color = AppColors.primary
+      ..color = primaryColor
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;
@@ -239,10 +266,10 @@ class _TrendChartPainter extends CustomPainter {
     canvas.drawPath(path, paint);
 
     final pointPaint = Paint()
-      ..color = AppColors.surface
+      ..color = surfaceColor
       ..style = PaintingStyle.fill;
     final pointStroke = Paint()
-      ..color = AppColors.primary
+      ..color = primaryColor
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
@@ -256,6 +283,8 @@ class _TrendChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TrendChartPainter oldDelegate) =>
+      oldDelegate.surfaceColor != surfaceColor ||
+      oldDelegate.primaryColor != primaryColor ||
       oldDelegate.maximumScore != maximumScore ||
       oldDelegate.data.toString() != data.toString();
 }
