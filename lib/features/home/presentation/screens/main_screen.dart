@@ -40,49 +40,41 @@ class _MainScreenState extends State<MainScreen> {
       builder: (context, _) => Scaffold(
         body: SafeArea(
           bottom: false,
-          child: Column(
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              Expanded(child: _screens[_currentIndex]),
-              if (MediaQuery.viewInsetsOf(context).bottom == 0)
-                Padding(
-                  // Keep the controls outside the page's content bounds.
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        CrisisFab(key: _tourTargets.crisis),
-                        const SizedBox(width: 16),
-                        Semantics(
-                          button: true,
-                          label: 'Open quick actions',
-                          child: GestureDetector(
-                            onLongPress: () =>
-                                context.push(AppRouter.crisisHub),
-                            child: FloatingActionButton(
-                              key: _tourTargets.journal,
-                              heroTag: 'quick-actions',
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onPrimary,
-                              onPressed: () => _showQuickActionsSheet(context),
-                              child: const Icon(Icons.add),
-                            ),
-                          ),
-                        ),
-                      ],
+              SizedBox.expand(
+                key: const ValueKey('main-tab-content'),
+                child: _screens[_currentIndex],
+              ),
+              if (MediaQuery.viewInsetsOf(context).bottom == 0) ...[
+                Positioned(
+                  right: 16,
+                  bottom: 88,
+                  child: CrisisFab(key: _tourTargets.crisis),
+                ),
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: Semantics(
+                    button: true,
+                    label: 'Open quick actions',
+                    child: GestureDetector(
+                      onLongPress: () => context.push(AppRouter.crisisHub),
+                      child: FloatingActionButton(
+                        key: _tourTargets.journal,
+                        heroTag: 'quick-actions',
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary,
+                        onPressed: () => _showQuickActionsSheet(context),
+                        child: const Icon(Icons.add),
+                      ),
                     ),
                   ),
                 ),
+              ],
             ],
           ),
         ),

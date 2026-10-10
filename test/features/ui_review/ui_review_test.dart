@@ -142,7 +142,7 @@ void main() {
     const Size(430, 932),
   ]) {
     for (final dark in [false, true]) {
-      testWidgets('Main controls stay clear of all tabs: $size dark=$dark', (
+      testWidgets('Main controls overlay full-height tabs: $size dark=$dark', (
         tester,
       ) async {
         final settings = await LocalDbService().settingsBox();
@@ -165,25 +165,20 @@ void main() {
             ),
           );
           final page = tester.getRect(
-            find
-                .descendant(
-                  of: find.byType(MainScreen),
-                  matching: find.byType(Expanded),
-                )
-                .first,
+            find.byKey(const ValueKey('main-tab-content')),
           );
           final navigation = tester.getRect(
             find.byType(CustomBottomNavigationBar),
           );
           expect(crisis.size, const Size(56, 56));
           expect(quick.size, const Size(56, 56));
-          expect(page.bottom, lessThan(crisis.top));
+          expect(page.contains(crisis.center), isTrue);
+          expect(page.contains(quick.center), isTrue);
           expect(crisis.overlaps(quick), isFalse);
-          expect(crisis.top, quick.top);
-          expect(crisis.right, lessThan(quick.left));
-          // The controls must not grow into the 160px stacked panel on tall
-          // phones. Only one button height plus 8px above/below is reserved.
-          expect(navigation.top - page.bottom, closeTo(72, 0.01));
+          expect(crisis.right, quick.right);
+          expect(crisis.bottom, lessThan(quick.top));
+          // Overlay controls must reserve no panel or dock in the page layout.
+          expect(page.bottom, closeTo(navigation.top, 0.01));
           expect(quick.bottom, lessThan(navigation.top));
           expect(tester.takeException(), isNull, reason: 'Tab $index');
         }
