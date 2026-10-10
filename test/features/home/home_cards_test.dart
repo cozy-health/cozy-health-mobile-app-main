@@ -60,8 +60,11 @@ void main() {
                               now: now,
                             ),
                             const SizedBox(height: 16),
-                            const JournalingCard(
-                              affirmation: Text(
+                            const JournalingCard(),
+                            const SizedBox(height: 16),
+                            const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text(
                                 "💛 You're doing great. Small steps count.",
                               ),
                             ),
@@ -83,6 +86,14 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.text('Cozy Calendar'), findsOneWidget);
+        expect(
+          tester.getTopLeft(find.text('Journaling')).dx,
+          tester.getTopLeft(find.text('Cozy Calendar')).dx,
+        );
+        expect(
+          tester.getSize(find.byType(JournalingCard)).width,
+          tester.getSize(find.byType(CozyCalendar)).width,
+        );
         expect(find.text('Avg intensity 7.5'), findsOneWidget);
         expect(find.text('Recent entries'), findsOneWidget);
         expect(find.text('calm'), findsNWidgets(3));

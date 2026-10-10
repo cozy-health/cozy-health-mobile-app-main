@@ -59,7 +59,7 @@ class CozyCalendar extends StatelessWidget {
                 'Your check-in is saved for today.',
                 style: theme.textTheme.bodySmall,
               ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             WeekdayRow(
               days: List.generate(7, (index) {
                 final date = DateTime(
@@ -81,7 +81,6 @@ class CozyCalendar extends StatelessWidget {
                 );
               }),
             ),
-            const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: [
@@ -124,6 +123,8 @@ class CozyCalendar extends StatelessWidget {
             else
               for (final entry in recentEntries.take(3))
                 ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
                   contentPadding: EdgeInsets.zero,
                   leading: Text(
                     entry.emoji,

@@ -481,6 +481,7 @@ class _HomeDesignCards extends StatelessWidget {
         ) ??
         moodsThisWeek.fold<double>(0, (sum, entry) => sum + entry.intensity);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const HomeQuizCard(),
         SizedBox(height: 16),
@@ -496,7 +497,16 @@ class _HomeDesignCards extends StatelessWidget {
               : () => _pushPage(context, StreakDetailScreen(streak: streak)),
         ),
         SizedBox(height: 16),
-        JournalingCard(affirmation: affirmation),
+        const JournalingCard(),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: affirmation,
+        ),
       ],
     );
   }
