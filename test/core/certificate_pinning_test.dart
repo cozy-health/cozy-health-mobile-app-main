@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cozy_health/core/api/api_transport_io.dart';
 import 'package:cozy_health/core/api/leaf_pin_policy.dart';
+import 'package:cozy_health/core/api/network_build_policy.dart';
 
 const fixture = 'test/fixtures/tls';
 String pin(String name) {
@@ -27,6 +28,7 @@ void main() {
     bool mismatch = false,
     bool redirect = false,
     bool requirePins = true,
+    bool missingPins = false,
   }) async {
     requests = 0;
     final serverContext = SecurityContext()
@@ -60,8 +62,16 @@ void main() {
     final policy = LeafPinPolicy(
       host: 'localhost',
       port: server.port,
-      current: mismatch ? '0' * 64 : pin('current'),
-      next: mismatch ? '1' * 64 : pin('next'),
+      current: missingPins
+          ? ''
+          : mismatch
+          ? '0' * 64
+          : pin('current'),
+      next: missingPins
+          ? ''
+          : mismatch
+          ? '1' * 64
+          : pin('next'),
     );
     dio =
         Dio(
@@ -81,6 +91,54 @@ void main() {
     dio.close(force: true);
     await server.close(force: true);
     started = false;
+  });
+
+  test(
+    'internal release login request succeeds without rollout pins',
+    () async {
+      const build = NetworkBuildPolicy(debug: false, internalTesting: true);
+      await start('current', missingPins: true, requirePins: build.requirePins);
+      final response = await dio.post(
+        'https://localhost:${server.port}/auth/login',
+        data: {'email': 'synthetic@example.test', 'password': 'synthetic'},
+      );
+      expect(response.statusCode, 200);
+      expect(requests, 1);
+    },
+  );
+
+  test(
+    'production release rejects missing pins before sending credentials',
+    () async {
+      const build = NetworkBuildPolicy(debug: false, internalTesting: false);
+      await start('current', missingPins: true, requirePins: build.requirePins);
+      await expectLater(
+        dio.post(
+          'https://localhost:${server.port}/auth/login',
+          data: {'password': 'synthetic'},
+        ),
+        throwsA(isA<DioException>()),
+      );
+      expect(requests, 0);
+    },
+  );
+
+  test('internal release still rejects untrusted TLS certificates', () async {
+    const build = NetworkBuildPolicy(debug: false, internalTesting: true);
+    await start(
+      'current',
+      trusted: false,
+      missingPins: true,
+      requirePins: build.requirePins,
+    );
+    await expectLater(
+      dio.post(
+        'https://localhost:${server.port}/auth/login',
+        data: {'password': 'synthetic'},
+      ),
+      throwsA(isA<DioException>()),
+    );
+    expect(requests, 0);
   });
 
   test(

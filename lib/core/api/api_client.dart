@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'api_transport.dart';
 import 'leaf_pin_policy.dart';
+import 'network_build_policy.dart';
 import '../constants/api_constants.dart';
 import 'api_exceptions.dart';
 import 'api_interceptors.dart';
@@ -35,7 +36,7 @@ class ApiClient {
         current: ApiConstants.currentLeafPin,
         next: ApiConstants.nextLeafPin,
       ),
-      requirePins: !kDebugMode,
+      requirePins: const NetworkBuildPolicy().requirePins,
     );
 
     _dio.interceptors.addAll([

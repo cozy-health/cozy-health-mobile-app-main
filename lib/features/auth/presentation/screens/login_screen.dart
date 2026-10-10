@@ -128,7 +128,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } on ApiException catch (e) {
       if (!mounted) return;
-      final message = _friendlyLoginError(e.message);
+      final message = e is ApiSecureConnectionException
+          ? 'This build cannot establish a secure connection. Install the latest test build.'
+          : _friendlyLoginError(e.message);
       setState(() => _passwordError = message);
       showAuthToast(
         context,

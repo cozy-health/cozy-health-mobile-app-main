@@ -1,5 +1,23 @@
 # API leaf certificate pinning and rotation
 
+## Internal iPhone sideload builds — 2026-10-10
+
+The develop-only iOS workflow explicitly supplies
+`--dart-define=INTERNAL_TEST_BUILD=true` when testing and packaging the unsigned
+release-mode IPA. iPhone sideload testing needs release-mode packaging, but the
+previous workflow supplied no pins and therefore blocked every API request.
+These internal artifacts use normal platform TLS chain, hostname and expiry
+validation, the existing HTTPS destination restriction and redirect prohibition.
+They do not enforce leaf pins and must not be distributed as production builds.
+The artifact name, build-info.json and workflow summary identify this mode.
+The workflow now probes health and empty login validation through the actual
+native internal-release transport before packaging, without account credentials.
+
+Without this explicit build define, profile/release still requires both pins.
+The production rollout prerequisites and rotation plan below remain open.
+This internal build policy supersedes the earlier statement that every release
+mode artifact always requires pins; it does not change production defaults.
+
 **Rollout blocked:** two real independently verified leaf pins and a named
 rotation owner are required. The next certificate and owner have not been
 supplied. No backup certificate has been invented.

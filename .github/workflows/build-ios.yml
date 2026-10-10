@@ -1,4 +1,4 @@
-name: Build iOS Unsigned IPA
+name: Build iOS Internal Test IPA
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
 
 jobs:
   build-ios:
+    if: github.ref == 'refs/heads/develop'
     runs-on: macos-14
     timeout-minutes: 60
 
@@ -22,11 +23,13 @@ jobs:
           from pathlib import Path
           identity = {key: os.environ[key] for key in (
               'GITHUB_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_NUMBER', 'GITHUB_REF_NAME')}
+          identity['INTERNAL_TEST_BUILD'] = True
           Path('build-info.json').write_text(json.dumps(identity, indent=2) + '\n')
           PY
           echo "Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "Build number: $GITHUB_RUN_NUMBER" >> "$GITHUB_STEP_SUMMARY"
           echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "Internal sideload build: standard HTTPS certificate validation; not a production release." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -42,12 +45,15 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Run tests
-        run: flutter test
+        run: flutter test --dart-define=INTERNAL_TEST_BUILD=true
+
+      - name: Verify internal release API connection
+        run: flutter test test/core/internal_build_api_smoke_test.dart --dart-define=INTERNAL_TEST_BUILD=true --dart-define=API_SMOKE_TEST=true
 
       - name: Build iOS (no codesign)
         run: |
           xcodebuild -version
-          flutter build ipa --release --no-codesign --build-number="$GITHUB_RUN_NUMBER" --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
+          flutter build ipa --release --no-codesign --build-number="$GITHUB_RUN_NUMBER" --dart-define=INTERNAL_TEST_BUILD=true --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
 
       - name: Verify Sentry native SDK version
         run: |
@@ -73,7 +79,7 @@ jobs:
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-unsigned-ipa-${{ github.sha }}-${{ github.run_id }}
+          name: ios-internal-test-ipa-${{ github.sha }}-${{ github.run_id }}
           path: |
             Runner-unsigned.ipa
             build-info.json
