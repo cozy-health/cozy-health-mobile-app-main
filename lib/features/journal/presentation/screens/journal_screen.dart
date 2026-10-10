@@ -1,4 +1,3 @@
-import 'package:cozy_health/core/widgets/security_blur.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -605,7 +604,9 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
 
   @override
   Widget build(BuildContext context) =>
-      SecurityBlur(child: _buildProtected(context));
+      // Screenshot protection disabled so users can capture their journal.
+      // SecurityBlur(child: _buildProtected(context));
+      _buildProtected(context);
 
   Widget _buildProtected(BuildContext context) {
     final prompt =
@@ -1407,7 +1408,9 @@ class JournalEntryDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      SecurityBlur(child: _buildProtected(context));
+      // Screenshot protection disabled so users can capture their journal.
+      // SecurityBlur(child: _buildProtected(context));
+      _buildProtected(context);
 
   Widget _buildProtected(BuildContext context) {
     final linked = MoodRepository().currentEntries().where(

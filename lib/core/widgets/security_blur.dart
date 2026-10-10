@@ -1,8 +1,8 @@
-import 'dart:ui';
+// import 'dart:ui'; // Screenshot blur disabled app-wide.
 import 'package:flutter/material.dart';
 import '../services/screen_capture_service.dart';
 
-/// Registers sensitive content; the root overlay also covers dialogs/sheets.
+/// Screenshot protection is disabled; content remains visible during capture.
 class SecurityBlur extends StatefulWidget {
   const SecurityBlur({super.key, required this.child, this.service});
   final Widget child;
@@ -21,18 +21,18 @@ class _SecurityBlurState extends State<SecurityBlur>
     super.initState();
     _service = widget.service ?? ScreenCaptureService.instance;
     WidgetsBinding.instance.addObserver(this);
-    _service.acquire();
+    // _service.acquire(); // Screenshot protection disabled app-wide.
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _service.refresh();
+    // if (state == AppLifecycleState.resumed) _service.refresh();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _service.release();
+    // _service.release();
     super.dispose();
   }
 
@@ -46,6 +46,10 @@ class SecurityCaptureOverlay extends StatelessWidget {
   final Widget child;
   final ScreenCaptureService? service;
 
+  @override
+  Widget build(BuildContext context) => child;
+
+  /* Screenshot overlay disabled app-wide so users can capture any screen.
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
     valueListenable: service ?? ScreenCaptureService.instance,
@@ -84,5 +88,6 @@ class SecurityCaptureOverlay extends StatelessWidget {
         ],
       );
     },
-  );
+      );
+  */
 }

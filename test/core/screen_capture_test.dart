@@ -28,7 +28,7 @@ void main() {
     channel.setMethodCallHandler(null);
   });
 
-  testWidgets('capture changes obscure content and preserve interaction', (
+  testWidgets('capture leaves content visible and preserves interaction', (
     tester,
   ) async {
     service = ScreenCaptureService(channel: channel);
@@ -67,18 +67,17 @@ void main() {
       (_) {},
     );
     await tester.pumpAndSettle();
-    expect(activeBlur, findsWidgets);
-    expect(calls, [true]);
+    expect(activeBlur, findsNothing);
+    expect(calls, isEmpty);
     await tester.tap(find.text('Sensitive'));
     expect(taps, 1);
     captured = false;
-    service.refresh();
     await tester.pumpAndSettle();
     expect(activeBlur, findsNothing);
     expect(find.text('Unsaved journal text'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
-    expect(calls.last, false);
+    expect(calls, isEmpty);
   });
 
   testWidgets('nested protection stays enabled until last screen leaves', (
@@ -96,7 +95,7 @@ void main() {
     expect(calls.last, false);
   });
 
-  testWidgets('capture already active at entry and resume is obscured', (
+  testWidgets('capture already active at entry and resume stays visible', (
     tester,
   ) async {
     service = ScreenCaptureService(channel: channel);
@@ -110,7 +109,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(activeBlur, findsOneWidget);
+    expect(activeBlur, findsNothing);
+    expect(find.text('Private journal'), findsOneWidget);
+    expect(calls, isEmpty);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     captured = false;
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
@@ -120,9 +121,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('native protection failure keeps content obscured', (
-    tester,
-  ) async {
+  testWidgets('unavailable capture API leaves content visible', (tester) async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (_) async {
           throw PlatformException(code: 'capture_unavailable');
@@ -137,7 +136,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(activeBlur, findsOneWidget);
+    expect(activeBlur, findsNothing);
+    expect(find.text('Sensitive content'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
     expect(service.shouldHide, false);

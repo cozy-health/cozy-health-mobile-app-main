@@ -14,19 +14,23 @@ import UIKit
       let channel = FlutterMethodChannel(
         name: "cozy_health/screen_capture", binaryMessenger: controller.binaryMessenger)
       captureChannel = channel
-      channel.setMethodCallHandler { [weak self] call, result in
+      channel.setMethodCallHandler { call, result in
         if call.method == "setProtected" {
-          result(self?.window?.screen.isCaptured ?? UIScreen.main.isCaptured)
+          // Screenshot protection disabled app-wide.
+          // result(self?.window?.screen.isCaptured ?? UIScreen.main.isCaptured)
+          result(false)
         } else {
           result(FlutterMethodNotImplemented)
         }
       }
+      /* Screenshot capture monitoring disabled app-wide.
       captureObserver = NotificationCenter.default.addObserver(
         forName: UIScreen.capturedDidChangeNotification, object: nil, queue: .main
       ) { [weak self] _ in
         let captured = self?.window?.screen.isCaptured ?? UIScreen.main.isCaptured
         self?.captureChannel?.invokeMethod("captureChanged", arguments: captured)
       }
+      */
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

@@ -11,12 +11,13 @@ class MainActivity : FlutterFragmentActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "cozy_health/screen_capture")
             .setMethodCallHandler { call, result ->
                 if (call.method == "setProtected") {
-                    if (call.arguments == true) {
-                        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                    } else {
-                        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                    }
-                    // FLAG_SECURE hides captures without obscuring the user's view.
+                    // Screenshot protection disabled app-wide.
+                    // if (call.arguments == true) {
+                    //     window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    // } else {
+                    //     window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    // }
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     result.success(false)
                 } else result.notImplemented()
             }
