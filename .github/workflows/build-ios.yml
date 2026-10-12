@@ -47,7 +47,9 @@ jobs:
       - name: Prepare optional Firebase configuration
         env:
           FIREBASE_OPTIONS_JSON: ${{ secrets.FIREBASE_OPTIONS_JSON }}
-        run: python3 tool/prepare_push_config.py
+        run: |
+          python3 -m unittest discover -s tool/tests
+          python3 tool/prepare_push_config.py
 
       - name: Run analyzer
         run: flutter analyze --no-fatal-infos --no-fatal-warnings

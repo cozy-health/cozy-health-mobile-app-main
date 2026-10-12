@@ -15,6 +15,20 @@ if raw:
             if not isinstance(options[platform].get(field), str) or not options[platform][field]:
                 raise ValueError(f'Missing Firebase field: {platform}.{field}')
     defines['FIREBASE_OPTIONS'] = json.dumps(options, separators=(',', ':'))
+    if options['android']['projectId'] != options['ios']['projectId']:
+        raise ValueError('Android and iOS Firebase projects must match for this build')
+    android = options['android']
+    android_config = {
+        'project_info': {'project_number': android['messagingSenderId'], 'project_id': android['projectId']},
+        'client': [{
+            'client_info': {'mobilesdk_app_id': android['appId'], 'android_client_info': {'package_name': 'com.example.cozy_health'}},
+            'api_key': [{'current_key': android['apiKey']}],
+            'oauth_client': [],
+            'services': {'appinvite_service': {'other_platform_oauth_client': []}},
+        }],
+        'configuration_version': '1',
+    }
+    Path('android/app/google-services.json').write_text(json.dumps(android_config))
     ios = options['ios']
     if not ios.get('iosBundleId'):
         raise ValueError('Missing Firebase iosBundleId')
@@ -36,5 +50,8 @@ if raw:
         '''], check=True)
     print('Firebase client configuration prepared. This does not enable Apple signing.')
 else:
+    # A configuration-free build must not inherit a previous Firebase project.
+    for generated in ('android/app/google-services.json', 'ios/Runner/GoogleService-Info.plist'):
+        Path(generated).unlink(missing_ok=True)
     print('Firebase configuration absent: building with push delivery unavailable.')
 Path('push-defines.json').write_text(json.dumps(defines))

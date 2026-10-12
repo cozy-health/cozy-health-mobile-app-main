@@ -78,6 +78,12 @@ Keep backend `PUSH_IOS_ENABLED=false` until real delivery passes. No local Mac o
 
 ## Acceptance checklist
 
+Firebase projects: `cozy-health-dev-2026` and `cozy-health-prod-2026`, with the existing Android package `com.example.cozy_health` and iOS bundle `com.example.cozyHealth` registered in each. GitHub `FIREBASE_OPTIONS_JSON` selects production client configuration to match the existing Railway API; `FIREBASE_OPTIONS_DEV_JSON` holds the separate development client configuration for a future isolated development backend. No server private key is included in mobile secrets or builds. `prepare_push_config.py` generates both native configuration files and rejects mixed project IDs. Firebase remains optional for builds without configuration.
+
+The Android internal APK workflow verifies native Firebase compilation and produces a sideloadable test APK. Remote reminder sound uses the new `gentle_reminders_v2` Android channel and `cozy_notification.wav` on iOS. Ordinary OS sound, notification and Focus/DND settings still apply. `IOS_PUSH_ENABLED=false` remains set on unsigned iPhone builds; Firebase configuration does not remove the Apple signing gate.
+
+Subsequent verification: GitHub iPhone build 118 passed analyzer, full tests, native compilation and packaged sound verification. The owner installed build 118 and reports the phone notification tests work. Eight targeted phone-test cases pass, including readable affirmation copy, offline fallback, scheduling, denied permission, account isolation, cold-start recovery and cancellation. This is acceptance of manually scheduled local notifications; automatic remote pushes remain unverified. Android compilation after adding the plugin could not be completed because dependency downloads failed.
+
 Local verification on 2026-10-12: full Flutter suite 552 passed, one skipped; final notification/core regression suite 170 passed, one skipped; Android debug APK built. All three workflow YAML files parsed successfully. No GitHub iOS execution or device delivery is claimed.
 
 - Android: real foreground/background/terminated delivery, permissions, taps, disabled categories and quiet-hour deferrals.

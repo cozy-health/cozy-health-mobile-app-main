@@ -14,7 +14,7 @@
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
-        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="gentle_reminders" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="gentle_reminders_v2" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
