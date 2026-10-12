@@ -468,7 +468,7 @@ class PushNotificationService extends ChangeNotifier
     }
   }
 
-  void simulate(String category, {bool tap = false}) {
+  void simulate(String category) {
     if (!internalBuild) return;
     final notification = AppNotification(
       id: const Uuid().v4(),
@@ -479,10 +479,6 @@ class PushNotificationService extends ChangeNotifier
       payload: {'user_id': _local.activeUserId, 'simulation': true},
       createdAt: DateTime.now(),
     );
-    if (tap) {
-      open(notification);
-    } else {
-      _foreground.add(notification);
-    }
+    _foreground.add(notification);
   }
 }

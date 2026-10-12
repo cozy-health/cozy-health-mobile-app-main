@@ -26,6 +26,8 @@ import 'package:cozy_health/core/services/restore_service.dart';
 import 'package:cozy_health/core/services/background_restore_service.dart';
 import 'package:cozy_health/core/services/push_notification_service.dart';
 import 'package:cozy_health/features/settings/presentation/screens/notification_preferences_screen.dart';
+import 'package:cozy_health/features/notifications/presentation/widgets/push_notification_host.dart';
+import 'package:cozy_health/features/notifications/presentation/widgets/app_notification_banner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cozy_health/core/services/user_data_merge.dart';
 import 'package:cozy_health/core/storage/token_storage.dart';
@@ -33,6 +35,8 @@ import 'package:cozy_health/features/auth/presentation/screens/restore_screen.da
 import '../../support/local_fonts.dart';
 
 final date = DateTime.utc(2026, 10, 8);
+Widget _notificationHost(BuildContext context, Widget? child) =>
+    PushNotificationHost(child: child!);
 Map<String, dynamic> mood(
   String id, {
   DateTime? updated,
@@ -232,7 +236,10 @@ void main() {
       );
       try {
         await tester.pumpWidget(
-          const MaterialApp(home: NotificationPreferencesScreen()),
+          const MaterialApp(
+            home: NotificationPreferencesScreen(),
+            builder: _notificationHost,
+          ),
         );
         await tester.pump();
         expect(find.text('Phone permission: Denied'), findsOneWidget);
@@ -244,14 +251,42 @@ void main() {
         for (final category in ['mood', 'journal', 'streak', 'affirmation']) {
           await tester.ensureVisible(find.text('Test $category'));
           await tester.pump();
-          await tester.tap(find.text('Test $category'));
+          final routeBefore = ModalRoute.of(
+            tester.element(find.byType(NotificationPreferencesScreen)),
+          );
+          final row = find.ancestor(
+            of: find.text('Test $category'),
+            matching: find.byType(ListTile),
+          );
+          await tester.tap(
+            find.descendant(of: row, matching: find.text('Simulate')),
+          );
           await tester.pump();
+          await tester.pump(const Duration(milliseconds: 450));
           expect(received.last.type, category);
+          expect(find.byType(AppNotificationBanner), findsOneWidget);
+          expect(find.text('Test $category reminder'), findsOneWidget);
+          expect(
+            ModalRoute.of(
+              tester.element(find.byType(NotificationPreferencesScreen)),
+            ),
+            same(routeBefore),
+          );
+          await tester.tap(
+            find.descendant(
+              of: find.byType(AppNotificationBanner),
+              matching: find.byIcon(Icons.close),
+            ),
+          );
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 450));
+          expect(find.byType(AppNotificationBanner), findsNothing);
         }
         expect(local.appNotificationBox, isEmpty);
       } finally {
         await tester.runAsync(() => subscription.cancel());
         await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 6));
         push.phonePermission.status = previousStatus;
         push.phonePermission.requested = previousRequested;
       }

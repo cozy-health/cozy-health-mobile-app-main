@@ -156,14 +156,14 @@ class _NotificationPreferencesScreenState
               const Divider(),
               const Text('Internal notification testing'),
               const Text(
-                'Simulations test banners and tap routing, not push delivery.',
+                'Tap Simulate to show an in-app notification banner. Tap the banner to open its destination. This does not send a phone push.',
               ),
               for (final c in ['mood', 'journal', 'streak', 'affirmation'])
                 ListTile(
                   title: Text('Test $c'),
                   trailing: TextButton(
-                    onPressed: () => _push.simulate(c, tap: true),
-                    child: const Text('Open'),
+                    onPressed: () => _push.simulate(c),
+                    child: const Text('Simulate'),
                   ),
                   onTap: () => _push.simulate(c),
                 ),

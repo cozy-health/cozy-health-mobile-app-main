@@ -51,7 +51,7 @@ Use the existing **Build iOS Internal Test IPA** action and sideload its unsigne
 
 Under Settings → Notifications, internal builds expose four simulation rows. Tap a row to show its banner; use **Open** to exercise routing. Simulations never send an external message, write a real inbox record or consume allowance. Production builds omit these controls.
 
-The simulation rows are near the top of the screen and work regardless of phone permission, reminder consent or Firebase setup.
+The simulation rows are near the top of the screen and work regardless of phone permission, reminder consent or Firebase setup. Tap the row or its **Simulate** button to show an in-app banner; only tapping the banner opens the destination. Simulations do not appear in the phone's notification centre or lock screen.
 
 Login now opens Home without a restore page. Downloads run through one account-scoped background coordinator, merge into cached records, and stop on logout/account switching. Home shows a small sync status; partial failures remain retryable. Failed sections are persisted and retried on app resume/reconnect, with at most three automatic retries before a manual retry is needed. New-account registration keeps its onboarding flow.
 
