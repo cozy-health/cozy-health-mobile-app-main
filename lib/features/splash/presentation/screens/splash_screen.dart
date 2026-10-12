@@ -11,7 +11,6 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/install_marker_service.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../../../core/services/onboarding_service.dart';
-import '../../../../core/services/user_data_fetcher.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../data/splash_service.dart';
 import '../../../auth/data/auth_service.dart';
@@ -151,10 +150,9 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     try {
-      final needsRestore = await AuthService().resumeStoredSession();
+      await AuthService().resumeStoredSession();
       if (!mounted) return;
-      context.go(needsRestore ? AppRouter.restore : AppRouter.home);
-      if (!needsRestore) unawaited(_syncUserDataInBackground());
+      context.go(AppRouter.home);
     } on ApiAuthException {
       await TokenStorage().clearToken();
       await LocalDbService.instance.activateGuest();
@@ -169,11 +167,6 @@ class _SplashScreenState extends State<SplashScreen>
             : AppRouter.welcome,
       );
     }
-  }
-
-  Future<void> _syncUserDataInBackground() async {
-    await UserDataFetcher().fetchAll();
-    debugPrint('Background data sync complete');
   }
 
   @override

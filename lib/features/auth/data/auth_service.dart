@@ -10,10 +10,10 @@ import '../../../core/models/user_profile.dart';
 import '../../../core/services/guest_session_service.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/services/restore_service.dart';
+import '../../../core/services/background_restore_service.dart';
 import '../../../core/services/user_data_fetcher.dart';
 import '../../../core/services/device_integrity_service.dart';
 import '../../../core/storage/token_storage.dart';
-import '../../settings/data/profile_repository.dart';
 
 class AuthLocalDataException implements Exception {
   const AuthLocalDataException();
@@ -25,10 +25,16 @@ class AuthLocalDataException implements Exception {
 class AuthService {
   final ApiClient _apiClient;
   final TokenStorage _tokenStorage;
+  final BackgroundRestoreService _backgroundRestore;
 
-  AuthService({ApiClient? apiClient, TokenStorage? tokenStorage})
-    : _apiClient = apiClient ?? ApiClient(),
-      _tokenStorage = tokenStorage ?? TokenStorage();
+  AuthService({
+    ApiClient? apiClient,
+    TokenStorage? tokenStorage,
+    BackgroundRestoreService? backgroundRestore,
+  }) : _apiClient = apiClient ?? ApiClient(),
+       _tokenStorage = tokenStorage ?? TokenStorage(),
+       _backgroundRestore =
+           backgroundRestore ?? BackgroundRestoreService.instance;
 
   Future<Map<String, dynamic>> login({
     required String email,
@@ -148,6 +154,7 @@ class AuthService {
       local.syncPaused = false;
     }
     unawaited(local.processSyncQueue(force: true));
+    _restoreInBackground(userId);
     return restore;
   }
 
@@ -265,15 +272,14 @@ class AuthService {
         user['id'].toString(),
       );
       await _cacheUserProfile(user);
-      final restore = await RestoreService.prepare(
+      await RestoreService.prepare(
         user['id'].toString(),
         registration: registration,
       );
-      if (!restore) await ProfileRepository().fetchProfile();
     } finally {
       local.syncPaused = false;
     }
-    if (!await RestoreService.required) _syncUserDataInBackground();
+    _restoreInBackground(user['id'].toString());
     unawaited(local.processSyncQueue(force: true));
   }
 
@@ -295,11 +301,19 @@ class AuthService {
     }
   }
 
-  void _syncUserDataInBackground() {
+  void _restoreInBackground(String owner) {
     unawaited(
-      UserDataFetcher().fetchAll().then((_) {
-        debugPrint('Background data sync complete');
-      }),
+      _backgroundRestore
+          .start(owner)
+          .then((_) async {
+            if (LocalDbService().activeUserId == owner &&
+                await _tokenStorage.getToken() != null) {
+              await UserDataFetcher().fetchSubscription();
+            }
+          })
+          .catchError((Object _) {
+            /* Home remains usable with its cached information. */
+          }),
     );
   }
 }

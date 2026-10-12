@@ -1,7 +1,10 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:async';
 import 'package:uuid/uuid.dart';
 
 class TokenStorage {
+  static final _sessionClearing = StreamController<void>.broadcast(sync: true);
+  static Stream<void> get sessionClearing => _sessionClearing.stream;
   static Future<void> Function()? beforeClear;
   static const String _tokenKey = 'cozy_health_access_token';
 
@@ -71,6 +74,7 @@ class TokenStorage {
   }
 
   Future<void> clearToken() async {
+    _sessionClearing.add(null);
     await beforeClear?.call();
     _sessionToken = null;
     _sessionOnly = false;

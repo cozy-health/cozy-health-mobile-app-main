@@ -1,5 +1,3 @@
-import '../../features/auth/presentation/screens/restore_screen.dart';
-import '../services/restore_service.dart';
 import '../../features/settings/presentation/screens/digital_wellbeing_screen.dart';
 import '../security_gate.dart';
 import 'package:flutter/material.dart';
@@ -259,16 +257,10 @@ class AppRouter {
         builder: (_, __) => const PreparingCozyScreen(),
       ),
 
-      GoRoute(
-        path: restore,
-        name: 'restore',
-        builder: (_, __) => const RestoreScreen(),
-      ),
+      GoRoute(path: restore, name: 'restore', redirect: (_, __) => home),
       GoRoute(
         path: home,
         name: 'home',
-        redirect: (_, __) async =>
-            await RestoreService.required ? restore : null,
         builder: (_, state) =>
             MainScreen(notificationFocus: state.uri.queryParameters['focus']),
       ),

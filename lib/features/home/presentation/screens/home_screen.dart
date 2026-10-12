@@ -2,6 +2,7 @@ import '../../../../core/data/demo_mode.dart';
 import '../widgets/mood_chips_row.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/sync_queue_badge.dart';
+import '../../../../core/widgets/background_restore_badge.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 
@@ -315,6 +316,7 @@ class _HomeScreenState extends State<HomeScreen>
                         children: [
                           const _GuestBanner(),
                           const SyncQueueBadge(),
+                          const BackgroundRestoreBadge(),
                           _AnimatedIn(
                             controller: _entranceController,
                             interval: const Interval(

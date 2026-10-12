@@ -1,6 +1,7 @@
 import 'core/widgets/network_observer.dart';
 import 'dart:async';
 import 'core/services/push_notification_service.dart';
+import 'core/services/background_restore_service.dart';
 import 'features/notifications/presentation/widgets/push_notification_host.dart';
 import 'core/widgets/security_blur.dart';
 import 'core/widgets/app_availability_gate.dart';
@@ -63,6 +64,7 @@ Future<void> _startApp() async {
     AppRouter.router.routeInformationProvider.value.uri.path,
   );
   runApp(const CozyHealthApp());
+  BackgroundRestoreService.instance.initialize();
   unawaited(PushNotificationService.instance.initialize());
 }
 

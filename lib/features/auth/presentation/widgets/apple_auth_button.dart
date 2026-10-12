@@ -1,10 +1,8 @@
-import '../../../../core/services/restore_service.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_exceptions.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/services/personalization_service.dart';
 import '../../../../core/widgets/apple_sign_in_button.dart';
 import '../../data/apple_auth_service.dart';
 import '../../data/auth_service.dart';
@@ -81,17 +79,8 @@ class _AppleAuthButtonState extends State<AppleAuthButton> {
       if (widget.onSuccess != null) {
         widget.onSuccess!();
       } else {
-        final completed = await PersonalizationService()
-            .hasCompletedPersonalization();
-        final needsRestore = await RestoreService.required;
         if (mounted) {
-          context.go(
-            needsRestore
-                ? AppRouter.restore
-                : completed
-                ? AppRouter.home
-                : AppRouter.personalization,
-          );
+          context.go(AppRouter.home);
         }
       }
     } on AuthLocalDataException catch (error) {

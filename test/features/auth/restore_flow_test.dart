@@ -23,6 +23,10 @@ import 'package:cozy_health/core/models/subscription_status.dart';
 import 'package:cozy_health/core/models/user_preferences.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/core/services/restore_service.dart';
+import 'package:cozy_health/core/services/background_restore_service.dart';
+import 'package:cozy_health/core/services/push_notification_service.dart';
+import 'package:cozy_health/features/settings/presentation/screens/notification_preferences_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:cozy_health/core/services/user_data_merge.dart';
 import 'package:cozy_health/core/storage/token_storage.dart';
 import 'package:cozy_health/features/auth/presentation/screens/restore_screen.dart';
@@ -116,6 +120,8 @@ class WidgetController extends RestoreController {
 }
 
 class SuccessfulLoginApi extends Fake implements ApiClient {
+  SuccessfulLoginApi({this.userId = '42'});
+  final String userId;
   @override
   Future<Response<dynamic>> post(
     String path, {
@@ -130,7 +136,11 @@ class SuccessfulLoginApi extends Fake implements ApiClient {
     data: {
       'data': {
         'token': 'test-session',
-        'user': {'id': '42', 'name': 'Test User', 'email': 'test@example.test'},
+        'user': {
+          'id': userId,
+          'name': 'Test User',
+          'email': 'test@example.test',
+        },
       },
     },
   );
@@ -161,6 +171,8 @@ void main() {
     await local.activateAccount('1', email: 'sample@example.test');
   });
   setUp(() async {
+    BackgroundRestoreService.instance.stop();
+    SharedPreferences.setMockInitialValues({'install_marker_set': true});
     await local.activateAccount('1', email: 'sample@example.test');
     for (final box in [
       local.moodBox,
@@ -184,6 +196,7 @@ void main() {
     api = FakeApi();
   });
   tearDownAll(() async {
+    BackgroundRestoreService.instance.stop();
     resetLocalTestFonts();
     await Hive.close();
     Hive.resetAdapters();
@@ -196,6 +209,186 @@ void main() {
     expect(await RestoreService.prepare('1'), isTrue);
     expect(await RestoreService.required, isTrue);
   });
+
+  testWidgets(
+    'internal simulations are visible and work when phone alerts are denied',
+    (tester) async {
+      final push = PushNotificationService.instance;
+      final previousStatus = push.phonePermission.status;
+      final previousRequested = push.phonePermission.requested;
+      push.phonePermission.status = PermissionStatus.permanentlyDenied;
+      push.phonePermission.requested = true;
+      final received = <AppNotification>[];
+      final subscription = push.foreground.listen(received.add);
+      await tester.runAsync(
+        () => local.saveUserProfile(
+          UserProfile(
+            id: 'profile-1',
+            name: 'Sample User',
+            email: 'sample@example.test',
+            updatedAt: date,
+          ),
+        ),
+      );
+      try {
+        await tester.pumpWidget(
+          const MaterialApp(home: NotificationPreferencesScreen()),
+        );
+        await tester.pump();
+        expect(find.text('Phone permission: Denied'), findsOneWidget);
+        expect(find.text('Test mood'), findsOneWidget);
+        expect(
+          tester.getTopLeft(find.text('Test mood')).dy,
+          lessThan(tester.getTopLeft(find.text('Phone permission: Denied')).dy),
+        );
+        for (final category in ['mood', 'journal', 'streak', 'affirmation']) {
+          await tester.ensureVisible(find.text('Test $category'));
+          await tester.pump();
+          await tester.tap(find.text('Test $category'));
+          await tester.pump();
+          expect(received.last.type, category);
+        }
+        expect(local.appNotificationBox, isEmpty);
+      } finally {
+        await tester.runAsync(() => subscription.cancel());
+        await tester.pumpWidget(const SizedBox());
+        push.phonePermission.status = previousStatus;
+        push.phonePermission.requested = previousRequested;
+      }
+    },
+    skip: !PushNotificationService.internalBuild,
+  );
+
+  test(
+    'background restore coalesces requests and finishes without Continue',
+    () async {
+      await RestoreService.prepare('1');
+      final waiting = Completer<dynamic>();
+      final entered = Completer<void>();
+      final service = BackgroundRestoreService(
+        hasSession: () async => true,
+        createController: (owner) => RestoreController(
+          userId: owner,
+          now: date,
+          get: (path, query) {
+            if (path == '/user/profile') {
+              if (!entered.isCompleted) entered.complete();
+              return waiting.future;
+            }
+            return api.get(path, query);
+          },
+        ),
+      );
+      final first = service.start('1');
+      await entered.future;
+      expect(service.busy, true);
+      expect(await RestoreService.required, true);
+      final second = service.start('1');
+      expect(identical(first, second), true);
+      waiting.complete(profile());
+      await first;
+      expect(service.state, BackgroundRestoreState.complete);
+      expect(await RestoreService.required, false);
+      expect(local.getUserProfile()?.name, 'Sample User');
+      service.dispose();
+    },
+  );
+
+  test(
+    'background partial failure retains completion and retries only failed sections',
+    () async {
+      await RestoreService.prepare('1');
+      api.failures.add('/mood-entries');
+      final service = BackgroundRestoreService(
+        hasSession: () async => true,
+        createController: (owner) =>
+            RestoreController(userId: owner, get: api.get, now: date),
+      );
+      await service.start('1');
+      expect(service.state, BackgroundRestoreState.partial);
+      expect((await local.settingsBox()).get('restore_incomplete_user'), '1');
+      final journals = api.calls['/journal-entries'];
+      api.failures.clear();
+      await service.retry();
+      expect(service.state, BackgroundRestoreState.complete);
+      expect(api.calls['/journal-entries'], journals);
+      expect(api.calls['/mood-entries'], 2);
+      service.dispose();
+    },
+  );
+
+  test(
+    'stopping background work cannot clear the next session or merge its response',
+    () async {
+      final waiting = Completer<dynamic>();
+      final entered = Completer<void>();
+      final service = BackgroundRestoreService(
+        hasSession: () async => true,
+        createController: (owner) => RestoreController(
+          userId: owner,
+          now: date,
+          get: (path, query) {
+            if (path == '/user/profile') {
+              entered.complete();
+              return waiting.future;
+            }
+            return api.get(path, query);
+          },
+        ),
+      );
+      final work = service.start('1');
+      await entered.future;
+      await local.activateAccount('2');
+      await TokenStorage().saveToken('second-session');
+      waiting.complete(profile());
+      await work;
+      expect(local.getUserProfile(), isNull);
+      expect(await TokenStorage().getToken(), 'second-session');
+      expect(service.state, BackgroundRestoreState.idle);
+      service.dispose();
+    },
+  );
+
+  test(
+    'login returns while the background profile download remains pending',
+    () async {
+      final waiting = Completer<dynamic>();
+      final entered = Completer<void>();
+      final service = BackgroundRestoreService(
+        hasSession: () async => true,
+        createController: (owner) => RestoreController(
+          userId: owner,
+          now: date,
+          get: (path, query) {
+            if (path == '/user/profile') {
+              entered.complete();
+              return waiting.future;
+            }
+            return api.get(path, query);
+          },
+        ),
+      );
+      await AuthService(
+        apiClient: SuccessfulLoginApi(userId: '77'),
+        backgroundRestore: service,
+      ).login(
+        email: 'test@example.test',
+        password: 'test-password',
+        stayLoggedIn: true,
+      );
+      await entered.future;
+      expect(service.busy, true);
+      expect(await TokenStorage().getToken(), 'test-session');
+      final work = service.activeWork;
+      service.stop();
+      waiting.complete(profile());
+      await work;
+      service.dispose();
+      await local.waitForSyncIdle();
+      local.syncPaused = true;
+      await local.activateAccount('1', email: 'sample@example.test');
+    },
+  );
   test(
     'successful server login recovers absent account cache from older reinstall',
     () async {

@@ -20,10 +20,13 @@ import '../../features/settings/data/profile_repository.dart';
 import '../../features/notifications/data/notification_repository.dart';
 import 'feature_flags_service.dart';
 import 'local_db_service.dart';
+import 'notification_permission_controller.dart';
 
 class PushNotificationService extends ChangeNotifier
     with WidgetsBindingObserver {
-  PushNotificationService._();
+  PushNotificationService._() {
+    phonePermission.addListener(notifyListeners);
+  }
   static final instance = PushNotificationService._();
   static const internalBuild = bool.fromEnvironment('INTERNAL_TEST_BUILD');
   static const iosPushEnabled = bool.fromEnvironment('IOS_PUSH_ENABLED');
@@ -37,7 +40,8 @@ class PushNotificationService extends ChangeNotifier
   bool _started = false;
   int _generation = 0;
   String status = 'Push delivery is not configured';
-  String permission = 'Unknown';
+  final phonePermission = NotificationPermissionController();
+  String get permission => phonePermission.label;
   AppNotification? _pendingTap;
   Timer? _timer;
   String? _registeredSignature;
@@ -66,6 +70,7 @@ class PushNotificationService extends ChangeNotifier
     AppRouter.router.routeInformationProvider.addListener(_drainTap);
     try {
       const raw = String.fromEnvironment('FIREBASE_OPTIONS');
+      await phonePermission.check();
       if (raw.isEmpty) {
         _setStatus('Push delivery is not configured');
         return;
@@ -134,16 +139,17 @@ class PushNotificationService extends ChangeNotifier
     final generation = _generation;
     final owner = _local.activeUserId;
     try {
+      await phonePermission.check();
       await _cleanupPending();
-      if (!_ready) return;
+      if (!_ready) {
+        _setStatus(
+          'Remote push is not configured. Phone alerts and internal simulations can still be tested.',
+        );
+        return;
+      }
       final profile = _local.getUserProfile();
       final token = await TokenStorage().getToken();
-      final settings = await FirebaseMessaging.instance
-          .getNotificationSettings();
-      permission = settings.authorizationStatus.name;
-      final authorized =
-          settings.authorizationStatus == AuthorizationStatus.authorized ||
-          settings.authorizationStatus == AuthorizationStatus.provisional;
+      final authorized = phonePermission.allowed;
       if (owner == null ||
           owner.startsWith('guest_') ||
           token == null ||
@@ -240,16 +246,10 @@ class PushNotificationService extends ChangeNotifier
   }) async {
     final owner = _local.activeUserId;
     final generation = _generation;
-    if (!_ready) {
-      _setStatus('Firebase setup is required before enabling push delivery');
-      return;
-    }
     try {
-      final result = await FirebaseMessaging.instance.requestPermission();
+      if (!phonePermission.allowed) await phonePermission.request();
       if (owner != _local.activeUserId || generation != _generation) return;
-      permission = result.authorizationStatus.name;
-      if (result.authorizationStatus != AuthorizationStatus.authorized &&
-          result.authorizationStatus != AuthorizationStatus.provisional) {
+      if (!phonePermission.allowed) {
         _setStatus(
           'Notification permission is $permission. You can change it in phone settings.',
         );
@@ -280,6 +280,11 @@ class PushNotificationService extends ChangeNotifier
   static bool shouldOfferPrompt(DateTime? declinedAt, DateTime now) =>
       declinedAt == null ||
       now.difference(declinedAt) >= const Duration(days: 14);
+
+  Future<void> enablePhoneAlerts() async {
+    await phonePermission.request();
+    await refresh();
+  }
 
   Future<bool> shouldPrompt() async {
     if (!_ready ||

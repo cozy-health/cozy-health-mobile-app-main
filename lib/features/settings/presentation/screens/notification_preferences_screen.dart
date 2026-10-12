@@ -152,6 +152,22 @@ class _NotificationPreferencesScreenState
               'Gentle reminders',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
+            if (PushNotificationService.internalBuild) ...[
+              const Divider(),
+              const Text('Internal notification testing'),
+              const Text(
+                'Simulations test banners and tap routing, not push delivery.',
+              ),
+              for (final c in ['mood', 'journal', 'streak', 'affirmation'])
+                ListTile(
+                  title: Text('Test $c'),
+                  trailing: TextButton(
+                    onPressed: () => _push.simulate(c, tap: true),
+                    child: const Text('Open'),
+                  ),
+                  onTap: () => _push.simulate(c),
+                ),
+            ],
             const SizedBox(height: 8),
             const Text(
               'Up to three reminders per day, at least two hours apart. Quiet hours may move reminders later. A completed check-in cancels its reminder.',
@@ -163,8 +179,18 @@ class _NotificationPreferencesScreenState
                 title: Text(_push.status),
                 subtitle: Text('Phone permission: ${_push.permission}'),
                 trailing: TextButton(
-                  onPressed: openAppSettings,
-                  child: const Text('Phone settings'),
+                  onPressed: _push.phonePermission.needsSettings
+                      ? openAppSettings
+                      : _push.phonePermission.allowed
+                      ? null
+                      : () => _push.enablePhoneAlerts(),
+                  child: Text(
+                    _push.phonePermission.needsSettings
+                        ? 'Phone settings'
+                        : _push.phonePermission.allowed
+                        ? 'Allowed'
+                        : 'Enable phone alerts',
+                  ),
                 ),
               ),
             ),
@@ -290,22 +316,6 @@ class _NotificationPreferencesScreenState
                 'Times use your saved account timezone. Equal start and end times mean no quiet interval.',
               ),
             ),
-            if (PushNotificationService.internalBuild) ...[
-              const Divider(),
-              const Text('Internal notification testing'),
-              const Text(
-                'Simulations test banners and tap routing, not push delivery.',
-              ),
-              for (final c in ['mood', 'journal', 'streak', 'affirmation'])
-                ListTile(
-                  title: Text('Test $c'),
-                  trailing: TextButton(
-                    onPressed: () => _push.simulate(c, tap: true),
-                    child: const Text('Open'),
-                  ),
-                  onTap: () => _push.simulate(c),
-                ),
-            ],
           ],
         );
       },

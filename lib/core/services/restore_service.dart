@@ -117,22 +117,25 @@ class RestoreController extends ChangeNotifier {
         (todo.contains('User profile') || todo.contains('User preferences'))) {
       _profile = null;
     }
-    for (final step in todo) {
-      if (!await _sameOwner()) break;
-      current = step;
-      _changed();
-      try {
-        await _fetchStep(step);
+    try {
+      for (final step in todo) {
         if (!await _sameOwner()) break;
-        _completed.add(step);
-        failed.remove(step);
-      } catch (_) {
-        if (_active) failed.add(step);
+        current = step;
+        _changed();
+        try {
+          await _fetchStep(step);
+          if (!await _sameOwner()) break;
+          _completed.add(step);
+          failed.remove(step);
+        } catch (_) {
+          if (_active) failed.add(step);
+        }
+        _changed();
       }
+    } finally {
+      busy = false;
       _changed();
     }
-    busy = false;
-    _changed();
   }
 
   Future<Map<String, dynamic>> _profileData() async {
@@ -287,8 +290,13 @@ class RestoreController extends ChangeNotifier {
       'restored_user_id': failed.isEmpty ? userId : null,
       'restore_requested': false,
       'restore_unavailable': unavailable.toList(),
+      'restore_failed': failed.toList(),
     });
-    if (failed.isEmpty) await settings.delete('restore_incomplete_user');
+    if (failed.isEmpty) {
+      await settings.delete('restore_incomplete_user');
+    } else {
+      await settings.put('restore_incomplete_user', userId);
+    }
     unawaited(LocalDbService().processSyncQueue());
   }
 
@@ -301,6 +309,14 @@ class RestoreController extends ChangeNotifier {
     );
     await TokenStorage().clearToken();
     await LocalDbService().activateGuest();
+  }
+
+  void resumeFailures(Iterable<String> stepsToRetry) {
+    if (busy || _completed.isNotEmpty) return;
+    failed.addAll(stepsToRetry.where(steps.contains));
+    if (failed.isNotEmpty) {
+      _completed.addAll(steps.where((step) => !failed.contains(step)));
+    }
   }
 
   @override

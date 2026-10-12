@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/local_db_service.dart';
+import '../services/background_restore_service.dart';
 import '../services/connection_sound.dart';
 import '../models/sync_summary.dart';
 import '../services/network_status.dart';
@@ -58,6 +59,7 @@ class _NetworkObserverState extends State<NetworkObserver> {
   }
 
   void _retry() {
+    unawaited(BackgroundRestoreService.instance.retry(automatic: true));
     unawaited(
       (widget.sync?.call() ?? LocalDbService().processSyncQueue(force: true)),
     );

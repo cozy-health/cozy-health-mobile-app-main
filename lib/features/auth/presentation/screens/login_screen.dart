@@ -1,4 +1,3 @@
-import '../../../../core/services/restore_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
@@ -8,7 +7,6 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/api/auth_token_service.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../../../core/services/guest_session_service.dart';
-import '../../../../core/services/personalization_service.dart';
 
 import '../../../../core/theme/app_text_styles.dart';
 import '../../data/auth_service.dart';
@@ -114,18 +112,8 @@ class _LoginScreenState extends State<LoginScreen> {
         title: 'Welcome back.',
       );
       await GuestSessionService().exitGuestSession();
-      final hasCompletedPersonalization = await PersonalizationService()
-          .hasCompletedPersonalization();
       if (!mounted) return;
-      final needsRestore = await RestoreService.required;
-      if (!mounted) return;
-      context.go(
-        needsRestore
-            ? AppRouter.restore
-            : hasCompletedPersonalization
-            ? AppRouter.home
-            : AppRouter.personalization,
-      );
+      context.go(AppRouter.home);
     } on AuthLocalDataException catch (e) {
       if (!mounted) return;
       showAuthToast(
@@ -215,11 +203,11 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final needsRestore = await _authService.resumeStoredSession();
+      await _authService.resumeStoredSession();
       await TokenStorage().saveToken(token, stayLoggedIn: _stayLoggedIn);
       await GuestSessionService().exitGuestSession();
       if (mounted) {
-        context.go(needsRestore ? AppRouter.restore : AppRouter.home);
+        context.go(AppRouter.home);
       }
     } catch (e) {
       debugPrint('Biometric error: details withheld.');

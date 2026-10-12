@@ -6,6 +6,8 @@ Firebase's resolved native packages require iOS 15. The project and CocoaPods de
 
 Settings → Notifications exposes explicit consent, four optional reminder categories, times/weekdays, quiet hours, OS permission and delivery status. The soft prompt enables mood; other categories require selection. Declining waits 14 days before another automatic soft prompt. Phone Settings handles OS denial.
 
+Phone permission is now checked independently of Firebase. In internal builds, use **Enable phone alerts** to request the iPhone notification permission even before Firebase is configured. Status distinguishes Not requested, Allowed, Denied and Permission check unavailable. After denial, the action opens phone Settings. Allowing phone alerts does not mean the installation can receive remote push.
+
 The backend controls the three-per-day allowance, two-hour spacing and quiet-hour deferrals. The app does not schedule duplicate local reminders. Foreground arrivals use the existing banner. Background and terminated taps use the same supported destination map. Journal compose reuses the existing save and crisis-support flow; Home focuses the streak or affirmation card. Unknown types open the inbox.
 
 FCM registration requires an authenticated account, explicit consent and OS permission. Logout cleanup uses securely stored, registration-specific revocation credentials and the API's pinned transport. It does not retain the old account's full login credential. Late registration results from another account session are revoked. Missing Firebase configuration or APNs support never blocks startup.
@@ -48,6 +50,10 @@ The existing Android and unsigned iOS workflows consume the secret. Missing conf
 Use the existing **Build iOS Internal Test IPA** action and sideload its unsigned IPA as before. It explicitly sets `IOS_PUSH_ENABLED=false` and keeps the current sideload entitlements. Firebase permission alone does not mean the build can register with APNs.
 
 Under Settings → Notifications, internal builds expose four simulation rows. Tap a row to show its banner; use **Open** to exercise routing. Simulations never send an external message, write a real inbox record or consume allowance. Production builds omit these controls.
+
+The simulation rows are near the top of the screen and work regardless of phone permission, reminder consent or Firebase setup.
+
+Login now opens Home without a restore page. Downloads run through one account-scoped background coordinator, merge into cached records, and stop on logout/account switching. Home shows a small sync status; partial failures remain retryable. Failed sections are persisted and retried on app resume/reconnect, with at most three automatic retries before a manual retry is needed. New-account registration keeps its onboarding flow.
 
 Verify startup, status reporting, banners, destinations, journal saving, quiet-hour controls and persistence. These are app tests, not proof of remote iPhone delivery.
 

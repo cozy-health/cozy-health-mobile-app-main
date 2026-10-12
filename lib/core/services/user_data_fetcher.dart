@@ -3,23 +3,32 @@ import '../api/api_client.dart';
 import '../models/subscription_status.dart';
 import 'local_db_service.dart';
 import 'user_data_merge.dart';
+import 'background_restore_service.dart';
 
 /// Streams render Hive immediately; refreshes only merge into the active account.
 class UserDataFetcher {
   final _api = ApiClient.instance;
   final _local = LocalDbService();
   final _merge = UserDataMerge();
-  Future<void> fetchAll() async => Future.wait([
-    fetchMoods(),
-    fetchJournals(),
-    fetchConversations(),
-    fetchNotifications(),
-    fetchProfile(),
-    fetchSafetyPlan(),
-    fetchQuizAttempts(),
-    fetchSavedArticles(),
-    fetchSubscription(),
-  ]);
+  Future<void> fetchAll() async {
+    final restoring = BackgroundRestoreService.instance.activeWork;
+    if (restoring != null) {
+      await restoring;
+      return;
+    }
+    await Future.wait([
+      fetchMoods(),
+      fetchJournals(),
+      fetchConversations(),
+      fetchNotifications(),
+      fetchProfile(),
+      fetchSafetyPlan(),
+      fetchQuizAttempts(),
+      fetchSavedArticles(),
+      fetchSubscription(),
+    ]);
+  }
+
   Future<void> fetchMoods() => _list('/mood-entries', 'mood_entry');
   Future<void> fetchJournals() => _list('/journal-entries', 'journal_entry');
   Future<void> fetchConversations() =>
