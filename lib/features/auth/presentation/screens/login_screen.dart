@@ -320,15 +320,24 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
         const SizedBox(height: 24),
-        AppleAuthButton(
-          enabled: !_busy,
-          stayLoggedIn: _stayLoggedIn,
-          onLoadingChanged: (value) => setState(() => _appleLoading = value),
-        ),
-        GoogleAuthButton(
-          enabled: !_busy,
-          stayLoggedIn: _stayLoggedIn,
-          onLoadingChanged: (value) => setState(() => _googleLoading = value),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppleAuthButton(
+              iconOnly: true,
+              enabled: !_busy,
+              stayLoggedIn: _stayLoggedIn,
+              onLoadingChanged: (value) =>
+                  setState(() => _appleLoading = value),
+            ),
+            GoogleAuthButton(
+              iconOnly: true,
+              enabled: !_busy,
+              stayLoggedIn: _stayLoggedIn,
+              onLoadingChanged: (value) =>
+                  setState(() => _googleLoading = value),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
         if (_biometricAvailable)

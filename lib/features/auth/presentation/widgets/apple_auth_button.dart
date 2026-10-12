@@ -9,6 +9,7 @@ import '../../data/auth_service.dart';
 
 class AppleAuthButton extends StatefulWidget {
   final bool enabled;
+  final bool iconOnly;
   final bool stayLoggedIn;
   final ValueChanged<bool>? onLoadingChanged;
   final VoidCallback? onSuccess;
@@ -17,6 +18,7 @@ class AppleAuthButton extends StatefulWidget {
   const AppleAuthButton({
     super.key,
     this.enabled = true,
+    this.iconOnly = false,
     this.stayLoggedIn = true,
     this.onLoadingChanged,
     this.onSuccess,
@@ -113,8 +115,11 @@ class _AppleAuthButtonState extends State<AppleAuthButton> {
   Widget build(BuildContext context) {
     if (!AppleAuthService.isIOS || !_available) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: widget.iconOnly
+          ? const EdgeInsets.only(right: 16)
+          : const EdgeInsets.only(bottom: 24),
       child: AppleSignInButton(
+        iconOnly: widget.iconOnly,
         isLoading: _loading,
         onPressed: widget.enabled && !_loading ? _signIn : null,
       ),

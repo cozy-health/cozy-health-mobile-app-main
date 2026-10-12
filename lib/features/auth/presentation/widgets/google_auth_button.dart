@@ -9,6 +9,7 @@ import '../../data/google_auth_service.dart';
 
 class GoogleAuthButton extends StatefulWidget {
   final bool enabled;
+  final bool iconOnly;
   final bool stayLoggedIn;
   final ValueChanged<bool>? onLoadingChanged;
   final VoidCallback? onSuccess;
@@ -17,6 +18,7 @@ class GoogleAuthButton extends StatefulWidget {
   const GoogleAuthButton({
     super.key,
     this.enabled = true,
+    this.iconOnly = false,
     this.stayLoggedIn = true,
     this.onLoadingChanged,
     this.onSuccess,
@@ -81,6 +83,7 @@ class _GoogleAuthButtonState extends State<GoogleAuthButton> {
 
   @override
   Widget build(BuildContext context) => GoogleSignInButton(
+    iconOnly: widget.iconOnly,
     isLoading: _loading,
     onPressed: widget.enabled && !_loading ? _signIn : null,
   );
