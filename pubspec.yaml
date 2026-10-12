@@ -52,6 +52,8 @@ dependencies:
   intl: ^0.20.3
   uuid: ^4.6.0
   local_auth: ^3.0.2
+  firebase_core: ^4.0.0
+  firebase_messaging: ^16.0.0
   permission_handler: 11.4.0
   record: ^7.1.1
   just_audio: 0.9.46

@@ -15,7 +15,8 @@ import '../widgets/feature_tour.dart';
 import '../../../crisis/presentation/widgets/crisis_fab.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  const MainScreen({super.key, this.notificationFocus});
+  final String? notificationFocus;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -26,7 +27,10 @@ class _MainScreenState extends State<MainScreen> {
 
   final _tourTargets = FeatureTourTargets();
   late final List<Widget> _screens = [
-    HomeScreen(tourTargets: _tourTargets),
+    HomeScreen(
+      tourTargets: _tourTargets,
+      notificationFocus: widget.notificationFocus,
+    ),
     const ActivityScreen(),
     const AssistantScreen(),
     const CommunityHubScreen(),

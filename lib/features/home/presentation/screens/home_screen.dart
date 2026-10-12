@@ -44,8 +44,10 @@ class HomeScreen extends StatefulWidget {
     super.key,
     this.state = HomeDashboardState.returningUser,
     this.tourTargets,
+    this.notificationFocus,
   });
   final FeatureTourTargets? tourTargets;
+  final String? notificationFocus;
 
   final HomeDashboardState state;
 
@@ -57,6 +59,22 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _entranceController;
   int _affirmationIndex = 0;
+  final _reminderTarget = GlobalKey();
+  bool _reminderFocused = false;
+
+  void _focusReminder() {
+    if (_reminderFocused || widget.notificationFocus == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _reminderTarget.currentContext;
+      if (!mounted || target == null) return;
+      _reminderFocused = true;
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0.15,
+        duration: Duration.zero,
+      );
+    });
+  }
 
   final MoodRepository _moodRepo = MoodRepository();
   final HomeRepository _homeRepo = HomeRepository();
@@ -218,6 +236,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    _focusReminder();
     if (widget.state == HomeDashboardState.error) {
       return _HomeErrorView(onRetry: () {});
     }
@@ -323,6 +342,8 @@ class _HomeScreenState extends State<HomeScreen>
                           _HomeEmotionStrip(key: widget.tourTargets?.hero),
                           SizedBox(height: 16),
                           _HomeDesignCards(
+                            reminderKey: _reminderTarget,
+                            notificationFocus: widget.notificationFocus,
                             entries: entries,
                             recentEntries: recentEntries,
                             moodsThisWeek: moodsThisWeek,
@@ -447,6 +468,8 @@ class _HomeEmotionStrip extends StatelessWidget {
 
 class _HomeDesignCards extends StatelessWidget {
   const _HomeDesignCards({
+    this.reminderKey,
+    this.notificationFocus,
     required this.entries,
     required this.recentEntries,
     required this.moodsThisWeek,
@@ -462,6 +485,8 @@ class _HomeDesignCards extends StatelessWidget {
   final bool isEmpty;
   final bool hasMoodToday;
   final Widget affirmation;
+  final GlobalKey? reminderKey;
+  final String? notificationFocus;
 
   @override
   Widget build(BuildContext context) {
@@ -486,6 +511,7 @@ class _HomeDesignCards extends StatelessWidget {
         const HomeQuizCard(),
         SizedBox(height: 16),
         CozyCalendar(
+          key: notificationFocus == 'streak' ? reminderKey : null,
           entries: entries,
           recentEntries: recentEntries,
           streak: streak,
@@ -500,6 +526,7 @@ class _HomeDesignCards extends StatelessWidget {
         const JournalingCard(),
         const SizedBox(height: 16),
         Container(
+          key: notificationFocus == 'affirmation' ? reminderKey : null,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainer,

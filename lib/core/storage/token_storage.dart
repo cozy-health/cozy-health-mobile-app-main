@@ -2,6 +2,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 
 class TokenStorage {
+  static Future<void> Function()? beforeClear;
   static const String _tokenKey = 'cozy_health_access_token';
 
   static String? _sessionToken;
@@ -70,6 +71,7 @@ class TokenStorage {
   }
 
   Future<void> clearToken() async {
+    await beforeClear?.call();
     _sessionToken = null;
     _sessionOnly = false;
     _sessionRefresh = null;

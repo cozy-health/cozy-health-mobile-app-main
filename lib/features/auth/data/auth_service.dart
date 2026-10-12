@@ -153,7 +153,10 @@ class AuthService {
 
   Future<void> logout() async {
     try {
-      await _apiClient.post(ApiConstants.logout);
+      await _apiClient.post(
+        ApiConstants.logout,
+        data: {'device_id': await _tokenStorage.deviceId()},
+      );
     } catch (e) {
       debugPrint('Logout API failed: details withheld.');
     } finally {

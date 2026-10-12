@@ -77,4 +77,7 @@ build/
 node_modules/
 Thumbs.db
 scratch/
+push-defines.json
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
 tmp/

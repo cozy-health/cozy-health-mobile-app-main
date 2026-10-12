@@ -71,6 +71,12 @@ class UserProfile extends HiveObject {
   @HiveField(22)
   final DateTime updatedAt;
 
+  @HiveField(23)
+  final bool pushConsent;
+
+  @HiveField(24)
+  final Map<String, dynamic> reminderSettings;
+
   UserProfile({
     required this.id,
     required this.name,
@@ -90,10 +96,12 @@ class UserProfile extends HiveObject {
     this.notificationsMaster = true,
     this.dailyCheckinEnabled = true,
     this.dailyCheckinTime = '20:00',
-    this.journalReminderEnabled = true,
+    this.journalReminderEnabled = false,
     this.commentsNotifications = true,
     this.achievementsNotifications = true,
     this.marketingNotifications = false,
+    this.pushConsent = false,
+    this.reminderSettings = const {},
     required this.updatedAt,
   });
 
@@ -119,6 +127,8 @@ class UserProfile extends HiveObject {
     bool? commentsNotifications,
     bool? achievementsNotifications,
     bool? marketingNotifications,
+    bool? pushConsent,
+    Map<String, dynamic>? reminderSettings,
     DateTime? updatedAt,
   }) {
     return UserProfile(
@@ -148,12 +158,20 @@ class UserProfile extends HiveObject {
           achievementsNotifications ?? this.achievementsNotifications,
       marketingNotifications:
           marketingNotifications ?? this.marketingNotifications,
+      pushConsent: pushConsent ?? this.pushConsent,
+      reminderSettings: reminderSettings ?? this.reminderSettings,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   UserProfile copyWithField(String key, dynamic value) {
     switch (key) {
+      case 'push_consent':
+        return copyWith(pushConsent: value as bool);
+      case 'reminder_settings':
+        return copyWith(
+          reminderSettings: Map<String, dynamic>.from(value as Map),
+        );
       case 'theme':
         return copyWith(theme: value as String);
       case 'accentColor':
@@ -221,6 +239,8 @@ class UserProfile extends HiveObject {
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{
+      'push_consent': pushConsent,
+      'reminder_settings': reminderSettings,
       'id': id,
       'name': name,
       'email': email,
@@ -250,6 +270,10 @@ class UserProfile extends HiveObject {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
+      pushConsent: json['push_consent'] as bool? ?? false,
+      reminderSettings: Map<String, dynamic>.from(
+        json['reminder_settings'] as Map? ?? const {},
+      ),
       id: json['id'].toString(),
       name: json['name']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
@@ -287,7 +311,7 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
 
   @override
   UserProfile read(BinaryReader reader) {
-    return UserProfile(
+    final profile = UserProfile(
       id: reader.readString(),
       name: reader.readString(),
       username: reader.readString(),
@@ -311,6 +335,11 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
       achievementsNotifications: reader.readBool(),
       marketingNotifications: reader.readBool(),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
+    );
+    if (reader.availableBytes == 0) return profile;
+    return profile.copyWith(
+      pushConsent: reader.readBool(),
+      reminderSettings: Map<String, dynamic>.from(reader.read() as Map),
     );
   }
 
@@ -339,5 +368,7 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
     writer.writeBool(obj.achievementsNotifications);
     writer.writeBool(obj.marketingNotifications);
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
+    writer.writeBool(obj.pushConsent);
+    writer.write(obj.reminderSettings);
   }
 }

@@ -21,9 +21,14 @@ import '../../../../core/services/local_db_service.dart';
 enum JournalViewState { populated, empty, loading }
 
 class JournalScreen extends StatefulWidget {
-  const JournalScreen({super.key, this.viewState = JournalViewState.populated});
+  const JournalScreen({
+    super.key,
+    this.viewState = JournalViewState.populated,
+    this.openCompose = false,
+  });
 
   final JournalViewState viewState;
+  final bool openCompose;
 
   @override
   State<JournalScreen> createState() => _JournalScreenState();
@@ -47,11 +52,13 @@ class _JournalScreenState extends State<JournalScreen>
       duration: const Duration(milliseconds: 1200),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       if (MediaQuery.of(context).disableAnimations) {
         _entranceController.value = 1;
       } else {
         _entranceController.forward();
       }
+      if (widget.openCompose) unawaited(_openEditor(type: 'free'));
     });
   }
 

@@ -1,4 +1,7 @@
 import 'core/widgets/network_observer.dart';
+import 'dart:async';
+import 'core/services/push_notification_service.dart';
+import 'features/notifications/presentation/widgets/push_notification_host.dart';
 import 'core/widgets/security_blur.dart';
 import 'core/widgets/app_availability_gate.dart';
 import 'core/services/crash_reporting.dart';
@@ -60,6 +63,7 @@ Future<void> _startApp() async {
     AppRouter.router.routeInformationProvider.value.uri.path,
   );
   runApp(const CozyHealthApp());
+  unawaited(PushNotificationService.instance.initialize());
 }
 
 class CozyHealthApp extends StatefulWidget {
@@ -169,7 +173,11 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
                               child: SecurityCaptureOverlay(
                                 child: SecurityGate(
                                   child: ConsentGate(
-                                    child: DeviceIntegrityNotice(child: child!),
+                                    child: PushNotificationHost(
+                                      child: DeviceIntegrityNotice(
+                                        child: child!,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),

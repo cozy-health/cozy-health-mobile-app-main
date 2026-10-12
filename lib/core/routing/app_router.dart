@@ -269,7 +269,8 @@ class AppRouter {
         name: 'home',
         redirect: (_, __) async =>
             await RestoreService.required ? restore : null,
-        builder: (_, __) => const MainScreen(),
+        builder: (_, state) =>
+            MainScreen(notificationFocus: state.uri.queryParameters['focus']),
       ),
 
       GoRoute(
@@ -521,6 +522,14 @@ class AppRouter {
           journal: true,
           journalRoot: true,
           child: JournalScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/journal-compose',
+        builder: (_, __) => const SecurityGate(
+          journal: true,
+          journalRoot: true,
+          child: JournalScreen(openCompose: true),
         ),
       ),
       GoRoute(

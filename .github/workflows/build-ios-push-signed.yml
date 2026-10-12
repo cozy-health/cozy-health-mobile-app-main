@@ -1,0 +1,96 @@
+name: Build Signed iPhone Push Test IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  signed-ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Firebase-compatible Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.44.6'
+          cache: true
+      - name: Require signing and Firebase configuration
+        env:
+          CERT: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          PROFILE: ${{ secrets.IOS_PUSH_PROFILE_BASE64 }}
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          OPTIONS: ${{ secrets.FIREBASE_OPTIONS_JSON }}
+        run: |
+          test -n "$CERT" && test -n "$PROFILE" && test -n "$TEAM" && test -n "$OPTIONS"
+      - name: Prepare Firebase configuration
+        env:
+          FIREBASE_OPTIONS_JSON: ${{ secrets.FIREBASE_OPTIONS_JSON }}
+        run: python3 tool/prepare_push_config.py
+      - name: Install signing assets
+        env:
+          CERT: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PUSH_PROFILE_BASE64 }}
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          python3 - <<'PY'
+          import base64, datetime, json, os, plistlib, subprocess
+          from pathlib import Path
+          temp = Path(os.environ['RUNNER_TEMP'])
+          cert = temp / 'push-signing.p12'
+          cert.write_bytes(base64.b64decode(os.environ['CERT']))
+          profile_path = temp / 'push.mobileprovision'
+          profile_path.write_bytes(base64.b64decode(os.environ['PROFILE']))
+          profile = plistlib.loads(subprocess.check_output(['security', 'cms', '-D', '-i', str(profile_path)]))
+          entitlements = profile['Entitlements']
+          # Current repository bundle ID is fixed; do not silently sign a different app.
+          bundle = 'com.example.cozyHealth'
+          assert profile['TeamIdentifier'][0] == os.environ['TEAM']
+          assert entitlements['application-identifier'] == os.environ['TEAM'] + '.' + bundle
+          assert entitlements.get('aps-environment') == 'production', 'Use an Ad Hoc push-enabled distribution profile'
+          assert profile.get('ProvisionedDevices'), 'Profile must include the test iPhone'
+          assert profile['ExpirationDate'] > datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+          profiles = Path.home() / 'Library/MobileDevice/Provisioning Profiles'
+          profiles.mkdir(parents=True, exist_ok=True)
+          (profiles / (profile['UUID'] + '.mobileprovision')).write_bytes(profile_path.read_bytes())
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('IOS_PROFILE_UUID=' + profile['UUID'] + '\n')
+          export = {'method': 'ad-hoc', 'signingStyle': 'manual', 'teamID': os.environ['TEAM'],
+                    'signingCertificate': 'Apple Distribution', 'provisioningProfiles': {bundle: profile['UUID']}}
+          (temp / 'ExportOptions.plist').write_bytes(plistlib.dumps(export))
+          PY
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/push.keychain-db"
+          security set-keychain-settings -lut 21600 "$RUNNER_TEMP/push.keychain-db"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/push.keychain-db"
+          security import "$RUNNER_TEMP/push-signing.p12" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$RUNNER_TEMP/push.keychain-db"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -k "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/push.keychain-db"
+          security list-keychains -d user -s "$RUNNER_TEMP/push.keychain-db" login.keychain-db
+      - name: Validate and build unsigned archive
+        run: |
+          flutter pub get
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          flutter test --dart-define=INTERNAL_TEST_BUILD=true
+          flutter build ipa --release --no-codesign --build-number="$GITHUB_RUN_NUMBER" --dart-define-from-file=push-defines.json --dart-define=INTERNAL_TEST_BUILD=true --dart-define=IOS_PUSH_ENABLED=true
+      - name: Archive with push-enabled signing and export
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release -archivePath build/ios/push/Runner.xcarchive archive DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_UUID" CODE_SIGN_ENTITLEMENTS=Runner/RunnerPush.entitlements APS_ENVIRONMENT=production
+          xcodebuild -exportArchive -archivePath build/ios/push/Runner.xcarchive -exportPath build/ios/push/export -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+          mkdir -p "$RUNNER_TEMP/push-inspect"
+          unzip -q build/ios/push/export/*.ipa -d "$RUNNER_TEMP/push-inspect"
+          codesign -d --entitlements :- "$RUNNER_TEMP/push-inspect/Payload/Runner.app" > "$RUNNER_TEMP/push-entitlements.plist"
+          /usr/libexec/PlistBuddy -c 'Print :aps-environment' "$RUNNER_TEMP/push-entitlements.plist" | grep -qx production
+          codesign --verify --deep --strict "$RUNNER_TEMP/push-inspect/Payload/Runner.app"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-signed-push-test-${{ github.sha }}-${{ github.run_id }}
+          path: build/ios/push/export/*.ipa
+          if-no-files-found: error
+          retention-days: 14
+      - name: Remove temporary keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/push.keychain-db" || true

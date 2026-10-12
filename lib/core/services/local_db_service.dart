@@ -42,6 +42,8 @@ class LocalDbService {
   final _syncResults = StreamController<SyncSummary>.broadcast();
   Stream<SyncSummary> get syncResults => _syncResults.stream;
   String? _activeUser;
+  String? get activeUserId => _activeUser;
+  Stream<void> get accountChanges => _accountChanges.stream;
   final _accountChanges = StreamController<void>.broadcast();
   String boxName(String base) => _activeUser == null
       ? base

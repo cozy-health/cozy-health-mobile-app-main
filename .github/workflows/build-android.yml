@@ -48,6 +48,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Prepare optional Firebase configuration
+        env:
+          FIREBASE_OPTIONS_JSON: ${{ secrets.FIREBASE_OPTIONS_JSON }}
+        run: python3 tool/prepare_push_config.py
+
       - name: Run analyzer
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
@@ -55,7 +60,7 @@ jobs:
         run: flutter test
 
       - name: Build debug APK
-        run: flutter build apk --debug --build-number="$GITHUB_RUN_NUMBER" --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
+        run: flutter build apk --debug --build-number="$GITHUB_RUN_NUMBER" --dart-define-from-file=push-defines.json --dart-define=INTERNAL_TEST_BUILD=true --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

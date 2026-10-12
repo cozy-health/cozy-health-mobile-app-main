@@ -1,83 +1,86 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_button.dart';
+import '../../../../core/services/push_notification_service.dart';
 
-class NotificationPermissionSheet extends StatelessWidget {
+class NotificationPermissionSheet extends StatefulWidget {
   const NotificationPermissionSheet({super.key});
-
-  static Future<void> show(BuildContext context) {
-    return showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => const NotificationPermissionSheet(),
-    );
-  }
-
+  static Future<void> show(BuildContext context) => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (_) => const NotificationPermissionSheet(),
+  ).whenComplete(() => PushNotificationService.instance.decline());
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 16),
-            Icon(
-              Icons.notifications_active_outlined,
-              size: 48,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Stay on track\nwith gentle\nreminders?',
-              style: AppTextStyles.heading2.copyWith(
-                fontSize: 28,
-                color: Theme.of(context).colorScheme.onSurface,
-                height: 1.2,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'We\'ll send you a daily check-in and celebrate your milestones.',
-              style: AppTextStyles.body1.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Never spam. Never guilt. You control everything in Settings.',
-              style: AppTextStyles.body2.copyWith(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            AppButton(
-              text: 'Turn on',
-              onPressed: () {
-                // Trigger system permission prompt here
-                // After success/failure, pop
-                context.pop(true);
-              },
-            ),
-            const SizedBox(height: 12),
-            AppButton(
-              text: 'Not now',
-              isOutlined: true,
-              onPressed: () => context.pop(false),
-            ),
-          ],
-        ),
+  State<NotificationPermissionSheet> createState() =>
+      _NotificationPermissionSheetState();
+}
+
+class _NotificationPermissionSheetState
+    extends State<NotificationPermissionSheet> {
+  bool journal = false, streak = false, affirmation = false, busy = false;
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.notifications_outlined, size: 48),
+          const SizedBox(height: 16),
+          Text(
+            'Can we send you gentle reminders?',
+            style: Theme.of(context).textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Enable mood check-in reminders and choose extras below. At most three reminders a day, two hours apart. You control times and quiet hours in Settings.',
+          ),
+          const ListTile(
+            title: Text('Mood check-in'),
+            subtitle: Text('A reminder when today’s check-in is missing.'),
+            trailing: Icon(Icons.check),
+          ),
+          CheckboxListTile(
+            title: const Text('Journal prompts'),
+            value: journal,
+            onChanged: busy ? null : (v) => setState(() => journal = v!),
+          ),
+          CheckboxListTile(
+            title: const Text('Streak reminders'),
+            value: streak,
+            onChanged: busy ? null : (v) => setState(() => streak = v!),
+          ),
+          CheckboxListTile(
+            title: const Text('Affirmations'),
+            value: affirmation,
+            onChanged: busy ? null : (v) => setState(() => affirmation = v!),
+          ),
+          FilledButton(
+            onPressed: busy
+                ? null
+                : () async {
+                    setState(() => busy = true);
+                    await PushNotificationService.instance.requestPermission(
+                      journal: journal,
+                      streak: streak,
+                      affirmation: affirmation,
+                    );
+                    await PushNotificationService.instance.decline();
+                    if (context.mounted) Navigator.pop(context);
+                  },
+            child: Text(busy ? 'Enabling…' : 'Yes, remind me'),
+          ),
+          TextButton(
+            onPressed: busy
+                ? null
+                : () async {
+                    await PushNotificationService.instance.decline();
+                    if (context.mounted) Navigator.pop(context);
+                  },
+            child: const Text('Not now'),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
