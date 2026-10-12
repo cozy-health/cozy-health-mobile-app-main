@@ -22,6 +22,7 @@ import 'feature_flags_service.dart';
 import 'local_db_service.dart';
 import 'notification_permission_controller.dart';
 import 'phone_notification_test_service.dart';
+import '../repositories/affirmation_repository.dart';
 
 class PushNotificationService extends ChangeNotifier
     with WidgetsBindingObserver {
@@ -51,6 +52,7 @@ class PushNotificationService extends ChangeNotifier
       return phonePermission.allowed;
     },
     onOpen: open,
+    affirmation: () => AffirmationRepository().getCachedToday(),
   );
   AppNotification? _pendingTap;
   Timer? _timer;

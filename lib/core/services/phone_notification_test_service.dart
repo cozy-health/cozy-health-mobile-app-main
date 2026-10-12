@@ -11,6 +11,7 @@ class PhoneNotificationTestService {
     required this.currentOwner,
     required this.allowed,
     required this.onOpen,
+    this.affirmation,
     FlutterLocalNotificationsPlugin? plugin,
     DateTime Function()? now,
   }) : _plugin = plugin ?? FlutterLocalNotificationsPlugin(),
@@ -20,6 +21,9 @@ class PhoneNotificationTestService {
   final String? Function() currentOwner;
   final Future<bool> Function() allowed;
   final void Function(AppNotification) onOpen;
+  final Future<String?> Function()? affirmation;
+  static const fallbackAffirmation =
+      'Small steps count. You can move at your own pace.';
   final FlutterLocalNotificationsPlugin _plugin;
   final DateTime Function() _now;
   static const categories = ['mood', 'journal', 'streak', 'affirmation'];
@@ -68,14 +72,28 @@ class PhoneNotificationTestService {
         return 'Enable phone alerts before running this test.';
       }
       await initialize();
+      String? affirmationBody;
+      if (category == 'affirmation') {
+        try {
+          affirmationBody = await affirmation?.call();
+        } catch (_) {
+          /* Use gentle offline copy. */
+        }
+      }
       if (owner != currentOwner() || generation != _generation) {
         return 'Account changed. Please try again.';
       }
       final created = _now().toUtc();
       await _plugin.zonedSchedule(
         id: 970180 + index,
-        title: 'Cozy Health: test $category reminder',
-        body: 'Your phone notification test is ready. Tap to open Cozy Health.',
+        title: category == 'affirmation'
+            ? 'Your Cozy affirmation'
+            : 'Cozy Health: test $category reminder',
+        body: category == 'affirmation'
+            ? (affirmationBody?.trim().isNotEmpty == true
+                  ? affirmationBody!.trim()
+                  : fallbackAffirmation)
+            : 'Your phone notification test is ready. Tap to open Cozy Health.',
         scheduledDate: tz.TZDateTime.from(created.add(delay), tz.UTC),
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(

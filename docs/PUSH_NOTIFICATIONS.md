@@ -59,6 +59,8 @@ Login now opens Home without a restore page. Downloads run through one account-s
 
 Verify startup, status reporting, banners, destinations, journal saving, quiet-hour controls and persistence. These are app tests, not proof of remote iPhone delivery.
 
+Affirmation phone tests display today's cached affirmation directly in the notification body, with gentle fallback copy when offline. Opening the app is optional; there is no “open the app to see your affirmation” prompt.
+
 ## Later signed push test build
 
 When Apple Developer access is available, enable Push Notifications and the existing Sign in with Apple capability for the App ID. Upload an APNs authentication key to Firebase. Register the iPhone and create an Ad Hoc distribution profile with the push entitlement.

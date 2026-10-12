@@ -96,6 +96,31 @@ void main() {
     await service(enabled: false).schedule('mood');
     expect(calls, isEmpty);
   });
+  test('affirmation is readable in the phone notification itself', () async {
+    final test = PhoneNotificationTestService(
+      enabled: true,
+      currentOwner: () => owner,
+      allowed: () async => true,
+      now: () => date,
+      onOpen: opened.add,
+      affirmation: () async => 'You deserve kindness, including from yourself.',
+    );
+    await test.schedule('affirmation');
+    final args =
+        calls.singleWhere((call) => call.method == 'zonedSchedule').arguments
+            as Map;
+    expect(args['title'], 'Your Cozy affirmation');
+    expect(args['body'], 'You deserve kindness, including from yourself.');
+    expect(opened, isEmpty);
+  });
+  test('offline affirmation uses readable fallback copy', () async {
+    await service().schedule('affirmation');
+    final args =
+        calls.singleWhere((call) => call.method == 'zonedSchedule').arguments
+            as Map;
+    expect(args['body'], PhoneNotificationTestService.fallbackAffirmation);
+    expect(args['body'], isNot(contains('Tap to open')));
+  });
   test('valid taps open only the current account supported category', () {
     final test = service();
     test.handleTap(payload());
