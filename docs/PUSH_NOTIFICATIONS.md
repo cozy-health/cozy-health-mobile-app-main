@@ -53,6 +53,8 @@ Under Settings → Notifications, internal builds expose four simulation rows. T
 
 The simulation rows are near the top of the screen and work regardless of phone permission, reminder consent or Firebase setup. Tap the row or its **Simulate** button to show an in-app banner; only tapping the banner opens the destination. Simulations do not appear in the phone's notification centre or lock screen.
 
+Each category also has an internal-only **Phone test** button. Enable phone alerts, tap it, then lock the phone. A one-off local notification is scheduled for 10 seconds later on iOS (Android uses inexact alarms and can take longer). It uses the supplied Cozy sound, appears through the OS and routes through the same authenticated tap handler. It needs no Firebase/APNs registration, creates no inbox record and consumes no server allowance. Repeating a category replaces its pending test. Tests are cancelled on logout/account changes; stale or foreign-account taps are discarded. Normal reminders remain server-scheduled.
+
 Login now opens Home without a restore page. Downloads run through one account-scoped background coordinator, merge into cached records, and stop on logout/account switching. Home shows a small sync status; partial failures remain retryable. Failed sections are persisted and retried on app resume/reconnect, with at most three automatic retries before a manual retry is needed. New-account registration keeps its onboarding flow.
 
 Verify startup, status reporting, banners, destinations, journal saving, quiet-hour controls and persistence. These are app tests, not proof of remote iPhone delivery.

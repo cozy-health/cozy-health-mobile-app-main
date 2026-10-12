@@ -19,6 +19,18 @@ class _NotificationPreferencesScreenState
   final _repo = ProfileRepository();
   final _push = PushNotificationService.instance;
   bool _saving = false;
+  bool _testingPhone = false;
+
+  Future<void> _testPhone(String category) async {
+    if (_testingPhone) return;
+    setState(() => _testingPhone = true);
+    final message = await _push.phoneTests.schedule(category);
+    if (!mounted) return;
+    setState(() => _testingPhone = false);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   Future<void> _change(UserProfile profile, String key, dynamic value) async {
     setState(() => _saving = true);
@@ -161,12 +173,24 @@ class _NotificationPreferencesScreenState
               for (final c in ['mood', 'journal', 'streak', 'affirmation'])
                 ListTile(
                   title: Text('Test $c'),
-                  trailing: TextButton(
-                    onPressed: () => _push.simulate(c),
-                    child: const Text('Simulate'),
+                  subtitle: Wrap(
+                    spacing: 8,
+                    children: [
+                      TextButton(
+                        onPressed: () => _push.simulate(c),
+                        child: const Text('Simulate'),
+                      ),
+                      TextButton(
+                        onPressed: _testingPhone ? null : () => _testPhone(c),
+                        child: const Text('Phone test'),
+                      ),
+                    ],
                   ),
                   onTap: () => _push.simulate(c),
                 ),
+              const Text(
+                'Phone test: enable phone alerts, tap the button, then lock your phone. The test uses the Cozy sound and follows your phone notification settings.',
+              ),
             ],
             const SizedBox(height: 8),
             const Text(

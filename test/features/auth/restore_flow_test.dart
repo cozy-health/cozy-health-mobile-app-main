@@ -217,6 +217,10 @@ void main() {
   testWidgets(
     'internal simulations are visible and work when phone alerts are denied',
     (tester) async {
+      tester.view.physicalSize = const Size(1000, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final push = PushNotificationService.instance;
       final previousStatus = push.phonePermission.status;
       final previousRequested = push.phonePermission.requested;

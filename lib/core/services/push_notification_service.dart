@@ -21,6 +21,7 @@ import '../../features/notifications/data/notification_repository.dart';
 import 'feature_flags_service.dart';
 import 'local_db_service.dart';
 import 'notification_permission_controller.dart';
+import 'phone_notification_test_service.dart';
 
 class PushNotificationService extends ChangeNotifier
     with WidgetsBindingObserver {
@@ -42,6 +43,15 @@ class PushNotificationService extends ChangeNotifier
   String status = 'Push delivery is not configured';
   final phonePermission = NotificationPermissionController();
   String get permission => phonePermission.label;
+  late final phoneTests = PhoneNotificationTestService(
+    enabled: internalBuild,
+    currentOwner: () => _local.activeUserId,
+    allowed: () async {
+      await phonePermission.check();
+      return phonePermission.allowed;
+    },
+    onOpen: open,
+  );
   AppNotification? _pendingTap;
   Timer? _timer;
   String? _registeredSignature;
@@ -64,10 +74,16 @@ class PushNotificationService extends ChangeNotifier
       _registeredSignature = null;
       _seen.clear();
       _pendingTap = null;
+      unawaited(phoneTests.cancel());
       unawaited(refresh());
     });
     FeatureFlagsService.instance.addListener(() => unawaited(refresh()));
     AppRouter.router.routeInformationProvider.addListener(_drainTap);
+    try {
+      await phoneTests.initialize();
+    } catch (_) {
+      /* Phone tests must not block startup. */
+    }
     try {
       const raw = String.fromEnvironment('FIREBASE_OPTIONS');
       await phonePermission.check();
@@ -307,6 +323,7 @@ class PushNotificationService extends ChangeNotifier
   }
 
   Future<void> unregisterBeforeLogout() async {
+    await phoneTests.cancel();
     _generation++;
     _pendingTap = null;
     _registeredSignature = null;
