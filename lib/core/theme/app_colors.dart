@@ -1,36 +1,36 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Figma redesign: 12 semantic roles; artwork keeps its own palette.
+  // Brand palette from the owner: blue, green, orange, and yellow.
   static const Color surfaceSubtle = Color(0xFFF1F4F7);
   static const Color textSecondary = Color(0xFF717680);
   static const Color textTertiary = Color(0xFFA4A7AE);
   static const Color borderSubtle = Color(0xFFD5D7DA);
   static const Color borderDefault = Color(0xFFCDDFF7);
-  static const Color accentWarmYellow = Color(0xFFFEF4BE);
-  static const Color accentSage = Color(0xFFCCF2DB);
-  static const Color accentPeach = Color(0xFFFCDECD);
+  static const Color accentWarmYellow = Color(0xFFFFF7CD);
+  static const Color accentSage = Color(0xFFD9F5E4);
+  static const Color accentPeach = Color(0xFFFFE5D6);
   static const Color accentBlush = Color(0xFFF4BFC9);
   static const Color accentSky = Color(0xFFCDDFF7);
   static const Color accentRose = Color(0xFFF04D6E);
   static const Color accentTeal = Color(0xFFB9EDF2);
 
-  // Parallel dark roles follow the existing warm dark surfaces and muted text.
-  static const Color surfaceSubtleDark = Color(0xFF2F2B28);
-  static const Color textSecondaryDark = Color(0xFFA8A29E);
-  static const Color textTertiaryDark = Color(0xFF9A928C);
-  static const Color borderSubtleDark = Color(0xFF3F3A36);
+  // Cool neutral dark surfaces with readable brand tints.
+  static const Color surfaceSubtleDark = Color(0xFF253449);
+  static const Color textSecondaryDark = Color(0xFFB5C0D0);
+  static const Color textTertiaryDark = Color(0xFF98A2B3);
+  static const Color borderSubtleDark = Color(0xFF344054);
   static const Color borderDefaultDark = Color(0xFF45566D);
-  static const Color accentWarmYellowDark = Color(0xFF4A4021);
+  static const Color accentWarmYellowDark = Color(0xFF3D3514);
   static const Color accentSageDark = Color(0xFF243F30);
-  static const Color accentPeachDark = Color(0xFF4A3028);
+  static const Color accentPeachDark = Color(0xFF482B1B);
   static const Color accentBlushDark = Color(0xFF492D35);
   static const Color accentSkyDark = Color(0xFF263B56);
   static const Color accentRoseDark = Color(0xFFFF829B);
   static const Color accentTealDark = Color(0xFF214247);
 
   // Light theme
-  static const Color backgroundLight = Color(0xFFFDF8F3);
+  static const Color backgroundLight = Color(0xFFF7FAFF);
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color surfaceElevatedLight = Color(0xFFFFFFFF);
   static const Color navBarLight = Color(0xFFFFFFFF);
@@ -43,17 +43,17 @@ class AppColors {
   static const Color borderStrongLight = Color(0xFFD1D5DB);
 
   // Dark theme
-  static const Color backgroundDark = Color(0xFF1A1815);
-  static const Color surfaceDark = Color(0xFF252220);
-  static const Color surfaceElevatedDark = Color(0xFF2F2B28);
-  static const Color navBarDark = Color(0xFF252220);
-  static const Color bottomSheetDark = Color(0xFF2F2B28);
-  static const Color dialogDark = Color(0xFF2F2B28);
-  static const Color textDark = Color(0xFFF5F0E8);
-  static const Color textMutedDark = Color(0xFFA8A29E);
-  static const Color textSubtleDark = Color(0xFFB5ADA6);
-  static const Color borderDark = Color(0xFF3F3A36);
-  static const Color borderStrongDark = Color(0xFF5C5551);
+  static const Color backgroundDark = Color(0xFF101828);
+  static const Color surfaceDark = Color(0xFF1D2939);
+  static const Color surfaceElevatedDark = Color(0xFF253449);
+  static const Color navBarDark = Color(0xFF1D2939);
+  static const Color bottomSheetDark = Color(0xFF253449);
+  static const Color dialogDark = Color(0xFF253449);
+  static const Color textDark = Color(0xFFF9FAFB);
+  static const Color textMutedDark = Color(0xFFB5C0D0);
+  static const Color textSubtleDark = Color(0xFF98A2B3);
+  static const Color borderDark = Color(0xFF344054);
+  static const Color borderStrongDark = Color(0xFF667085);
 
   // Shared accents
   static const Color primary = Color(0xFF0460D8);
@@ -61,12 +61,12 @@ class AppColors {
   static const Color primaryHover = Color(0xFF0450B8);
   static const Color primarySubtle = Color(0x140460D8);
   static const Color primarySoft = Color(0x140460D8);
-  static const Color success = Color(0xFF2D9E54);
-  static const Color warning = Color(0xFFF5C318);
+  static const Color success = Color(0xFF00BC4C);
+  static const Color warning = Color(0xFFF2CB05);
   static const Color danger = Color(0xFFEF4444);
-  static const Color warmYellow = Color(0xFFF5C318);
-  static const Color warmGreen = Color(0xFF2D9E54);
-  static const Color warmOrange = Color(0xFFF26B1D);
+  static const Color warmYellow = Color(0xFFF2CB05);
+  static const Color warmGreen = Color(0xFF00BC4C);
+  static const Color warmOrange = Color(0xFFF25C05);
 
   // Legacy aliases retained while screens are migrated to theme tokens.
   static const Color white = Colors.white;
@@ -80,23 +80,23 @@ class AppColors {
   static const Color textSubtle = textSubtleLight;
   static const Color border = borderLight;
   static const Color borderStrong = Color(0xFFCBD5E1);
-  static const Color surface = Color(0xFFFFFBF7);
+  static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceElevated = surfaceElevatedLight;
-  static const Color background = Color(0xFFFFF8F0);
-  static const Color warmBackground = Color(0xFFFFF8F0);
-  static const Color moodGood = Color(0xFF2D9E54);
+  static const Color background = Color(0xFFF7FAFF);
+  static const Color warmBackground = Color(0xFFF7FAFF);
+  static const Color moodGood = Color(0xFF00BC4C);
   static const Color moodOkay = Color(0xFFF59E0B);
-  static const Color moodLow = Color(0xFFE85D3A);
+  static const Color moodLow = Color(0xFFF25C05);
 
   // Crisis theme
   static const Color crisisBg = Color(0xFFFFF9F5);
   static const Color crisisSurface = Color(0xFFFFFFFF);
   static const Color crisisText = Color(0xFF2D2A26);
   static const Color crisisTextMuted = Color(0xFF6B7280);
-  static const Color crisisPrimary = Color(0xFFE85D3A);
+  static const Color crisisPrimary = Color(0xFFF25C05);
   static const Color crisisPrimaryHover = Color(0xFFD14A2A);
   static const Color crisisSubtle = Color(0xFFF5E6DF);
-  static const Color crisisSafe = Color(0xFF2D9E54);
+  static const Color crisisSafe = Color(0xFF00BC4C);
   static const Color crisisWarning = Color(0xFFF5A623);
   static const Color crisisDanger = Color(0xFFD9342B);
   static const Color crisisTextOnDark = Color(0xFFFFFFFF);
@@ -104,5 +104,5 @@ class AppColors {
   static const Color crisisSurfaceDark = Color(0xFF2F2723);
   static const Color crisisTextDark = Color(0xFFF8EFE9);
   static const Color crisisTextMutedDark = Color(0xFFC8B8AE);
-  static const Color crisisSubtleDark = Color(0xFF4A3028);
+  static const Color crisisSubtleDark = Color(0xFF482B1B);
 }

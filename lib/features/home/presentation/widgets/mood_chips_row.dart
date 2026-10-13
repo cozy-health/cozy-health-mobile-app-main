@@ -43,7 +43,7 @@ class _MoodChipsRowState extends State<MoodChipsRow> {
                 child: Material(
                   color: theme.brightness == Brightness.dark
                       ? AppColors.accentWarmYellowDark
-                      : const Color(0xFFFEF4BE),
+                      : AppColors.accentWarmYellow,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side: BorderSide(

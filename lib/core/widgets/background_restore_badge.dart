@@ -20,7 +20,11 @@ class BackgroundRestoreBadge extends StatelessWidget {
         BackgroundRestoreState.partial => TextButton.icon(
           onPressed: () => unawaited(service.retry()),
           icon: const Icon(Icons.sync, size: 16),
-          label: const Text('Some information is still syncing. Retry'),
+          label: Text(
+            service.failedSections.isEmpty
+                ? 'Saved information could not sync. Tap to retry'
+                : '${service.failedSections.join(', ')} could not sync. Tap to retry',
+          ),
         ),
         _ => const SizedBox.shrink(),
       },

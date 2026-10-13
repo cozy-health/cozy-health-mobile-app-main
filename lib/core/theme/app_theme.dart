@@ -209,6 +209,10 @@ class AppTheme {
     scaffoldBackgroundColor: AppColors.backgroundLight,
     colorScheme: const ColorScheme.light(
       primary: AppColors.primary,
+      secondary: AppColors.warmGreen,
+      onSecondary: Colors.black,
+      tertiary: AppColors.warmYellow,
+      onTertiary: Colors.black,
       surface: AppColors.surfaceLight,
       error: AppColors.danger,
       onPrimary: Colors.white,
@@ -287,6 +291,10 @@ class AppTheme {
     scaffoldBackgroundColor: AppColors.backgroundDark,
     colorScheme: const ColorScheme.dark(
       primary: AppColors.primaryDark,
+      secondary: AppColors.warmGreen,
+      onSecondary: Colors.black,
+      tertiary: AppColors.warmYellow,
+      onTertiary: Colors.black,
       surface: AppColors.surfaceDark,
       error: AppColors.danger,
       onPrimary: AppColors.backgroundDark,

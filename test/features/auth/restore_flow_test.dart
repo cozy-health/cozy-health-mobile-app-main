@@ -329,6 +329,10 @@ void main() {
       expect(service.state, BackgroundRestoreState.complete);
       expect(await RestoreService.required, false);
       expect(local.getUserProfile()?.name, 'Sample User');
+      final calls = Map<String, int>.from(api.calls);
+      await service.start('1');
+      expect(api.calls, calls);
+      expect(service.state, BackgroundRestoreState.complete);
       service.dispose();
     },
   );
@@ -591,6 +595,48 @@ void main() {
     await restore.finish(acceptPartial: true);
     expect(await RestoreService.required, isFalse);
     expect(await RestoreService.prepare('1'), isTrue);
+    restore.dispose();
+  });
+  test(
+    'an absent optional safety plan does not leave restore partial',
+    () async {
+      final restore = RestoreController(
+        userId: '1',
+        now: date,
+        get: (path, query) async {
+          if (path == '/safety-plan') return {'data': null};
+          return await api.get(path, query);
+        },
+      );
+      await restore.run();
+      expect(restore.failed, isEmpty);
+      await restore.finish();
+      expect(
+        (await local.settingsBox()).get('restore_incomplete_user'),
+        isNull,
+      );
+      restore.dispose();
+    },
+  );
+  test('bare paginators restore every page', () async {
+    final pages = <int>[];
+    final restore = RestoreController(
+      userId: '1',
+      now: date,
+      get: (path, query) async {
+        if (path != '/mood-entries') return api.get(path, query);
+        final current = query['page'] as int;
+        pages.add(current);
+        return {
+          'data': [mood('m$current')],
+          'last_page': 2,
+        };
+      },
+    );
+    await restore.run();
+    expect(restore.failed, isEmpty);
+    expect(pages, [1, 2]);
+    expect(local.moodBox.keys, containsAll(['m1', 'm2']));
     restore.dispose();
   });
   test(

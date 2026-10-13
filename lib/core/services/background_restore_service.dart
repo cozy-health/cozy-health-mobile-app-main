@@ -30,6 +30,8 @@ class BackgroundRestoreService extends ChangeNotifier
   double get progress => _controller?.progress ?? 0;
   bool get busy => state == BackgroundRestoreState.restoring;
   Future<void>? get activeWork => _work;
+  List<String> get failedSections =>
+      List.unmodifiable(_controller?.failed ?? const <String>{});
 
   void initialize() {
     if (_initialized || _disposed) return;
@@ -45,6 +47,12 @@ class BackgroundRestoreService extends ChangeNotifier
     if (_disposed || owner.startsWith('guest_')) return Future.value();
     initialize();
     if (_owner == owner && _work != null) return _work!;
+    if (_owner == owner && state == BackgroundRestoreState.complete) {
+      return Future.value();
+    }
+    if (_owner == owner && state == BackgroundRestoreState.partial) {
+      return retry();
+    }
     stop();
     _owner = owner;
     final generation = _generation;
@@ -96,17 +104,23 @@ class BackgroundRestoreService extends ChangeNotifier
           : BackgroundRestoreState.partial;
       controller.removeListener(_changed);
       _changed();
-      if (state == BackgroundRestoreState.partial && _automaticRetries < 3) {
-        _retryTimer = Timer(
-          Duration(seconds: 30 * (1 << _automaticRetries)),
-          () => unawaited(retry(automatic: true)),
-        );
-      }
+      _scheduleRetry();
     } catch (_) {
       if (!_disposed && generation == _generation) {
         state = BackgroundRestoreState.partial;
         _changed();
+        _scheduleRetry();
       }
+    }
+  }
+
+  void _scheduleRetry() {
+    _retryTimer?.cancel();
+    if (state == BackgroundRestoreState.partial && _automaticRetries < 3) {
+      _retryTimer = Timer(
+        Duration(seconds: 30 * (1 << _automaticRetries)),
+        () => unawaited(retry(automatic: true)),
+      );
     }
   }
 

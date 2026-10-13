@@ -45,8 +45,8 @@ class HomeQuizCard extends StatelessWidget {
         OutlinedButton(
           onPressed: () => context.push(AppRouter.quizSelection),
           style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF0066FF),
-            side: const BorderSide(color: Color(0xFF0066FF)),
+            foregroundColor: theme.colorScheme.primary,
+            side: BorderSide(color: theme.colorScheme.primary),
             padding: const EdgeInsets.symmetric(horizontal: 10),
             minimumSize: const Size(0, 33),
             tapTargetSize: MaterialTapTargetSize.padded,
@@ -62,7 +62,7 @@ class HomeQuizCard extends StatelessWidget {
                 child: Text(
                   'Start Quiz',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF0066FF),
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ),
@@ -79,7 +79,7 @@ class HomeQuizCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: dark
             ? theme.colorScheme.surfaceContainer
-            : const Color(0xFFF9F9F9),
+            : theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8),
       ),
       child: LayoutBuilder(

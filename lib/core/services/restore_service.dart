@@ -242,7 +242,12 @@ class RestoreController extends ChangeNotifier {
     do {
       final response = await _get(endpoint, {'page': page, 'per_page': 50});
       if (!await _sameOwner()) return;
-      final payload = response is Map ? response['data'] ?? response : response;
+      // A bare paginator also has a data key; keep its pagination metadata.
+      final payload = response is Map && response.containsKey('last_page')
+          ? response
+          : response is Map && response.containsKey('data')
+          ? response['data']
+          : response;
       final rows = payload is Map ? payload['data'] : payload;
       if (rows is! List) throw const FormatException('Invalid list response');
       final last = payload is Map ? payload['last_page'] : null;
@@ -273,7 +278,9 @@ class RestoreController extends ChangeNotifier {
   }
 
   static Map<String, dynamic>? _single(dynamic response) {
-    final value = response is Map ? response['data'] ?? response : response;
+    final value = response is Map && response.containsKey('data')
+        ? response['data']
+        : response;
     return value is Map ? Map<String, dynamic>.from(value) : null;
   }
 
