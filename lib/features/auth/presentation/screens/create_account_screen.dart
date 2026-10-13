@@ -254,13 +254,22 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         const SizedBox(height: 24),
         const Center(child: Text('or')),
         const SizedBox(height: 24),
-        AppleAuthButton(
-          enabled: !_busy,
-          onLoadingChanged: (value) => setState(() => _appleLoading = value),
-        ),
-        GoogleAuthButton(
-          enabled: !_busy,
-          onLoadingChanged: (value) => setState(() => _googleLoading = value),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppleAuthButton(
+              iconOnly: true,
+              enabled: !_busy,
+              onLoadingChanged: (value) =>
+                  setState(() => _appleLoading = value),
+            ),
+            GoogleAuthButton(
+              iconOnly: true,
+              enabled: !_busy,
+              onLoadingChanged: (value) =>
+                  setState(() => _googleLoading = value),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
       ],
