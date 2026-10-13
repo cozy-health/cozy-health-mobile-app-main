@@ -226,7 +226,10 @@ class ErrorInterceptor extends Interceptor {
       } else if (statusCode != null && statusCode >= 500) {
         exception = ApiServerException(statusCode: statusCode);
       } else {
-        exception = ApiUnknownException(err.message ?? 'Unknown error');
+        exception = ApiUnknownException(
+          'Request unavailable',
+          statusCode: statusCode,
+        );
       }
     } else {
       exception = ApiUnknownException(err.message ?? 'Unknown error');

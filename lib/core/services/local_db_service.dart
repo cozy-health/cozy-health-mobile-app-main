@@ -840,10 +840,15 @@ class LocalDbService {
           if (batch.isEmpty) continue;
           attempted.addAll(batch.map((item) => item.id));
           try {
+            final owner = activeUserId;
+            final scope = boxName(userSettingsBoxName);
             final response = await ApiClient.instance.post(
               '/sync/batch',
               data: {'operations': batch.map(_operationForSyncItem).toList()},
             );
+            if (owner != activeUserId || scope != boxName(userSettingsBoxName)) {
+              break;
+            }
             final result = await _applyBatchResult(batch, response.data);
             synced += result.synced;
             failed += result.failed;
@@ -996,12 +1001,52 @@ class LocalDbService {
     String? errorCode;
     for (final item in batch) {
       final result = results?[item.id] ?? results?[item.recordId];
+      if (!syncQueueBox.containsKey(item.id)) continue;
       if (result?['success'] == true || result?['status'] == 'success') {
+        if (item.type == 'quiz_attempt' && item.action == 'upsert') {
+          if (result?['record'] is! Map) {
+            await _scheduleRetry(item, errorCode: 'server');
+            continue;
+          }
+          final deleted = pendingItems.any(
+            (pending) =>
+                pending.type == item.type &&
+                pending.recordId == item.recordId &&
+                pending.action == 'delete',
+          );
+          if (!deleted) {
+            await saveQuizAttempt(
+              QuizAttempt.fromJson(
+                Map<String, dynamic>.from(result!['record'] as Map),
+              ),
+            );
+          }
+        }
         synced++;
         await syncQueueBox.delete(item.id);
       } else {
         final code = _safeSyncError(result?['error_code']);
         errorCode ??= code;
+        if (item.type == 'quiz_attempt' &&
+            const {
+              'invalid_payload',
+              'conflict',
+              'gone',
+              'definition_unavailable',
+              'ownership_conflict',
+            }.contains(code)) {
+          final attempt = quizAttemptBox.get(item.recordId);
+          if (attempt != null) {
+            await saveQuizAttempt(
+              attempt.withMetadata({
+                'validation_state': 'rejected',
+                'validation_error': code,
+              }),
+            );
+          }
+          await syncQueueBox.delete(item.id);
+          continue;
+        }
         await _scheduleRetry(item, errorCode: code);
       }
     }
@@ -1036,6 +1081,11 @@ class LocalDbService {
         'ownership_conflict',
         'dependency_missing',
         'database',
+        'feature_paused',
+        'rate_limited',
+        'conflict',
+        'gone',
+        'definition_unavailable',
       }.contains(code)
       ? code as String
       : null;

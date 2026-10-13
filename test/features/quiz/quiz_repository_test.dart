@@ -4,6 +4,7 @@ import 'package:cozy_health/features/quiz/data/quiz_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/repository_fixture.dart';
+import 'package:cozy_health/core/storage/encrypted_hive.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -12,7 +13,10 @@ void main() {
     QuizAttemptAdapter(),
   );
   final repository = QuizRepository();
-  setUpAll(fixture.open);
+  setUpAll(() async {
+    await fixture.open();
+    await EncryptedHive.openBox<String>(LocalDbService.syncQueueBoxName);
+  });
   setUp(fixture.reset);
   tearDownAll(fixture.close);
 
@@ -43,7 +47,10 @@ void main() {
         };
 
         final result = await repository.fetchAttempts();
-        expect(result.map((item) => item.id), items.map((item) => item['id']));
+        expect(
+          result.map((item) => item.id),
+          unorderedEquals(items.map((item) => item['id'])),
+        );
         expect(result, hasLength(count));
         expect(fixture.box.length, count);
         expect(fixture.requests, hasLength(1));

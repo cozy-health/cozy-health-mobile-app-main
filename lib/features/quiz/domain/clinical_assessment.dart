@@ -8,12 +8,64 @@ class ClinicalAssessment {
     required this.title,
     required this.questions,
     required this.minutes,
+    this.definitionVersion,
+    this.definition = const {},
   });
   final String id;
   final String title;
   final List<String> questions;
   final int minutes;
-  int get maximumScore => questions.length * 3;
+  final String? definitionVersion;
+  final Map<String, dynamic> definition;
+  List<Map<String, dynamic>> get questionDefinitions =>
+      (definition['questions'] as List? ?? [])
+          .map((q) => Map<String, dynamic>.from(q as Map))
+          .toList();
+  List<Map<String, dynamic>> options(int question) => definition.isEmpty
+      ? [
+          for (var i = 0; i < answerLabels.length; i++)
+            {'id': i, 'label': answerLabels[i], 'score': i},
+        ]
+      : (questionDefinitions[question]['options'] as List)
+            .map((o) => Map<String, dynamic>.from(o as Map))
+            .toList();
+  String get questionTimeframe =>
+      definition['timeframe'] as String? ?? timeframe;
+  String get disclaimer =>
+      definition['disclaimer'] as String? ??
+      'Not a substitute for professional care. This is not a diagnosis.';
+  String recommendation(int total) {
+    final rules = definition['scoring_rules'] as Map?;
+    if (rules == null) return '';
+    final band = (rules['bands'] as List).cast<Map>().firstWhere(
+      (b) => total <= (b['max'] as num),
+    );
+    return (band['recommendation'] ?? rules['recommendation'] ?? '').toString();
+  }
+
+  int get maximumScore => List.generate(
+    questions.length,
+    (i) => options(
+      i,
+    ).map((o) => o['score'] as int).reduce((a, b) => a > b ? a : b),
+  ).fold(0, (a, b) => a + b);
+  factory ClinicalAssessment.fromDefinition(Map<String, dynamic> json) =>
+      ClinicalAssessment(
+        id: json['slug'] as String,
+        title: json['title'] as String,
+        questions: (json['questions'] as List)
+            .map((q) => (q as Map)['question'] as String)
+            .toList(),
+        minutes: (json['estimated_minutes'] as num?)?.toInt() ?? 5,
+        definitionVersion: json['definition_version'] as String?,
+        definition: json,
+      );
+  static ClinicalAssessment? fromExtra(Map<String, dynamic> extra) =>
+      extra['definition'] is Map
+      ? ClinicalAssessment.fromDefinition(
+          Map<String, dynamic>.from(extra['definition'] as Map),
+        )
+      : find(extra['id'] as String?);
   static const timeframe =
       'Over the last 2 weeks, how often have you been bothered by the following problems?';
   static const answerLabels = [
@@ -76,6 +128,18 @@ class ClinicalAssessment {
   }
 
   int score(List<int> answers) {
+    if (definition.isNotEmpty) {
+      if (answers.length != questions.length) {
+        throw ArgumentError('Complete every question.');
+      }
+      var total = 0;
+      for (var i = 0; i < answers.length; i++) {
+        final option = options(i).where((o) => o['id'] == answers[i]);
+        if (option.isEmpty) throw ArgumentError('Invalid answer.');
+        total += option.first['score'] as int;
+      }
+      return total;
+    }
     if (answers.length != questions.length ||
         answers.any((answer) => answer < 0 || answer > 3)) {
       throw ArgumentError(
@@ -89,6 +153,13 @@ class ClinicalAssessment {
     if (total < 0 || total > maximumScore) {
       throw RangeError.range(total, 0, maximumScore);
     }
+    if (definition.isNotEmpty) {
+      final rules = definition['scoring_rules'] as Map;
+      return (rules['bands'] as List).cast<Map>().firstWhere(
+            (b) => total <= (b['max'] as num),
+          )['label']
+          as String;
+    }
     if (total < 5) return 'Minimal';
     if (total < 10) return 'Mild';
     if (total < 15) return 'Moderate';
@@ -98,6 +169,16 @@ class ClinicalAssessment {
 
   // A positive PHQ-9 item 9 warrants support independently of the total.
   // The prompt is optional and must not be presented as a risk diagnosis.
-  bool needsSupport(List<int> answers) =>
-      score(answers) >= 15 || (id == 'phq-9' && answers[8] > 0);
+  bool needsSupport(List<int> answers) {
+    final total = score(answers);
+    final item9 =
+        id == 'phq-9' &&
+        answers.length == 9 &&
+        options(8).any((o) => o['id'] == answers[8] && (o['score'] as num) > 0);
+    final threshold =
+        (definition['scoring_rules'] as Map?)?['crisis_threshold'] as num?;
+    return item9 ||
+        (const ['phq-9', 'gad-7'].contains(id) && total >= 15) ||
+        (threshold != null && total >= threshold);
+  }
 }

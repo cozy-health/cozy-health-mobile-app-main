@@ -1,4 +1,6 @@
 import 'core/widgets/network_observer.dart';
+import 'features/quiz/data/quiz_invitation_service.dart';
+import 'features/quiz/presentation/widgets/quiz_share_actions.dart';
 import 'dart:async';
 import 'core/services/push_notification_service.dart';
 import 'core/services/background_restore_service.dart';
@@ -66,6 +68,8 @@ Future<void> _startApp() async {
   runApp(const CozyHealthApp());
   BackgroundRestoreService.instance.initialize();
   unawaited(PushNotificationService.instance.initialize());
+  unawaited(QuizInvitationService.instance.initialize());
+  unawaited(cleanupQuizExports());
 }
 
 class CozyHealthApp extends StatefulWidget {

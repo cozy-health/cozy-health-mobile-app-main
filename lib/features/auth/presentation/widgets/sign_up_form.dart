@@ -179,7 +179,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
 
     if (username.isEmpty) {
       setState(() {
-        _usernameError = 'Username is required.';
+        _usernameError = 'Name is required.';
       });
       return;
     }
@@ -283,7 +283,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
               SizedBox(height: 4),
             ],
             CustomTextField(
-              hintText: 'Username',
+              hintText: 'Your name',
               controller: _usernameController,
               hasError: _usernameError != null,
             ),

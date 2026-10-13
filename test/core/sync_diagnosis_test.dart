@@ -6,6 +6,8 @@ import 'package:cozy_health/core/api/api_client.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/core/models/sync_item.dart';
 import 'package:cozy_health/core/models/user_profile.dart';
+import 'package:cozy_health/core/models/quiz_attempt.dart';
+import 'package:hive/hive.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'package:dio/dio.dart';
@@ -36,6 +38,11 @@ class ProbeAdapter implements HttpClientAdapter {
               {
                 'client_operation_id': op['client_operation_id'],
                 'success': op['data']?['note'] != reject || reject == null,
+                if (op['type'] == 'quiz_attempt')
+                  'record': {
+                    ...op['data'] as Map,
+                    'validated_at': '2026-10-13T00:00:00Z',
+                  },
               },
           ],
         },
@@ -61,6 +68,8 @@ void main() {
   late ProbeAdapter adapter;
   setUpAll(() async {
     await fixture.open();
+    Hive.registerAdapter(QuizAttemptAdapter());
+    await EncryptedHive.openBox<QuizAttempt>(LocalDbService.quizAttemptBoxName);
     await EncryptedHive.openBox<String>(LocalDbService.syncQueueBoxName);
   });
   setUp(() async {

@@ -9,11 +9,18 @@ class QuizResultContent extends StatelessWidget {
   final QuizAttempt attempt;
   @override
   Widget build(BuildContext context) {
-    final assessment = ClinicalAssessment.find(attempt.assessmentId);
+    final assessment = attempt.definition.isNotEmpty
+        ? ClinicalAssessment.fromDefinition(attempt.definition)
+        : ClinicalAssessment.find(attempt.assessmentId);
     final complete =
         assessment != null &&
         attempt.answers.length == assessment.questions.length &&
-        attempt.answers.every((answer) => answer >= 0 && answer <= 3);
+        List.generate(
+          attempt.answers.length,
+          (i) => assessment
+              .options(i)
+              .any((option) => option['id'] == attempt.answers[i]),
+        ).every((valid) => valid);
     final severity = attempt.severityLabel.isNotEmpty
         ? attempt.severityLabel
         : attempt.interpretation;
@@ -21,6 +28,15 @@ class QuizResultContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (!attempt.isValidated)
+          Text(
+            attempt.validationState == 'pending'
+                ? 'Provisional result · waiting for server validation'
+                : attempt.validationState == 'rejected'
+                ? 'Result not validated · ${attempt.metadata['validation_error'] ?? 'Please retake'}'
+                : 'Legacy result · not verified',
+            textAlign: TextAlign.center,
+          ),
         Text(
           attempt.quizTitle,
           style: Theme.of(context).textTheme.headlineSmall,
@@ -56,8 +72,14 @@ class QuizResultContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
+        if ((attempt.metadata['result_snapshot'] as Map?)?['recommendation']
+            is String)
+          Text(
+            (attempt.metadata['result_snapshot'] as Map)['recommendation']
+                as String,
+          ),
         const Text(
-          'This is not a diagnosis. Talk to a professional for clinical evaluation.',
+          'Not a substitute for professional care. This is not a diagnosis.',
           textAlign: TextAlign.center,
         ),
         if (complete) ...[
@@ -82,7 +104,12 @@ class QuizResultContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    ClinicalAssessment.answerLabels[attempt.answers[index]],
+                    assessment
+                            .options(index)
+                            .firstWhere(
+                              (o) => o['id'] == attempt.answers[index],
+                            )['label']
+                        as String,
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                 ],

@@ -1,223 +1,143 @@
-import '../../../../core/services/user_data_fetcher.dart';
-import '../../../../core/services/local_db_service.dart';
-import 'package:cozy_health/core/widgets/skeleton_loader.dart';
-import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/models/quiz_attempt.dart';
-import '../../data/quiz_repository.dart';
-import '../../domain/clinical_assessment.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/models/quiz_attempt.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../data/quiz_repository.dart';
 
-class QuizHistoryScreen extends StatelessWidget {
+class QuizHistoryScreen extends StatefulWidget {
   const QuizHistoryScreen({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'Quiz History',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: StreamBuilder<List<QuizAttempt>>(
-          stream: QuizRepository().watchAttempts(),
-          initialData: LocalDbService().getAllQuizAttempts(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting &&
-                !snapshot.hasData) {
-              return const ListSkeleton();
-            }
+  State<QuizHistoryScreen> createState() => _QuizHistoryScreenState();
+}
 
-            final attempts = [...?snapshot.data];
-            if (attempts.isEmpty) {
-              return EmptyState(
-                onOfflineRetry: () => UserDataFetcher().fetchQuizAttempts(),
-                icon: Icons.history,
-                title: 'Your results will appear here.',
-                primaryCtaLabel: 'Explore assessments',
-                onPrimaryCta: () => context.push(AppRouter.quizSelection),
-              );
-            }
-            attempts.sort(
-              (a, b) => b.completedAt.compareTo(a.completedAt),
-            ); // latest first
-
-            // Keep every attempt in history. Trend each real instrument separately;
-            // their raw scores use different scales. Legacy results remain below.
-            final trends = {
-              for (final assessment in ClinicalAssessment.all)
-                assessment.id: attempts.reversed
-                    .where(
-                      (attempt) =>
-                          attempt.assessmentId == assessment.id &&
-                          attempt.answers.length == assessment.questions.length,
-                    )
-                    .map((attempt) => attempt.score.toDouble())
-                    .toList(),
-            };
-
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Score Trend Chart
-                  for (final assessment in ClinicalAssessment.all)
-                    if (trends[assessment.id]!.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        margin: const EdgeInsets.only(bottom: 24),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${assessment.id.toUpperCase()} Trend',
-                              style: AppTextStyles.body1.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              height: 120,
-                              child: CustomPaint(
-                                size: const Size(
-                                  double.infinity,
-                                  double.infinity,
-                                ),
-                                painter: _TrendChartPainter(
-                                  data: trends[assessment.id]!,
-                                  maximumScore: assessment.maximumScore,
-                                  surfaceColor: Theme.of(
-                                    context,
-                                  ).colorScheme.surface,
-                                  primaryColor: Theme.of(
-                                    context,
-                                  ).colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                  Text(
-                    'Past attempts',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 16),
-
-                  if (attempts.isEmpty)
-                    Text(
-                      'No attempts yet.',
-                      style: AppTextStyles.body1.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    )
-                  else
-                    ...attempts.map((attempt) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _buildHistoryItem(context, attempt: attempt),
-                      );
-                    }),
-
-                  const SizedBox(height: 64),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
+class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
+  final _repository = QuizRepository();
+  @override
+  void initState() {
+    super.initState();
+    _repository.fetchAttempts();
   }
 
-  Widget _buildHistoryItem(
-    BuildContext context, {
-    required QuizAttempt attempt,
-  }) {
-    final title = attempt.quizTitle;
-    final date = DateFormat('MMM d, yyyy').format(attempt.completedAt);
-    final score = attempt.score.toString();
-
-    return GestureDetector(
-      onTap: () {
-        context.push(AppRouter.quizResultDetail, extra: {'attempt': attempt});
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Theme.of(
-              context,
-            ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Quiz History')),
+    body: StreamBuilder<List<QuizAttempt>>(
+      stream: _repository.watchAttempts(),
+      initialData: LocalDbService().getAllQuizAttempts(),
+      builder: (context, snapshot) {
+        final attempts = [...?snapshot.data]
+          ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
+        final groups = <String, List<QuizAttempt>>{};
+        for (final attempt in attempts.reversed) {
+          if (!const [
+                'validated',
+                'pending',
+              ].contains(attempt.validationState) ||
+              attempt.metadata['maximum_score'] == null) {
+            continue;
+          }
+          final key =
+              '${attempt.quizSlug}:${attempt.metadata['definition_version']}:${attempt.metadata['maximum_score']}';
+          (groups[key] ??= []).add(attempt);
+        }
+        return RefreshIndicator(
+          onRefresh: () async {
+            await _repository.fetchAttempts();
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (attempts.isEmpty) ...[
+                const Text('Your results will appear here.'),
+                TextButton(
+                  onPressed: () => context.push('/quiz-selection'),
+                  child: const Text('Explore assessments'),
+                ),
+              ],
+              for (final rows in groups.values) _Trend(rows: rows),
+              const SizedBox(height: 12),
+              Text(
+                'Past attempts',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              for (final attempt in attempts)
+                Card(
+                  child: ListTile(
+                    title: Text(attempt.quizTitle),
+                    subtitle: Text(
+                      '${DateFormat.yMMMd().format(attempt.completedAt.toLocal())} · ${attempt.validationState}',
+                    ),
+                    trailing: Text('${attempt.score}'),
+                    onTap: () => context.push('/quiz-attempt/${attempt.id}'),
+                  ),
+                ),
+            ],
           ),
-        ),
-        child: Row(
+        );
+      },
+    ),
+  );
+}
+
+class _Trend extends StatelessWidget {
+  const _Trend({required this.rows});
+  final List<QuizAttempt> rows;
+  @override
+  Widget build(BuildContext context) {
+    final maximum = rows.first.metadata['maximum_score'] as int;
+    final reduced =
+        MediaQuery.of(context).disableAnimations ||
+        LocalDbService().getUserProfile()?.reduceMotion == true;
+    final descriptions = rows
+        .map(
+          (r) =>
+              '${DateFormat.yMMMd().format(r.completedAt.toLocal())}: ${r.score} out of $maximum, ${r.validationState}',
+        )
+        .join('. ');
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    date,
-                    style: AppTextStyles.body2.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+            Text(
+              '${rows.first.quizTitle} Trend',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Score: $score',
-                style: AppTextStyles.body2.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
+            Text('Scale 0–$maximum · hollow points are provisional'),
+            Semantics(
+              label: descriptions,
+              child: ExcludeSemantics(
+                child: TweenAnimationBuilder<double>(
+                  key: ValueKey(descriptions),
+                  tween: Tween(begin: reduced ? 1 : 0, end: 1),
+                  duration: reduced
+                      ? Duration.zero
+                      : const Duration(milliseconds: 450),
+                  builder: (context, progress, _) => SizedBox(
+                    height: 140,
+                    child: CustomPaint(
+                      painter: _TrendPainter(
+                        rows,
+                        maximum,
+                        Theme.of(context).colorScheme.primary,
+                        progress,
+                      ),
+                    ),
+                  ),
                 ),
               ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  DateFormat.MMMd().format(rows.first.completedAt.toLocal()),
+                ),
+                Text(DateFormat.MMMd().format(rows.last.completedAt.toLocal())),
+              ],
             ),
           ],
         ),
@@ -226,65 +146,74 @@ class QuizHistoryScreen extends StatelessWidget {
   }
 }
 
-class _TrendChartPainter extends CustomPainter {
-  final List<double> data;
-  final int maximumScore;
-  final Color surfaceColor;
-  final Color primaryColor;
-
-  _TrendChartPainter({
-    required this.data,
-    required this.maximumScore,
-    required this.surfaceColor,
-    required this.primaryColor,
-  });
-
+class _TrendPainter extends CustomPainter {
+  _TrendPainter(this.rows, this.maximum, this.color, this.progress);
+  final List<QuizAttempt> rows;
+  final int maximum;
+  final Color color;
+  final double progress;
   @override
   void paint(Canvas canvas, Size size) {
-    if (data.isEmpty) return;
-    final maxData = maximumScore.toDouble();
-
-    if (data.isEmpty) return;
-
-    final pointWidth = size.width / (data.length > 1 ? data.length - 1 : 1);
-
-    final path = Path();
-    path.moveTo(0, size.height - (data[0] / maxData) * size.height);
-
-    for (int i = 1; i < data.length; i++) {
-      final x = i * pointWidth;
-      final y = size.height - (data[i] / maxData) * size.height;
-      path.lineTo(x, y);
+    if (maximum <= 0 || rows.isEmpty) return;
+    const margin = 8.0;
+    final width = size.width - margin * 2;
+    final height = size.height - margin * 2;
+    final first = rows.first.completedAt.millisecondsSinceEpoch;
+    final range = rows.last.completedAt.millisecondsSinceEpoch - first;
+    final points = rows
+        .map(
+          (r) => Offset(
+            range == 0
+                ? size.width / 2
+                : margin +
+                      (r.completedAt.millisecondsSinceEpoch - first) /
+                          range *
+                          width,
+            margin +
+                height -
+                r.score.clamp(0, maximum) / maximum * height * progress,
+          ),
+        )
+        .toList();
+    final axis = Paint()
+      ..color = color.withValues(alpha: .2)
+      ..strokeWidth = 1;
+    canvas.drawLine(
+      Offset(margin, margin),
+      Offset(margin, margin + height),
+      axis,
+    );
+    canvas.drawLine(
+      Offset(margin, margin + height),
+      Offset(margin + width, margin + height),
+      axis,
+    );
+    final path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (final p in points.skip(1)) {
+      path.lineTo(p.dx, p.dy);
     }
-
-    final paint = Paint()
-      ..color = primaryColor
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..strokeJoin = StrokeJoin.round;
-
-    canvas.drawPath(path, paint);
-
-    final pointPaint = Paint()
-      ..color = surfaceColor
-      ..style = PaintingStyle.fill;
-    final pointStroke = Paint()
-      ..color = primaryColor
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    for (int i = 0; i < data.length; i++) {
-      final x = i * pointWidth;
-      final y = size.height - (data[i] / maxData) * size.height;
-      canvas.drawCircle(Offset(x, y), 5, pointPaint);
-      canvas.drawCircle(Offset(x, y), 5, pointStroke);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke,
+    );
+    for (var i = 0; i < points.length; i++) {
+      canvas.drawCircle(
+        points[i],
+        4,
+        Paint()
+          ..color = color
+          ..strokeWidth = 2
+          ..style = rows[i].isValidated
+              ? PaintingStyle.fill
+              : PaintingStyle.stroke,
+      );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _TrendChartPainter oldDelegate) =>
-      oldDelegate.surfaceColor != surfaceColor ||
-      oldDelegate.primaryColor != primaryColor ||
-      oldDelegate.maximumScore != maximumScore ||
-      oldDelegate.data.toString() != data.toString();
+  bool shouldRepaint(covariant _TrendPainter old) =>
+      old.progress != progress || old.color != color || old.rows != rows;
 }

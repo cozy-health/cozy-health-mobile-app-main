@@ -296,7 +296,10 @@ void main() {
       final theme = dark ? AppTheme.dark : AppTheme.light;
       for (final title in ['Quiz History', 'Past attempts']) {
         final text = tester.widget<Text>(find.text(title));
-        final luminance = text.style!.color!.computeLuminance();
+        final style = DefaultTextStyle.of(
+          tester.element(find.text(title)),
+        ).style.merge(text.style);
+        final luminance = style.color!.computeLuminance();
         final background = theme.scaffoldBackgroundColor.computeLuminance();
         final contrast = luminance > background
             ? (luminance + 0.05) / (background + 0.05)

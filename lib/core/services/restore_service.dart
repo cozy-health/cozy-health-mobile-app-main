@@ -222,7 +222,7 @@ class RestoreController extends ChangeNotifier {
       case 'Journal entries':
         await _list('/journal-entries', 'journal_entry', recent: true);
       case 'Quiz attempts':
-        await _list('/quiz-attempts', 'quiz_attempt');
+        await _list('/quiz-attempts', 'quiz_attempt', includeDeleted: true);
       case 'Saved articles':
         await _list('/content/saved', 'saved_article');
       case 'Notifications':
@@ -236,11 +236,16 @@ class RestoreController extends ChangeNotifier {
     String endpoint,
     String type, {
     bool recent = false,
+    bool includeDeleted = false,
   }) async {
     var page = 1;
     var lastPage = 1;
     do {
-      final response = await _get(endpoint, {'page': page, 'per_page': 50});
+      final response = await _get(endpoint, {
+        'page': page,
+        'per_page': 50,
+        if (includeDeleted) 'include_deleted': 1,
+      });
       if (!await _sameOwner()) return;
       // A bare paginator also has a data key; keep its pagination metadata.
       final payload = response is Map && response.containsKey('last_page')

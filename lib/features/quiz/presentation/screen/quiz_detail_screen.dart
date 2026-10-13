@@ -5,14 +5,13 @@ import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../gen/assets.gen.dart';
 import '../../domain/clinical_assessment.dart';
-import '../widgets/clinical_disclaimer_sheet.dart';
 
 class QuizDetailScreen extends StatelessWidget {
   const QuizDetailScreen({super.key, required this.extra});
   final Map<String, dynamic> extra;
   @override
   Widget build(BuildContext context) {
-    final assessment = ClinicalAssessment.find(extra['id'] as String?);
+    final assessment = ClinicalAssessment.fromExtra(extra);
     final title = assessment?.title ?? extra['title'] as String? ?? 'Quiz';
     return Scaffold(
       appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
@@ -24,7 +23,7 @@ class QuizDetailScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               assessment != null
-                  ? 'A check-in on the last two weeks'
+                  ? assessment.questionTimeframe
                   : 'Take a moment to reflect',
               style: Theme.of(context).textTheme.titleMedium,
             ),
@@ -71,7 +70,7 @@ class QuizDetailScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Text(
               assessment != null
-                  ? ClinicalAssessment.timeframe
+                  ? assessment.questionTimeframe
                   : 'Take a few minutes to reflect on how you are feeling.',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
@@ -87,28 +86,26 @@ class QuizDetailScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onPressed: () async {
-                try {
-                  if (assessment != null &&
-                      await ClinicalDisclaimerSheet.show(context) != true) {
-                    return;
-                  }
-                  if (context.mounted) {
-                    context.push(AppRouter.quizTaking, extra: extra);
-                  }
-                } catch (_) {
-                  if (context.mounted) {
-                    AppSnackbar.show(
-                      context,
-                      AppSnackbar.fromLegacy(
-                        content: const Text(
-                          'Could not start the assessment. Please try again.',
-                        ),
-                      ),
-                    );
-                  }
-                }
-              },
+              onPressed: assessment?.definitionVersion == null
+                  ? null
+                  : () async {
+                      try {
+                        if (context.mounted) {
+                          context.push(AppRouter.quizTaking, extra: extra);
+                        }
+                      } catch (_) {
+                        if (context.mounted) {
+                          AppSnackbar.show(
+                            context,
+                            AppSnackbar.fromLegacy(
+                              content: const Text(
+                                'Could not start the assessment. Please try again.',
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
               child: const Text('Start Quiz'),
             ),
             TextButton(

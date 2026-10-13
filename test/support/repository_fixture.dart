@@ -2,11 +2,11 @@ import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:dio/dio.dart';
-import 'package:dio/io.dart';
 import 'package:cozy_health/core/api/api_client.dart';
 
 /// Exercises the real API client and cache without network or platform storage.
@@ -36,7 +36,11 @@ class RepositoryFixture<T> {
       requestBodies,
     );
     _previousTransport = ApiClient().transportForTesting;
-    ApiClient().transportForTesting = IOHttpClientAdapter();
+    ApiClient().transportForTesting = _FixtureAdapter(
+      () => body,
+      requests,
+      requestBodies,
+    );
   }
 
   Future<void> reset() async {
@@ -54,6 +58,38 @@ class RepositoryFixture<T> {
     Hive.resetAdapters();
     await _directory.delete(recursive: true);
   }
+}
+
+// A transport fixture also works inside widget tests, whose zone overrides real HTTP.
+class _FixtureAdapter implements HttpClientAdapter {
+  _FixtureAdapter(this.body, this.requests, this.requestBodies);
+  final dynamic Function() body;
+  final List<Uri> requests;
+  final List<dynamic> requestBodies;
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add(options.uri);
+    if (options.data != null)
+      requestBodies.add(
+        options.data is String
+            ? jsonDecode(options.data as String)
+            : options.data,
+      );
+    return ResponseBody.fromString(
+      jsonEncode(body()),
+      200,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }
 
 class _ResponseOverrides extends HttpOverrides {

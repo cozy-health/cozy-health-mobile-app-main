@@ -1,38 +1,57 @@
-import 'package:flutter/foundation.dart';
+import '../../../core/api/api_exceptions.dart';
 import '../../../core/models/quiz_attempt.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/services/user_data_fetcher.dart';
+import '../domain/clinical_assessment.dart';
 
 class QuizRepository {
   final LocalDbService _local = LocalDbService();
-
-  List<dynamic> _extractListData(dynamic data) {
-    if (data is List) return data;
-    if (data is Map && data['data'] is List) {
-      return data['data'] as List;
+  Future<List<ClinicalAssessment>> catalog() async {
+    final owner = _local.activeUserId;
+    final settings = await _local.settingsBox();
+    try {
+      final rows = <Map<String, dynamic>>[];
+      var page = 1;
+      var lastPage = 1;
+      do {
+        final response = await ApiClient.instance.get(
+          '/quizzes',
+          queryParameters: {'page': page, 'per_page': 50},
+        );
+        if (owner != _local.activeUserId) return [];
+        final data = response.data['data'] as Map;
+        rows.addAll(
+          (data['data'] as List).map(
+            (row) => Map<String, dynamic>.from(row as Map),
+          ),
+        );
+        lastPage = (data['last_page'] as num).toInt();
+        page++;
+      } while (page <= lastPage && page <= 100);
+      await settings.put('quiz_definitions_v1', rows);
+      return rows.map(ClinicalAssessment.fromDefinition).toList();
+    } catch (error) {
+      // Only cached, previously approved definitions can be taken offline.
+      if (owner != _local.activeUserId) return [];
+      if (error is ApiAuthException ||
+          error is ApiServerException ||
+          (error is ApiException && error.statusCode != null)) {
+        return [];
+      }
+      return (settings.get('quiz_definitions_v1') as List? ?? [])
+          .map(
+            (row) => ClinicalAssessment.fromDefinition(
+              Map<String, dynamic>.from(row as Map),
+            ),
+          )
+          .toList();
     }
-    if (data is Map && data['data'] is Map) {
-      final nested = data['data'] as Map;
-      if (nested['data'] is List) return nested['data'] as List;
-    }
-    debugPrint('Unexpected quiz attempts response shape: ${data.runtimeType}');
-    return const [];
   }
 
   Future<List<QuizAttempt>> fetchAttempts() async {
-    try {
-      final response = await ApiClient.instance.get('/quiz-attempts');
-      final items = _extractListData(response.data)
-          .whereType<Map>()
-          .map((json) => QuizAttempt.fromJson(Map<String, dynamic>.from(json)))
-          .toList();
-      for (final item in items) {
-        await _local.saveQuizAttempt(item);
-      }
-      return items;
-    } catch (e) {
-      return _local.getAllQuizAttempts();
-    }
+    await UserDataFetcher().fetchQuizAttempts();
+    return _local.getAllQuizAttempts();
   }
 
   Stream<List<QuizAttempt>> watchAttempts() {
@@ -49,5 +68,16 @@ class QuizRepository {
     );
     _local.processSyncQueue();
     return attempt;
+  }
+
+  Future<void> deleteAttempt(String id) async {
+    await _local.enqueueSync(
+      type: 'quiz_attempt',
+      action: 'delete',
+      recordId: id,
+      payload: {'id': id},
+    );
+    await _local.quizAttemptBox.delete(id);
+    _local.processSyncQueue();
   }
 }

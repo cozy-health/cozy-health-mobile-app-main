@@ -81,6 +81,16 @@ class UserDataMerge {
     if (id == null || id.isEmpty) {
       throw const FormatException('Missing record identifier');
     }
+    if (type == 'quiz_attempt' &&
+        (incoming['is_deleted'] == true || incoming['deleted_at'] != null)) {
+      await _local.quizAttemptBox.delete(id);
+      for (final item in _local.pendingItems.where(
+        (item) => item.type == type && item.recordId == id,
+      )) {
+        await _local.syncQueueBox.delete(item.id);
+      }
+      return;
+    }
     var local = localRow(type, id);
     final localId = local?['id']?.toString() ?? id;
     final pending = _local.pendingItems
@@ -99,6 +109,13 @@ class UserDataMerge {
     }
     // A pending delete is a tombstone: background downloads cannot resurrect it.
     if (pending.any((item) => item.action == 'delete')) return;
+    if (type == 'quiz_attempt' && incoming['validated_at'] != null) {
+      await _write(type, incoming);
+      for (final item in pending) {
+        await _local.syncQueueBox.delete(item.id);
+      }
+      return;
+    }
     final localTime = local == null ? null : timestamp(local);
     final remoteTime = timestamp(incoming);
     final keepLocal =

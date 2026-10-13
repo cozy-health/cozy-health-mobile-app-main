@@ -14,6 +14,10 @@ import 'package:cozy_health/core/models/journal_entry.dart';
 import 'package:cozy_health/core/models/app_notification.dart';
 import 'package:cozy_health/core/models/saved_article.dart';
 import 'package:cozy_health/core/models/quiz_attempt.dart';
+import 'package:cozy_health/features/quiz/data/quiz_repository.dart';
+import 'package:cozy_health/features/quiz/domain/clinical_assessment.dart';
+import '../quiz/assessment_fixture.dart';
+
 import 'package:cozy_health/core/models/safety_plan.dart';
 import 'package:cozy_health/core/models/user_profile.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
@@ -36,6 +40,15 @@ import 'package:cozy_health/features/content/presentation/screens/saved_articles
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_selection_screen.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_history_screen.dart';
 import 'package:cozy_health/features/settings/presentation/screens/blocked_users_screen.dart';
+
+class _ApprovedQuizRepository extends QuizRepository {
+  @override
+  Future<List<ClinicalAssessment>> catalog() async => ClinicalAssessment.all
+      .map((a) => ClinicalAssessment.fromDefinition(assessmentFixture(a)))
+      .toList();
+  @override
+  Future<List<QuizAttempt>> fetchAttempts() async => [];
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -363,7 +376,10 @@ void main() {
     await mount(tester, const ContentHomeScreen());
     expect(find.text('The Voice in Your Head'), findsOneWidget);
     expect(find.byType(EmptyState), findsNothing);
-    await mount(tester, const QuizSelectionScreen());
+    await mount(
+      tester,
+      QuizSelectionScreen(repository: _ApprovedQuizRepository()),
+    );
     expect(find.text('PHQ-9 Depression Screening'), findsOneWidget);
     expect(find.text('GAD-7 Anxiety Assessment'), findsOneWidget);
     expect(find.byType(EmptyState), findsNothing);

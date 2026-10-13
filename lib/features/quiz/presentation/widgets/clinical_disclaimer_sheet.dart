@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
-import '../../../../core/services/local_db_service.dart';
 
 class ClinicalDisclaimerSheet extends StatelessWidget {
-  const ClinicalDisclaimerSheet({super.key});
+  const ClinicalDisclaimerSheet({
+    super.key,
+    this.disclaimer =
+        'Not a substitute for professional care. This is not a diagnosis.',
+  });
+  final String disclaimer;
   static const acknowledgementKey = 'clinical_quiz_disclaimer_v1';
-  static Future<bool?> show(BuildContext context) async {
-    final settings = await LocalDbService.instance.settingsBox();
-    if (settings.get(acknowledgementKey) == true) return true;
+  static Future<bool?> show(BuildContext context, {String? disclaimer}) async {
     if (!context.mounted) return false;
     final accepted = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => const ClinicalDisclaimerSheet(),
+      builder: (_) => ClinicalDisclaimerSheet(
+        disclaimer:
+            disclaimer ??
+            'Not a substitute for professional care. This is not a diagnosis.',
+      ),
     );
-    if (accepted == true) await settings.put(acknowledgementKey, true);
     return accepted;
   }
 
@@ -33,10 +38,7 @@ class ClinicalDisclaimerSheet extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          const Text(
-            'This is not a diagnosis. Talk to a professional for clinical evaluation.',
-            textAlign: TextAlign.center,
-          ),
+          Text(disclaimer, textAlign: TextAlign.center),
           const SizedBox(height: 24),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),

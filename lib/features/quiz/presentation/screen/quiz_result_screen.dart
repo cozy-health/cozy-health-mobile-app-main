@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:uuid/uuid.dart';
 import '../../../../core/models/quiz_attempt.dart';
-import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/local_db_service.dart';
 import '../../data/quiz_repository.dart';
-import '../../domain/clinical_assessment.dart';
 import '../widgets/quiz_result_content.dart';
-import '../widgets/provider_share_confirm_dialog.dart';
-import '../widgets/quiz_retake_confirm_dialog.dart';
+import '../widgets/quiz_share_actions.dart';
 import '../widgets/quiz_support_sheet.dart';
+import '../widgets/quiz_session_guard.dart';
 
 class QuizResultScreen extends StatefulWidget {
   const QuizResultScreen({super.key, required this.extra});
@@ -17,131 +15,118 @@ class QuizResultScreen extends StatefulWidget {
   State<QuizResultScreen> createState() => _QuizResultScreenState();
 }
 
-class _QuizResultScreenState extends State<QuizResultScreen> {
-  QuizAttempt? _attempt;
-  bool _saved = false;
-  bool _saving = false;
-  bool _sharing = false;
-  String? _error;
+class _QuizResultScreenState extends State<QuizResultScreen>
+    with QuizSessionGuard<QuizResultScreen> {
+  bool _supportShown = false;
+  void _support(QuizAttempt? attempt) {
+    if (attempt?.isCrisisFlagged != true ||
+        _supportShown ||
+        !isQuizSessionActive) {
+      return;
+    }
+    _supportShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && isQuizSessionActive) QuizSupportSheet.show(context);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
-    final assessment = ClinicalAssessment.find(widget.extra['id'] as String?);
-    try {
-      if (assessment == null && widget.extra['type'] == 'clinical') {
-        throw ArgumentError('Unknown clinical assessment');
-      }
-      final answers = List<int>.from(
-        widget.extra['answers'] as List? ?? const [],
-      );
-      final score =
-          assessment?.score(answers) ?? widget.extra['score'] as int? ?? 0;
-      final severity =
-          assessment?.severity(score) ?? 'Great job checking in with yourself!';
-      _attempt = QuizAttempt(
-        id: const Uuid().v4(),
-        quizId: assessment?.id ?? widget.extra['id'] as String? ?? 'legacy',
-        quizSlug: assessment?.id ?? widget.extra['id'] as String? ?? 'legacy',
-        quizTitle:
-            assessment?.title ?? widget.extra['title'] as String? ?? 'Quiz',
-        answers: answers,
-        score: score,
-        interpretation: severity,
-        severityLabel: assessment != null ? severity : '',
-        isCrisisFlagged: assessment?.needsSupport(answers) ?? false,
-        completedAt: DateTime.now(),
-      );
-      _saveAttempt();
-      if (_attempt!.isCrisisFlagged) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) QuizSupportSheet.show(context);
-        });
-      }
-    } catch (_) {
-      _error =
-          'Your assessment is incomplete. Please return and finish all questions.';
-    }
-  }
-
-  Future<void> _saveAttempt() async {
-    if (_attempt == null || _saving || _saved) return;
-    _saving = true;
-    try {
-      await QuizRepository().saveAttempt(_attempt!);
-      if (mounted) {
-        setState(() {
-          _saved = true;
-          _error = null;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(
-          () => _error =
-              'Could not save your result. Please retry before leaving.',
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+    final attempt = widget.extra['attempt'] as QuizAttempt?;
+    _support(attempt);
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Results'),
-      centerTitle: true,
-      leading: IconButton(
-        tooltip: 'Close results',
-        onPressed: () => context.push(AppRouter.quizSelection),
-        icon: const Icon(Icons.close),
-      ),
-    ),
-    body: SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (_attempt != null) QuizResultContent(attempt: _attempt!),
-          if (_error != null) ...[
-            Text(_error!, textAlign: TextAlign.center),
-            if (_attempt != null)
-              TextButton(
-                onPressed: _saving ? null : _saveAttempt,
-                child: const Text('Retry save'),
-              ),
-          ],
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: () => context.push(AppRouter.quizSelection),
-            child: const Text('Done'),
+  Widget build(BuildContext context) {
+    final saved = widget.extra['attempt'] as QuizAttempt?;
+    if (saved == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Results')),
+        body: const Center(
+          child: Text('Finish an assessment to view your saved result.'),
+        ),
+      );
+    }
+    return StreamBuilder<List<QuizAttempt>>(
+      stream: QuizRepository().watchAttempts(),
+      initialData: LocalDbService().getAllQuizAttempts(),
+      builder: (context, snapshot) {
+        final found = snapshot.data?.where((a) => a.id == saved.id).firstOrNull;
+        if (!isQuizSessionActive || found == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Results')),
+            body: const Center(
+              child: Text('This result is no longer available.'),
+            ),
+          );
+        }
+        final attempt = found;
+        _support(attempt);
+        return Scaffold(
+          appBar: AppBar(title: const Text('Results')),
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                QuizResultContent(attempt: attempt),
+                const SizedBox(height: 24),
+                QuizShareActions(
+                  key: ValueKey(attempt.validationState),
+                  attempt: attempt,
+                ),
+                FilledButton(
+                  onPressed: () => context.go('/quiz-selection'),
+                  child: const Text('Done'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final date = attempt.completedAt
+                        .toLocal()
+                        .toString()
+                        .split(' ')
+                        .first;
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Retake assessment?'),
+                        content: Text(
+                          'You last completed this assessment on $date. Start a new attempt?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Retake'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm != true) return;
+                    final catalog = await QuizRepository().catalog();
+                    final assessment = catalog
+                        .where((a) => a.id == attempt.quizSlug)
+                        .firstOrNull;
+                    if (context.mounted && assessment != null) {
+                      context.pushReplacement(
+                        '/quiz-taking',
+                        extra: {
+                          'id': assessment.id,
+                          'definition': assessment.definition,
+                        },
+                      );
+                    }
+                  },
+                  child: const Text('Retake assessment'),
+                ),
+              ],
+            ),
           ),
-          if (_attempt != null) ...[
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: !_saved || _sharing
-                  ? null
-                  : () async {
-                      setState(() => _sharing = true);
-                      await QuizProviderSharing.share(context);
-                      if (mounted) setState(() => _sharing = false);
-                    },
-              child: Text(_sharing ? 'Sharing…' : 'Share with provider'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (await QuizRetakeConfirmDialog.show(context) == 'retake' &&
-                    context.mounted) {
-                  context.pushReplacement(
-                    AppRouter.quizTaking,
-                    extra: widget.extra,
-                  );
-                }
-              },
-              child: const Text('Retake Quiz'),
-            ),
-          ],
-        ],
-      ),
-    ),
-  );
+        );
+      },
+    );
+  }
 }

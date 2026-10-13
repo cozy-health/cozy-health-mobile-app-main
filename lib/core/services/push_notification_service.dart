@@ -408,6 +408,7 @@ class PushNotificationService extends ChangeNotifier
     'journal' => '/journal-compose',
     'streak' => '${AppRouter.home}?focus=streak',
     'affirmation' => '${AppRouter.home}?focus=affirmation',
+    'quiz_share' => '/quiz-shared',
     _ => AppRouter.notifications,
   };
 

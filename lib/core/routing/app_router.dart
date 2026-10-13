@@ -5,6 +5,7 @@ import '../models/app_notification.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_detail_screen.dart';
+import 'package:cozy_health/features/quiz/presentation/screen/quiz_shared_screen.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_result_screen.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_selection_screen.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_taking_screen.dart';
@@ -341,6 +342,28 @@ class AppRouter {
         path: quizSelection,
         name: 'quizSelection',
         builder: (_, __) => const QuizSelectionScreen(),
+      ),
+      GoRoute(
+        path: '/quiz-shared',
+        builder: (_, __) => const QuizSharedScreen(),
+      ),
+      GoRoute(
+        path: '/quiz-shared/:id',
+        builder: (_, state) =>
+            QuizSharedScreen(shareId: state.pathParameters['id']),
+      ),
+      GoRoute(
+        path: '/quiz-invitation',
+        builder: (_, __) => const QuizInvitationScreen(),
+      ),
+      GoRoute(
+        path: '/quiz-username',
+        builder: (_, __) => const QuizUsernameScreen(),
+      ),
+      GoRoute(
+        path: '/quiz-attempt/:id',
+        builder: (_, state) =>
+            QuizResultDetailScreen(extra: {'id': state.pathParameters['id']}),
       ),
       GoRoute(
         path: quizResults,

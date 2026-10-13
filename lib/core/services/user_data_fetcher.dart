@@ -35,7 +35,8 @@ class UserDataFetcher {
       _list('/conversations', 'chat_conversation');
   Future<void> fetchNotifications() =>
       _list('/notifications', 'app_notification');
-  Future<void> fetchQuizAttempts() => _list('/quiz-attempts', 'quiz_attempt');
+  Future<void> fetchQuizAttempts() =>
+      _list('/quiz-attempts', 'quiz_attempt', includeDeleted: true);
   Future<void> fetchSavedArticles() =>
       _list('/saved-articles', 'saved_article');
   Future<void> fetchProfile() => _single('/user/profile', 'user_profile');
@@ -79,7 +80,11 @@ class UserDataFetcher {
     }
   }
 
-  Future<void> _list(String endpoint, String type) async {
+  Future<void> _list(
+    String endpoint,
+    String type, {
+    bool includeDeleted = false,
+  }) async {
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       var page = 1;
@@ -87,7 +92,11 @@ class UserDataFetcher {
       do {
         final response = await _api.get(
           endpoint,
-          queryParameters: {'page': page, 'per_page': 50},
+          queryParameters: {
+            'page': page,
+            'per_page': 50,
+            if (includeDeleted) 'include_deleted': 1,
+          },
         );
         if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) return;
         final data = response.data is Map

@@ -31,6 +31,17 @@ class QuizAttempt extends HiveObject {
 
   @HiveField(9)
   final String severityLabel;
+  @HiveField(10)
+  final Map<String, dynamic> metadata;
+  String get validationState =>
+      metadata['validation_state'] as String? ??
+      (metadata['validated_at'] != null ? 'validated' : 'legacy');
+  bool get isValidated => validationState == 'validated';
+  Map<String, dynamic> get definition => Map<String, dynamic>.from(
+    (metadata['result_snapshot'] as Map?)?['definition'] as Map? ?? {},
+  );
+  QuizAttempt withMetadata(Map<String, dynamic> values) =>
+      QuizAttempt.fromJson({...toJson(), ...values});
   String get assessmentId => quizId;
   int get totalScore => score;
 
@@ -45,10 +56,12 @@ class QuizAttempt extends HiveObject {
     required this.isCrisisFlagged,
     required this.completedAt,
     this.severityLabel = '',
+    this.metadata = const {},
   });
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{
+      ...metadata,
       'id': id,
       'quiz_slug': quizSlug,
       'quiz_title': quizTitle,
@@ -92,6 +105,20 @@ class QuizAttempt extends HiveObject {
               ].contains(json['interpretation'])
               ? json['interpretation'] as String
               : ''),
+      metadata: {
+        for (final key in [
+          'definition_version',
+          'result_snapshot',
+          'maximum_score',
+          'validated_at',
+          'validation_state',
+          'disclaimer_accepted',
+          'disclaimer_accepted_at',
+          'validation_error',
+        ])
+          if (json.containsKey(key)) key: json[key],
+        if (json['validated_at'] != null) 'validation_state': 'validated',
+      },
       isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
       completedAt: json['completed_at'] != null
           ? DateTime.parse(json['completed_at'])
@@ -121,13 +148,16 @@ class QuizAttemptAdapter extends TypeAdapter<QuizAttempt> {
       isCrisisFlagged: fields[7] as bool,
       completedAt: fields[8] as DateTime,
       severityLabel: fields[9] as String? ?? '',
+      metadata: fields[10] is Map
+          ? Map<String, dynamic>.from(fields[10] as Map)
+          : const {},
     );
   }
 
   @override
   void write(BinaryWriter writer, QuizAttempt obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -147,6 +177,8 @@ class QuizAttemptAdapter extends TypeAdapter<QuizAttempt> {
       ..writeByte(8)
       ..write(obj.completedAt)
       ..writeByte(9)
-      ..write(obj.severityLabel);
+      ..write(obj.severityLabel)
+      ..writeByte(10)
+      ..write(obj.metadata);
   }
 }

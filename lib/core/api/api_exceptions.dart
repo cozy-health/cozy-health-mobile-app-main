@@ -33,7 +33,7 @@ class ApiServerException extends ApiException {
 }
 
 class ApiUnknownException extends ApiException {
-  ApiUnknownException(super.message);
+  ApiUnknownException(super.message, {super.statusCode});
 }
 
 class ApiSecureConnectionException extends ApiException {

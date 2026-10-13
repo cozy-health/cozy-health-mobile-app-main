@@ -12,6 +12,20 @@ import 'package:cozy_health/features/quiz/presentation/widgets/clinical_disclaim
 import 'package:cozy_health/features/quiz/presentation/widgets/quiz_support_sheet.dart';
 import '../../support/local_fonts.dart';
 import '../../support/repository_fixture.dart';
+import 'assessment_fixture.dart';
+import 'package:cozy_health/core/storage/encrypted_hive.dart';
+import 'package:cozy_health/features/quiz/data/quiz_repository.dart';
+
+class _FlowRepository extends QuizRepository {
+  @override
+  Future<QuizAttempt> saveAttempt(QuizAttempt attempt) async => attempt;
+  @override
+  Future<List<ClinicalAssessment>> catalog() async => ClinicalAssessment.all
+      .map((a) => ClinicalAssessment.fromDefinition(assessmentFixture(a)))
+      .toList();
+  @override
+  Future<List<QuizAttempt>> fetchAttempts() async => [];
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -19,12 +33,23 @@ void main() {
     LocalDbService.quizAttemptBoxName,
     QuizAttemptAdapter(),
   );
-  setUpAll(fixture.open);
+  setUpAll(() async {
+    await fixture.open();
+    await EncryptedHive.openBox<String>(LocalDbService.syncQueueBoxName);
+    LocalDbService.instance.syncPaused = true;
+  });
   setUp(() async {
     await fixture.reset();
+    await LocalDbService.instance.syncQueueBox.clear();
     await installLocalTestFonts();
     final settings = await LocalDbService.instance.settingsBox();
     await settings.put(ClinicalDisclaimerSheet.acknowledgementKey, true);
+    fixture.body = {
+      'data': {
+        'data': ClinicalAssessment.all.map(assessmentFixture).toList(),
+        'last_page': 1,
+      },
+    };
   });
   tearDown(resetLocalTestFonts);
   tearDownAll(fixture.close);
@@ -39,7 +64,12 @@ void main() {
             GoRoute(
               path: '/taking',
               builder: (_, _) => QuizTakingScreen(
-                extra: {'id': assessment.id, 'type': 'clinical'},
+                repository: _FlowRepository(),
+                extra: {
+                  'id': assessment.id,
+                  'type': 'clinical',
+                  'definition': assessmentFixture(assessment),
+                },
               ),
             ),
             GoRoute(
@@ -56,6 +86,11 @@ void main() {
           MaterialApp.router(routerConfig: router, theme: AppTheme.light),
         );
         await tester.pumpAndSettle();
+        await tester.runAsync(() async {
+          await tester.tap(find.text('I understand'));
+          await Future<void>.delayed(const Duration(milliseconds: 30));
+        });
+        await tester.pumpAndSettle();
         for (
           var question = 0;
           question < assessment.questions.length;
@@ -70,18 +105,21 @@ void main() {
           await tester.ensureVisible(find.text('Several days'));
           await tester.tap(find.text('Several days'));
           await tester.pumpAndSettle();
-          await tester.tap(
-            find.text(
-              question == assessment.questions.length - 1 ? 'Submit' : 'Next',
-            ),
-          );
+          await tester.runAsync(() async {
+            await tester.tap(
+              find.text(
+                question == assessment.questions.length - 1 ? 'Submit' : 'Next',
+              ),
+            );
+            await Future<void>.delayed(const Duration(milliseconds: 100));
+          });
           await tester.pumpAndSettle();
         }
         expect(submitted!['id'], assessment.id);
         expect(submitted!['score'], assessment.questions.length);
         expect(
           submitted!['answers'],
-          List.filled(assessment.questions.length, 1),
+          List.generate(assessment.questions.length, (i) => i * 10 + 101),
         );
       },
     );
@@ -95,8 +133,13 @@ void main() {
       routes: [
         GoRoute(
           path: '/taking',
-          builder: (_, _) => const QuizTakingScreen(
-            extra: {'id': 'gad-7', 'type': 'clinical'},
+          builder: (_, _) => QuizTakingScreen(
+            repository: _FlowRepository(),
+            extra: {
+              'id': 'gad-7',
+              'type': 'clinical',
+              'definition': assessmentFixture(ClinicalAssessment.gad7),
+            },
           ),
         ),
         GoRoute(
@@ -113,6 +156,11 @@ void main() {
       MaterialApp.router(routerConfig: router, theme: AppTheme.light),
     );
     await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await tester.tap(find.text('I understand'));
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Nearly every day'));
     await tester.tap(find.text('Nearly every day'));
     await tester.pump();
@@ -125,11 +173,14 @@ void main() {
       await tester.ensureVisible(find.text('Not at all'));
       await tester.tap(find.text('Not at all'));
       await tester.pump();
-      await tester.tap(find.text(question == 6 ? 'Submit' : 'Next'));
+      await tester.runAsync(() async {
+        await tester.tap(find.text(question == 6 ? 'Submit' : 'Next'));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      });
       await tester.pumpAndSettle();
     }
     expect(submitted!['score'], 0);
-    expect(submitted!['answers'], List.filled(7, 0));
+    expect(submitted!['answers'], List.generate(7, (i) => i * 10 + 100));
   });
   testWidgets(
     'first assessment requires disclaimer and cancellation does not acknowledge',
@@ -155,7 +206,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.text(
-          'This is not a diagnosis. Talk to a professional for clinical evaluation.',
+          'Not a substitute for professional care. This is not a diagnosis.',
         ),
         findsOneWidget,
       );
@@ -169,21 +220,24 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 30));
       });
       await tester.pumpAndSettle();
-      expect(settings.get(ClinicalDisclaimerSheet.acknowledgementKey), isTrue);
+      expect(settings.get(ClinicalDisclaimerSheet.acknowledgementKey), isNull);
       await tester.runAsync(() => tester.tap(find.text('Start')));
       await tester.pumpAndSettle();
-      expect(find.text('Before we start'), findsNothing);
+      expect(find.text('Before we start'), findsOneWidget);
     },
   );
   testWidgets(
     'chooser includes both clinical cards and hides legacy assessments',
     (tester) async {
       await tester.pumpWidget(
-        MaterialApp(theme: AppTheme.light, home: const QuizSelectionScreen()),
+        MaterialApp(
+          theme: AppTheme.light,
+          home: QuizSelectionScreen(repository: _FlowRepository()),
+        ),
       );
       await tester.pump();
       await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 30)),
+        () => Future<void>.delayed(const Duration(milliseconds: 300)),
       );
       await tester.pump();
       expect(find.text(ClinicalAssessment.phq9.title), findsOneWidget);
