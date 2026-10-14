@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cozy_health/core/widgets/friendly_error.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
@@ -20,13 +21,22 @@ class ProviderScreen extends StatefulWidget {
   State<ProviderScreen> createState() => _ProviderScreenState();
 }
 
-class _ProviderScreenState extends State<ProviderScreen> {
+class _ProviderScreenState extends State<ProviderScreen>
+    with WidgetsBindingObserver {
   late final SettingsService _settingsService;
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController codeController = TextEditingController();
 
+  final Map<String, bool> _invitationFlags = {
+    'moods': false,
+    'journals': false,
+    'quizzes': false,
+    'notes': false,
+  };
+  Timer? _resendTimer;
+  int _resendSeconds = 0;
   bool _loading = true;
   bool _sending = false;
   bool _verifying = false;
@@ -43,16 +53,43 @@ class _ProviderScreenState extends State<ProviderScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _settingsService = widget.settingsService ?? SettingsService();
     _loadProvider();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _resendTimer?.cancel();
     emailController.dispose();
     nameController.dispose();
     codeController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        !_sending &&
+        !_removing &&
+        !_verifying) {
+      _loadProvider();
+    }
+  }
+
+  void _startResendCooldown(int seconds) {
+    _resendTimer?.cancel();
+    setState(() => _resendSeconds = seconds);
+    if (seconds <= 0) return;
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() => _resendSeconds--);
+      if (_resendSeconds <= 0) timer.cancel();
+    });
   }
 
   Future<void> _loadProvider() async {
@@ -68,10 +105,27 @@ class _ProviderScreenState extends State<ProviderScreen> {
       if (!mounted) return;
       _failures = 0;
       final provider = response['provider'];
+      if (provider is Map &&
+          provider['verification_actor'] == 'provider' &&
+          response['has_provider'] != true) {
+        final sentAt = DateTime.tryParse(
+          provider['invitation_sent_at']?.toString() ?? '',
+        );
+        final remaining = sentAt == null
+            ? 0
+            : 60 - DateTime.now().difference(sentAt).inSeconds;
+        _startResendCooldown(remaining.clamp(0, 60));
+      }
 
       setState(() {
         _provider = provider is Map<String, dynamic> ? provider : null;
         _hasProvider = response['has_provider'] == true;
+        if (_provider?['verification_actor'] == 'provider' && !_hasProvider) {
+          final flags = _provider?['consent_flags'] as Map? ?? {};
+          for (final type in _invitationFlags.keys) {
+            _invitationFlags[type] = flags[type] == true;
+          }
+        }
       });
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -95,8 +149,11 @@ class _ProviderScreenState extends State<ProviderScreen> {
   }
 
   Future<void> _requestProvider() async {
+    if (_sending || _removing) return;
     _retry = _requestProvider;
-    final email = emailController.text.trim();
+    final email = emailController.text.trim().isNotEmpty
+        ? emailController.text.trim()
+        : _provider?['provider_email']?.toString() ?? '';
     final name = nameController.text.trim();
 
     if (email.isEmpty || !email.contains('@')) {
@@ -115,6 +172,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
       final response = await _settingsService.requestProvider(
         providerEmail: email,
         providerName: name.isEmpty ? null : name,
+        consentFlags: Map<String, bool>.from(_invitationFlags),
       );
 
       if (!mounted) return;
@@ -127,11 +185,18 @@ class _ProviderScreenState extends State<ProviderScreen> {
       });
 
       if (!mounted) return;
+      if (!_hasProvider) {
+        _startResendCooldown(60);
+      }
 
       AppSnackbar.show(
         context,
         AppSnackbar.fromLegacy(
-          content: Text('Verification code sent to therapist.'),
+          content: Text(
+            _hasProvider
+                ? 'Your provider is already connected.'
+                : 'Invitation email queued for your provider.',
+          ),
         ),
       );
     } on ApiException catch (e) {
@@ -221,6 +286,8 @@ class _ProviderScreenState extends State<ProviderScreen> {
 
     try {
       await _settingsService.removeProvider();
+      _resendTimer?.cancel();
+      _resendSeconds = 0;
       if (!mounted) return;
       _failures = 0;
 
@@ -230,6 +297,9 @@ class _ProviderScreenState extends State<ProviderScreen> {
         emailController.clear();
         nameController.clear();
         codeController.clear();
+        for (final type in _invitationFlags.keys) {
+          _invitationFlags[type] = false;
+        }
       });
 
       if (!mounted) return;
@@ -418,7 +488,9 @@ class _ProviderScreenState extends State<ProviderScreen> {
                         _hasProvider
                             ? 'Your therapist is connected to your account.'
                             : _hasPendingProvider
-                            ? 'A verification code has been sent. Enter the code to complete connection.'
+                            ? (_provider?['verification_actor'] == 'provider'
+                                  ? 'Your provider will enter the emailed code in their dashboard to connect.'
+                                  : 'Enter the verification code to complete your existing request.')
                             : 'Add your personal therapist by entering their email address.',
                         style: AppTextStyles.body1.copyWith(
                           color: AppColors.grey,
@@ -475,7 +547,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
               style: AppTextStyles.heading2.copyWith(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: AppColors.black,
               ),
             ),
           ),
@@ -504,7 +576,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
         2.sh,
 
         Text(
-          'A verification code will be sent to the therapist. Once confirmed, they will be linked to your account.',
+          'Choose what to share. Cozy will email your provider a connection code. They will review your choices before connecting.',
           style: AppTextStyles.body2.copyWith(
             color: AppColors.grey,
             height: 1.4,
@@ -513,16 +585,113 @@ class _ProviderScreenState extends State<ProviderScreen> {
 
         4.sh,
 
+        _invitationChoices(),
+        2.sh,
         AppButton(
           isLoading: _sending,
-          text: _sending ? 'Sending...' : 'Send Code',
+          text: _sending ? 'Sending...' : 'Send invitation',
           onPressed: _sending ? null : _requestProvider,
         ),
       ],
     );
   }
 
+  Widget _invitationChoices() {
+    const labels = {
+      'moods': 'Share mood entries, triggers and coping choices',
+      'journals': 'Share journal summaries',
+      'quizzes': 'Share quiz results',
+      'notes': 'Allow provider notes',
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Your sharing choices',
+          style: AppTextStyles.heading3.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const Text(
+          'All choices start off. You can connect without sharing wellness information and change your choices later.',
+        ),
+        for (final entry in labels.entries)
+          SwitchListTile.adaptive(
+            key: ValueKey('invitation-${entry.key}'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(entry.value),
+            subtitle: entry.key == 'journals'
+                ? const Text(
+                    'Titles, type, word count and dates only. Journal text, transcripts and recordings stay private.',
+                  )
+                : null,
+            value: _invitationFlags[entry.key]!,
+            onChanged: _sending
+                ? null
+                : (value) =>
+                      setState(() => _invitationFlags[entry.key] = value),
+          ),
+      ],
+    );
+  }
+
+  Widget _pendingInvitation() {
+    final email = _provider?['provider_email']?.toString() ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Waiting for your provider',
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          _provider?['invitation_sent_at'] == null
+              ? 'The invitation email could not be queued. Resend it to $email or cancel this request.'
+              : 'The invitation was queued for $email. Your provider signs in with this email and selects Add patient to enter the code. Codes expire after 15 minutes.',
+        ),
+        const SizedBox(height: 16),
+        for (final type in _invitationFlags.keys)
+          Text(
+            '${_invitationFlags[type]! ? "Selected to share" : "Private"}: $type',
+          ),
+        const SizedBox(height: 12),
+        const Text(
+          'No information is available to the provider until they confirm. You can cancel this invitation at any time.',
+        ),
+        const SizedBox(height: 24),
+        AppButton(
+          text: 'Check connection status',
+          onPressed: _loadProvider,
+          isOutlined: true,
+        ),
+        const SizedBox(height: 12),
+        AppButton(
+          text: _resendSeconds > 0
+              ? 'Resend in ${_resendSeconds}s'
+              : 'Resend invitation',
+          isLoading: _sending,
+          onPressed: _sending || _removing || _resendSeconds > 0
+              ? null
+              : _requestProvider,
+        ),
+        const SizedBox(height: 12),
+        AppButton(
+          text: 'Cancel request',
+          isLoading: _removing,
+          onPressed: _removing || _sending ? null : _removeProvider,
+          isOutlined: true,
+        ),
+      ],
+    );
+  }
+
   Widget _pendingVerification() {
+    if (_provider?['verification_actor'] == 'provider') {
+      return _pendingInvitation();
+    }
     final email = _provider?['provider_email']?.toString() ?? '';
     final name = _provider?['provider_name']?.toString() ?? '';
 
@@ -543,7 +712,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
                 name.isEmpty ? 'Pending Therapist' : name,
                 style: AppTextStyles.body1.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: AppColors.black,
                 ),
               ),
               1.sh,
@@ -625,7 +794,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
                       name,
                       style: AppTextStyles.body1.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: AppColors.black,
                       ),
                     ),
                     0.8.sh,
@@ -721,7 +890,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
       child: Text(
         text,
         style: AppTextStyles.body2.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
+          color: AppColors.black,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -736,7 +905,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      style: AppTextStyles.body1.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+      style: AppTextStyles.body1.copyWith(color: AppColors.black, fontSize: 14),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: AppTextStyles.body2.copyWith(color: AppColors.grey),

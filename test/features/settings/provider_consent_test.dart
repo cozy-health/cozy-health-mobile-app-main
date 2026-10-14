@@ -225,7 +225,15 @@ void main() {
     expect(find.text('Settings destination'), findsOneWidget);
     router.push('/provider');
     await tester.pumpAndSettle();
-    expect(find.byType(SwitchListTile), findsNothing);
+    expect(find.byKey(const ValueKey('consent-moods')), findsNothing);
+    for (final type in ['moods', 'journals', 'quizzes', 'notes']) {
+      expect(
+        tester
+            .widget<SwitchListTile>(find.byKey(ValueKey('invitation-$type')))
+            .value,
+        isFalse,
+      );
+    }
     expect(find.text('Dr. Avery'), findsNothing);
   });
 

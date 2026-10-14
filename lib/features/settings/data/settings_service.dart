@@ -36,12 +36,17 @@ class SettingsService {
   Future<Map<String, dynamic>> requestProvider({
     required String providerEmail,
     String? providerName,
+    Map<String, bool>? consentFlags,
   }) async {
     return responseMap(
       await _apiClient.post(
         ApiConstants.providerRequest,
         body: {
           'provider_email': providerEmail,
+          if (consentFlags != null) ...{
+            'verification_actor': 'provider',
+            'consent_flags': consentFlags,
+          },
           if (providerName != null) 'provider_name': providerName,
         },
       ),
