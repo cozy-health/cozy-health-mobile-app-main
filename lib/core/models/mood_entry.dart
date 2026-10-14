@@ -62,6 +62,8 @@ class MoodEntry extends HiveObject {
 
   @HiveField(13)
   final bool isCrisisFlagged;
+  @HiveField(14)
+  final String? expressionSlug;
 
   MoodEntry({
     required this.id,
@@ -76,6 +78,7 @@ class MoodEntry extends HiveObject {
     this.copingStrategies,
     this.copingHelped,
     this.isCrisisFlagged = false,
+    this.expressionSlug,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -94,6 +97,7 @@ class MoodEntry extends HiveObject {
     if (note != null) json['note'] = note;
     if (copingStrategies != null) json['coping_strategies'] = copingStrategies;
     if (copingHelped != null) json['coping_helped'] = copingHelped;
+    if (expressionSlug != null) json['expression_slug'] = expressionSlug;
     json['is_crisis_flagged'] = isCrisisFlagged;
     json['client_created_at'] = createdAt.toUtc().toIso8601String();
     json['client_updated_at'] = updatedAt.toUtc().toIso8601String();
@@ -119,6 +123,7 @@ class MoodEntry extends HiveObject {
           ?.map((e) => e as String)
           .toList(),
       copingHelped: json['coping_helped'] as String?,
+      expressionSlug: json['expression_slug'] as String?,
       isCrisisFlagged: json['is_crisis_flagged'] as bool? ?? false,
       createdAt: json['client_created_at'] != null
           ? DateTime.parse(json['client_created_at'])
@@ -151,6 +156,7 @@ class MoodEntryAdapter extends TypeAdapter<MoodEntry> {
       createdAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
       isCrisisFlagged: reader.availableBytes > 0 ? reader.readBool() : false,
+      expressionSlug: reader.availableBytes > 0 ? reader.readString() : null,
     );
   }
 
@@ -170,5 +176,6 @@ class MoodEntryAdapter extends TypeAdapter<MoodEntry> {
     writer.writeInt(obj.createdAt.millisecondsSinceEpoch);
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
     writer.writeBool(obj.isCrisisFlagged);
+    writer.writeString(obj.expressionSlug ?? '');
   }
 }

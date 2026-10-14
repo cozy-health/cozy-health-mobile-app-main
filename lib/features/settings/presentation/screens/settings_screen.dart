@@ -246,6 +246,16 @@ class SettingsScreen extends StatelessWidget {
                 title: 'SUBSCRIPTION',
                 children: [
                   _SettingsRow(
+                    icon: Icons.task_alt,
+                    label: 'Cozy Challenges',
+                    onTap: () => context.push(AppRouter.wellnessChallenges),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.inventory_2_outlined,
+                    label: 'Cozy Packages',
+                    onTap: () => context.push(AppRouter.wellnessPackages),
+                  ),
+                  _SettingsRow(
                     icon: Icons.star_border,
                     label: 'Current Plan: Free',
                     onTap: () => context.push(AppRouter.subscription),

@@ -10,6 +10,7 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/repositories/mood_repository.dart';
+import '../../../../core/repositories/wellness_repository.dart';
 import '../../../../core/models/mood_entry.dart';
 import '../../../crisis/presentation/screens/crisis_screens.dart';
 import '../../../crisis/services/crisis_detector.dart';
@@ -41,6 +42,8 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   int _step = 1;
   String? _moodLabel;
   String? _moodEmoji;
+  String? _expressionSlug;
+  String? _copingHelped;
   int _intensity = 5;
   final Set<String> _bodyZones = {};
   final Set<String> _triggers = {};
@@ -53,7 +56,31 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   Map<String, dynamic>? _savedDraft;
   Future<void> _draftWrites = Future.value();
 
-  List<_MoodOption> get _moods => [
+  Map<String, dynamic>? _catalog;
+  List<_MoodOption> get _moods {
+    if (_catalog != null) {
+      final expressions = (_catalog!['expressions'] as List).cast<Map>();
+      return (_catalog!['moods'] as List).cast<Map>().map((mood) {
+        final expression = expressions
+            .where((row) => row['feeling_id'] == mood['id'])
+            .firstOrNull;
+        return _MoodOption(
+          (expression?['emoji'] ?? MoodEntry.moodEmojis[mood['slug']] ?? '😐')
+              .toString(),
+          mood['slug'].toString(),
+          mood['name'].toString(),
+          Theme.of(context).colorScheme.primary,
+          (expression?['description'] ??
+                  mood['description'] ??
+                  'Thanks for checking in.')
+              .toString(),
+        );
+      }).toList();
+    }
+    return _defaultMoods;
+  }
+
+  List<_MoodOption> get _defaultMoods => [
     _MoodOption(
       MoodEntry.moodEmojis['good']!,
       'good',
@@ -119,7 +146,12 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     ),
   ];
 
-  final List<String> _triggerOptions = const [
+  List<String> get _triggerOptions => _catalog == null
+      ? _defaultTriggers
+      : (_catalog!['triggers'] as List)
+            .map((row) => row['name'].toString())
+            .toList();
+  final List<String> _defaultTriggers = const [
     'Work',
     'Family',
     'Friends',
@@ -143,7 +175,22 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     'Legs',
   ];
 
-  final List<_CopingOption> _copingOptions = const [
+  List<_CopingOption> get _copingOptions => _catalog == null
+      ? _defaultCoping
+      : (_catalog!['coping'] as List).map((row) {
+          final routes = {
+            'box-breathing': AppRouter.breathing,
+            '5-4-3-2-1-grounding': AppRouter.grounding,
+            'quick-journal': AppRouter.journal,
+          };
+          return _CopingOption(
+            (row['icon'] ?? '🌿').toString(),
+            row['name'].toString(),
+            (row['description'] ?? '').toString(),
+            routes[row['slug']],
+          );
+        }).toList();
+  final List<_CopingOption> _defaultCoping = const [
     _CopingOption('🌬', 'Box breathing', '2 minutes', AppRouter.breathing),
     _CopingOption(
       '🧘',
@@ -177,9 +224,14 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       _energy = entry.energyLevel ?? 5;
       _noteController.text = entry.note ?? '';
       _coping.addAll(entry.copingStrategies ?? const []);
+      _expressionSlug = entry.expressionSlug;
+      _copingHelped = entry.copingHelped;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _restartEntrance());
     if (entry == null) _loadDraft();
+    WellnessRepository().catalog().then((catalog) {
+      if (mounted && catalog != null) setState(() => _catalog = catalog);
+    });
   }
 
   Future<void> _loadDraft() async {
@@ -202,6 +254,8 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     'energy': _energy,
     'note': _noteController.text,
     'coping': _coping.toList(),
+    'expression_slug': _expressionSlug,
+    'coping_helped': _copingHelped,
   };
 
   void _queueDraft() {
@@ -238,6 +292,8 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       _energy = draft['energy'] as int? ?? 5;
       _noteController.text = draft['note'] as String? ?? '';
       _coping.addAll(List<String>.from(draft['coping'] as List? ?? []));
+      _expressionSlug = draft['expression_slug'] as String?;
+      _copingHelped = draft['coping_helped'] as String?;
     });
     _restartEntrance();
   }
@@ -394,6 +450,8 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       energyLevel: _energy,
       note: note.isNotEmpty ? note : null,
       copingStrategies: _coping.toList(),
+      copingHelped: _coping.isEmpty ? null : _copingHelped,
+      expressionSlug: _expressionSlug,
       isCrisisFlagged: shouldShowCrisisSupport,
       createdAt: widget.entry?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
@@ -526,6 +584,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   void _selectMood(_MoodOption mood) {
     HapticFeedback.lightImpact();
     setState(() {
+      if (_moodLabel != mood.key) _expressionSlug = null;
       _moodLabel = mood.key;
       _moodEmoji = mood.emoji;
     });
@@ -610,6 +669,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
                   child: _MascotMessage(message: selected.message),
                 ),
         ),
+        if (_catalog != null && _moodLabel != null) _expressionChoices(),
       ],
     );
   }
@@ -682,6 +742,36 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
       _MascotMessage(message: _intensityMessage),
     ],
   );
+  Widget _expressionChoices() {
+    final mood = (_catalog!['moods'] as List)
+        .cast<Map>()
+        .where((row) => row['slug'] == _moodLabel)
+        .firstOrNull;
+    if (mood == null) return const SizedBox.shrink();
+    final expressions = (_catalog!['expressions'] as List).cast<Map>().where(
+      (row) => row['feeling_id'] == mood['id'],
+    );
+    return Wrap(
+      spacing: 8,
+      children: expressions
+          .map(
+            (row) => ChoiceChip(
+              label: Text('${row['emoji'] ?? ''} ${row['name']}'),
+              selected: row['slug'] == _expressionSlug,
+              onSelected: (selected) {
+                setState(
+                  () => _expressionSlug = selected
+                      ? row['slug'].toString()
+                      : null,
+                );
+                _queueDraft();
+              },
+            ),
+          )
+          .toList(),
+    );
+  }
+
   Widget _bodyStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -933,9 +1023,30 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
                     : _coping.add(option.title);
               });
             },
-            onTry: () => context.push(option.route),
+            onTry: option.route == null
+                ? null
+                : () => context.push(option.route!),
           ),
           const SizedBox(height: 10),
+        ],
+        if (_coping.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          const Text('Did these coping activities help?'),
+          Wrap(
+            spacing: 8,
+            children: ['yes', 'somewhat', 'no']
+                .map(
+                  (answer) => ChoiceChip(
+                    label: Text(answer),
+                    selected: _copingHelped == answer,
+                    onSelected: (selected) {
+                      setState(() => _copingHelped = selected ? answer : null);
+                      _queueDraft();
+                    },
+                  ),
+                )
+                .toList(),
+          ),
         ],
       ],
     );
@@ -1774,7 +1885,7 @@ class _CopingCard extends StatelessWidget {
   final _CopingOption option;
   final bool selected;
   final VoidCallback onSelect;
-  final VoidCallback onTry;
+  final VoidCallback? onTry;
 
   @override
   Widget build(BuildContext context) {
@@ -1808,7 +1919,8 @@ class _CopingCard extends StatelessWidget {
               ),
             ),
           ),
-          TextButton(onPressed: onTry, child: const Text('Try')),
+          if (onTry != null)
+            TextButton(onPressed: onTry, child: const Text('Try')),
           Checkbox(value: selected, onChanged: (_) => onSelect()),
         ],
       ),
@@ -2100,7 +2212,7 @@ class _CopingOption {
   final String emoji;
   final String title;
   final String duration;
-  final String route;
+  final String? route;
 }
 
 class _ReviewRowData {

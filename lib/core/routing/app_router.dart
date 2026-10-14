@@ -1,4 +1,5 @@
 import '../../features/settings/presentation/screens/digital_wellbeing_screen.dart';
+import '../../features/wellness/presentation/wellness_screen.dart';
 import '../security_gate.dart';
 import 'package:flutter/material.dart';
 import '../models/app_notification.dart';
@@ -180,6 +181,8 @@ class AppRouter {
   static const String dailyAffirmation = '/daily-affirmation';
 
   static const String communityHub = '/community';
+  static const String wellnessChallenges = '/wellness/challenges';
+  static const String wellnessPackages = '/wellness/packages';
   static const String createPost = '/community/create-post';
   static const String postDetail = '/community/post-detail';
   static const String userProfile = '/community/user-profile';
@@ -471,6 +474,14 @@ class AppRouter {
         path: communityHub,
         name: 'communityHub',
         builder: (_, __) => const CommunityHubScreen(),
+      ),
+      GoRoute(
+        path: wellnessChallenges,
+        builder: (_, __) => const WellnessScreen(),
+      ),
+      GoRoute(
+        path: wellnessPackages,
+        builder: (_, __) => const WellnessScreen(packages: true),
       ),
       GoRoute(
         path: createPost,
