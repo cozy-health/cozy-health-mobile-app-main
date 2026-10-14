@@ -112,7 +112,7 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
                     children: [
                       _buildLegendItem(
                         'Activity',
-                        const Color(0xFFE85D3A),
+                        AppColors.warmOrange,
                         true,
                       ),
                       SizedBox(width: 24),
@@ -328,7 +328,7 @@ class _DualLineChartPainter extends CustomPainter {
     }
 
     final activityPaint = Paint()
-      ..color = Color(0xFFE85D3A)
+      ..color = AppColors.warmOrange
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;
@@ -371,11 +371,11 @@ class _DualLineChartPainter extends CustomPainter {
         begin: Alignment.bottomCenter,
         end: Alignment.topCenter,
         colors: [
-          const Color(0xFFD9C7B8),
-          const Color(0xFFE8B89D),
-          const Color(0xFFF5C318),
-          const Color(0xFF8DB8A8),
-          const Color(0xFF2D9E54),
+          AppColors.warmOrange,
+          AppColors.warmOrange,
+          AppColors.warmYellow,
+          AppColors.success,
+          AppColors.success,
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..strokeWidth = 2

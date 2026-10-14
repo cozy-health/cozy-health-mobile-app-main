@@ -30,11 +30,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
               Container(
                 height: 120,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFF0E6), Color(0xFFFFE4D6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
                 ),
                 padding: const EdgeInsets.all(24),
@@ -141,7 +137,9 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                   height: 56,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -172,14 +170,21 @@ class CommunityGuidelinesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGuideline(BuildContext context, String icon, String title, String body) {
+  Widget _buildGuideline(
+    BuildContext context,
+    String icon,
+    String title,
+    String body,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: context.communitySurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.communityBorder.withValues(alpha: 0.7)),
+        border: Border.all(
+          color: context.communityBorder.withValues(alpha: 0.7),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,7 +215,10 @@ class CommunityGuidelinesScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('• ', style: TextStyle(fontSize: 18, color: context.communityText)),
+          Text(
+            '• ',
+            style: TextStyle(fontSize: 18, color: context.communityText),
+          ),
           Expanded(
             child: Text(
               text,

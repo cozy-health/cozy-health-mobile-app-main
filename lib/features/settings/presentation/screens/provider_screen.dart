@@ -408,7 +408,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
                         style: AppTextStyles.heading1.copyWith(
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.black,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
 
@@ -475,7 +475,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
               style: AppTextStyles.heading2.copyWith(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: AppColors.black,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -533,7 +533,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
           width: double.infinity,
           padding: EdgeInsets.all(4.w),
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F5FA),
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
@@ -543,7 +543,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
                 name.isEmpty ? 'Pending Therapist' : name,
                 style: AppTextStyles.body1.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               1.sh,
@@ -555,7 +555,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
               Text(
                 'Pending verification',
                 style: AppTextStyles.body2.copyWith(
-                  color: Colors.orange,
+                  color: AppColors.warmOrange,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -599,7 +599,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
           width: double.infinity,
           padding: EdgeInsets.all(4.w),
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F5FA),
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
@@ -625,7 +625,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
                       name,
                       style: AppTextStyles.body1.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.black,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     0.8.sh,
@@ -721,7 +721,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
       child: Text(
         text,
         style: AppTextStyles.body2.copyWith(
-          color: AppColors.black,
+          color: Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -736,7 +736,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      style: AppTextStyles.body1.copyWith(color: AppColors.black, fontSize: 14),
+      style: AppTextStyles.body1.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: AppTextStyles.body2.copyWith(color: AppColors.grey),
@@ -745,7 +745,7 @@ class _ProviderScreenState extends State<ProviderScreen> {
         contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.8.h),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Color(0xFFE1E4EA)),
+          borderSide: BorderSide(color: AppColors.borderLight),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),

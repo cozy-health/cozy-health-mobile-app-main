@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -134,7 +135,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                         : DismissDirection.endToStart,
                     confirmDismiss: (_) => _revoke(row),
                     background: const ColoredBox(
-                      color: Colors.red,
+                      color: AppColors.danger,
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: Icon(Icons.logout),

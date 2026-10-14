@@ -30,13 +30,13 @@ class CozyColors extends ThemeExtension<CozyColors> {
     triggerHigh: AppColors.danger,
   );
   static const dark = CozyColors(
-    crisis: Color(0xFFFF8A6A),
+    crisis: AppColors.crisisPrimary,
     calendarBg: AppColors.accentPeachDark,
     journalingBg: AppColors.accentSageDark,
     quizBg: AppColors.accentSkyDark,
-    triggerLow: Color(0xFF69D68C),
-    triggerMed: Color(0xFFFFAB70),
-    triggerHigh: Color(0xFFFF8585),
+    triggerLow: AppColors.success,
+    triggerMed: AppColors.warmOrange,
+    triggerHigh: AppColors.danger,
   );
 
   @override

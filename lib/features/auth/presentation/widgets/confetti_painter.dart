@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_colors.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 
@@ -5,14 +6,14 @@ import 'package:flutter/material.dart';
 // Confetti colors extracted from Signup-3.svg
 // ---------------------------------------------------------------------------
 const List<Color> kConfettiColors = [
-  Color(0xFF0460D8), // Brand blue
-  Color(0xFFFBBC04), // Yellow
-  Color(0xFFEA4335), // Red-coral
-  Color(0xFF34A853), // Green
-  Color(0xFFFF6B6B), // Pink-red
-  Color(0xFFA259FF), // Purple
-  Color(0xFF00C2FF), // Cyan
-  Color(0xFFFF9500), // Orange
+  AppColors.primary, // Brand blue
+  AppColors.warmYellow, // Yellow
+  AppColors.warmOrange, // Red-coral
+  AppColors.success, // Green
+  AppColors.warmOrange, // Pink-red
+  AppColors.primary, // Purple
+  AppColors.primary, // Cyan
+  AppColors.warmOrange, // Orange
 ];
 
 enum ConfettiShape { rect, circle, ribbon, arc }

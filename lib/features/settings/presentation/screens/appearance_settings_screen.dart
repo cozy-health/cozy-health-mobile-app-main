@@ -31,14 +31,10 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
         final safeTheme = theme.isEmpty ? 'system' : theme;
 
         // Theme: Capitalize first letter
-        _selectedTheme =
-            safeTheme[0].toUpperCase() + safeTheme.substring(1);
+        _selectedTheme = safeTheme[0].toUpperCase() + safeTheme.substring(1);
 
         // Accent Color
-        if (profile.accentColor != 'lavender' &&
-            int.tryParse(profile.accentColor) != null) {
-          _selectedAccent = Color(int.parse(profile.accentColor));
-        }
+        _selectedAccent = AppColors.resolveAccent(profile.accentColor);
       });
     }
   }
@@ -54,14 +50,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
   }
 
   final List<String> _themes = ['Light', 'Dark', 'System'];
-  final List<Color> _accents = [
-    AppColors.primary,
-    const Color(0xFF3B82F6), // Blue
-    const Color(0xFF8B5CF6), // Purple
-    const Color(0xFFEC4899), // Pink
-    const Color(0xFFF97316), // Orange
-    const Color(0xFF14B8A6), // Teal
-  ];
+  final List<Color> _accents = AppColors.brandPalette;
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +251,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                   return Semantics(
                     selected: isSelected,
                     button: true,
-                    label: 'Accent color swatch',
+                    label: '${['Blue', 'Green', 'Orange', 'Yellow'][_accents.indexOf(color)]} accent color',
                     child: GestureDetector(
                       onTap: () => _updateAccent(color),
                       child: Container(
@@ -279,7 +268,12 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                               : null,
                         ),
                         child: isSelected
-                            ? Icon(Icons.check, color: AppColors.white)
+                            ? Icon(
+                                Icons.check,
+                                color: color == AppColors.primary
+                                    ? Colors.white
+                                    : Colors.black,
+                              )
                             : null,
                       ),
                     ),

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -32,7 +33,7 @@ class ArticleCardFeatured extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [
               Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-              const Color(0xFFE8A050).withValues(alpha: 0.05), // warm orange
+              AppColors.warmOrange.withValues(alpha: 0.05), // warm orange
             ],
           ),
           border: Border.all(

@@ -127,7 +127,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         _strength < 0.3
                             ? AppColors.danger
                             : (_strength < 0.7
-                                  ? Colors.orange
+                                  ? AppColors.warmOrange
                                   : Theme.of(context).colorScheme.primary),
                       ),
                       minHeight: 6,

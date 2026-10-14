@@ -215,9 +215,6 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
   }
 
   ThemeData _themeWithAccent(ThemeData theme, Color accent) {
-    if (theme.brightness == Brightness.dark && accent == AppColors.primary) {
-      accent = AppColors.primaryDark;
-    }
     final onAccent = accent.computeLuminance() > .179
         ? Colors.black
         : Colors.white;
@@ -318,19 +315,5 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
     );
   }
 
-  Color _accentColorFromString(String? value) {
-    final raw = value?.trim();
-    if (raw == null || raw.isEmpty || raw == 'lavender') {
-      return const Color(0xFF0460D8);
-    }
-
-    if (raw.startsWith('#') && raw.length == 7) {
-      return Color(int.parse('FF${raw.substring(1)}', radix: 16));
-    }
-
-    final parsed = int.tryParse(raw);
-    if (parsed != null) return Color(parsed);
-
-    return const Color(0xFF0460D8);
-  }
+  Color _accentColorFromString(String? value) => AppColors.resolveAccent(value);
 }

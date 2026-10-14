@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class PageIndicator extends StatelessWidget {
@@ -25,7 +26,7 @@ class PageIndicator extends StatelessWidget {
             decoration: BoxDecoration(
               color: currentPage == index
                   ? Theme.of(context).colorScheme.primary
-                  : const Color(0xFFCDDFF7),
+                  : AppColors.borderLight,
               borderRadius: BorderRadius.circular(4),
             ),
           ),

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,7 +13,7 @@ class HomeQuizCard extends StatelessWidget {
     final dark = theme.brightness == Brightness.dark;
     final textColor = dark
         ? theme.colorScheme.onSurface
-        : const Color(0xFF555965);
+        : AppColors.textMutedLight;
     final art = Image.asset(
       'assets/png/home_quiz_brain.png',
       width: 146.59,

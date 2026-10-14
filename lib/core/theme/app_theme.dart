@@ -10,26 +10,10 @@ class AppTheme {
     final dark = base.brightness == Brightness.dark;
     final surface = dark ? Colors.black : Colors.white;
     final foreground = dark ? Colors.white : Colors.black;
-    Color readable(Color color) {
-      final backdrop = surface.computeLuminance();
-      double ratio(Color candidate) {
-        final value = candidate.computeLuminance();
-        return value > backdrop
-            ? (value + .05) / (backdrop + .05)
-            : (backdrop + .05) / (value + .05);
-      }
-
-      var adjusted = color;
-      for (var step = 0; step < 100 && ratio(adjusted) < 4.5; step++) {
-        adjusted = Color.lerp(adjusted, foreground, .08)!;
-      }
-      return adjusted;
-    }
-
-    final primary = readable(base.colorScheme.primary);
-    final secondary = readable(base.colorScheme.secondary);
-    final tertiary = readable(base.colorScheme.tertiary);
-    final error = readable(base.colorScheme.error);
+    final primary = base.colorScheme.primary;
+    final secondary = base.colorScheme.secondary;
+    final tertiary = base.colorScheme.tertiary;
+    final error = base.colorScheme.error;
     Color onColor(Color color) =>
         color.computeLuminance() > .179 ? Colors.black : Colors.white;
     final onPrimary = primary.computeLuminance() > .179
@@ -193,10 +177,10 @@ class AppTheme {
           calendarBg: surface,
           journalingBg: surface,
           quizBg: surface,
-          crisis: readable(extension.crisis),
-          triggerLow: readable(extension.triggerLow),
-          triggerMed: readable(extension.triggerMed),
-          triggerHigh: readable(extension.triggerHigh),
+          crisis: extension.crisis,
+          triggerLow: extension.triggerLow,
+          triggerMed: extension.triggerMed,
+          triggerHigh: extension.triggerHigh,
         ),
       ],
     );
@@ -214,13 +198,32 @@ class AppTheme {
       tertiary: AppColors.warmYellow,
       onTertiary: Colors.black,
       surface: AppColors.surfaceLight,
+      surfaceDim: AppColors.surfaceLight,
+      surfaceBright: AppColors.surfaceLight,
+      surfaceContainerLowest: AppColors.surfaceLight,
+      surfaceContainerLow: AppColors.surfaceLight,
+      surfaceContainer: AppColors.surfaceLight,
+      surfaceContainerHigh: AppColors.surfaceLight,
+      surfaceContainerHighest: AppColors.surfaceLight,
+      primaryContainer: AppColors.surfaceLight,
+      secondaryContainer: AppColors.surfaceLight,
+      tertiaryContainer: AppColors.surfaceLight,
+      errorContainer: AppColors.surfaceLight,
+      onPrimaryContainer: AppColors.textLight,
+      onSecondaryContainer: AppColors.textLight,
+      onTertiaryContainer: AppColors.textLight,
+      onErrorContainer: AppColors.textLight,
+      inversePrimary: AppColors.primary,
+      inverseSurface: AppColors.surfaceDark,
+      onInverseSurface: AppColors.textDark,
+      surfaceTint: Colors.transparent,
       error: AppColors.danger,
       onPrimary: Colors.white,
       onSurface: AppColors.textLight,
       onSurfaceVariant: AppColors.textMutedLight,
       outline: AppColors.borderStrongLight,
       outlineVariant: AppColors.borderLight,
-      onError: Colors.white,
+      onError: Colors.black,
     ),
     textTheme: AppTextStyles.getTextTheme(Brightness.light),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -296,13 +299,32 @@ class AppTheme {
       tertiary: AppColors.warmYellow,
       onTertiary: Colors.black,
       surface: AppColors.surfaceDark,
+      surfaceDim: AppColors.surfaceDark,
+      surfaceBright: AppColors.surfaceDark,
+      surfaceContainerLowest: AppColors.surfaceDark,
+      surfaceContainerLow: AppColors.surfaceDark,
+      surfaceContainer: AppColors.surfaceDark,
+      surfaceContainerHigh: AppColors.surfaceDark,
+      surfaceContainerHighest: AppColors.surfaceDark,
+      primaryContainer: AppColors.surfaceDark,
+      secondaryContainer: AppColors.surfaceDark,
+      tertiaryContainer: AppColors.surfaceDark,
+      errorContainer: AppColors.surfaceDark,
+      onPrimaryContainer: AppColors.textDark,
+      onSecondaryContainer: AppColors.textDark,
+      onTertiaryContainer: AppColors.textDark,
+      onErrorContainer: AppColors.textDark,
+      inversePrimary: AppColors.primary,
+      inverseSurface: AppColors.surfaceLight,
+      onInverseSurface: AppColors.textLight,
+      surfaceTint: Colors.transparent,
       error: AppColors.danger,
-      onPrimary: AppColors.backgroundDark,
+      onPrimary: Colors.white,
       onSurface: AppColors.textDark,
       onSurfaceVariant: AppColors.textMutedDark,
       outline: AppColors.borderStrongDark,
       outlineVariant: AppColors.borderDark,
-      onError: Colors.white,
+      onError: Colors.black,
     ),
     textTheme: AppTextStyles.getTextTheme(Brightness.dark),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(

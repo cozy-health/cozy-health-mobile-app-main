@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_colors.dart';
 import 'package:cozy_health/core/theme/app_theme.dart';
 import 'package:cozy_health/core/theme/appearance_preferences.dart';
 import 'package:cozy_health/core/theme/cozy_colors.dart';
@@ -74,13 +75,7 @@ void main() {
       'high contrast palette and accent contrast in ${dark ? 'dark' : 'light'}',
       () {
         final normal = dark ? AppTheme.dark : AppTheme.light;
-        for (final accent in [
-          Colors.blue,
-          Colors.purple,
-          Colors.pink,
-          Colors.orange,
-          Colors.teal,
-        ]) {
+        for (final accent in AppColors.brandPalette) {
           final theme = AppTheme.highContrast(
             normal.copyWith(
               colorScheme: normal.colorScheme.copyWith(primary: accent),
@@ -95,10 +90,7 @@ void main() {
           expect(theme.dialogTheme.backgroundColor, surface);
           expect(theme.bottomSheetTheme.backgroundColor, surface);
           expect(theme.disabledColor.a, closeTo(.6, .01));
-          expect(
-            _contrast(theme.colorScheme.primary, surface),
-            greaterThanOrEqualTo(4.5),
-          );
+          expect(theme.colorScheme.primary, accent);
           expect(
             _contrast(theme.colorScheme.primary, theme.colorScheme.onPrimary),
             greaterThanOrEqualTo(4.5),

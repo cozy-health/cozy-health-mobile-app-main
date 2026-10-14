@@ -120,7 +120,7 @@ class _SleepMoodScreenState extends State<SleepMoodScreen>
                     children: [
                       _buildLegendItem(
                         'Sleep quality (1-5)',
-                        const Color(0xFFA78BC7),
+                        AppColors.primary,
                         true,
                       ),
                       SizedBox(width: 24),
@@ -288,12 +288,12 @@ class _DualLineChartPainter extends CustomPainter {
       canvas.drawCircle(
         Offset(0, size.height - moodData[0] / maxData * size.height),
         4,
-        Paint()..color = const Color(0xFF2D9E54),
+        Paint()..color = AppColors.success,
       );
       canvas.drawCircle(
         Offset(0, size.height - sleepData[0] / maxData * size.height),
         4,
-        Paint()..color = Color(0xFFA78BC7),
+        Paint()..color = AppColors.primary,
       );
     }
     _drawSleepLine(canvas, size, maxData, pointWidth);
@@ -348,7 +348,7 @@ class _DualLineChartPainter extends CustomPainter {
     }
 
     final sleepPaint = Paint()
-      ..color = Color(0xFFA78BC7)
+      ..color = AppColors.primary
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;
@@ -391,11 +391,11 @@ class _DualLineChartPainter extends CustomPainter {
         begin: Alignment.bottomCenter,
         end: Alignment.topCenter,
         colors: [
-          const Color(0xFFD9C7B8),
-          const Color(0xFFE8B89D),
-          const Color(0xFFF5C318),
-          const Color(0xFF8DB8A8),
-          const Color(0xFF2D9E54),
+          AppColors.warmOrange,
+          AppColors.warmOrange,
+          AppColors.warmYellow,
+          AppColors.success,
+          AppColors.success,
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..strokeWidth = 2

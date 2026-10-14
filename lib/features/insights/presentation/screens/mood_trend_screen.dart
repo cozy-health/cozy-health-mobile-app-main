@@ -361,11 +361,11 @@ class _MoodAreaChartPainter extends CustomPainter {
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
           colors: [
-            const Color(0xFFD9C7B8), // Very low
-            const Color(0xFFE8B89D), // Low
-            const Color(0xFFF5C318), // Medium
-            const Color(0xFF8DB8A8), // Good
-            const Color(0xFF2D9E54), // Very good
+            AppColors.warmOrange, // Very low
+            AppColors.warmOrange, // Low
+            AppColors.warmYellow, // Medium
+            AppColors.success, // Good
+            AppColors.success, // Very good
           ],
         ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
         ..strokeWidth = 3

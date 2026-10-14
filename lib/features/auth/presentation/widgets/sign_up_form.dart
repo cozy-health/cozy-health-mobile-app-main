@@ -264,12 +264,12 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                 width: double.infinity,
                 padding: EdgeInsets.all(4.w),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   _generalError!,
-                  style: AppTextStyles.body2.copyWith(color: Colors.red),
+                  style: AppTextStyles.body2.copyWith(color: AppColors.danger),
                 ),
               ),
               SizedBox(height: 8),
@@ -278,7 +278,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
             if (_usernameError != null) ...[
               Text(
                 _usernameError!,
-                style: AppTextStyles.body2.copyWith(color: Colors.red),
+                style: AppTextStyles.body2.copyWith(color: AppColors.danger),
               ),
               SizedBox(height: 4),
             ],
@@ -293,7 +293,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
             if (_emailError != null) ...[
               Text(
                 _emailError!,
-                style: AppTextStyles.body2.copyWith(color: Colors.red),
+                style: AppTextStyles.body2.copyWith(color: AppColors.danger),
               ),
               SizedBox(height: 4),
             ],
@@ -309,7 +309,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
             if (_passwordError != null) ...[
               Text(
                 _passwordError!,
-                style: AppTextStyles.body2.copyWith(color: Colors.red),
+                style: AppTextStyles.body2.copyWith(color: AppColors.danger),
               ),
               SizedBox(height: 4),
             ],
@@ -325,7 +325,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
             if (_confirmPasswordError != null) ...[
               Text(
                 _confirmPasswordError!,
-                style: AppTextStyles.body2.copyWith(color: Colors.red),
+                style: AppTextStyles.body2.copyWith(color: AppColors.danger),
               ),
               SizedBox(height: 4),
             ],

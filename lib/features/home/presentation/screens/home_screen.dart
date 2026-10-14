@@ -640,7 +640,7 @@ class _Header extends StatelessWidget {
                               top: 4,
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
-                                  color: Color(0xFF55D288),
+                                  color: AppColors.success,
                                   shape: BoxShape.circle,
                                 ),
                                 child: SizedBox(width: 8, height: 8),

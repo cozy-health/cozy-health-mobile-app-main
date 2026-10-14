@@ -156,7 +156,7 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: isRecording
-                        ? Colors.red
+                        ? AppColors.danger
                         : Theme.of(context).colorScheme.primary,
                     width: 4,
                   ),
@@ -167,7 +167,7 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                     height: 32,
                     decoration: BoxDecoration(
                       color: isRecording
-                          ? Colors.red
+                          ? AppColors.danger
                           : Theme.of(context).colorScheme.primary,
                       borderRadius: isRecording
                           ? BorderRadius.circular(4)
@@ -190,10 +190,10 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
                       // Cancel recording
                       context.pop();
                     },
-                    icon: Icon(Icons.close, color: Colors.red),
+                    icon: Icon(Icons.close, color: AppColors.danger),
                     label: Text(
                       'Cancel',
-                      style: AppTextStyles.body1.copyWith(color: Colors.red),
+                      style: AppTextStyles.body1.copyWith(color: AppColors.danger),
                     ),
                   ),
                 if (!isRecording)

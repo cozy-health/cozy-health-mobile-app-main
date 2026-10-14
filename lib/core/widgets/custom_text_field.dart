@@ -51,14 +51,14 @@ class _CustomTextFieldState extends State<CustomTextField> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: widget.hasError ? Colors.red : AppColors.midGrey,
+            color: widget.hasError ? AppColors.danger : AppColors.midGrey,
             width: 1.5,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: widget.hasError ? Colors.red : AppColors.midGrey,
+            color: widget.hasError ? AppColors.danger : AppColors.midGrey,
             width: 1.5,
           ),
         ),
@@ -66,18 +66,18 @@ class _CustomTextFieldState extends State<CustomTextField> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
             color: widget.hasError
-                ? Colors.red
+                ? AppColors.danger
                 : Theme.of(context).colorScheme.primary,
             width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderSide: const BorderSide(color: AppColors.danger, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -98,7 +98,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                           width: 20,
                           height: 20,
                           colorFilter: const ColorFilter.mode(
-                            Colors.red,
+                            AppColors.danger,
                             BlendMode.srcIn,
                           ),
                         )
@@ -123,7 +123,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                   width: 20,
                   height: 20,
                   colorFilter: const ColorFilter.mode(
-                    Colors.red,
+                    AppColors.danger,
                     BlendMode.srcIn,
                   ),
                 ),

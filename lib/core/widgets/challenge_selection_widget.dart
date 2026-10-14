@@ -15,13 +15,16 @@ class ChallengeSelectionWidget extends StatelessWidget {
   final Function(String) onChallengeToggle;
 
   static const List<BubbleTheme> _themes = [
-    BubbleTheme(Color(0xFFFFE0D0), Color(0xFFCC5500)), // Peach/Orange
-    BubbleTheme(Color(0xFFD1F2D9), Color(0xFF16A34A)), // Mint/Emerald
-    BubbleTheme(Color(0xFFFFC5C5), Color(0xFFB91C1C)), // Pink/Red
-    BubbleTheme(Color(0xFFCBE3FF), Color(0xFF1D4ED8)), // Blue/Dark Blue
-    BubbleTheme(Color(0xFFFFF0C2), Color(0xFFCA8A04)), // Yellow/Dark Yellow
-    BubbleTheme(Color(0xFFE8D1FF), Color(0xFF7E22CE)), // Lavender/Purple
-    BubbleTheme(Color(0xFFE2E2E2), Color(0xFF4B5563)), // Grey/Dark Grey
+    BubbleTheme(AppColors.surfaceLight, AppColors.warmOrange), // Peach/Orange
+    BubbleTheme(AppColors.surfaceLight, AppColors.success), // Mint/Emerald
+    BubbleTheme(AppColors.surfaceLight, AppColors.warmOrange), // Pink/Red
+    BubbleTheme(AppColors.surfaceLight, AppColors.primary), // Blue/Dark Blue
+    BubbleTheme(
+      AppColors.surfaceLight,
+      AppColors.warmYellow,
+    ), // Yellow/Dark Yellow
+    BubbleTheme(AppColors.surfaceLight, AppColors.primary), // Lavender/Purple
+    BubbleTheme(AppColors.surfaceLight, AppColors.textLight), // Grey/Dark Grey
   ];
 
   const ChallengeSelectionWidget({
@@ -105,7 +108,7 @@ class ChallengeSelectionWidget extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: theme.background,
+          color: Theme.of(context).colorScheme.surface,
           border: isSelected
               ? Border.all(color: theme.border, width: 2.5)
               : Border.all(color: Colors.transparent, width: 2.5),
@@ -116,7 +119,7 @@ class ChallengeSelectionWidget extends StatelessWidget {
             child: Text(
               challenge,
               style: AppTextStyles.body2.copyWith(
-                color: AppColors.black,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 fontSize: challenge.length > 8 ? 11 : 13,
               ),

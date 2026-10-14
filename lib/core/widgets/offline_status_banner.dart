@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../services/network_status.dart';
 
@@ -41,9 +42,7 @@ class _OfflineStatusBannerState extends State<OfflineStatusBanner> {
                 key: const ValueKey('home-offline'),
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Material(
-                  color: dark
-                      ? const Color(0xFF3A2F10)
-                      : const Color(0xFFFFF8E1),
+                  color: dark ? AppColors.surfaceDark : AppColors.surfaceLight,
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -54,9 +53,7 @@ class _OfflineStatusBannerState extends State<OfflineStatusBanner> {
                       children: [
                         Icon(
                           Icons.cloud_off,
-                          color: dark
-                              ? const Color(0xFFFFC107)
-                              : const Color(0xFFF0A500),
+                          color: dark ? AppColors.warning : AppColors.warning,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -65,8 +62,8 @@ class _OfflineStatusBannerState extends State<OfflineStatusBanner> {
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: dark
-                                      ? const Color(0xFFFFD966)
-                                      : const Color(0xFF8A6D00),
+                                      ? Theme.of(context).colorScheme.onSurface
+                                      : Theme.of(context).colorScheme.onSurface,
                                 ),
                           ),
                         ),
