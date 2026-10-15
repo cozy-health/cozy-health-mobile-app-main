@@ -27,7 +27,8 @@ void main() {
           3,
           (i) => MoodEntry(
             id: '$i',
-            mood: 'calm',
+            mood: i == 2 ? 'good' : 'calm',
+            expressionSlug: i == 2 ? 'good-hopeful' : null,
             intensity: 7,
             createdAt: now.subtract(Duration(days: i)),
             updatedAt: now,
@@ -96,7 +97,8 @@ void main() {
         );
         expect(find.text('Avg intensity 7.5'), findsOneWidget);
         expect(find.text('Recent entries'), findsOneWidget);
-        expect(find.text('calm'), findsNWidgets(3));
+        expect(find.text('Calm'), findsNWidgets(2));
+        expect(find.text('Hopeful'), findsOneWidget);
         await tester.ensureVisible(find.text('View Log ›'));
         await tester.pumpAndSettle();
         expect(

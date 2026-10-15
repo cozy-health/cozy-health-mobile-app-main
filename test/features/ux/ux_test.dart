@@ -181,22 +181,107 @@ void main() {
     await tester.tap(find.text('Try again'));
     expect(retries, 1);
   });
-  testWidgets('today draft offers resume and restores the saved step', (
-    tester,
-  ) async {
-    await tester.runAsync(
-      () => drafts.save({'step': 2, 'mood': 'calm', 'intensity': 6}),
-    );
-    tester.view.physicalSize = const Size(430, 932);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await mount(tester, const MoodFeelingScreen());
-    await tester.pumpAndSettle();
-    expect(find.text('You have an unsaved check-in. Resume?'), findsOneWidget);
-    await tester.tap(find.text('Resume'));
-    await tester.pumpAndSettle();
-    expect(find.text('Step 2 of 9'), findsOneWidget);
-    expect(find.text('You have an unsaved check-in. Resume?'), findsNothing);
-  });
+  testWidgets(
+    'legacy draft resumes at the migrated step with feeling and intensity intact',
+    (tester) async {
+      await tester.runAsync(
+        () => drafts.save({
+          'step': 2,
+          'mood': 'angry',
+          'expression_slug': 'angry-resentful',
+          'intensity': 8,
+        }),
+      );
+      tester.view.physicalSize = const Size(430, 932);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await mount(tester, const MoodFeelingScreen());
+      await tester.pumpAndSettle();
+      expect(
+        find.text('You have an unsaved check-in. Resume?'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Resume'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('How would you describe how you are feeling?'),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<LinearProgressIndicator>(
+              find.byType(LinearProgressIndicator),
+            )
+            .value,
+        74 / 215,
+      );
+      expect(find.text('You have an unsaved check-in. Resume?'), findsNothing);
+      final feeling = find.byKey(
+        const ValueKey('recording-expressions-angry-resentful'),
+      );
+      expect(
+        tester
+            .widget<Semantics>(
+              find
+                  .ancestor(of: feeling, matching: find.byType(Semantics))
+                  .first,
+            )
+            .properties
+            .selected,
+        isTrue,
+      );
+      await tester.tap(find.text('Resentful'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 4);
+      Navigator.of(
+        tester.element(
+          find.byKey(const ValueKey('recording-intensity-dialog')),
+        ),
+      ).pop();
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'version two draft resumes causes and preserves selected answers',
+    (tester) async {
+      await tester.runAsync(
+        () => drafts.save({
+          'version': 2,
+          'step': 1,
+          'mood': 'angry',
+          'expression_slug': 'angry-resentful',
+          'intensity': 8,
+          'triggers': ['Deadlines'],
+        }),
+      );
+      await mount(tester, const MoodFeelingScreen());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Resume'));
+      await tester.pumpAndSettle();
+      expect(find.text('What made you feel this way?'), findsOneWidget);
+      expect(
+        tester
+            .widget<LinearProgressIndicator>(
+              find.byType(LinearProgressIndicator),
+            )
+            .value,
+        145 / 215,
+      );
+      expect(find.text('You have an unsaved check-in. Resume?'), findsNothing);
+      final cause = find.byKey(
+        const ValueKey('recording-triggers-work-deadlines'),
+      );
+      expect(
+        tester
+            .widget<Semantics>(
+              find.ancestor(of: cause, matching: find.byType(Semantics)).first,
+            )
+            .properties
+            .selected,
+        isTrue,
+      );
+    },
+  );
 }

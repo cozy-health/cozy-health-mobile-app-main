@@ -39,8 +39,10 @@ ThemeData themeFor(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(
-    () =>
-        installLocalTestFonts(visualFontPath: 'test/golden_assets/Outfit.ttf'),
+    () => installLocalTestFonts(
+      visualFontPath: 'test/golden_assets/Outfit.ttf',
+      useRealFonts: true,
+    ),
   );
   tearDown(resetLocalTestFonts);
   setUp(() {
