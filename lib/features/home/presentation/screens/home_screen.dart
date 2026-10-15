@@ -1,3 +1,4 @@
+import '../../../../core/widgets/profile_avatar.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import '../../../../core/data/demo_mode.dart';
 import '../widgets/mood_chips_row.dart';
@@ -554,7 +555,6 @@ class _Header extends StatelessWidget {
         final name = profileName == null || profileName.isEmpty
             ? ''
             : profileName;
-        final avatarUrl = profile?.avatarUrl;
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -564,25 +564,7 @@ class _Header extends StatelessWidget {
               label: 'Open profile',
               child: GestureDetector(
                 onTap: () => context.push(AppRouter.editProfile),
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.primaryContainer,
-                  foregroundColor: Theme.of(
-                    context,
-                  ).colorScheme.onPrimaryContainer,
-                  backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                      ? NetworkImage(avatarUrl)
-                      : null,
-                  child: avatarUrl != null && avatarUrl.isNotEmpty
-                      ? null
-                      : Text(
-                          name.isEmpty
-                              ? '?'
-                              : name.characters.first.toUpperCase(),
-                        ),
-                ),
+                child: ProfileAvatar(profile: profile, size: 40),
               ),
             ),
             SizedBox(width: 12),

@@ -1,3 +1,4 @@
+import '../../../../core/widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_surface.dart';
 import 'package:go_router/go_router.dart';
@@ -50,7 +51,7 @@ class SettingsScreen extends StatelessWidget {
                     future: GuestSessionService().isGuestSession(),
                     builder: (context, guestSnapshot) {
                       final isGuest = guestSnapshot.data ?? false;
-                      final avatarUrl = isGuest ? null : profile?.avatarUrl;
+
                       final name = isGuest
                           ? 'Guest'
                           : profile?.name ?? 'Loading...';
@@ -83,25 +84,9 @@ class SettingsScreen extends StatelessWidget {
                             padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
-                                Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: AppColors.midGrey,
-                                    image: avatarUrl != null
-                                        ? DecorationImage(
-                                            image: NetworkImage(avatarUrl),
-                                            fit: BoxFit.cover,
-                                          )
-                                        : null,
-                                  ),
-                                  child: avatarUrl == null
-                                      ? Icon(
-                                          Icons.person,
-                                          color: AppColors.white,
-                                        )
-                                      : null,
+                                ProfileAvatar(
+                                  profile: isGuest ? null : profile,
+                                  size: 48,
                                 ),
                                 SizedBox(width: 16),
                                 Expanded(

@@ -231,7 +231,10 @@ class AuthService {
         email: email,
         username: json['username']?.toString(),
         avatarUrl:
-            json['avatar_url']?.toString() ?? json['avatar_path']?.toString(),
+            json['avatar_url']?.toString() ??
+            LocalDbService.instance.getUserProfile()?.avatarUrl,
+        avatarRevision:
+            LocalDbService.instance.getUserProfile()?.avatarRevision ?? 0,
         updatedAt:
             DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
             DateTime.now(),

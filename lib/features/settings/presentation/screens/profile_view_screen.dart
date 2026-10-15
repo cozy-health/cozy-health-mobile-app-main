@@ -1,3 +1,4 @@
+import '../../../../core/widgets/profile_avatar.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -58,32 +59,11 @@ class ProfileViewScreen extends StatelessWidget {
                       : '';
                   final bio =
                       profile?.bio ?? '"Trying to be kinder\nto myself."';
-                  final avatarUrl = profile?.avatarUrl;
 
                   return Column(
                     children: [
                       // Avatar
-                      Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.midGrey,
-                          image: avatarUrl != null
-                              ? DecorationImage(
-                                  image: NetworkImage(avatarUrl),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                        ),
-                        child: avatarUrl == null
-                            ? Icon(
-                                Icons.person,
-                                color: AppColors.white,
-                                size: 48,
-                              )
-                            : null,
-                      ),
+                      ProfileAvatar(profile: profile, size: 96),
                       SizedBox(height: 24),
 
                       Text(

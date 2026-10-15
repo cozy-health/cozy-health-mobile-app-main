@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:cozy_health/features/settings/data/avatar_repository.dart';
+import 'package:cozy_health/features/settings/data/profile_repository.dart';
 import 'package:cozy_health/core/models/next_of_kin_contact.dart';
 import 'package:cozy_health/features/crisis/data/next_of_kin_repository.dart';
 import 'package:cozy_health/features/crisis/presentation/screens/crisis_screens.dart';
@@ -355,6 +358,85 @@ void main() {
     expect(await RestoreService.prepare('1'), isTrue);
     expect(await RestoreService.required, isTrue);
   });
+
+  test(
+    'encrypted photo cache survives reopening and stays scoped to its account',
+    () async {
+      final profile = UserProfile(
+        id: 'cached-avatar-profile',
+        name: 'Person',
+        email: 'sample@example.test',
+        avatarUrl: 'https://storage.example.test/photo.jpg',
+        avatarRevision: 1,
+        updatedAt: date,
+      );
+      await local.saveUserProfile(profile);
+      final bytes = Uint8List.fromList([1, 2, 3]);
+      await (await local.settingsBox()).put('profile_avatar_bytes', {
+        'profile_id': profile.id,
+        'revision': 1,
+        'bytes': bytes,
+      });
+      await (await local.settingsBox()).close();
+      expect(await AvatarRepository().cachedPhoto(profile), bytes);
+      await local.activateAccount('2');
+      expect(await AvatarRepository().cachedPhoto(profile), isNull);
+      await local.activateAccount('1');
+      expect(await AvatarRepository().cachedPhoto(profile), bytes);
+    },
+  );
+
+  test(
+    'new avatar revisions merge independently of pending offline profile edits',
+    () async {
+      final edited = UserProfile(
+        id: 'avatar-profile',
+        name: 'Local edited name',
+        email: 'sample@example.test',
+        avatarUrl: 'asset:open-peeps-01',
+        avatarRevision: 1,
+        updatedAt: date.add(const Duration(days: 2)),
+      );
+      await ProfileRepository().saveProfile(edited);
+      await UserDataMerge().apply('user_profile', {
+        ...edited.toJson(),
+        'name': 'Older server name',
+        'avatar_url': 'asset:open-peeps-02',
+        'avatar_revision': 2,
+        'client_updated_at': date.toIso8601String(),
+      });
+      expect(local.getUserProfile()?.name, 'Local edited name');
+      expect(local.getUserProfile()?.avatarUrl, 'asset:open-peeps-02');
+      await UserDataMerge().apply('user_profile', {
+        ...edited.toJson(),
+        'avatar_url': null,
+        'avatar_revision': 3,
+      });
+      expect(local.getUserProfile()?.avatarUrl, isNull);
+      expect(local.getUserProfile()?.avatarRevision, 3);
+    },
+  );
+
+  test(
+    'saving a stale profile cannot restore an old avatar after removal',
+    () async {
+      final stale = UserProfile(
+        id: 'avatar-profile',
+        name: 'Person',
+        email: 'sample@example.test',
+        avatarUrl: 'asset:open-peeps-01',
+        avatarRevision: 1,
+        updatedAt: date,
+      );
+      await local.saveUserProfile(
+        stale.copyWith(clearAvatarUrl: true, avatarRevision: 2),
+      );
+      await ProfileRepository().saveProfile(stale.copyWith(name: 'New name'));
+      expect(local.getUserProfile()?.name, 'New name');
+      expect(local.getUserProfile()?.avatarUrl, isNull);
+      expect(local.getUserProfile()?.avatarRevision, 2);
+    },
+  );
 
   testWidgets(
     'internal simulations are visible and work when phone alerts are denied',

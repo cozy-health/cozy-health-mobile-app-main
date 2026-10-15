@@ -16,6 +16,8 @@ class UserProfile extends HiveObject {
 
   @HiveField(4)
   final String? avatarUrl;
+  @HiveField(25)
+  final int avatarRevision;
 
   @HiveField(5)
   final String? bio;
@@ -83,6 +85,7 @@ class UserProfile extends HiveObject {
     this.username,
     required this.email,
     this.avatarUrl,
+    this.avatarRevision = 0,
     this.bio,
     this.theme = 'system',
     this.accentColor = 'lavender',
@@ -110,6 +113,8 @@ class UserProfile extends HiveObject {
     String? username,
     String? email,
     String? avatarUrl,
+    bool clearAvatarUrl = false,
+    int? avatarRevision,
     String? bio,
     String? theme,
     String? accentColor,
@@ -136,7 +141,8 @@ class UserProfile extends HiveObject {
       name: name ?? this.name,
       username: username ?? this.username,
       email: email ?? this.email,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
+      avatarUrl: clearAvatarUrl ? null : (avatarUrl ?? this.avatarUrl),
+      avatarRevision: avatarRevision ?? this.avatarRevision,
       bio: bio ?? this.bio,
       theme: theme ?? this.theme,
       accentColor: accentColor ?? this.accentColor,
@@ -263,7 +269,8 @@ class UserProfile extends HiveObject {
       'client_updated_at': updatedAt.toUtc().toIso8601String(),
     };
     if (username != null) json['username'] = username;
-    if (avatarUrl != null) json['avatar_url'] = avatarUrl;
+    json['avatar_url'] = avatarUrl;
+    json['avatar_revision'] = avatarRevision;
     if (bio != null) json['bio'] = bio;
     return json;
   }
@@ -278,7 +285,10 @@ class UserProfile extends HiveObject {
       name: json['name']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       username: json['username']?.toString(),
-      avatarUrl: json['avatar_url']?.toString(),
+      avatarUrl: (json['avatar_url']?.toString().isEmpty ?? true)
+          ? null
+          : json['avatar_url'].toString(),
+      avatarRevision: (json['avatar_revision'] as num?)?.toInt() ?? 0,
       bio: json['bio']?.toString(),
       theme: json['theme'] as String? ?? 'system',
       accentColor: json['accent_color'] as String? ?? '#0460D8',
@@ -305,6 +315,8 @@ class UserProfile extends HiveObject {
   }
 }
 
+String? _avatarValue(String value) => value.isEmpty ? null : value;
+
 class UserProfileAdapter extends TypeAdapter<UserProfile> {
   @override
   final int typeId = 6;
@@ -316,7 +328,7 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
       name: reader.readString(),
       username: reader.readString(),
       email: reader.readString(),
-      avatarUrl: reader.readString(),
+      avatarUrl: _avatarValue(reader.readString()),
       bio: reader.readString(),
       theme: reader.readString(),
       accentColor: reader.readString(),
@@ -337,10 +349,13 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
       updatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
     );
     if (reader.availableBytes == 0) return profile;
-    return profile.copyWith(
+    final extended = profile.copyWith(
       pushConsent: reader.readBool(),
       reminderSettings: Map<String, dynamic>.from(reader.read() as Map),
     );
+    return reader.availableBytes > 0
+        ? extended.copyWith(avatarRevision: reader.readInt())
+        : extended;
   }
 
   @override
@@ -370,5 +385,6 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
     writer.writeBool(obj.pushConsent);
     writer.write(obj.reminderSettings);
+    writer.writeInt(obj.avatarRevision);
   }
 }

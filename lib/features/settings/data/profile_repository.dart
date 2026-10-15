@@ -55,6 +55,16 @@ class ProfileRepository {
   }
 
   Future<UserProfile> saveProfile(UserProfile profile) async {
+    final current = _local.getUserProfile();
+    if (current != null &&
+        current.id == profile.id &&
+        current.avatarRevision >= profile.avatarRevision) {
+      profile = profile.copyWith(
+        avatarUrl: current.avatarUrl,
+        clearAvatarUrl: current.avatarUrl == null,
+        avatarRevision: current.avatarRevision,
+      );
+    }
     await _local.saveUserProfile(profile);
     await _local.enqueueSync(
       type: 'user_profile',

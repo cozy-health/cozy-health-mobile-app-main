@@ -19,8 +19,8 @@ Future<void> installLocalTestFonts({
   final visualFont = File(visualFontPath ?? 'build/surface-review/Outfit.ttf');
   final readableFonts =
       useRealFonts ||
-      bool.fromEnvironment('SURFACE_SCREENSHOTS') ||
-      bool.fromEnvironment('SURFACE_REAL_FONTS');
+      const bool.fromEnvironment('SURFACE_SCREENSHOTS') ||
+      const bool.fromEnvironment('SURFACE_REAL_FONTS');
   if (useRealFonts && !visualFont.existsSync()) {
     throw StateError(
       'Required test font fixture is missing: ${visualFont.path}',
@@ -31,6 +31,14 @@ Future<void> installLocalTestFonts({
       : font;
   if (readableFonts) {
     await (FontLoader('MaterialIcons')..addFont(Future.value(font))).load();
+    for (final family in [
+      'Outfit',
+      'Outfit_regular',
+      for (final weight in [100, 200, 300, 500, 600, 700, 800, 900])
+        'Outfit_$weight',
+    ]) {
+      await (FontLoader(family)..addFont(Future.value(readable))).load();
+    }
   }
   fonts.assetManifest = _FontManifest();
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

@@ -81,6 +81,32 @@ class UserDataMerge {
     if (id == null || id.isEmpty) {
       throw const FormatException('Missing record identifier');
     }
+    if (type == 'user_profile') {
+      final profile = _local.getUserProfile();
+      final revision = (incoming['avatar_revision'] as num?)?.toInt() ?? 0;
+      if (profile != null) {
+        if (incoming.containsKey('avatar_revision') &&
+            revision >= profile.avatarRevision) {
+          final avatar = incoming['avatar_url']?.toString();
+          await _local.saveUserProfile(
+            profile.copyWith(
+              avatarUrl: avatar,
+              clearAvatarUrl: avatar == null || avatar.isEmpty,
+              avatarRevision: revision,
+            ),
+          );
+          if (avatar == null || avatar.startsWith('asset:')) {
+            await settings.delete('profile_avatar_bytes');
+          }
+          if (!active()) return;
+        } else if (profile.avatarRevision > 0 ||
+            incoming.containsKey('avatar_revision')) {
+          incoming['avatar_url'] = profile.avatarUrl;
+          incoming['avatar_revision'] = profile.avatarRevision;
+        }
+      }
+    }
+
     if (type == 'quiz_attempt' &&
         (incoming['is_deleted'] == true || incoming['deleted_at'] != null)) {
       await _local.quizAttemptBox.delete(id);

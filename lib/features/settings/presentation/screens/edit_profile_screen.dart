@@ -1,3 +1,7 @@
+import '../../../../core/widgets/profile_avatar.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/guest_session_service.dart';
+import '../widgets/avatar_picker_sheet.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -40,6 +44,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       bioController.text = profile.bio ?? '';
       emailController.text = profile.email;
     }
+  }
+
+  Future<void> _changePhoto() async {
+    final guest = await GuestSessionService().isGuestSession();
+    if (!mounted) return;
+    await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (_) => AvatarPickerSheet(
+        isGuest: guest,
+        onCreateAccount: () {
+          Navigator.pop(context);
+          context.push(AppRouter.createAccount);
+        },
+      ),
+    );
+    if (mounted) {
+      setState(() => _currentProfile = LocalDbService().getUserProfile());
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final controller in [
+      nameController,
+      usernameController,
+      bioController,
+      emailController,
+    ]) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   void _onChanged(String _) {
@@ -127,55 +165,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Center(
                 child: Column(
                   children: [
-                    Stack(
-                      children: [
-                        Container(
-                          width: 96,
-                          height: 96,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.midGrey,
-                            image: _currentProfile?.avatarUrl != null
-                                ? DecorationImage(
-                                    image: NetworkImage(
-                                      _currentProfile!.avatarUrl!,
-                                    ),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
-                          ),
-                          child: _currentProfile?.avatarUrl == null
-                              ? Icon(
-                                  Icons.person,
-                                  color: AppColors.white,
-                                  size: 48,
-                                )
-                              : null,
-                        ),
-                        Positioned.fill(
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                // show avatar picker
-                              },
-                              customBorder: const CircleBorder(),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.4),
-                                ),
-                                child: Icon(Icons.edit, color: AppColors.white),
-                              ),
+                    InkWell(
+                      onTap: _changePhoto,
+                      customBorder: const CircleBorder(),
+                      child: Stack(
+                        children: [
+                          ProfileAvatar(profile: _currentProfile, size: 96),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: CircleAvatar(
+                              radius: 16,
+                              child: Icon(Icons.edit, size: 18),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     SizedBox(height: 12),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: _changePhoto,
                       child: Text(
                         'Change photo',
                         style: AppTextStyles.body2.copyWith(
