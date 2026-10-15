@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -39,9 +40,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) => Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          border: AppSurface.border(context),
+          color: Theme.of(context).bottomSheetTheme.backgroundColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -212,9 +215,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: context.communityBorder.withValues(alpha: 0.7),
-                      ),
+                      border: AppSurface.border(context),
                     ),
                     child: IconButton(
                       icon: Icon(
@@ -267,9 +268,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: context.communityBorder.withValues(alpha: 0.7),
-        ),
+        border: AppSurface.border(context),
       ),
       child: Column(
         children: [

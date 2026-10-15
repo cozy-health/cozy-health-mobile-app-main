@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -69,10 +70,9 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          scrollable: true,
+          backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
+          shape: AppSurface.shape(context, BorderRadius.circular(16)),
           title: Text(
             'Cancel Subscription?',
             style: AppTextStyles.heading2.copyWith(
@@ -171,7 +171,7 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border, width: 1),
+                  border: AppSurface.border(context),
                 ),
                 child: Column(
                   children: _reasons.map((reason) {
@@ -239,15 +239,14 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Theme.of(
+                    color: AppSurface.tint(
                       context,
-                    ).colorScheme.primary.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Theme.of(
+                      Theme.of(
                         context,
-                      ).colorScheme.primary.withValues(alpha: 0.2),
+                      ).colorScheme.primary.withValues(alpha: 0.05),
                     ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: AppSurface.border(context),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,

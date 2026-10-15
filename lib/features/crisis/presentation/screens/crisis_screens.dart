@@ -1,3 +1,7 @@
+import '../widgets/next_of_kin_panel.dart';
+import '../../data/next_of_kin_repository.dart';
+import 'package:cozy_health/core/widgets/app_scroll_body.dart';
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/security_blur.dart';
 import '../../../../core/services/crash_reporting.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
@@ -175,9 +179,9 @@ class CrisisButton extends StatelessWidget {
       );
     }
 
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 64,
+      constraints: const BoxConstraints(minHeight: 64),
       child: outlined
           ? OutlinedButton(
               onPressed: onPressed,
@@ -234,7 +238,10 @@ class CrisisActionCard extends StatelessWidget {
     final bg = primary
         ? AppColors.crisisPrimary
         : danger
-        ? AppColors.crisisDanger.withValues(alpha: 0.1)
+        ? AppSurface.tint(
+            context,
+            AppColors.crisisDanger.withValues(alpha: 0.1),
+          )
         : Theme.of(context).colorScheme.surface;
     final fg = primary
         ? Theme.of(context).colorScheme.onPrimary
@@ -260,7 +267,9 @@ class CrisisActionCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: border),
+            border: Border.fromBorderSide(
+              AppSurface.side(context, color: border),
+            ),
           ),
           child: Row(
             children: [
@@ -346,50 +355,16 @@ class CrisisResourcesHubScreen extends StatelessWidget {
       ),
       children: [
         CrisisActionCard(
-          icon: Icons.call,
-          title: 'Call 988',
-          subtitle: 'Suicide & Crisis Lifeline',
-          action: 'Call',
+          icon: Icons.person_outline,
+          title: 'Contact next of kin',
+          subtitle: 'Reach someone you trust',
+          action: 'Open',
           primary: true,
-          onTap: () => showCrisisCallSheet(
-            context,
-            title: 'Call 988?',
-            subtitle: 'Suicide & Crisis Lifeline',
-            number: '988',
-          ),
-        ),
-        const SizedBox(height: 12),
-        CrisisActionCard(
-          icon: Icons.sms,
-          title: 'Text HOME to 741741',
-          subtitle: 'Crisis Text Line',
-          action: 'Text',
-          onTap: () => _sendCrisisSms(context, number: '741741', body: 'HOME'),
-        ),
-        const SizedBox(height: 12),
-        CrisisActionCard(
-          icon: Icons.emergency,
-          title: "If you're in immediate danger",
-          subtitle: 'Call emergency services',
-          action: 'Call',
-          danger: true,
-          onTap: () => showCrisisCallSheet(
-            context,
-            title: 'Call 911?',
-            subtitle: 'Use this if you are in immediate danger.',
-            number: '911',
-            danger: true,
-          ),
+          onTap: () => context.push(AppRouter.crisisContact),
         ),
         const SizedBox(height: 32),
         _DividerLabel(label: 'More support'),
         const SizedBox(height: 24),
-        _SupportRow(
-          icon: Icons.person,
-          title: 'Emergency Contact',
-          subtitle: 'Add someone you trust',
-          onTap: () => context.push(AppRouter.crisisContact),
-        ),
         _SupportRow(
           icon: Icons.assignment,
           title: 'My Safety Plan',
@@ -417,7 +392,7 @@ class CrisisResourcesHubScreen extends StatelessWidget {
         const SizedBox(height: 28),
         Center(
           child: Text(
-            "This app is not a substitute for professional care. If you're in immediate danger, call 911.",
+            "Contacting your next of kin does not dispatch emergency assistance. This app is not a substitute for professional care.",
             textAlign: TextAlign.center,
             style: CrisisText.caption.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -493,75 +468,65 @@ void showCrisisCallSheet(
   showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
+    shape: const RoundedRectangleBorder(),
     builder: (context) {
       return Container(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          border: AppSurface.border(context),
+          color: Theme.of(context).bottomSheetTheme.backgroundColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: CrisisText.h2.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: CrisisText.h2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: CrisisText.bodyMuted.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              const SizedBox(height: 12),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: CrisisText.bodyMuted.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            CrisisButton(
-              label: 'Call',
-              color: danger ? AppColors.crisisDanger : AppColors.crisisPrimary,
-              onPressed: () async {
-                Navigator.pop(context);
-                final result = await _crisisLauncher.callPhone(number);
-                if (result != LaunchResult.success && parentContext.mounted) {
-                  showLaunchFailureSheet(
-                    parentContext,
-                    result: result,
-                    value: number,
-                    retry: () => _crisisLauncher.callPhone(number),
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 12),
-            CrisisButton(
-              label: 'Cancel',
-              textOnly: true,
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
+              const SizedBox(height: 24),
+              CrisisButton(
+                label: 'Call',
+                color: danger
+                    ? AppColors.crisisDanger
+                    : AppColors.crisisPrimary,
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final result = await _crisisLauncher.callPhone(number);
+                  if (result != LaunchResult.success && parentContext.mounted) {
+                    showLaunchFailureSheet(
+                      parentContext,
+                      result: result,
+                      value: number,
+                      retry: () => _crisisLauncher.callPhone(number),
+                    );
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              CrisisButton(
+                label: 'Cancel',
+                textOnly: true,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
         ),
       );
     },
   );
-}
-
-Future<void> _sendCrisisSms(
-  BuildContext context, {
-  required String number,
-  required String body,
-}) async {
-  final result = await _crisisLauncher.sendSms(number, body: body);
-  if (result != LaunchResult.success && context.mounted) {
-    showLaunchFailureSheet(
-      context,
-      result: result,
-      value: number,
-      retry: () => _crisisLauncher.sendSms(number, body: body),
-    );
-  }
 }
 
 Future<void> _openCrisisUrl(BuildContext context, String url) async {
@@ -597,73 +562,77 @@ void showLaunchFailureSheet(
   showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
+    shape: const RoundedRectangleBorder(),
     builder: (sheetContext) {
       return Container(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          border: AppSurface.border(context),
+          color: Theme.of(context).bottomSheetTheme.backgroundColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              headline,
-              textAlign: TextAlign.center,
-              style: CrisisText.h2.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                headline,
+                textAlign: TextAlign.center,
+                style: CrisisText.h2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              subtext,
-              textAlign: TextAlign.center,
-              style: CrisisText.bodyMuted.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              const SizedBox(height: 12),
+              Text(
+                subtext,
+                textAlign: TextAlign.center,
+                style: CrisisText.bodyMuted.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-            const SizedBox(height: 18),
-            SelectableText(
-              value,
-              textAlign: TextAlign.center,
-              style: CrisisText.h1
-                  .copyWith(color: Theme.of(context).colorScheme.onSurface)
-                  .copyWith(color: AppColors.crisisPrimary),
-            ),
-            const SizedBox(height: 24),
-            CrisisButton(
-              label: 'Copy number',
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: value));
-                HapticFeedback.mediumImpact();
-                Navigator.pop(sheetContext);
-                _showSupportSnack(context, 'Copied');
-              },
-            ),
-            const SizedBox(height: 12),
-            CrisisButton(
-              label: 'Try again',
-              outlined: true,
-              onPressed: () async {
-                Navigator.pop(sheetContext);
-                final retryResult = await retry();
-                if (retryResult != LaunchResult.success && context.mounted) {
-                  showLaunchFailureSheet(
-                    context,
-                    result: retryResult,
-                    value: value,
-                    retry: retry,
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 12),
-            CrisisButton(
-              label: 'Close',
-              textOnly: true,
-              onPressed: () => Navigator.pop(sheetContext),
-            ),
-          ],
+              const SizedBox(height: 18),
+              SelectableText(
+                value,
+                textAlign: TextAlign.center,
+                style: CrisisText.h1
+                    .copyWith(color: Theme.of(context).colorScheme.onSurface)
+                    .copyWith(color: AppColors.crisisPrimary),
+              ),
+              const SizedBox(height: 24),
+              CrisisButton(
+                label: 'Copy number',
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: value));
+                  HapticFeedback.mediumImpact();
+                  Navigator.pop(sheetContext);
+                  _showSupportSnack(context, 'Copied');
+                },
+              ),
+              const SizedBox(height: 12),
+              CrisisButton(
+                label: 'Try again',
+                outlined: true,
+                onPressed: () async {
+                  Navigator.pop(sheetContext);
+                  final retryResult = await retry();
+                  if (retryResult != LaunchResult.success && context.mounted) {
+                    showLaunchFailureSheet(
+                      context,
+                      result: retryResult,
+                      value: value,
+                      retry: retry,
+                    );
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              CrisisButton(
+                label: 'Close',
+                textOnly: true,
+                onPressed: () => Navigator.pop(sheetContext),
+              ),
+            ],
+          ),
         ),
       );
     },
@@ -701,6 +670,7 @@ class CrisisDetectionOverlayScreen extends StatelessWidget {
           child: Container(
             margin: const EdgeInsets.all(24),
             decoration: BoxDecoration(
+              border: AppSurface.border(context),
               color: _crisisSurface(context),
               borderRadius: BorderRadius.circular(24),
             ),
@@ -708,46 +678,51 @@ class CrisisDetectionOverlayScreen extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.favorite,
-                        color: AppColors.crisisWarning,
-                        size: 48,
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        "It sounds like you're going through a lot.",
-                        style: CrisisText.h2.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
+                  child: AppScrollBody(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.favorite,
+                          color: AppColors.crisisWarning,
+                          size: 48,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        "You don't have to carry this alone. We're here with you.",
-                        style: CrisisText.bodyMuted.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        const SizedBox(height: 24),
+                        Text(
+                          "It sounds like you're going through a lot.",
+                          style: CrisisText.h2.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      CrisisButton(
-                        label: 'Talk to someone',
-                        onPressed: () => context.push(AppRouter.crisisHub),
-                      ),
-                      const SizedBox(height: 12),
-                      CrisisButton(
-                        label: 'Try a grounding exercise',
-                        outlined: true,
-                        onPressed: () => context.push(AppRouter.grounding),
-                      ),
-                      const SizedBox(height: 12),
-                      _CrisisDismissButton(
-                        label: "I'm okay right now",
-                        onPressed: () => context.pop(),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Text(
+                          "You don't have to carry this alone. We're here with you.",
+                          style: CrisisText.bodyMuted.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        CrisisButton(
+                          label: 'Contact next of kin',
+                          onPressed: () =>
+                              context.push(AppRouter.crisisContact),
+                        ),
+                        const SizedBox(height: 12),
+                        CrisisButton(
+                          label: 'Try a grounding exercise',
+                          outlined: true,
+                          onPressed: () => context.push(AppRouter.grounding),
+                        ),
+                        const SizedBox(height: 12),
+                        _CrisisDismissButton(
+                          label: "I'm okay right now",
+                          onPressed: () => context.pop(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Positioned(
@@ -786,9 +761,11 @@ Future<void> showCrisisSupportOverlay(
       builder: (dialogContext) {
         return Dialog(
           backgroundColor: Colors.transparent,
+          shape: const RoundedRectangleBorder(),
           insetPadding: const EdgeInsets.all(24),
           child: Container(
             decoration: BoxDecoration(
+              border: AppSurface.border(context),
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
             ),
@@ -825,10 +802,10 @@ Future<void> showCrisisSupportOverlay(
                       ),
                       const SizedBox(height: 24),
                       CrisisButton(
-                        label: 'Talk to someone',
+                        label: 'Contact next of kin',
                         onPressed: () {
                           Navigator.pop(dialogContext);
-                          context.push(AppRouter.crisisHub);
+                          context.push(AppRouter.crisisContact);
                         },
                       ),
                       const SizedBox(height: 12),
@@ -907,74 +884,9 @@ class _CrisisDismissButton extends StatelessWidget {
 
 class EmergencyContactScreen extends StatelessWidget {
   const EmergencyContactScreen({super.key});
-
-  static const PlanContact _sampleContact = PlanContact(
-    name: 'Sarah Chen',
-    phone: '+15550101234',
-    relationship: 'Sister',
-  );
-
   @override
-  Widget build(BuildContext context) {
-    return CrisisShell(
-      title: _sampleContact.name,
-      subtitle: _sampleContact.relationship,
-      trailing: TextButton(
-        onPressed: () => _showSupportSnack(
-          context,
-          'Contact editing needs contacts permission wiring.',
-        ),
-        child: Text(
-          'Edit',
-          style: CrisisText.caption.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-      children: [
-        Center(
-          child: Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              color: _crisisSubtle(context),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.person, color: AppColors.crisisPrimary, size: 48),
-          ),
-        ),
-        const SizedBox(height: 32),
-        CrisisButton(
-          label: 'Call Sarah',
-          onPressed: () => showCrisisCallSheet(
-            context,
-            title: 'Call Sarah?',
-            subtitle: 'Emergency contact',
-            number: _sampleContact.phone,
-          ),
-        ),
-        const SizedBox(height: 12),
-        CrisisButton(
-          label: 'Text Sarah',
-          outlined: true,
-          onPressed: () => _sendCrisisSms(
-            context,
-            number: _sampleContact.phone,
-            body: 'Hey, I need to talk. Can you call me?',
-          ),
-        ),
-        const SizedBox(height: 24),
-        CrisisButton(
-          label: 'Change contact',
-          textOnly: true,
-          onPressed: () => _showSupportSnack(
-            context,
-            'Contact picker needs device permission wiring.',
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) =>
+      const SecurityBlur(child: NextOfKinPanel());
 }
 
 class SafetyPlanScreen extends StatefulWidget {
@@ -992,6 +904,9 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
   bool _done = false;
   bool _loaded = false;
   SafetyPlan _plan = SafetyPlan.empty();
+  Map<String, String>? _nextOfKin;
+  List<Map<String, String>> _existingPeople = [];
+  List<Map<String, String>> _existingProfessionals = [];
 
   static const _titles = [
     'What tells you\na hard moment\nis coming?',
@@ -1035,8 +950,13 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
       'Playing a game',
       'Going outside',
     ],
-    ['Sarah Chen', 'Mom', 'Add from contacts', 'Add manually'],
-    ['Therapist', 'Psychiatrist', 'Primary care doctor', 'Local crisis line'],
+    ['My next of kin'],
+    [
+      'Therapist',
+      'Psychiatrist',
+      'Primary care doctor',
+      'Other professional support',
+    ],
     [
       'Remove or lock away medications',
       'Remove or lock away sharp objects',
@@ -1068,16 +988,28 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
   }
 
   Future<void> _loadDraft() async {
+    final contact = await NextOfKinRepository().load().catchError(
+      (Object _) => null,
+    );
+    _nextOfKin = contact == null
+        ? null
+        : {
+            'name': contact.name,
+            'phone': contact.phone,
+            'relation': contact.relationship,
+          };
     final saved = await _storage.load();
     if (!mounted) return;
-    if (saved == null || saved.isComplete) {
+    if (saved == null) {
       setState(() => _loaded = true);
       return;
     }
 
     setState(() {
       _plan = saved;
-      _step = saved.currentStep.clamp(0, 5);
+      _existingPeople = saved.peopleToCall ?? [];
+      _existingProfessionals = saved.professionals ?? [];
+      _step = saved.isComplete ? 0 : saved.currentStep.clamp(0, 5);
       _selected
         ..clear()
         ..addAll(_keysForStep(0, saved.warningSigns ?? []))
@@ -1096,10 +1028,18 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
           ),
         )
         ..addAll(_keysForStep(5, saved.environmentSteps ?? []));
+      if (_nextOfKin != null &&
+          _existingPeople.any(
+            (person) => person['phone'] == _nextOfKin!['phone'],
+          )) {
+        _selected.add('3:My next of kin');
+      }
       _loaded = true;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _showResumeDraftSheet(saved.currentStep);
+      if (mounted && !saved.isComplete) {
+        _showResumeDraftSheet(saved.currentStep);
+      }
     });
   }
 
@@ -1121,28 +1061,27 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
       warningSigns: values[0],
       copingStrategies: values[1],
       distractions: values[2],
-      peopleToCall: (values[3] ?? const [])
-          .map(
-            (name) => {
-              'name': name,
-              'phone': name == 'Sarah Chen' ? '+15550101234' : '',
-              'relation': name == 'Sarah Chen'
-                  ? 'Sister'
-                  : name == 'Mom'
-                  ? 'Mother'
-                  : '',
-            },
-          )
-          .toList(),
-      professionals: (values[4] ?? const [])
-          .map(
-            (name) => {
-              'name': name,
-              'role': name,
-              'phone': name == 'Local crisis line' ? '988' : '',
-            },
-          )
-          .toList(),
+      peopleToCall: [
+        ..._existingPeople.where(
+          (person) =>
+              _nextOfKin == null || person['phone'] != _nextOfKin!['phone'],
+        ),
+        if ((values[3] ?? []).contains('My next of kin') &&
+            _nextOfKin != null &&
+            _nextOfKin!['phone']!.isNotEmpty)
+          _nextOfKin!,
+      ],
+      professionals: [
+        ..._existingProfessionals.where(
+          (person) => !_options[4].contains(person['name']),
+        ),
+        ...(values[4] ?? const []).map(
+          (name) => _existingProfessionals.firstWhere(
+            (person) => person['name'] == name,
+            orElse: () => {'name': name, 'role': name, 'phone': ''},
+          ),
+        ),
+      ],
       environmentSteps: values[5],
       currentStep: complete ? 5 : (_step + 1).clamp(0, 5),
       isComplete: complete,
@@ -1156,46 +1095,50 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) {
         return Container(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            border: AppSurface.border(context),
+            color: Theme.of(context).bottomSheetTheme.backgroundColor,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Continue your safety plan?',
-                textAlign: TextAlign.center,
-                style: CrisisText.h2.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Continue your safety plan?',
+                  textAlign: TextAlign.center,
+                  style: CrisisText.h2.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'You left off at Step ${currentStep + 1} of 6.',
-                textAlign: TextAlign.center,
-                style: CrisisText.bodyMuted.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                const SizedBox(height: 12),
+                Text(
+                  'You left off at Step ${currentStep + 1} of 6.',
+                  textAlign: TextAlign.center,
+                  style: CrisisText.bodyMuted.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              CrisisButton(
-                label: 'Continue',
-                onPressed: () => Navigator.pop(context),
-              ),
-              const SizedBox(height: 12),
-              CrisisButton(
-                label: 'Start over',
-                outlined: true,
-                color: AppColors.crisisDanger,
-                onPressed: () {
-                  _confirmStartOver(context);
-                },
-              ),
-            ],
+                const SizedBox(height: 24),
+                CrisisButton(
+                  label: 'Continue',
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const SizedBox(height: 12),
+                CrisisButton(
+                  label: 'Start over',
+                  outlined: true,
+                  color: AppColors.crisisDanger,
+                  onPressed: () {
+                    _confirmStartOver(context);
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -1207,6 +1150,7 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
+          scrollable: true,
           title: Text(
             'Start over?',
             style: CrisisText.h2.copyWith(
@@ -1234,6 +1178,8 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
                 sheetNavigator.pop();
                 setState(() {
                   _plan = SafetyPlan.empty();
+                  _existingPeople = [];
+                  _existingProfessionals = [];
                   _selected.clear();
                   _step = 0;
                 });
@@ -1307,20 +1253,41 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
           ),
         ),
         const SizedBox(height: 28),
-        ..._options[_step].map((option) {
-          final selected = _selected.contains('$_step:$option');
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _PlanChip(
-              label: option,
-              selected: selected,
-              onTap: () => setState(() {
-                final key = '$_step:$option';
-                selected ? _selected.remove(key) : _selected.add(key);
-              }),
-            ),
-          );
-        }),
+        if (_step == 3 && _nextOfKin == null)
+          TextButton(
+            onPressed: () async {
+              await context.push(AppRouter.crisisContact);
+              final contact = await NextOfKinRepository().load();
+              if (!mounted) return;
+              setState(() {
+                _nextOfKin = contact == null
+                    ? null
+                    : {
+                        'name': contact.name,
+                        'phone': contact.phone,
+                        'relation': contact.relationship,
+                      };
+              });
+            },
+            child: const Text('Set up next of kin'),
+          ),
+        if (_step == 3 && _nextOfKin != null)
+          Text('${_nextOfKin!['name']} · ${_nextOfKin!['phone']}'),
+        ...(_step == 3 && _nextOfKin == null ? <String>[] : _options[_step])
+            .map((option) {
+              final selected = _selected.contains('$_step:$option');
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _PlanChip(
+                  label: option,
+                  selected: selected,
+                  onTap: () => setState(() {
+                    final key = '$_step:$option';
+                    selected ? _selected.remove(key) : _selected.add(key);
+                  }),
+                ),
+              );
+            }),
         const SizedBox(height: 20),
         CrisisButton(
           label: _step == 5 ? 'Finish Plan' : 'Continue',
@@ -1408,87 +1375,8 @@ class _PlanChip extends StatelessWidget {
 
 class SafetyPlanViewScreen extends StatelessWidget {
   const SafetyPlanViewScreen({super.key});
-
   @override
-  Widget build(BuildContext context) =>
-      SecurityBlur(child: _buildProtected(context));
-
-  Widget _buildProtected(BuildContext context) {
-    final sections = {
-      'My warning signs': [
-        'Feeling isolated',
-        "Can't sleep",
-        'Racing thoughts',
-      ],
-      'What helps me': [
-        'Deep breathing',
-        'Going for a walk',
-        'Listening to music',
-      ],
-      'Distractions': ['Comfort show', 'Drawing'],
-      'People I can call': ['Sarah Chen (Sister)', 'Mom'],
-      'Professionals': ['Dr. Patel (Therapist)', 'Local crisis line'],
-      'Making my space safe': ['Remove medications', 'Stay with someone'],
-    };
-
-    return CrisisShell(
-      title: 'My Safety Plan',
-      subtitle: 'Last updated today',
-      trailing: TextButton(
-        onPressed: () => context.push(AppRouter.safetyPlan),
-        child: Text(
-          'Edit',
-          style: CrisisText.caption.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-      children: [
-        ...sections.entries.map(
-          (entry) => Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Theme.of(context).colorScheme.outline),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.key,
-                  style: CrisisText.body
-                      .copyWith(color: Theme.of(context).colorScheme.onSurface)
-                      .copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 10),
-                ...entry.value.map(
-                  (item) => Text(
-                    '• $item',
-                    style: CrisisText.bodyMuted.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-        CrisisButton(
-          label: 'Call 988',
-          onPressed: () => showCrisisCallSheet(
-            context,
-            title: 'Call 988?',
-            subtitle: 'Suicide & Crisis Lifeline',
-            number: '988',
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => const PersistedSafetyPlanViewScreen();
 }
 
 class PersistedSafetyPlanViewScreen extends StatelessWidget {
@@ -1599,13 +1487,8 @@ class PersistedSafetyPlanViewScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             CrisisButton(
-              label: 'Call 988',
-              onPressed: () => showCrisisCallSheet(
-                context,
-                title: 'Call 988?',
-                subtitle: 'Suicide & Crisis Lifeline',
-                number: '988',
-              ),
+              label: 'Contact next of kin',
+              onPressed: () => context.push(AppRouter.crisisContact),
             ),
           ],
         );
@@ -1671,14 +1554,9 @@ class _GroundingExerciseScreenState extends State<GroundingExerciseScreen> {
           ),
           const SizedBox(height: 12),
           CrisisButton(
-            label: 'Call 988',
+            label: 'Contact next of kin',
             outlined: true,
-            onPressed: () => showCrisisCallSheet(
-              context,
-              title: 'Call 988?',
-              subtitle: 'Suicide & Crisis Lifeline',
-              number: '988',
-            ),
+            onPressed: () => context.push(AppRouter.crisisContact),
           ),
         ],
       );
@@ -1979,9 +1857,9 @@ class _ProfessionalHelpScreenState extends State<ProfessionalHelpScreen> {
         ),
         _SupportRow(
           icon: Icons.emergency,
-          title: 'Crisis support',
+          title: 'Contact next of kin',
           subtitle: 'Immediate help',
-          onTap: () => context.push(AppRouter.crisisHub),
+          onTap: () => context.push(AppRouter.crisisContact),
         ),
         const SizedBox(height: 28),
         Center(
@@ -2036,12 +1914,7 @@ class _CrisisFollowUpScreenState extends State<CrisisFollowUpScreen> {
               ? null
               : () {
                   if (_selected == 'Still struggling') {
-                    showCrisisCallSheet(
-                      context,
-                      title: 'Call 988?',
-                      subtitle: 'Suicide & Crisis Lifeline',
-                      number: '988',
-                    );
+                    context.push(AppRouter.crisisContact);
                   } else {
                     _showSupportSnack(
                       context,
@@ -2065,65 +1938,69 @@ void showQuickCalmSheet(BuildContext context) {
   showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
+    shape: const RoundedRectangleBorder(),
     builder: (context) {
       return Container(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          border: AppSurface.border(context),
+          color: Theme.of(context).bottomSheetTheme.backgroundColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'I need a moment.',
-              style: CrisisText.h2.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'I need a moment.',
+                style: CrisisText.h2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'What would help right now?',
-              style: CrisisText.bodyMuted.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              const SizedBox(height: 8),
+              Text(
+                'What would help right now?',
+                style: CrisisText.bodyMuted.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            _SupportRow(
-              icon: Icons.air,
-              title: 'Breathe',
-              subtitle: '4-7-8',
-              onTap: () {
-                Navigator.pop(context);
-                context.push(AppRouter.breathing);
-              },
-            ),
-            _SupportRow(
-              icon: Icons.spa,
-              title: 'Ground',
-              subtitle: '5-4-3-2-1',
-              onTap: () {
-                Navigator.pop(context);
-                context.push(AppRouter.grounding);
-              },
-            ),
-            _SupportRow(
-              icon: Icons.call,
-              title: 'Call someone',
-              subtitle: 'People who can help right now',
-              onTap: () {
-                Navigator.pop(context);
-                context.push(AppRouter.crisisHub);
-              },
-            ),
-            CrisisButton(
-              label: 'Close',
-              textOnly: true,
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
+              _SupportRow(
+                icon: Icons.air,
+                title: 'Breathe',
+                subtitle: '4-7-8',
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push(AppRouter.breathing);
+                },
+              ),
+              _SupportRow(
+                icon: Icons.spa,
+                title: 'Ground',
+                subtitle: '5-4-3-2-1',
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push(AppRouter.grounding);
+                },
+              ),
+              _SupportRow(
+                icon: Icons.call,
+                title: 'Call someone',
+                subtitle: 'People who can help right now',
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push(AppRouter.crisisContact);
+                },
+              ),
+              CrisisButton(
+                label: 'Close',
+                textOnly: true,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
         ),
       );
     },

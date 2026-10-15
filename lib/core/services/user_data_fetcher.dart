@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../features/crisis/data/next_of_kin_repository.dart';
 import '../api/api_client.dart';
 import '../models/subscription_status.dart';
 import 'local_db_service.dart';
@@ -23,10 +24,19 @@ class UserDataFetcher {
       fetchNotifications(),
       fetchProfile(),
       fetchSafetyPlan(),
+      fetchNextOfKin(),
       fetchQuizAttempts(),
       fetchSavedArticles(),
       fetchSubscription(),
     ]);
+  }
+
+  Future<void> fetchNextOfKin() async {
+    try {
+      await NextOfKinRepository().refresh();
+    } catch (_) {
+      debugPrint('Next-of-kin refresh unavailable.');
+    }
   }
 
   Future<void> fetchMoods() => _list('/mood-entries', 'mood_entry');

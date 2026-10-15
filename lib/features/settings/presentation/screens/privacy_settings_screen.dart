@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/security_gate.dart';
 import '../../../../core/services/security_service.dart';
@@ -303,12 +304,10 @@ class _SettingsSection extends StatelessWidget {
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
-          ),
+        Material(
+          color: Theme.of(context).colorScheme.surface,
+          shape: AppSurface.shape(context, BorderRadius.circular(16)),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             children: List.generate(children.length, (index) {
               final isLast = index == children.length - 1;

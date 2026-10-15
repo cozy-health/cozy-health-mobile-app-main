@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 
@@ -56,9 +57,7 @@ class TypingIndicatorBubbleState extends State<TypingIndicatorBubble>
               ? AppColors.surfaceElevatedDark
               : AppColors.surfaceElevatedLight,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          ),
+          border: AppSurface.border(context),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

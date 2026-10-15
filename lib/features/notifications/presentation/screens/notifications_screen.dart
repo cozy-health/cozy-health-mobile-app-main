@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import '../../../../core/services/user_data_fetcher.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
@@ -212,10 +213,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           // Context menu (simulated with a bottom sheet for now)
           showModalBottomSheet(
             context: context,
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
             builder: (context) {
               return SafeArea(
                 child: Column(
@@ -267,13 +264,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ? Theme.of(context).colorScheme.surface
                 : Theme.of(context).colorScheme.primary.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: item.read
-                  ? Theme.of(context).dividerColor
-                  : Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: .25),
-            ),
+            border: AppSurface.border(context),
           ),
           padding: const EdgeInsets.all(16),
           child: Stack(

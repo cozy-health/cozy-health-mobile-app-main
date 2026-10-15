@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../community_local_state.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -35,9 +36,7 @@ class CommentCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.communitySurface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: context.communityBorder.withValues(alpha: 0.7),
-          ),
+          border: AppSurface.border(context),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -184,7 +184,7 @@ class _SplashScreenState extends State<SplashScreen>
     return FadeTransition(
       opacity: _screenOpacity,
       child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(

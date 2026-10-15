@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -85,14 +86,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: AppSurface.border(context),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.warmBackground,
+                  border: AppSurface.border(context),
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -134,18 +136,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
+                AppSurface.tint(
+                  context,
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                ),
+                AppSurface.tint(
+                  context,
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
+                ),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.3),
-            ),
+            border: AppSurface.border(context),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -182,8 +186,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 ],
               ),
               SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.end,
                 children: [
                   Text(
                     '\$7.99',
@@ -268,12 +272,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.5),
-              width: 1,
-            ),
+            border: AppSurface.border(context),
             boxShadow: [
               BoxShadow(
                 color: Theme.of(
@@ -289,9 +288,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(
+                  border: AppSurface.border(context),
+                  color: AppSurface.tint(
                     context,
-                  ).colorScheme.primary.withValues(alpha: 0.1),
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -332,7 +335,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: AppSurface.border(context),
           ),
           child: Column(
             children: [

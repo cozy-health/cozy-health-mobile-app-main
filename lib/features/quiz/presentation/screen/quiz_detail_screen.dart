@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -54,6 +55,7 @@ class QuizDetailScreen extends StatelessWidget {
             Container(
               height: 239,
               decoration: BoxDecoration(
+                border: AppSurface.border(context),
                 color: Theme.of(context).brightness == Brightness.dark
                     ? AppColors.accentSkyDark
                     : AppColors.accentSky,

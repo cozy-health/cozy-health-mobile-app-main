@@ -80,6 +80,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: const Text('Log out all devices?'),
         content: const Text(
           'This includes this device. You will need to sign in again.',

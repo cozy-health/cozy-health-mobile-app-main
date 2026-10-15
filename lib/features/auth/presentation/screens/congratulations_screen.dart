@@ -1,10 +1,10 @@
+import 'package:cozy_health/core/widgets/app_scroll_body.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/personalization_service.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../utils/responsive_extensions.dart';
 import '../../../../gen/assets.gen.dart';
@@ -181,7 +181,7 @@ class _CongratulationsScreenState extends State<CongratulationsScreen>
     });
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // ── Background (full-screen) ──────────────────────────────────
@@ -193,55 +193,61 @@ class _CongratulationsScreenState extends State<CongratulationsScreen>
           SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 6.w),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Spacer(),
+              child: AppScrollBody(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Spacer(),
 
-                  // Celebration graphic as the burst focal point
-                  Image.asset(
-                    key: _coneKey,
-                    Assets.png.confetti.path,
-                    height: 160,
-                    width: 160,
-                  ),
-
-                  6.sh,
-
-                  Text(
-                    'Congratulations!',
-                    style: AppTextStyles.heading1.copyWith(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                    // Celebration graphic as the burst focal point
+                    Image.asset(
+                      key: _coneKey,
+                      Assets.png.confetti.path,
+                      height: 160,
+                      width: 160,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
 
-                  4.sh,
+                    6.sh,
 
-                  Text(
-                    'You\'ve just taken an important step toward prioritizing your mental well-being.',
-                    style: AppTextStyles.body1.copyWith(color: AppColors.grey),
-                    textAlign: TextAlign.center,
-                  ),
+                    Text(
+                      'Congratulations!',
+                      style: AppTextStyles.heading1.copyWith(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
 
-                  4.sh,
+                    4.sh,
 
-                  Text(
-                    'Cozy is here to support you every step of the way.',
-                    style: AppTextStyles.body1.copyWith(color: AppColors.grey),
-                    textAlign: TextAlign.center,
-                  ),
+                    Text(
+                      'You\'ve just taken an important step toward prioritizing your mental well-being.',
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
 
-                  8.sh,
+                    4.sh,
 
-                  CircularProgressIndicator(
-                    color: Theme.of(context).colorScheme.primary,
-                    strokeWidth: 3,
-                  ),
+                    Text(
+                      'Cozy is here to support you every step of the way.',
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
 
-                  const Spacer(),
-                ],
+                    8.sh,
+
+                    CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                      strokeWidth: 3,
+                    ),
+
+                    const Spacer(),
+                  ],
+                ),
               ),
             ),
           ),

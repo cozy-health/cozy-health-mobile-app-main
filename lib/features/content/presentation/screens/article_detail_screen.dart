@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
@@ -147,9 +148,13 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Theme.of(
+                        border: AppSurface.border(context),
+                        color: AppSurface.tint(
                           context,
-                        ).colorScheme.primary.withValues(alpha: 0.1),
+                          Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.1),
+                        ),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(

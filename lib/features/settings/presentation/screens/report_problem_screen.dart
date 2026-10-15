@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/app_dropdown.dart';
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -89,35 +91,24 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: AppSurface.border(context),
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedCategory,
-                    icon: Icon(
-                      Icons.keyboard_arrow_down,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textSubtleDark
-                          : AppColors.textSubtleLight,
-                    ),
-                    isExpanded: true,
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    items: ['Bug', 'Suggestion', 'Crash', 'Other'].map((
-                      String value,
-                    ) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      if (newValue != null) {
-                        setState(() => _selectedCategory = newValue);
-                      }
-                    },
-                  ),
+                child: AppDropdown<String>(
+                  value: _selectedCategory,
+                  compact: true,
+                  entries: ['Bug', 'Suggestion', 'Crash', 'Other']
+                      .map(
+                        (value) => DropdownMenuEntry<String>(
+                          value: value,
+                          label: value,
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (newValue) {
+                    if (newValue != null) {
+                      setState(() => _selectedCategory = newValue);
+                    }
+                  },
                 ),
               ),
 
@@ -186,7 +177,7 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    border: AppSurface.border(context),
                   ),
                   child: Row(
                     children: [
@@ -194,9 +185,13 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Theme.of(
+                          border: AppSurface.border(context),
+                          color: AppSurface.tint(
                             context,
-                          ).colorScheme.primary.withValues(alpha: 0.1),
+                            Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.1),
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -232,6 +227,7 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                   child: Container(
                     height: 80,
                     decoration: BoxDecoration(
+                      border: AppSurface.border(context),
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -271,7 +267,7 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border, width: 1),
+                  border: AppSurface.border(context),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

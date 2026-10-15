@@ -15,6 +15,7 @@ class ProviderShareConfirmDialog extends StatelessWidget {
   );
   @override
   Widget build(BuildContext context) => AlertDialog(
+    scrollable: true,
     title: const Text('Share this assessment result?'),
     content: SingleChildScrollView(
       child: Text(

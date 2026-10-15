@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -16,8 +17,9 @@ class QuizBackConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      scrollable: true,
+      backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
+      shape: AppSurface.shape(context, BorderRadius.circular(16)),
       title: Text('Leave the quiz?', style: AppTextStyles.heading2),
       content: Text(
         'Your progress will be lost.',

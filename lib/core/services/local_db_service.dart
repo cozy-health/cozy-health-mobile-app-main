@@ -846,7 +846,8 @@ class LocalDbService {
               '/sync/batch',
               data: {'operations': batch.map(_operationForSyncItem).toList()},
             );
-            if (owner != activeUserId || scope != boxName(userSettingsBoxName)) {
+            if (owner != activeUserId ||
+                scope != boxName(userSettingsBoxName)) {
               break;
             }
             final result = await _applyBatchResult(batch, response.data);
@@ -943,7 +944,9 @@ class LocalDbService {
       'type': item.type,
       'action': item.action,
       if (item.action == 'delete' || payload == null) 'id': item.recordId,
-      if (item.action != 'delete' && payload != null) 'data': payload,
+      if ((item.action != 'delete' || item.type == 'next_of_kin') &&
+          payload != null)
+        'data': payload,
     };
   }
 

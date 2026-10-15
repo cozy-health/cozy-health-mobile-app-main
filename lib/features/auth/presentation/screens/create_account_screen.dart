@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -221,9 +222,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               child: Checkbox(
                 value: _agreeToTerms,
                 activeColor: Theme.of(context).colorScheme.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
+                shape: AppSurface.shape(context, BorderRadius.circular(6)),
                 onChanged: _busy
                     ? null
                     : (value) => setState(() {

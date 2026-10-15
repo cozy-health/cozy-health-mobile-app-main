@@ -104,6 +104,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) => MenuSheet(
         children: ['Warm', 'Neutral', 'Direct']
             .map(
@@ -125,7 +126,11 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
 }
 
 class SettingsSection extends StatelessWidget {
-  const SettingsSection({super.key, required this.title, required this.children});
+  const SettingsSection({
+    super.key,
+    required this.title,
+    required this.children,
+  });
 
   final String title;
   final List<Widget> children;

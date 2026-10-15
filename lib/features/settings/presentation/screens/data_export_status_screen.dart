@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/app_scroll_body.dart';
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -37,29 +39,31 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Data export status',
-                style: AppTextStyles.heading1.copyWith(
-                  fontSize: 28,
-                  color: Theme.of(context).colorScheme.onSurface,
+          child: AppScrollBody(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Data export status',
+                  style: AppTextStyles.heading1.copyWith(
+                    fontSize: 28,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-              ),
-              SizedBox(height: 12),
-              Text(
-                'View the status of your requested data export.',
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textMutedDark
-                      : AppColors.textMutedLight,
+                SizedBox(height: 12),
+                Text(
+                  'View the status of your requested data export.',
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
+                  ),
                 ),
-              ),
-              SizedBox(height: 48),
+                SizedBox(height: 48),
 
-              Expanded(child: _buildStateContent()),
-            ],
+                Expanded(child: _buildStateContent()),
+              ],
+            ),
           ),
         ),
       ),
@@ -119,7 +123,7 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.border),
+              border: AppSurface.border(context),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -162,15 +166,12 @@ class _DataExportStatusScreenState extends State<DataExportStatusScreen> {
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: Theme.of(
+              color: AppSurface.tint(
                 context,
-              ).colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.3),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               ),
+              borderRadius: BorderRadius.circular(24),
+              border: AppSurface.border(context),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,

@@ -3,10 +3,20 @@ import 'package:cozy_health/core/services/app_version.dart';
 import 'package:cozy_health/core/services/feature_flags_service.dart';
 import 'package:cozy_health/core/widgets/app_availability_gate.dart';
 import 'package:cozy_health/features/crisis/presentation/screens/crisis_screens.dart';
+import 'package:cozy_health/features/crisis/presentation/widgets/next_of_kin_panel.dart';
+import 'package:cozy_health/features/crisis/data/next_of_kin_repository.dart';
+import 'package:cozy_health/core/models/next_of_kin_contact.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import '../support/local_fonts.dart';
+
+class _ContactRepository extends NextOfKinRepository {
+  @override
+  Future<NextOfKinContact?> load() async => null;
+  @override
+  Future<void> refresh() async {}
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -100,11 +110,11 @@ void main() {
       useRealCrisisHub: true,
     );
 
-    await tester.tap(find.text('Crisis resources'));
+    await tester.tap(find.text('Contact next of kin'));
     await tester.pumpAndSettle();
 
-    expect(find.text("You're not\nalone."), findsOneWidget);
-    expect(find.text('Call 988'), findsOneWidget);
+    expect(find.text('Reach someone you trust'), findsOneWidget);
+    expect(find.text('Add your next of kin'), findsOneWidget);
     expect(find.text("We're doing some quick maintenance."), findsNothing);
   });
 
@@ -216,6 +226,10 @@ Future<void> _pumpGate(
       GoRoute(
         path: AppRouter.home,
         builder: (_, __) => const Scaffold(body: Text('Home content')),
+      ),
+      GoRoute(
+        path: AppRouter.crisisContact,
+        builder: (_, __) => NextOfKinPanel(repository: _ContactRepository()),
       ),
       GoRoute(
         path: AppRouter.crisisHub,

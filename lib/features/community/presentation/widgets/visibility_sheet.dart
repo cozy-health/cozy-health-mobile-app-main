@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../community_theme.dart';
 
@@ -13,13 +14,15 @@ class VisibilitySheet extends StatelessWidget {
     required this.onSelect,
   });
 
-  static void show(BuildContext context, {
+  static void show(
+    BuildContext context, {
     required PostVisibility currentVisibility,
     required ValueChanged<PostVisibility> onSelect,
   }) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) => VisibilitySheet(
         currentVisibility: currentVisibility,
         onSelect: onSelect,
@@ -29,49 +32,58 @@ class VisibilitySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.communitySurface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Who can see this?', style: context.communityHeading3),
-          const SizedBox(height: 16),
-          _buildOption(
-            context,
-            title: 'Public',
-            subtitle: 'Anyone here can see',
-            value: PostVisibility.public,
-          ),
-          _buildOption(
-            context,
-            title: 'Followers only',
-            subtitle: 'Only people who follow you',
-            value: PostVisibility.followers,
-          ),
-          _buildOption(
-            context,
-            title: 'Anonymous',
-            subtitle: 'Post without your name',
-            value: PostVisibility.anonymous,
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+    return SingleChildScrollView(
+      child: Container(
+        decoration: BoxDecoration(
+          border: AppSurface.border(context),
+          color: Theme.of(context).bottomSheetTheme.backgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Who can see this?', style: context.communityHeading3),
+            const SizedBox(height: 16),
+            _buildOption(
+              context,
+              title: 'Public',
+              subtitle: 'Anyone here can see',
+              value: PostVisibility.public,
             ),
-            child: Text(
-              'Note: Moderators can always see your username for safety.',
-              style: context.communityBody2.copyWith(color: context.communityMuted),
+            _buildOption(
+              context,
+              title: 'Followers only',
+              subtitle: 'Only people who follow you',
+              value: PostVisibility.followers,
             ),
-          ),
-        ],
+            _buildOption(
+              context,
+              title: 'Anonymous',
+              subtitle: 'Post without your name',
+              value: PostVisibility.anonymous,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: AppSurface.border(context),
+                color: AppSurface.tint(
+                  context,
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Note: Moderators can always see your username for safety.',
+                style: context.communityBody2.copyWith(
+                  color: context.communityMuted,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -94,8 +106,12 @@ class VisibilitySheet extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: isSelected ? Theme.of(context).colorScheme.primary : context.communityMuted,
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : context.communityMuted,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -108,7 +124,12 @@ class VisibilitySheet extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Text(subtitle, style: context.communityBody2.copyWith(color: context.communityMuted)),
+                  Text(
+                    subtitle,
+                    style: context.communityBody2.copyWith(
+                      color: context.communityMuted,
+                    ),
+                  ),
                 ],
               ),
             ),

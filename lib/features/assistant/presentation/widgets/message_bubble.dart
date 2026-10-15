@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_surface.dart';
 import 'chat_shared_widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -54,19 +55,13 @@ class MessageBubble extends StatelessWidget {
                       bottomLeft: Radius.circular(isUser ? 20 : 4),
                       bottomRight: Radius.circular(isUser ? 4 : 20),
                     ),
-                    border: isUser
-                        ? null
-                        : Border.all(
-                            color: isDark
-                                ? AppColors.borderDark
-                                : AppColors.borderLight,
-                          ),
+                    border: isUser ? null : AppSurface.border(context),
                   ),
                   child: Text(
                     message.text,
                     style: AppTextStyles.body1.copyWith(
                       color: isUser
-                          ? AppColors.white
+                          ? Theme.of(context).colorScheme.onPrimary
                           : Theme.of(context).colorScheme.onSurface,
                       height: 1.5,
                     ),
@@ -82,14 +77,10 @@ class MessageBubble extends StatelessWidget {
               ? MainAxisAlignment.end
               : MainAxisAlignment.start,
           children: [
-            Text(formatTime(message.createdAt), style: timestampStyle()),
+            Text(formatTime(message.createdAt), style: timestampStyle(context)),
             if (message.status == MessageStatus.failed) ...[
               const SizedBox(width: 4),
-              Icon(
-                Icons.error_outline,
-                color: AppColors.danger,
-                size: 14,
-              ),
+              Icon(Icons.error_outline, color: AppColors.danger, size: 14),
             ],
           ],
         ),

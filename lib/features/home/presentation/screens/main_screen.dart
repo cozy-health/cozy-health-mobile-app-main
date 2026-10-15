@@ -64,7 +64,7 @@ class _MainScreenState extends State<MainScreen> {
                     button: true,
                     label: 'Open quick actions',
                     child: GestureDetector(
-                      onLongPress: () => context.push(AppRouter.crisisHub),
+                      onLongPress: () => context.push(AppRouter.crisisContact),
                       child: FloatingActionButton(
                         key: _tourTargets.journal,
                         heroTag: 'quick-actions',

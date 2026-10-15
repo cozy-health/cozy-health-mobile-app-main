@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/app_scroll_body.dart';
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/security_blur.dart';
 import '../../../../core/services/local_db_service.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
@@ -366,7 +368,8 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     final discard = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: colorScheme.surface,
+        scrollable: true,
+        backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
         title: Text(
           'Discard this entry?',
           style: TextStyle(color: colorScheme.onSurface),
@@ -1174,74 +1177,76 @@ class _MoodCheckInSuccessScreenState extends State<MoodCheckInSuccessScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (!reduceMotion) ...[
-                    const Positioned(top: 4, left: 80, child: _Sparkle()),
-                    const Positioned(
-                      bottom: 10,
-                      right: 70,
-                      child: _Sparkle(size: 5),
-                    ),
-                    const Positioned(
-                      top: 28,
-                      right: 102,
-                      child: _Sparkle(size: 4),
+          child: AppScrollBody(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (!reduceMotion) ...[
+                      const Positioned(top: 4, left: 80, child: _Sparkle()),
+                      const Positioned(
+                        bottom: 10,
+                        right: 70,
+                        child: _Sparkle(size: 5),
+                      ),
+                      const Positioned(
+                        top: 28,
+                        right: 102,
+                        child: _Sparkle(size: 4),
+                      ),
+                    ],
+                    Container(
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withValues(alpha: .12),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Icon(
+                        Icons.check_rounded,
+                        color: AppColors.success,
+                        size: 52,
+                      ),
                     ),
                   ],
-                  Container(
-                    width: 88,
-                    height: 88,
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: .12),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Icon(
-                      Icons.check_rounded,
-                      color: AppColors.success,
-                      size: 52,
-                    ),
+                ),
+                const SizedBox(height: 34),
+                Text(
+                  'Entry saved.',
+                  style: AppTextStyles.heading1.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
-              const SizedBox(height: 34),
-              Text(
-                'Entry saved.',
-                style: AppTextStyles.heading1.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Thanks for checking\nin with yourself.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.4,
+                const SizedBox(height: 14),
+                Text(
+                  'Thanks for checking\nin with yourself.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 42),
-              _PrimaryButton(
-                label: 'Back to Home',
-                onPressed: () => context.go(AppRouter.home),
-              ),
-              const SizedBox(height: 12),
-              _SecondaryButton(
-                label: 'Log another',
-                onPressed: () => context.go(AppRouter.moodFeeling),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => context.push(AppRouter.moodHistory),
-                child: const Text('See past entries'),
-              ),
-            ],
+                const SizedBox(height: 42),
+                _PrimaryButton(
+                  label: 'Back to Home',
+                  onPressed: () => context.go(AppRouter.home),
+                ),
+                const SizedBox(height: 12),
+                _SecondaryButton(
+                  label: 'Log another',
+                  onPressed: () => context.go(AppRouter.moodFeeling),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => context.push(AppRouter.moodHistory),
+                  child: const Text('See past entries'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1358,7 +1363,8 @@ class _MoodHistoryCard extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: AppColors.primarySoft,
+                  border: AppSurface.border(context),
+                  color: AppSurface.tint(context, AppColors.primarySoft),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Center(
@@ -1700,7 +1706,8 @@ class _MascotMessage extends StatelessWidget {
           width: 64,
           height: 64,
           decoration: BoxDecoration(
-            color: AppColors.primarySoft,
+            border: AppSurface.border(context),
+            color: AppSurface.tint(context, AppColors.primarySoft),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Icon(

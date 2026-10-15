@@ -145,7 +145,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
         ? AppColors.danger
         : _focusNode.hasFocus
         ? (isDark ? AppColors.borderStrongDark : AppColors.borderStrongLight)
-        : (isDark ? AppColors.borderDark : AppColors.borderLight);
+        : colorScheme.outline;
     final message = widget.error ?? widget.success ?? widget.helper;
     final messageType = hasError
         ? AuthMessageType.error
@@ -169,7 +169,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
         const SizedBox(height: 8),
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          height: 56,
+          constraints: const BoxConstraints(minHeight: 56),
           decoration: BoxDecoration(
             color: isDark ? AppColors.surfaceElevatedDark : colorScheme.surface,
             borderRadius: BorderRadius.circular(12),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_surface.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/models/mood_entry.dart';
@@ -41,9 +42,10 @@ class CozyCalendar extends StatelessWidget {
     const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(8),
+      shape: AppSurface.shape(context, BorderRadius.circular(8)),
+      clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16 + AppSurface.side(context).width),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

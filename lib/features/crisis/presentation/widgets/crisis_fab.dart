@@ -88,8 +88,8 @@ class _CrisisFabState extends State<CrisisFab>
                 ),
                 ListTile(
                   leading: const Icon(Icons.phone_outlined),
-                  title: const Text('Call for help'),
-                  onTap: () => open(AppRouter.crisisHub),
+                  title: const Text('Contact next of kin'),
+                  onTap: () => open(AppRouter.crisisContact),
                 ),
                 ListTile(
                   leading: const Icon(Icons.close),
@@ -108,9 +108,9 @@ class _CrisisFabState extends State<CrisisFab>
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Crisis support',
-      hint: 'Tap to open crisis resources',
-      onTap: () => context.push(AppRouter.crisisHub),
+      label: 'Contact next of kin',
+      hint: 'Tap to contact your next of kin',
+      onTap: () => context.push(AppRouter.crisisContact),
       onLongPress: _showQuickCalm,
       child: ExcludeSemantics(
         child: AnimatedBuilder(
@@ -140,7 +140,7 @@ class _CrisisFabState extends State<CrisisFab>
               backgroundColor: AppColors.crisisPrimary,
               foregroundColor: AppColors.crisisTextOnDark,
               shape: const CircleBorder(),
-              onPressed: () => context.push(AppRouter.crisisHub),
+              onPressed: () => context.push(AppRouter.crisisContact),
               child: const Icon(Icons.favorite_border),
             ),
           ),

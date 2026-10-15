@@ -253,7 +253,10 @@ class ConversationCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Text(formatTime(conversation.updatedAt), style: timestampStyle()),
+            Text(
+              formatTime(conversation.updatedAt),
+              style: timestampStyle(context),
+            ),
           ],
         ),
       ),
@@ -304,50 +307,53 @@ class DeleteConversationDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: WarmPanel(
-        padding: const EdgeInsets.all(22),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Delete this\nconversation?',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.heading2.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'All messages will be\npermanently removed.',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body1.copyWith(
-                color: Theme.of(context).textTheme.bodyMedium?.color,
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: onDelete,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.danger,
-                  foregroundColor: AppColors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+      shape: const RoundedRectangleBorder(),
+      child: SingleChildScrollView(
+        child: WarmPanel(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Delete this\nconversation?',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.heading2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-                child: const Text('Delete'),
               ),
-            ),
-            const SizedBox(height: 10),
-            SecondaryButton(
-              label: 'Cancel',
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                'All messages will be\npermanently removed.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: onDelete,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.danger,
+                    foregroundColor: AppColors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Delete'),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SecondaryButton(
+                label: 'Cancel',
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
         ),
       ),
     );

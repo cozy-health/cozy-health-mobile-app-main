@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -81,13 +82,12 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.3),
+            color: AppSurface.tint(
+              context,
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             ),
+            borderRadius: BorderRadius.circular(16),
+            border: AppSurface.border(context),
           ),
           child: Row(
             children: [
@@ -126,7 +126,7 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: AppSurface.border(context),
           ),
           child: Column(
             children: [
@@ -206,7 +206,7 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: AppSurface.border(context),
           ),
           child: Column(
             children: [
@@ -389,7 +389,7 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: AppSurface.border(context),
           ),
           child: Wrap(
             spacing: 24,
@@ -437,10 +437,9 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          scrollable: true,
+          backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
+          shape: AppSurface.shape(context, BorderRadius.circular(16)),
           title: Text(
             'Disable 2FA?',
             style: AppTextStyles.heading2.copyWith(
@@ -568,7 +567,8 @@ class _MethodRow extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.warmBackground,
+                  border: AppSurface.border(context),
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(

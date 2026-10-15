@@ -1,9 +1,14 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class AssistantSubScaffold extends StatelessWidget {
-  const AssistantSubScaffold({super.key, required this.title, required this.child});
+  const AssistantSubScaffold({
+    super.key,
+    required this.title,
+    required this.child,
+  });
 
   final String title;
   final Widget child;
@@ -54,22 +59,19 @@ class MenuSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.surfaceElevatedDark
-                : AppColors.surfaceElevatedLight,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        child: Material(
+          color: Theme.of(context).bottomSheetTheme.backgroundColor,
+          shape: AppSurface.shape(context, BorderRadius.circular(18)),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: EdgeInsets.all(12 + AppSurface.side(context).width),
+            child: SingleChildScrollView(
+              child: Column(mainAxisSize: MainAxisSize.min, children: children),
             ),
           ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: children),
         ),
       ),
     );
@@ -156,7 +158,8 @@ class CozyCharacterState extends State<CozyCharacter>
           width: widget.size,
           height: widget.size,
           decoration: BoxDecoration(
-            color: AppColors.primarySoft,
+            border: AppSurface.border(context),
+            color: AppSurface.tint(context, AppColors.primarySoft),
             borderRadius: BorderRadius.circular(widget.size * .25),
           ),
           child: Icon(
@@ -186,12 +189,11 @@ class WarmPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveColor = isDark && color == AppColors.surfaceElevated
-        ? AppColors.surfaceElevatedDark
+    final effectiveColor = color == AppColors.surfaceElevated
+        ? Theme.of(context).colorScheme.surfaceContainerHigh
+        : color.a < 1
+        ? AppSurface.tint(context, color)
         : color;
-    final effectiveBorder = borderColor ??
-        (isDark ? AppColors.borderDark : AppColors.borderLight);
 
     return Container(
       width: double.infinity,
@@ -199,7 +201,9 @@ class WarmPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: effectiveColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: effectiveBorder),
+        border: Border.fromBorderSide(
+          AppSurface.side(context, color: borderColor),
+        ),
       ),
       child: child,
     );
@@ -207,7 +211,11 @@ class WarmPanel extends StatelessWidget {
 }
 
 class PrimaryButton extends StatelessWidget {
-  const PrimaryButton({super.key, required this.label, required this.onPressed});
+  const PrimaryButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
 
   final String label;
   final VoidCallback onPressed;
@@ -234,7 +242,11 @@ class PrimaryButton extends StatelessWidget {
 }
 
 class SecondaryButton extends StatelessWidget {
-  const SecondaryButton({super.key, required this.label, required this.onPressed});
+  const SecondaryButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
 
   final String label;
   final VoidCallback onPressed;
@@ -364,9 +376,7 @@ class PromptButton extends StatelessWidget {
               ? AppColors.surfaceElevatedDark
               : AppColors.surfaceElevatedLight,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          ),
+          border: AppSurface.border(context),
         ),
         child: Text(
           text,
@@ -379,8 +389,8 @@ class PromptButton extends StatelessWidget {
   }
 }
 
-TextStyle timestampStyle() => AppTextStyles.body2.copyWith(
-  color: AppColors.textSubtle,
+TextStyle timestampStyle(BuildContext context) => AppTextStyles.body2.copyWith(
+  color: Theme.of(context).colorScheme.onSurfaceVariant,
   fontSize: 11,
   fontWeight: FontWeight.w500,
 );

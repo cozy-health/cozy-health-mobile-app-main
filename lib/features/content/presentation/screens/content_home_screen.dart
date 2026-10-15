@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import '../../data/content_repository.dart';
 import '../../../../core/data/demo_mode.dart';
 import 'package:flutter/material.dart';
@@ -282,11 +283,7 @@ class _ContentHomeScreenState extends State<ContentHomeScreen>
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                      ),
+                      border: AppSurface.border(context),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

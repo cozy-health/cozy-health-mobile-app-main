@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 
@@ -13,11 +14,12 @@ class QuizRecommendationCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+          color: AppSurface.tint(
+            context,
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           ),
+          borderRadius: BorderRadius.circular(16),
+          border: AppSurface.border(context),
         ),
         child: Row(
           children: [

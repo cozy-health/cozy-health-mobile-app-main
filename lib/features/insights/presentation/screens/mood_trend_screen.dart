@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -93,11 +94,7 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  ),
+                  border: AppSurface.border(context),
                 ),
                 child: Row(
                   children: ['7 days', '30 days', '90 days'].map((range) {
@@ -120,7 +117,7 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
                                   ? FontWeight.w600
                                   : FontWeight.w500,
                               color: isSelected
-                                  ? AppColors.white
+                                  ? Theme.of(context).colorScheme.onPrimary
                                   : Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
@@ -174,11 +171,7 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  ),
+                  border: AppSurface.border(context),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,7 +211,7 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
   }
 
   Widget _buildSummaryRow(String label, String value) {
-    return Row(
+    return Wrap(
       children: [
         Text(
           label,
@@ -255,8 +248,8 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
           ),
         ),
         SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
           children: _daily
               .map((row) => (row['day'] as String).substring(5))
               .map((day) {

@@ -1,5 +1,7 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 // TODO: wire to backend when endpoint exists
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_dropdown.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/chip.dart' as design;
 import '../community_local_state.dart';
@@ -155,10 +157,7 @@ class CommunityGroupRow extends StatelessWidget {
   final VoidCallback onLeave;
   @override
   Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      border: Border.all(color: Theme.of(context).dividerColor),
-      borderRadius: BorderRadius.circular(8),
-    ),
+    decoration: BoxDecoration(border: AppSurface.border(context)),
     child: ListTile(
       leading: const CircleAvatar(
         radius: 15,
@@ -213,14 +212,11 @@ class _CreateCommunityGroupScreenState
                   : null,
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: _topic,
-              decoration: const InputDecoration(labelText: 'Topic'),
-              items: CommunityLocalState.topics
-                  .map(
-                    (topic) =>
-                        DropdownMenuItem(value: topic, child: Text(topic)),
-                  )
+            AppDropdown<String>(
+              value: _topic,
+              label: const Text('Topic'),
+              entries: CommunityLocalState.topics
+                  .map((topic) => DropdownMenuEntry(value: topic, label: topic))
                   .toList(),
               onChanged: (value) => setState(() => _topic = value!),
             ),

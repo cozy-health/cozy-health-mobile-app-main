@@ -48,6 +48,7 @@ class _FeatureTourState extends State<FeatureTour> {
       final accepted = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
+          scrollable: true,
           title: const Text('Want a quick look around?'),
           content: const Text(
             'A short tour can help you find your way. You can skip it anytime.',
@@ -118,7 +119,7 @@ class _FeatureTourState extends State<FeatureTour> {
       (
         targets.crisis,
         'Get help when you need it',
-        'The heart button opens support and grounding resources.',
+        'The heart button helps you contact your next of kin.',
         ContentAlign.top,
       ),
       (

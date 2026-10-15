@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 extension CommunityTheme on BuildContext {
@@ -8,27 +7,20 @@ extension CommunityTheme on BuildContext {
 
   Color get communityBackground => Theme.of(this).scaffoldBackgroundColor;
 
-  Color get communitySurface =>
-      communityIsDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+  Color get communitySurface => Theme.of(this).colorScheme.surface;
 
-  Color get communitySurfaceElevated => communityIsDark
-      ? AppColors.surfaceElevatedDark
-      : AppColors.surfaceElevatedLight;
+  Color get communitySurfaceElevated =>
+      Theme.of(this).colorScheme.surfaceContainerHigh;
 
-  Color get communityText =>
-      communityIsDark ? AppColors.textDark : AppColors.textLight;
+  Color get communityText => Theme.of(this).colorScheme.onSurface;
 
-  Color get communityMuted =>
-      communityIsDark ? AppColors.textMutedDark : AppColors.textMutedLight;
+  Color get communityMuted => Theme.of(this).colorScheme.onSurfaceVariant;
 
-  Color get communitySubtle =>
-      communityIsDark ? AppColors.textSubtleDark : AppColors.textSubtleLight;
+  Color get communitySubtle => Theme.of(this).colorScheme.onSurfaceVariant;
 
-  Color get communityBorder =>
-      communityIsDark ? AppColors.borderDark : AppColors.borderLight;
+  Color get communityBorder => Theme.of(this).colorScheme.outline;
 
-  Color get communityStrongBorder =>
-      communityIsDark ? AppColors.borderStrongDark : AppColors.borderStrongLight;
+  Color get communityStrongBorder => Theme.of(this).colorScheme.outline;
 
   TextStyle get communityHeading1 =>
       AppTextStyles.heading1.copyWith(color: communityText);

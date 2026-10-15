@@ -48,6 +48,7 @@ class _QuizShareActionsState extends State<QuizShareActions>
       await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
+              scrollable: true,
               title: Text(title),
               content: Text(text),
               actions: [
@@ -69,6 +70,7 @@ class _QuizShareActionsState extends State<QuizShareActions>
     final value = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: Text(title),
         content: TextField(controller: controller, autofocus: true),
         actions: [

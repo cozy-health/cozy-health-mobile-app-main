@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -107,14 +108,10 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
                         ),
                       )
                       .toList(),
-                  legend: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  legend: Wrap(
+                    alignment: WrapAlignment.center,
                     children: [
-                      _buildLegendItem(
-                        'Activity',
-                        AppColors.warmOrange,
-                        true,
-                      ),
+                      _buildLegendItem('Activity', AppColors.warmOrange, true),
                       SizedBox(width: 24),
                       _buildLegendItem(
                         'Mood',
@@ -138,11 +135,7 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  ),
+                  border: AppSurface.border(context),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,8 +179,8 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
           height: 2,
           color: isDashed ? Colors.transparent : color,
           child: isDashed
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ? Wrap(
+                  alignment: WrapAlignment.spaceBetween,
                   children: List.generate(
                     3,
                     (_) => Container(width: 4, height: 2, color: color),
@@ -224,8 +217,8 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
           ),
         ),
         SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
           children: _daily
               .map((row) => (row['day'] as String).substring(5))
               .map((day) {

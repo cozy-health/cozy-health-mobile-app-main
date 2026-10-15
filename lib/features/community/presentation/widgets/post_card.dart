@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 // TODO: wire to backend when endpoint exists
 import 'package:flutter/material.dart';
 import '../community_local_state.dart';
@@ -38,9 +39,7 @@ class PostCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.communitySurface,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: context.communityBorder.withValues(alpha: 0.7),
-          ),
+          border: AppSurface.border(context),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,9 +108,13 @@ class PostCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(
+                          border: AppSurface.border(context),
+                          color: AppSurface.tint(
                             context,
-                          ).colorScheme.primary.withValues(alpha: .08),
+                            Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: .08),
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

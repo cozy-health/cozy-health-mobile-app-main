@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/app_scroll_body.dart';
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -403,6 +405,7 @@ class _JournalScreenState extends State<JournalScreen>
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) => _EntryMoreSheet(
         onEdit: () {
           Navigator.pop(context);
@@ -433,6 +436,7 @@ class _JournalScreenState extends State<JournalScreen>
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) => _FilterSheet(
         selectedTags: _activeTags,
         dateRange: _dateRange,
@@ -462,6 +466,7 @@ class _JournalScreenState extends State<JournalScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) => _AddTagSheet(
         controller: controller,
         onAdd: () async {
@@ -756,6 +761,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) => _AddTagSheet(
         controller: controller,
         onAdd: () {
@@ -994,55 +1000,57 @@ class _JournalVoiceRecordingScreenState
       action: TextButton(onPressed: _cancel, child: Text('Cancel')),
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const Spacer(),
-            ScaleTransition(
-              scale: MediaQuery.of(context).disableAnimations
-                  ? const AlwaysStoppedAnimation(1)
-                  : _pulseController,
-              child: GestureDetector(
-                onTap: _toggleRecording,
-                child: Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: _isRecording
-                        ? AppColors.danger
-                        : Theme.of(context).colorScheme.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
-                    color: AppColors.white,
-                    size: 28,
+        child: AppScrollBody(
+          child: Column(
+            children: [
+              const Spacer(),
+              ScaleTransition(
+                scale: MediaQuery.of(context).disableAnimations
+                    ? const AlwaysStoppedAnimation(1)
+                    : _pulseController,
+                child: GestureDetector(
+                  onTap: _toggleRecording,
+                  child: Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: _isRecording
+                          ? AppColors.danger
+                          : Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                      color: AppColors.white,
+                      size: 28,
+                    ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(height: 32),
-            Text(
-              _formatDuration(_seconds),
-              style: AppTextStyles.heading1.copyWith(
-                fontSize: 32,
-                color: Theme.of(context).colorScheme.primary,
+              SizedBox(height: 32),
+              Text(
+                _formatDuration(_seconds),
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 32,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              _isRecording ? 'Recording...' : 'Tap to start',
-              style: _captionStyle(context),
-            ),
-            SizedBox(height: 34),
-            _Waveform(active: _isRecording),
-            const Spacer(),
-            _PrimaryButton(
-              label: _isRecording ? 'Tap to stop' : 'Start recording',
-              onPressed: _toggleRecording,
-            ),
-            SizedBox(height: 12),
-            _SecondaryButton(label: 'Cancel', onPressed: _cancel),
-          ],
+              SizedBox(height: 8),
+              Text(
+                _isRecording ? 'Recording...' : 'Tap to start',
+                style: _captionStyle(context),
+              ),
+              SizedBox(height: 34),
+              _Waveform(active: _isRecording),
+              const Spacer(),
+              _PrimaryButton(
+                label: _isRecording ? 'Tap to stop' : 'Start recording',
+                onPressed: _toggleRecording,
+              ),
+              SizedBox(height: 12),
+              _SecondaryButton(label: 'Cancel', onPressed: _cancel),
+            ],
+          ),
         ),
       ),
     );
@@ -1512,6 +1520,7 @@ class JournalEntryDetailScreen extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (sheetContext) => _EntryMoreSheet(
         onEdit: () {
           Navigator.pop(sheetContext);
@@ -1596,6 +1605,7 @@ class _EntrySection extends StatelessWidget {
         Container(
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
+            border: AppSurface.border(context),
             borderRadius: BorderRadius.circular(8),
             color: Theme.of(context).brightness == Brightness.dark
                 ? AppColors.surfaceSubtleDark
@@ -1660,7 +1670,8 @@ class _JournalEntryCard extends StatelessWidget {
       color: Theme.of(context).brightness == Brightness.dark
           ? AppColors.surfaceSubtleDark
           : AppColors.surfaceSubtle,
-      borderRadius: BorderRadius.circular(8),
+      shape: AppSurface.shape(context, BorderRadius.circular(8)),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         onLongPress: onMore,
@@ -2189,6 +2200,7 @@ class _DeleteConfirmation extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       child: _WarmPanel(
         padding: const EdgeInsets.all(22),
         child: Column(
@@ -2246,6 +2258,7 @@ class _DiscardRecordingDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
       title: Text('Discard recording?'),
       content: Text('This recording has not been saved.'),
       actions: [
@@ -2359,7 +2372,8 @@ class _TagRow extends StatelessWidget {
               vertical: compact ? 4 : 6,
             ),
             decoration: BoxDecoration(
-              color: AppColors.primarySubtle,
+              border: AppSurface.border(context),
+              color: AppSurface.tint(context, AppColors.primarySubtle),
               borderRadius: BorderRadius.circular(24),
             ),
             child: Text(
@@ -2506,23 +2520,19 @@ class _BottomSheetFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final dividerColor = Theme.of(context).dividerTheme.color;
-
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color:
-                  dividerColor ?? Theme.of(context).colorScheme.outlineVariant,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          child: Material(
+            color: Theme.of(context).bottomSheetTheme.backgroundColor,
+            shape: AppSurface.shape(context, BorderRadius.circular(24)),
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: EdgeInsets.all(20 + AppSurface.side(context).width),
+              child: child,
             ),
           ),
-          child: child,
         ),
       ),
     );
@@ -2669,19 +2679,16 @@ class _WarmPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final dividerColor = Theme.of(context).dividerTheme.color;
-
     return Container(
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: color ?? colorScheme.surface,
+        color: color != null && color!.a < 1
+            ? AppSurface.tint(context, color!)
+            : color ?? colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color:
-              borderColor ??
-              dividerColor ??
-              Theme.of(context).colorScheme.outlineVariant,
+        border: Border.fromBorderSide(
+          AppSurface.side(context, color: borderColor),
         ),
       ),
       child: child,

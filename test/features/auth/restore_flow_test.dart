@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'package:cozy_health/core/models/next_of_kin_contact.dart';
+import 'package:cozy_health/features/crisis/data/next_of_kin_repository.dart';
+import 'package:cozy_health/features/crisis/presentation/screens/crisis_screens.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -78,6 +81,19 @@ class FakeApi {
     calls.update(path, (count) => count + 1, ifAbsent: () => 1);
     if (failures.contains(path)) throw StateError('Unavailable');
     if (path == '/user/profile') return profile();
+    if (path == '/next-of-kin') {
+      return {
+        'data': {
+          'id': 'primary',
+          'contact': {
+            'name': 'Real contact',
+            'phone': '+2348031234567',
+            'relationship': 'Sibling',
+          },
+          'client_updated_at': date.toIso8601String(),
+        },
+      };
+    }
     if (path == '/safety-plan') {
       return {
         'data': {
@@ -155,6 +171,7 @@ void main() {
   final local = LocalDbService();
   late Directory temporary;
   late FakeApi api;
+  final secureHiveKeys = <String, String>{};
   setUpAll(() async {
     await installLocalTestFonts();
     FlutterSecureStorage.setMockInitialValues({});
@@ -173,9 +190,18 @@ void main() {
     Hive.registerAdapter(UserPreferencesAdapter());
     local.syncPaused = true;
     await local.activateAccount('1', email: 'sample@example.test');
+    secureHiveKeys.addAll(await const FlutterSecureStorage().readAll());
   });
   setUp(() async {
     BackgroundRestoreService.instance.stop();
+    secureHiveKeys.addAll(
+      Map.fromEntries(
+        (await const FlutterSecureStorage().readAll()).entries.where(
+          (entry) => entry.key.startsWith('hive_'),
+        ),
+      ),
+    );
+    FlutterSecureStorage.setMockInitialValues(secureHiveKeys);
     SharedPreferences.setMockInitialValues({'install_marker_set': true});
     await local.activateAccount('1', email: 'sample@example.test');
     for (final box in [
@@ -196,7 +222,6 @@ void main() {
       await box.clear();
     }
     await (await local.settingsBox()).put('device_user_id', '1');
-    FlutterSecureStorage.setMockInitialValues({});
     api = FakeApi();
   });
   tearDownAll(() async {
@@ -208,6 +233,123 @@ void main() {
   });
   RestoreController controller() =>
       RestoreController(userId: '1', get: api.get, now: date);
+
+  const kin = NextOfKinContact(
+    name: 'Trusted Person',
+    phone: '+2348031234567',
+    relationship: 'Sibling',
+  );
+
+  test('next-of-kin persists offline and queues contact data only', () async {
+    final repo = NextOfKinRepository();
+    await repo.save(kin);
+    expect((await repo.load())?.phone, kin.phone);
+    final pending = local.pendingItems.single;
+    expect(pending.type, 'next_of_kin');
+    expect(pending.payload?['phone'], kin.phone);
+    expect(pending.payload?.containsKey('message'), false);
+    await (await local.settingsBox()).close();
+    expect((await NextOfKinRepository().load())?.name, kin.name);
+  });
+
+  test('next-of-kin contact never leaks across accounts', () async {
+    final repo = NextOfKinRepository();
+    await repo.save(kin);
+    await local.activateAccount('2');
+    expect(await repo.load(), isNull);
+    await local.activateAccount('1');
+    expect((await repo.load())?.phone, kin.phone);
+  });
+
+  test(
+    'next-of-kin removal prevents download resurrection and survives restart',
+    () async {
+      final repo = NextOfKinRepository();
+      await repo.save(kin);
+      await repo.save(null);
+      expect(local.pendingItems.single.action, 'delete');
+      await repo.merge({
+        'id': 'primary',
+        'contact': kin.toJson(),
+        'client_updated_at': date.toIso8601String(),
+      });
+      expect(await repo.load(), isNull);
+      await (await local.settingsBox()).close();
+      expect(await NextOfKinRepository().load(), isNull);
+    },
+  );
+
+  test('newer remote next-of-kin edit and removal restore correctly', () async {
+    final repo = NextOfKinRepository();
+    await repo.merge({
+      'id': 'primary',
+      'contact': kin.toJson(),
+      'client_updated_at': date.toIso8601String(),
+    });
+    expect((await repo.load())?.phone, kin.phone);
+    await repo.merge({
+      'id': 'primary',
+      'contact': null,
+      'client_updated_at': date
+          .add(const Duration(minutes: 1))
+          .toIso8601String(),
+    });
+    await repo.merge({
+      'id': 'primary',
+      'contact': kin.toJson(),
+      'client_updated_at': date.toIso8601String(),
+    });
+    expect(await repo.load(), isNull);
+  });
+
+  testWidgets(
+    'editing a completed safety plan preserves existing contact details',
+    (tester) async {
+      final people = [
+        {
+          'name': 'Existing trusted person',
+          'phone': '+2348011111111',
+          'relation': 'Friend',
+        },
+      ];
+      final professionals = [
+        {'name': 'Therapist', 'phone': '+2348022222222', 'role': 'Therapist'},
+      ];
+      await tester.runAsync(() async {
+        await local.saveSafetyPlan(
+          SafetyPlan(
+            id: 'saved-plan',
+            warningSigns: ['Feeling isolated'],
+            peopleToCall: people,
+            professionals: professionals,
+            isComplete: true,
+            lastUpdatedAt: date,
+          ),
+        );
+      });
+      await tester.pumpWidget(const MaterialApp(home: SafetyPlanScreen()));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Feeling isolated'), findsOneWidget);
+      await tester.ensureVisible(find.text('Continue'));
+      await tester.runAsync(() async {
+        await tester.tap(find.text('Continue'));
+        for (
+          var attempt = 0;
+          attempt < 50 && !local.hasPending('safety_plan', 'saved-plan');
+          attempt++
+        ) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        }
+      });
+      await tester.pumpAndSettle();
+      expect(local.getSafetyPlan()?.peopleToCall, people);
+      expect(local.getSafetyPlan()?.professionals, professionals);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 
   test('fresh device with empty history requests restore', () async {
     expect(await RestoreService.prepare('1'), isTrue);

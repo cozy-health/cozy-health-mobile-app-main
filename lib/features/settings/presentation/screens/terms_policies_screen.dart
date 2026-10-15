@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../utils/responsive_extensions.dart';
 
@@ -13,7 +12,7 @@ class TermsPoliciesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 5.w),
@@ -31,12 +30,14 @@ class TermsPoliciesScreen extends StatelessWidget {
                         Icon(
                           Icons.chevron_left,
                           size: 22,
-                          color: AppColors.darkGrey,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         Text(
                           'Back',
                           style: AppTextStyles.body2.copyWith(
-                            color: AppColors.grey,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -49,7 +50,7 @@ class TermsPoliciesScreen extends StatelessWidget {
                         style: AppTextStyles.heading1.copyWith(
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.black,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -77,7 +78,7 @@ Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saep
                     style: AppTextStyles.body1.copyWith(
                       fontSize: 15,
                       height: 1.45,
-                      color: AppColors.darkGrey,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),

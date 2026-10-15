@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -46,14 +47,15 @@ class TopicsScreen extends StatelessWidget {
                 context.push(AppRouter.communityHub);
               },
               child: Container(
-                height: 80,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                constraints: const BoxConstraints(minHeight: 80),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: context.communityBorder.withValues(alpha: 0.7),
-                  ),
+                  border: AppSurface.border(context),
                 ),
                 child: Row(
                   children: [
@@ -64,7 +66,10 @@ class TopicsScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(topic['title'], style: context.communityHeading3),
+                          Text(
+                            topic['title'],
+                            style: context.communityHeading3,
+                          ),
                           SizedBox(height: 2),
                           Text(
                             '${topic['posts']} posts',

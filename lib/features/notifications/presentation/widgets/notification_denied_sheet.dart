@@ -10,62 +10,60 @@ class NotificationDeniedSheet extends StatelessWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (context) => const NotificationDeniedSheet(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 16),
-            Icon(
-              Icons.notifications_off_outlined,
-              size: 48,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Notifications are turned off.',
-              style: AppTextStyles.heading2.copyWith(
-                fontSize: 24,
-                color: Theme.of(context).colorScheme.onSurface,
-                height: 1.2,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'To receive reminders, turn them on in your device settings.',
-              style: AppTextStyles.body1.copyWith(
+    return SingleChildScrollView(
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 16),
+              Icon(
+                Icons.notifications_off_outlined,
+                size: 48,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            AppButton(
-              text: 'Open Settings',
-              onPressed: () {
-                // Open device settings
-                context.pop(true);
-              },
-            ),
-            const SizedBox(height: 12),
-            AppButton(
-              text: 'Maybe later',
-              isOutlined: true,
-              onPressed: () => context.pop(false),
-            ),
-          ],
+              const SizedBox(height: 24),
+              Text(
+                'Notifications are turned off.',
+                style: AppTextStyles.heading2.copyWith(
+                  fontSize: 24,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  height: 1.2,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'To receive reminders, turn them on in your device settings.',
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              AppButton(
+                text: 'Open Settings',
+                onPressed: () {
+                  // Open device settings
+                  context.pop(true);
+                },
+              ),
+              const SizedBox(height: 12),
+              AppButton(
+                text: 'Maybe later',
+                isOutlined: true,
+                onPressed: () => context.pop(false),
+              ),
+            ],
+          ),
         ),
       ),
     );

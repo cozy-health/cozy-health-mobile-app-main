@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -30,6 +31,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
               Container(
                 height: 120,
                 decoration: BoxDecoration(
+                  border: AppSurface.border(context),
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -132,24 +134,33 @@ class CommunityGuidelinesScreen extends StatelessWidget {
               SizedBox(height: 24),
 
               GestureDetector(
-                onTap: () => context.push(AppRouter.crisisHub),
+                onTap: () => context.push(AppRouter.crisisContact),
                 child: Container(
-                  height: 56,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  constraints: const BoxConstraints(minHeight: 56),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(
+                    border: AppSurface.border(context),
+                    color: AppSurface.tint(
                       context,
-                    ).colorScheme.primary.withValues(alpha: 0.1),
+                      Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.1),
+                    ),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'View crisis resources',
-                        style: context.communityBody1.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+                      Expanded(
+                        child: Text(
+                          'Contact next of kin',
+                          style: context.communityBody1.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                       Icon(
@@ -182,9 +193,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.communitySurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: context.communityBorder.withValues(alpha: 0.7),
-        ),
+        border: AppSurface.border(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,7 +202,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
             children: [
               Text(icon, style: TextStyle(fontSize: 24)),
               SizedBox(width: 12),
-              Text(title, style: context.communityHeading3),
+              Expanded(child: Text(title, style: context.communityHeading3)),
             ],
           ),
           SizedBox(height: 12),

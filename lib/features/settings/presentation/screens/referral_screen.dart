@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -15,7 +16,10 @@ class ReferralScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
           tooltip: 'Back',
         ),
@@ -30,13 +34,15 @@ class ReferralScreen extends StatelessWidget {
                 'Invite a friend',
                 style: AppTextStyles.heading1.copyWith(
                   fontSize: 28,
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               SizedBox(height: 12),
               Text(
                 'If Cozy Health has helped you, share it with someone who might need it.',
-                style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               SizedBox(height: 32),
               Center(
@@ -44,7 +50,8 @@ class ReferralScreen extends StatelessWidget {
                   width: 200,
                   height: 200,
                   decoration: BoxDecoration(
-                    color: AppColors.white,
+                    border: AppSurface.border(context),
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -60,7 +67,7 @@ class ReferralScreen extends StatelessWidget {
                     child: Icon(
                       Icons.qr_code_2,
                       size: 160,
-                      color: Colors.black,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -69,7 +76,7 @@ class ReferralScreen extends StatelessWidget {
               Text(
                 'Your invite link',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.textMuted,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -78,9 +85,9 @@ class ReferralScreen extends StatelessWidget {
                 height: 56,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border, width: 1),
+                  border: AppSurface.border(context),
                 ),
                 child: Row(
                   children: [
@@ -88,12 +95,15 @@ class ReferralScreen extends StatelessWidget {
                       child: Text(
                         'cozy.health/r/sarahchen',
                         style: AppTextStyles.body1.copyWith(
-                          color: AppColors.text,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.copy, color: AppColors.textSubtle),
+                      icon: Icon(
+                        Icons.copy,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       tooltip: 'Copy link',
                       onPressed: () {
                         AppSnackbar.show(
@@ -120,16 +130,14 @@ class ReferralScreen extends StatelessWidget {
                 child: Container(
                   height: 56,
                   decoration: BoxDecoration(
-                    color: Theme.of(
+                    color: AppSurface.tint(
                       context,
-                    ).colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(
+                      Theme.of(
                         context,
-                      ).colorScheme.primary.withValues(alpha: 0.15),
-                      width: 1,
+                      ).colorScheme.primary.withValues(alpha: 0.1),
                     ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: AppSurface.border(context),
                   ),
                   child: Center(
                     child: Text(
@@ -146,12 +154,12 @@ class ReferralScreen extends StatelessWidget {
               Text(
                 'Friends who joined',
                 style: AppTextStyles.body2.copyWith(
-                  color: AppColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               SizedBox(height: 16),
-              _buildFriendsList(),
+              _buildFriendsList(context),
               SizedBox(height: 48),
             ],
           ),
@@ -160,7 +168,7 @@ class ReferralScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFriendsList() {
+  Widget _buildFriendsList(BuildContext context) {
     final friends = ['alex', 'maya', 'jordan'];
 
     if (friends.isEmpty) {
@@ -171,11 +179,15 @@ class ReferralScreen extends StatelessWidget {
             children: [
               Text(
                 'No one yet.',
-                style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               Text(
                 'That\'s okay.',
-                style: AppTextStyles.body1.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -185,9 +197,9 @@ class ReferralScreen extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: AppSurface.border(context),
       ),
       child: Column(
         children: friends.map((friend) {
@@ -213,7 +225,7 @@ class ReferralScreen extends StatelessWidget {
                     Text(
                       '@$friend',
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.text,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],

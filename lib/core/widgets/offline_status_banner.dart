@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../services/network_status.dart';
@@ -43,7 +44,8 @@ class _OfflineStatusBannerState extends State<OfflineStatusBanner> {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Material(
                   color: dark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                  borderRadius: BorderRadius.circular(12),
+                  shape: AppSurface.shape(context, BorderRadius.circular(12)),
+                  clipBehavior: Clip.antiAlias,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,

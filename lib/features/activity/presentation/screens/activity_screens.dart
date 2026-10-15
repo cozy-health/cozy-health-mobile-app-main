@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/data/demo_mode.dart';
 import '../../../../core/data/placeholder_data.dart';
@@ -1026,18 +1027,7 @@ class _ActivityCard extends StatelessWidget {
             ? AppColors.surfaceElevatedDark
             : AppColors.surfaceElevatedLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: .04),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+        border: AppSurface.border(context),
       ),
       child: child,
     );

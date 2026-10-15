@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../features/crisis/data/next_of_kin_repository.dart';
 import 'package:flutter/foundation.dart';
 import '../api/api_client.dart';
 import '../api/api_exceptions.dart';
@@ -202,20 +203,10 @@ class RestoreController extends ChangeNotifier {
           if (error.statusCode != 404) rethrow;
         }
       case 'Emergency contacts':
-        // No standalone endpoint exists. Recover contacts carried by the plan.
-        unavailable.add('Standalone emergency contacts');
-        if (failed.contains('Safety plan')) {
-          throw StateError('Safety plan unavailable');
-        }
-        final people = LocalDbService().getSafetyPlan()?.peopleToCall ?? [];
+        final contact = _single(await _get('/next-of-kin', {}));
         if (await _sameOwner()) {
-          await (await LocalDbService().settingsBox()).put(
-            'restored_emergency_contacts',
-            people,
-          );
-          for (var i = 0; i < people.length; i++) {
-            _seen.add('contact:$i');
-          }
+          await NextOfKinRepository().merge(contact);
+          if (contact?['contact'] != null) _seen.add('next_of_kin');
         }
       case 'Mood entries':
         await _list('/mood-entries', 'mood_entry', recent: true);

@@ -89,6 +89,7 @@ class _QuizResultScreenState extends State<QuizResultScreen>
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
+                        scrollable: true,
                         title: const Text('Retake assessment?'),
                         content: Text(
                           'You last completed this assessment on $date. Start a new attempt?',

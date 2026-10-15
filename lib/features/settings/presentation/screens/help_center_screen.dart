@@ -47,24 +47,24 @@ const helpFaqs = <FaqItem>[
     'Patterns need a little history. Log a few moods to begin; some cards need at least three check-ins. There is no need to rush.',
   ),
   FaqItem(
-    'Crisis Resources',
+    'Next of kin',
     'Where can I find help resources?',
-    'Use the help button on Home to open crisis resources. You can review support options, professional providers, and your safety plan.',
+    'Use the heart button to contact your saved next of kin. Review your help message, open Messages, and press Send there. Sending and delivery cannot be confirmed by Cozy Health.',
   ),
   // Emergency guidance is grounded in NHS urgent mental health guidance:
   // https://www.nhs.uk/nhs-services/mental-health-services/where-to-get-urgent-help-for-mental-health/
   FaqItem(
-    'Crisis Resources',
+    'Next of kin',
     'What if someone is in immediate danger?',
     'Contact your local emergency services or go to the nearest emergency department now. Cozy Health is not an emergency service; do not wait for an app response.',
   ),
   FaqItem(
-    'Crisis Resources',
+    'Next of kin',
     'What is a safety plan?',
     'A safety plan brings together warning signs, coping ideas, trusted contacts, and professional support. You can create one in help resources and review it with a qualified professional.',
   ),
   FaqItem(
-    'Crisis Resources',
+    'Next of kin',
     'Can the assistant replace a therapist?',
     'The assistant offers space for reflection. It cannot replace a qualified professional or emergency care. Reach out to a professional when you need personal clinical guidance.',
   ),

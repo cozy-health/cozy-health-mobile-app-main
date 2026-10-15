@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 // TODO: wire to backend when endpoint exists
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
@@ -425,7 +426,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.communityBorder),
+          border: AppSurface.border(context),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

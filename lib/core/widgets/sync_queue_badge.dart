@@ -57,6 +57,7 @@ class _QueueSheetState extends State<_QueueSheet> {
         'user_profile': 'Profile',
         'user_preferences': 'Onboarding preferences',
         'safety_plan': 'Safety plan',
+        'next_of_kin': 'Next of kin',
         'chat_message': 'Chat message',
         'chat_conversation': 'Conversation',
         'quiz_attempt': 'Assessment result',

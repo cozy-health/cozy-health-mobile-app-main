@@ -1,5 +1,6 @@
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_surface.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -84,14 +85,7 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                               builder: (context, child) {
                                 return Theme(
                                   data: Theme.of(context).copyWith(
-                                    colorScheme: const ColorScheme.light(
-                                      primary: AppColors
-                                          .primary, // header background color
-                                      onPrimary:
-                                          AppColors.white, // header text color
-                                      onSurface:
-                                          AppColors.text, // body text color
-                                    ),
+                                    colorScheme: Theme.of(context).colorScheme,
                                     textButtonTheme: TextButtonThemeData(
                                       style: TextButton.styleFrom(
                                         foregroundColor: AppColors
@@ -118,21 +112,23 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppColors.border,
-                                width: 2,
-                              ),
+                              border: AppSurface.border(context),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  _selectedTime.format(context),
-                                  style: AppTextStyles.heading1.copyWith(
-                                    fontSize: 48,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
+                                Flexible(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      _selectedTime.format(context),
+                                      style: AppTextStyles.heading1.copyWith(
+                                        fontSize: 48,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 SizedBox(width: 12),
@@ -157,8 +153,9 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                       ),
                     ),
                     SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: List.generate(_days.length, (index) {
                         final isSelected = _selectedDays[index];
                         return Semantics(
@@ -178,11 +175,11 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                                 shape: BoxShape.circle,
                                 color: isSelected
                                     ? Theme.of(context).colorScheme.primary
-                                    : AppColors.surface,
+                                    : Theme.of(context).colorScheme.surface,
                                 border: Border.all(
                                   color: isSelected
                                       ? Theme.of(context).colorScheme.primary
-                                      : AppColors.border,
+                                      : Theme.of(context).colorScheme.outline,
                                   width: 1,
                                 ),
                               ),
@@ -192,7 +189,9 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
                                   style: AppTextStyles.body1.copyWith(
                                     color: isSelected
                                         ? AppColors.white
-                                        : AppColors.textSubtle,
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
                                     fontWeight: isSelected
                                         ? FontWeight.w600
                                         : FontWeight.w400,

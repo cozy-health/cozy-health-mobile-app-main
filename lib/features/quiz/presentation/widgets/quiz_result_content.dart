@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/models/quiz_attempt.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -46,6 +47,7 @@ class QuizResultContent extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
+            border: AppSurface.border(context),
             color: dark ? AppColors.accentSkyDark : AppColors.accentSky,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -90,6 +92,7 @@ class QuizResultContent extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
+                border: AppSurface.border(context),
                 color: dark
                     ? AppColors.surfaceSubtleDark
                     : AppColors.surfaceSubtle,

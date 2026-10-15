@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import '../../data/community_repository.dart';
 // TODO: wire to backend when endpoint exists
 import '../../../../core/widgets/empty_state.dart';
@@ -143,7 +144,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            border: Border.all(color: context.communityBorder),
+                            border: AppSurface.border(context),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -285,9 +286,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: context.communityBorder.withValues(alpha: 0.7),
-                ),
+                border: AppSurface.border(context),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

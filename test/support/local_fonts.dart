@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,6 +13,16 @@ Future<void> installLocalTestFonts() async {
     assets[path] = await rootBundle.load(path);
   }
   final font = await rootBundle.load('fonts/MaterialIcons-Regular.otf');
+  final visualFont = File('build/surface-review/Outfit.ttf');
+  const readableFonts =
+      bool.fromEnvironment('SURFACE_SCREENSHOTS') ||
+      bool.fromEnvironment('SURFACE_REAL_FONTS');
+  final readable = readableFonts && visualFont.existsSync()
+      ? ByteData.sublistView(visualFont.readAsBytesSync())
+      : font;
+  if (readableFonts) {
+    await (FontLoader('MaterialIcons')..addFont(Future.value(font))).load();
+  }
   fonts.assetManifest = _FontManifest();
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMessageHandler('flutter/assets', (message) async {
@@ -21,7 +32,7 @@ Future<void> installLocalTestFonts() async {
             message.lengthInBytes,
           ),
         );
-        return path.startsWith('test-fonts/') ? font : assets[path];
+        return path.startsWith('test-fonts/') ? readable : assets[path];
       });
 }
 

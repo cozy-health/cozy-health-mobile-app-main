@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
@@ -40,10 +41,9 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          scrollable: true,
+          backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
+          shape: AppSurface.shape(context, BorderRadius.circular(16)),
           title: Text(
             'Unblock @$username?',
             style: AppTextStyles.heading2.copyWith(
@@ -162,7 +162,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: AppSurface.border(context),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

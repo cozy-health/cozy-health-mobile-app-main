@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -100,6 +101,7 @@ class _AppNotificationBannerState extends State<AppNotificationBanner>
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
+                    border: AppSurface.border(context),
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [

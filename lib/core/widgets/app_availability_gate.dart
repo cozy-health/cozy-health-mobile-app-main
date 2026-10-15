@@ -250,8 +250,8 @@ class _AppAvailabilityGateState extends State<AppAvailabilityGate>
 
   void _openCrisisResources() {
     if (_router.routeInformationProvider.value.uri.path !=
-        AppRouter.crisisHub) {
-      _router.push(AppRouter.crisisHub);
+        AppRouter.crisisContact) {
+      _router.push(AppRouter.crisisContact);
     }
   }
 
@@ -440,7 +440,7 @@ class _BlockingAvailabilityScreen extends StatelessWidget {
                     ),
                   const SizedBox(height: 12),
                   AppButton(
-                    text: 'Crisis resources',
+                    text: 'Contact next of kin',
                     isOutlined: true,
                     onPressed: onCrisis,
                     trailingIcon: Icons.favorite_outline,

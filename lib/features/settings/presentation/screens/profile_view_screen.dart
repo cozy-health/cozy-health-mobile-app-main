@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -130,16 +131,15 @@ class ProfileViewScreen extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Container(
-                                  height: 80,
+                                  constraints: const BoxConstraints(
+                                    minHeight: 80,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Theme.of(
                                       context,
                                     ).colorScheme.surface,
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: AppColors.border,
-                                      width: 1,
-                                    ),
+                                    border: AppSurface.border(context),
                                   ),
                                   padding: const EdgeInsets.all(16),
                                   child: Column(
@@ -170,16 +170,15 @@ class ProfileViewScreen extends StatelessWidget {
                               SizedBox(width: 16),
                               Expanded(
                                 child: Container(
-                                  height: 80,
+                                  constraints: const BoxConstraints(
+                                    minHeight: 80,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Theme.of(
                                       context,
                                     ).colorScheme.surface,
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: AppColors.border,
-                                      width: 1,
-                                    ),
+                                    border: AppSurface.border(context),
                                   ),
                                   padding: const EdgeInsets.all(16),
                                   child: Column(
@@ -230,15 +229,16 @@ class ProfileViewScreen extends StatelessWidget {
               // Sections
               Material(
                 color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
+                shape: AppSurface.shape(context, BorderRadius.circular(16)),
+                clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: () {},
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
-                    height: 56,
+                    constraints: const BoxConstraints(minHeight: 56),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border, width: 1),
+                      border: AppSurface.border(context),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
@@ -267,15 +267,16 @@ class ProfileViewScreen extends StatelessWidget {
 
               Material(
                 color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
+                shape: AppSurface.shape(context, BorderRadius.circular(16)),
+                clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: () {},
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
-                    height: 56,
+                    constraints: const BoxConstraints(minHeight: 56),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border, width: 1),
+                      border: AppSurface.border(context),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(

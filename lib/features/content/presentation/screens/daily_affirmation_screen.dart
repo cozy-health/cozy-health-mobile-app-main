@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_scroll_body.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -85,50 +86,52 @@ class _DailyAffirmationScreenState extends State<DailyAffirmationScreen> {
                   final affirmation = _affirmations[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 88,
-                          height: 88,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.outlineVariant,
+                    child: AppScrollBody(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 88,
+                            height: 88,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.outlineVariant,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              affirmation['icon']!,
+                              style: const TextStyle(fontSize: 40),
                             ),
                           ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            affirmation['icon']!,
-                            style: const TextStyle(fontSize: 40),
+                          const SizedBox(height: 32),
+                          Text(
+                            affirmation['title']!,
+                            style: AppTextStyles.heading1.copyWith(
+                              fontSize: 28,
+                              height: 1.3,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                        ),
-                        const SizedBox(height: 32),
-                        Text(
-                          affirmation['title']!,
-                          style: AppTextStyles.heading1.copyWith(
-                            fontSize: 28,
-                            height: 1.3,
-                            color: Theme.of(context).colorScheme.onSurface,
+                          const SizedBox(height: 16),
+                          Text(
+                            affirmation['subtitle']!,
+                            style: AppTextStyles.body1.copyWith(
+                              fontSize: 18,
+                              fontStyle: FontStyle.italic,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          affirmation['subtitle']!,
-                          style: AppTextStyles.body1.copyWith(
-                            fontSize: 18,
-                            fontStyle: FontStyle.italic,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },

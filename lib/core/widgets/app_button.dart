@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
 class AppButton extends StatelessWidget {
@@ -36,7 +35,7 @@ class AppButton extends StatelessWidget {
         ),
       ),
       const SizedBox(width: 12),
-      const Text('Loading...'),
+      const Flexible(child: Text('Loading...')),
     ],
   );
   @override
@@ -62,10 +61,12 @@ class AppButton extends StatelessWidget {
                   ? Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          text,
-                          style: AppTextStyles.buttonText.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
+                        Flexible(
+                          child: Text(
+                            text,
+                            style: AppTextStyles.buttonText.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -87,7 +88,7 @@ class AppButton extends StatelessWidget {
               onPressed: isLoading ? null : onPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: AppColors.white,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 disabledBackgroundColor: Theme.of(
                   context,
                 ).disabledColor.withValues(alpha: 0.2),
@@ -106,12 +107,28 @@ class AppButton extends StatelessWidget {
                   ? Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(text, style: AppTextStyles.buttonText),
+                        Flexible(
+                          child: Text(
+                            text,
+                            style: AppTextStyles.buttonText.copyWith(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 8),
-                        Icon(trailingIcon, size: 18, color: AppColors.white),
+                        Icon(
+                          trailingIcon,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
                       ],
                     )
-                  : Text(text, style: AppTextStyles.buttonText),
+                  : Text(
+                      text,
+                      style: AppTextStyles.buttonText.copyWith(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
             ),
     );
   }

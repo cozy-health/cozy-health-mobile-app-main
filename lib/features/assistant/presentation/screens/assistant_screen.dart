@@ -446,6 +446,7 @@ class _AssistantScreenState extends State<_AssistantContent>
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) => MenuSheet(
         children: [
           SheetTile(
@@ -494,6 +495,7 @@ class _AssistantScreenState extends State<_AssistantContent>
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) => MenuSheet(
         children: [
           SheetTile(

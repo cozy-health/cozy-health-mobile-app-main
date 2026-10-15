@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -59,7 +60,7 @@ class _BillingHistoryScreenState extends State<BillingHistoryScreen> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border, width: 1),
+                      border: AppSurface.border(context),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,7 +68,8 @@ class _BillingHistoryScreenState extends State<BillingHistoryScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.warmBackground,
+                            border: AppSurface.border(context),
+                            color: Theme.of(context).colorScheme.surface,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -142,13 +144,15 @@ class _BillingHistoryScreenState extends State<BillingHistoryScreen> {
                                       ).colorScheme.primary,
                                     ),
                                     SizedBox(width: 4),
-                                    Text(
-                                      'Download Receipt',
-                                      style: AppTextStyles.body2.copyWith(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                        fontWeight: FontWeight.w500,
+                                    Flexible(
+                                      child: Text(
+                                        'Download Receipt',
+                                        style: AppTextStyles.body2.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
                                   ],

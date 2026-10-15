@@ -22,24 +22,31 @@ class PasswordValidation extends StatelessWidget {
       children: [
         Text(
           'Protect your account by creating a strong password',
-          style: AppTextStyles.body2.copyWith(color: AppColors.grey),
+          style: AppTextStyles.body2.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 12),
-        _buildValidationItem('A minimum of 8 characters', hasMinLength),
+        _buildValidationItem(
+          context,
+          'A minimum of 8 characters',
+          hasMinLength,
+        ),
         const SizedBox(height: 8),
         _buildValidationItem(
+          context,
           'Lower and upper case letters',
           hasUpperAndLowerCase,
         ),
         const SizedBox(height: 8),
-        _buildValidationItem('At least 1 number', hasNumber),
+        _buildValidationItem(context, 'At least 1 number', hasNumber),
         const SizedBox(height: 8),
-        _buildValidationItem('At least 1 character', hasSpecialChar),
+        _buildValidationItem(context, 'At least 1 character', hasSpecialChar),
       ],
     );
   }
 
-  Widget _buildValidationItem(String text, bool isValid) {
+  Widget _buildValidationItem(BuildContext context, String text, bool isValid) {
     return Row(
       children: [
         Container(
@@ -50,7 +57,10 @@ class PasswordValidation extends StatelessWidget {
             color: isValid ? AppColors.success : Colors.transparent,
             border: isValid
                 ? null
-                : Border.all(color: AppColors.grey, width: 1.5),
+                : Border.all(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    width: 1.5,
+                  ),
           ),
           child: isValid
               ? Icon(Icons.check, size: 12, color: Colors.white)
@@ -60,7 +70,9 @@ class PasswordValidation extends StatelessWidget {
         Text(
           text,
           style: AppTextStyles.body2.copyWith(
-            color: isValid ? AppColors.success : AppColors.grey,
+            color: isValid
+                ? AppColors.success
+                : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ],

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/theme/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
@@ -32,13 +33,17 @@ class ArticleCardFeatured extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-              AppColors.warmOrange.withValues(alpha: 0.05), // warm orange
+              AppSurface.tint(
+                context,
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+              ),
+              AppSurface.tint(
+                context,
+                AppColors.warmOrange.withValues(alpha: 0.05),
+              ),
             ],
           ),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-          ),
+          border: AppSurface.border(context),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,6 +51,7 @@ class ArticleCardFeatured extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
+                border: AppSurface.border(context),
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(8),
               ),

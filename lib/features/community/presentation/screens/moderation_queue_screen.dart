@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -84,12 +85,12 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.communityBorder),
+        border: AppSurface.border(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
             children: [
               Icon(Icons.flag, color: AppColors.danger, size: 20),
               SizedBox(width: 8),
@@ -147,12 +148,12 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.communityBorder),
+        border: AppSurface.border(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
             children: [
               Icon(Icons.person_off, color: AppColors.warning, size: 20),
               SizedBox(width: 8),
@@ -197,9 +198,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen>
     return Center(
       child: Text(
         message,
-        style: context.communityBody1.copyWith(
-          color: context.communityMuted,
-        ),
+        style: context.communityBody1.copyWith(color: context.communityMuted),
       ),
     );
   }

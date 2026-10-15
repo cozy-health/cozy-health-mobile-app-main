@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../community_theme.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -12,8 +13,11 @@ class ReportSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: ReportSheet(onSubmit: onSubmit),
       ),
     );
@@ -43,60 +47,71 @@ class _ReportSheetState extends State<ReportSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.communitySurface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('What\'s wrong?', style: context.communityHeading3),
-          const SizedBox(height: 16),
-          ..._reasons.map((reason) => _buildRadio(reason)),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _notesController,
-            decoration: InputDecoration(
-              hintText: 'Additional notes (optional)',
-              hintStyle: context.communityBody1.copyWith(color: context.communityMuted),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: context.communityBorder.withValues(alpha: 0.7)),
+    return SingleChildScrollView(
+      child: Container(
+        decoration: BoxDecoration(
+          border: AppSurface.border(context),
+          color: Theme.of(context).bottomSheetTheme.backgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('What\'s wrong?', style: context.communityHeading3),
+            const SizedBox(height: 16),
+            ..._reasons.map((reason) => _buildRadio(reason)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _notesController,
+              decoration: InputDecoration(
+                hintText: 'Additional notes (optional)',
+                hintStyle: context.communityBody1.copyWith(
+                  color: context.communityMuted,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: context.communityBorder.withValues(alpha: 0.7),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: context.communityBorder.withValues(alpha: 0.7),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                filled: true,
+                fillColor: context.communityBackground,
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: context.communityBorder.withValues(alpha: 0.7)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-              ),
-              filled: true,
-              fillColor: context.communityBackground,
+              maxLines: 3,
+              style: context.communityBody1,
             ),
-            maxLines: 3,
-            style: context.communityBody1,
-          ),
-          const SizedBox(height: 24),
-          AppButton(
-            text: 'Submit report',
-            onPressed: _selectedReason == null
-                ? null
-                : () {
-                    Navigator.pop(context);
-                    widget.onSubmit();
-                  },
-          ),
-          const SizedBox(height: 12),
-          AppButton(
-            text: 'Cancel',
-            isOutlined: true,
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
+            const SizedBox(height: 24),
+            AppButton(
+              text: 'Submit report',
+              onPressed: _selectedReason == null
+                  ? null
+                  : () {
+                      Navigator.pop(context);
+                      widget.onSubmit();
+                    },
+            ),
+            const SizedBox(height: 12),
+            AppButton(
+              text: 'Cancel',
+              isOutlined: true,
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -114,16 +129,15 @@ class _ReportSheetState extends State<ReportSheet> {
         child: Row(
           children: [
             Icon(
-              _selectedReason == reason ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: _selectedReason == reason ? Theme.of(context).colorScheme.primary : context.communityMuted,
+              _selectedReason == reason
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: _selectedReason == reason
+                  ? Theme.of(context).colorScheme.primary
+                  : context.communityMuted,
             ),
             const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                reason,
-                style: context.communityBody1,
-              ),
-            ),
+            Expanded(child: Text(reason, style: context.communityBody1)),
           ],
         ),
       ),

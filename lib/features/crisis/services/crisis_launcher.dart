@@ -23,14 +23,12 @@ class CrisisLauncher {
     final uri = Uri(
       scheme: 'sms',
       path: sanitized,
-      queryParameters: body == null || body.isEmpty ? null : {'body': body},
+      query: body == null || body.isEmpty
+          ? null
+          : 'body=${Uri.encodeComponent(body)}',
     );
-    final result = await _launchWithFallback(uri);
-    if (result == LaunchResult.success || body == null || body.isEmpty) {
-      return result;
-    }
-
-    return _launchWithFallback(Uri(scheme: 'sms', path: sanitized));
+    // Never silently reopen an empty composer and lose the reviewed request.
+    return _launchWithFallback(uri);
   }
 
   Future<LaunchResult> sendEmail(

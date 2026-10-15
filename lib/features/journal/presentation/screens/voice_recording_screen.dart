@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_scroll_body.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -29,205 +30,214 @@ class _VoiceRecordingScreenState extends State<VoiceRecordingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text('Voice Journal', style: AppTextStyles.heading2),
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 6.w),
-        child: Column(
-          children: [
-            8.sh,
+        child: AppScrollBody(
+          child: Column(
+            children: [
+              8.sh,
 
-            // Recording time
-            Text(
-              recordingTime,
-              style: AppTextStyles.heading1.copyWith(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: AppColors.black,
+              // Recording time
+              Text(
+                recordingTime,
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-            ),
 
-            10.sh,
+              10.sh,
 
-            // Audio Waveform
-            Container(
-              height: 80,
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(40, (index) {
-                  final height = (20 + (index % 5) * 8).toDouble();
-                  final isActive = index % 3 != 0; // Simulate active waveform
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                    child: Container(
-                      width: 4,
-                      height: isActive ? height : 8,
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? Theme.of(context).colorScheme.primary
-                            : AppColors.midGrey,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
-
-            4.sh,
-
-            // Subtitle
-            Text(
-              'Recording in progress...',
-              style: AppTextStyles.body1.copyWith(color: AppColors.grey),
-            ),
-
-            const Spacer(),
-
-            // Record / Stop Button
-            GestureDetector(
-              onTap: () async {
-                if (isRecording) {
-                  final path = await _audioRecorder.stop();
-                  if (!context.mounted) return;
-                  if (path == null) {
-                    AppSnackbar.show(
-                      context,
-                      AppSnackbar.fromLegacy(
-                        content: Text("Couldn't save recording. Try again?"),
+              // Audio Waveform
+              Container(
+                height: 80,
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(40, (index) {
+                    final height = (20 + (index % 5) * 8).toDouble();
+                    final isActive = index % 3 != 0; // Simulate active waveform
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                      child: Container(
+                        width: 4,
+                        height: isActive ? height : 8,
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? Theme.of(context).colorScheme.primary
+                              : AppColors.midGrey,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     );
-                  }
-                  setState(() {
-                    isRecording = false;
-                    _recordingPath = path;
-                  });
-                  return;
-                }
-                final result = await PermissionService.requestMicrophone();
-                if (!context.mounted) return;
-                if (result == MicPermissionResult.granted) {
-                  try {
-                    await _audioRecorder.start();
-                  } catch (_) {
+                  }),
+                ),
+              ),
+
+              4.sh,
+
+              // Subtitle
+              Text(
+                'Recording in progress...',
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+
+              const Spacer(),
+
+              // Record / Stop Button
+              GestureDetector(
+                onTap: () async {
+                  if (isRecording) {
+                    final path = await _audioRecorder.stop();
                     if (!context.mounted) return;
-                    AppSnackbar.show(
-                      context,
-                      AppSnackbar.fromLegacy(
-                        content: Text("Couldn't save recording. Try again?"),
-                      ),
-                    );
+                    if (path == null) {
+                      AppSnackbar.show(
+                        context,
+                        AppSnackbar.fromLegacy(
+                          content: Text("Couldn't save recording. Try again?"),
+                        ),
+                      );
+                    }
+                    setState(() {
+                      isRecording = false;
+                      _recordingPath = path;
+                    });
                     return;
                   }
-                  setState(() => isRecording = true);
-                } else if (result == MicPermissionResult.permanentlyDenied) {
-                  AppSnackbar.show(
-                    context,
-                    AppSnackbar.fromLegacy(
-                      content: Text('Microphone access is needed to record.'),
-                      action: SnackBarAction(
-                        label: 'Open Settings',
-                        onPressed: PermissionService.openAppSettings,
+                  final result = await PermissionService.requestMicrophone();
+                  if (!context.mounted) return;
+                  if (result == MicPermissionResult.granted) {
+                    try {
+                      await _audioRecorder.start();
+                    } catch (_) {
+                      if (!context.mounted) return;
+                      AppSnackbar.show(
+                        context,
+                        AppSnackbar.fromLegacy(
+                          content: Text("Couldn't save recording. Try again?"),
+                        ),
+                      );
+                      return;
+                    }
+                    setState(() => isRecording = true);
+                  } else if (result == MicPermissionResult.permanentlyDenied) {
+                    AppSnackbar.show(
+                      context,
+                      AppSnackbar.fromLegacy(
+                        content: Text('Microphone access is needed to record.'),
+                        action: SnackBarAction(
+                          label: 'Open Settings',
+                          onPressed: PermissionService.openAppSettings,
+                        ),
                       ),
-                    ),
-                  );
-                } else {
-                  AppSnackbar.show(
-                    context,
-                    AppSnackbar.fromLegacy(
-                      content: Text('Microphone access is needed to record.'),
-                    ),
-                  );
-                }
-              },
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isRecording
-                        ? AppColors.danger
-                        : Theme.of(context).colorScheme.primary,
-                    width: 4,
-                  ),
-                ),
-                child: Center(
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
+                    );
+                  } else {
+                    AppSnackbar.show(
+                      context,
+                      AppSnackbar.fromLegacy(
+                        content: Text('Microphone access is needed to record.'),
+                      ),
+                    );
+                  }
+                },
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
                       color: isRecording
                           ? AppColors.danger
                           : Theme.of(context).colorScheme.primary,
-                      borderRadius: isRecording
-                          ? BorderRadius.circular(4)
-                          : BorderRadius.circular(20),
+                      width: 4,
+                    ),
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: isRecording
+                            ? AppColors.danger
+                            : Theme.of(context).colorScheme.primary,
+                        borderRadius: isRecording
+                            ? BorderRadius.circular(4)
+                            : BorderRadius.circular(20),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            8.sh,
+              8.sh,
 
-            // Action buttons row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (isRecording)
-                  TextButton.icon(
-                    onPressed: () {
-                      // Cancel recording
-                      context.pop();
-                    },
-                    icon: Icon(Icons.close, color: AppColors.danger),
-                    label: Text(
-                      'Cancel',
-                      style: AppTextStyles.body1.copyWith(color: AppColors.danger),
-                    ),
-                  ),
-                if (!isRecording)
-                  TextButton.icon(
-                    onPressed: () {
-                      if (_recordingPath == null) {
-                        AppSnackbar.show(
-                          context,
-                          AppSnackbar.fromLegacy(
-                            content: Text(
-                              "Couldn't save recording. Try again?",
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      context.pop();
-                    },
-                    icon: Icon(
-                      Icons.check,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    label: Text(
-                      'Save Recording',
-                      style: AppTextStyles.body1.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
+              // Action buttons row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isRecording)
+                    TextButton.icon(
+                      onPressed: () {
+                        // Cancel recording
+                        context.pop();
+                      },
+                      icon: Icon(Icons.close, color: AppColors.danger),
+                      label: Text(
+                        'Cancel',
+                        style: AppTextStyles.body1.copyWith(
+                          color: AppColors.danger,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
+                  if (!isRecording)
+                    TextButton.icon(
+                      onPressed: () {
+                        if (_recordingPath == null) {
+                          AppSnackbar.show(
+                            context,
+                            AppSnackbar.fromLegacy(
+                              content: Text(
+                                "Couldn't save recording. Try again?",
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        context.pop();
+                      },
+                      icon: Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      label: Text(
+                        'Save Recording',
+                        style: AppTextStyles.body1.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
 
-            6.sh,
-          ],
+              6.sh,
+            ],
+          ),
         ),
       ),
     );

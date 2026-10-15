@@ -297,6 +297,7 @@ class _PinDialogState extends State<_PinDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
+    scrollable: true,
     title: Text(widget.setup ? 'Set journal PIN' : 'Enter current journal PIN'),
     content: Column(
       mainAxisSize: MainAxisSize.min,

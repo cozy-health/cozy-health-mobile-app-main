@@ -125,7 +125,7 @@ class PlaceholderData {
           'Your post got 5 new likes.',
           'Welcome to Cozy Health.',
           "You're on a 3-day streak!",
-          'Crisis resources are always here.',
+          'Contact next of kin are always here.',
         ][i],
         read: i >= 4,
         createdAt: current.subtract(Duration(hours: i * 4)),

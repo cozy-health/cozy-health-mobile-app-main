@@ -38,6 +38,8 @@ import 'package:cozy_health/features/insights/presentation/screens/insights_home
 import 'package:cozy_health/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:cozy_health/features/notifications/presentation/screens/notification_detail_screen.dart';
 import '../../support/local_fonts.dart';
+import '../../support/surface_capture.dart';
+import 'package:cozy_health/features/settings/presentation/screens/settings_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -108,6 +110,7 @@ void main() {
           AppRouter.communityHub,
           AppRouter.contentSearch,
           AppRouter.crisisHub,
+          AppRouter.crisisContact,
           AppRouter.breathing,
           AppRouter.grounding,
         })
@@ -126,7 +129,7 @@ void main() {
           data: MediaQuery.of(
             context,
           ).copyWith(textScaler: TextScaler.linear(1.6)),
-          child: child!,
+          child: RepaintBoundary(key: surfaceCaptureKey, child: child!),
         ),
         routerConfig: router,
       ),
@@ -134,6 +137,10 @@ void main() {
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
+    await captureSurface(
+      tester,
+      '${screen.runtimeType}_${dark ? 'dark' : 'light'}_${size.width.toInt()}x${size.height.toInt()}',
+    );
   }
 
   for (final size in [
@@ -213,7 +220,10 @@ void main() {
         );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
-        expect(find.text('destination:${AppRouter.crisisHub}'), findsOneWidget);
+        expect(
+          find.text('destination:${AppRouter.crisisContact}'),
+          findsOneWidget,
+        );
         await tester.pumpWidget(const SizedBox.shrink());
       });
     }
@@ -230,9 +240,9 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('destination:${AppRouter.crisisHub}'), findsOneWidget);
+    expect(find.text('destination:${AppRouter.crisisContact}'), findsOneWidget);
     GoRouter.of(
-      tester.element(find.text('destination:${AppRouter.crisisHub}')),
+      tester.element(find.text('destination:${AppRouter.crisisContact}')),
     ).pop();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
@@ -248,6 +258,7 @@ void main() {
   });
 
   final screens = <String, Widget Function()>{
+    'Settings': () => const SettingsScreen(),
     'Home': () => const HomeScreen(),
     'Activity': () => const ActivityScreen(),
     'Community': () => const CommunityHubScreen(),
@@ -269,6 +280,67 @@ void main() {
     ),
   };
   for (final dark in [false, true]) {
+    testWidgets('Home cards remain defined after scrolling, dark=$dark', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        const HomeScreen(),
+        dark: dark,
+        size: const Size(390, 844),
+      );
+      await tester.ensureVisible(find.text('Journaling'));
+      await tester.pump(const Duration(milliseconds: 300));
+      await captureSurface(
+        tester,
+        'home_${dark ? 'dark' : 'light'}_lower_cards',
+      );
+      expect(tester.takeException(), isNull);
+    });
+    testWidgets(
+      'Settings group borders survive child rows and scrolling, dark=$dark',
+      (tester) async {
+        await mount(
+          tester,
+          const SettingsScreen(),
+          dark: dark,
+          size: const Size(390, 844),
+        );
+        final theme = dark ? AppTheme.dark : AppTheme.light;
+        for (final label in [
+          'Next of kin',
+          'Digital Wellbeing',
+          'Change Password',
+          'Connected Apps',
+          'Cozy Challenges',
+          'Delete Account',
+        ]) {
+          final row = find.text(label);
+          await tester.ensureVisible(row);
+          await tester.pump(const Duration(milliseconds: 300));
+          final materials = tester
+              .widgetList<Material>(
+                find.ancestor(of: row, matching: find.byType(Material)),
+              )
+              .toList();
+          expect(materials.first.color, Colors.transparent);
+          final group = materials.firstWhere(
+            (m) => m.shape is RoundedRectangleBorder,
+          );
+          expect(group.clipBehavior, Clip.antiAlias);
+          expect(group.borderOnForeground, isTrue);
+          expect(
+            (group.shape! as RoundedRectangleBorder).side.color,
+            theme.colorScheme.outline,
+          );
+          await captureSurface(
+            tester,
+            'settings_${dark ? 'dark' : 'light'}_$label',
+          );
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
     testWidgets('Quiz History headings have readable contrast, dark=$dark', (
       tester,
     ) async {

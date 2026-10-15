@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -84,10 +85,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: dividerColor ?? AppColors.border,
-                    width: 1,
-                  ),
+                  border: AppSurface.border(context),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,15 +169,10 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                 ),
               ),
               SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: dividerColor ?? AppColors.border,
-                    width: 1,
-                  ),
-                ),
+              Material(
+                color: colorScheme.surface,
+                shape: AppSurface.shape(context, BorderRadius.circular(16)),
+                clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: List.generate(_themes.length, (index) {
                     final theme = _themes[index];
@@ -251,7 +244,8 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                   return Semantics(
                     selected: isSelected,
                     button: true,
-                    label: '${['Blue', 'Green', 'Orange', 'Yellow'][_accents.indexOf(color)]} accent color',
+                    label:
+                        '${['Blue', 'Green', 'Orange', 'Yellow'][_accents.indexOf(color)]} accent color',
                     child: GestureDetector(
                       onTap: () => _updateAccent(color),
                       child: Container(

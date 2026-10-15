@@ -31,12 +31,12 @@ class OptionSelectionWidget extends StatelessWidget {
               width: double.infinity,
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelected
                       ? AppColors.success
-                      : AppColors.midGrey,
+                      : Theme.of(context).colorScheme.outline,
                   width: 1.5,
                 ),
               ),
@@ -46,7 +46,7 @@ class OptionSelectionWidget extends StatelessWidget {
                     child: Text(
                       option,
                       style: AppTextStyles.body1.copyWith(
-                        color: AppColors.black,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -60,7 +60,10 @@ class OptionSelectionWidget extends StatelessWidget {
                           : Colors.transparent,
                       border: isSelected
                           ? null
-                          : Border.all(color: AppColors.midGrey, width: 1.5),
+                          : Border.all(
+                              color: Theme.of(context).colorScheme.outline,
+                              width: 1.5,
+                            ),
                     ),
                     child: isSelected
                         ? Icon(Icons.check, size: 14, color: Colors.white)

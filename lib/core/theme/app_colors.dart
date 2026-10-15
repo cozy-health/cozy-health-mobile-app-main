@@ -16,18 +16,18 @@ class AppColors {
   static const Color accentTeal = Color(0xFFFFFFFF);
 
   // Neutral dark surfaces; brand accents stay identical in both modes.
-  static const Color surfaceSubtleDark = Color(0xFF000000);
+  static const Color surfaceSubtleDark = Color(0xFF171717);
   static const Color textSecondaryDark = Color(0xFFB5B5B5);
   static const Color textTertiaryDark = Color(0xFFA3A3A3);
   static const Color borderSubtleDark = Color(0xFF404040);
   static const Color borderDefaultDark = Color(0xFF666666);
-  static const Color accentWarmYellowDark = Color(0xFF000000);
-  static const Color accentSageDark = Color(0xFF000000);
-  static const Color accentPeachDark = Color(0xFF000000);
-  static const Color accentBlushDark = Color(0xFF000000);
-  static const Color accentSkyDark = Color(0xFF000000);
+  static const Color accentWarmYellowDark = Color(0xFF171717);
+  static const Color accentSageDark = Color(0xFF171717);
+  static const Color accentPeachDark = Color(0xFF171717);
+  static const Color accentBlushDark = Color(0xFF171717);
+  static const Color accentSkyDark = Color(0xFF171717);
   static const Color accentRoseDark = Color(0xFFF25C05);
-  static const Color accentTealDark = Color(0xFF000000);
+  static const Color accentTealDark = Color(0xFF171717);
 
   // Light theme
   static const Color backgroundLight = Color(0xFFFFFFFF);
@@ -44,11 +44,11 @@ class AppColors {
 
   // Dark theme
   static const Color backgroundDark = Color(0xFF000000);
-  static const Color surfaceDark = Color(0xFF000000);
-  static const Color surfaceElevatedDark = Color(0xFF000000);
+  static const Color surfaceDark = Color(0xFF171717);
+  static const Color surfaceElevatedDark = Color(0xFF242424);
   static const Color navBarDark = Color(0xFF000000);
-  static const Color bottomSheetDark = Color(0xFF000000);
-  static const Color dialogDark = Color(0xFF000000);
+  static const Color bottomSheetDark = Color(0xFF242424);
+  static const Color dialogDark = Color(0xFF242424);
   static const Color textDark = Color(0xFFFAFAFA);
   static const Color textMutedDark = Color(0xFFB5B5B5);
   static const Color textSubtleDark = Color(0xFFA3A3A3);
@@ -101,10 +101,10 @@ class AppColors {
   static const Color crisisDanger = Color(0xFFF25C05);
   static const Color crisisTextOnDark = Color(0xFFFFFFFF);
   static const Color crisisBgDark = Color(0xFF000000);
-  static const Color crisisSurfaceDark = Color(0xFF000000);
+  static const Color crisisSurfaceDark = Color(0xFF171717);
   static const Color crisisTextDark = Color(0xFFFAFAFA);
   static const Color crisisTextMutedDark = Color(0xFFB5B5B5);
-  static const Color crisisSubtleDark = Color(0xFF000000);
+  static const Color crisisSubtleDark = Color(0xFF171717);
   static const brandPalette = [primary, success, warmOrange, warmYellow];
   static Color resolveAccent(String? value) {
     final raw = value?.trim() ?? '';

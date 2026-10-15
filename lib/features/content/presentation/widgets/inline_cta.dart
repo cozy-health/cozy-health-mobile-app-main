@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -5,11 +6,7 @@ class InlineCTA extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
 
-  const InlineCTA({
-    super.key,
-    required this.text,
-    required this.onTap,
-  });
+  const InlineCTA({super.key, required this.text, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -19,9 +16,12 @@ class InlineCTA extends StatelessWidget {
         height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+          color: AppSurface.tint(
+            context,
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+          ),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)),
+          border: AppSurface.border(context),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -33,7 +33,11 @@ class InlineCTA extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ],
         ),
       ),

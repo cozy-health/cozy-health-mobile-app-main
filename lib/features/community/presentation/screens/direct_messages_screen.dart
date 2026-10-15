@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -48,9 +49,11 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
       builder: (context) => Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          border: AppSurface.border(context),
+          color: Theme.of(context).bottomSheetTheme.backgroundColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -142,7 +145,9 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
                           child: Text(
                             message['content'],
                             style: context.communityBody1.copyWith(
-                              color: isMine ? Colors.white : context.communityText,
+                              color: isMine
+                                  ? Theme.of(context).colorScheme.onPrimary
+                                  : context.communityText,
                             ),
                           ),
                         ),
@@ -191,7 +196,10 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.arrow_upward, color: Theme.of(context).colorScheme.primary),
+                    icon: Icon(
+                      Icons.arrow_upward,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     onPressed: _sendMessage,
                   ),
                 ],

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -59,9 +60,7 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: context.communityBorder.withValues(alpha: 0.7),
-                  ),
+                  border: AppSurface.border(context),
                 ),
                 child: Row(
                   children: [

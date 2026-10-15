@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_scroll_body.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -20,7 +21,8 @@ class PersonalizationScreen extends StatefulWidget {
 class _PersonalizationScreenState extends State<PersonalizationScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  List<PersonalizationQuestion> get _questions => PersonalizationQuestion.questions;
+  List<PersonalizationQuestion> get _questions =>
+      PersonalizationQuestion.questions;
 
   // Store answers for each question
   final List<String> _selectedChallenges = [];
@@ -125,9 +127,8 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
@@ -139,7 +140,10 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
                     curve: Curves.easeInOut,
                   );
                 },
-                icon: Icon(Icons.arrow_back, color: AppColors.black),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               )
             : null,
         actions: [
@@ -147,7 +151,9 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
             onPressed: _finishPersonalization,
             child: Text(
               'Skip',
-              style: AppTextStyles.linkText.copyWith(color: AppColors.grey),
+              style: AppTextStyles.linkText.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -162,7 +168,9 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
               child: LinearProgressIndicator(
                 value: (_currentPage + 1) / _questions.length,
                 backgroundColor: AppColors.lightGrey,
-                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
               ),
             ),
 
@@ -182,41 +190,54 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
                   final question = _questions[index];
                   return Padding(
                     padding: EdgeInsets.symmetric(horizontal: 6.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        4.sh,
+                    child: AppScrollBody(
+                      minimumContentHeight: MediaQuery.textScalerOf(
+                        context,
+                      ).scale(450),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          4.sh,
 
-                        // Question title
-                        Text(
-                          question.title,
-                          style: AppTextStyles.heading1.copyWith(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                          // Question title
+                          Text(
+                            question.title,
+                            style: AppTextStyles.heading1.copyWith(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
 
-                        2.sh,
+                          2.sh,
 
-                        // Question subtitle
-                        Text(
-                          question.subtitle,
-                          style: AppTextStyles.body1.copyWith(
-                            color: AppColors.grey,
+                          // Question subtitle
+                          Text(
+                            question.subtitle,
+                            style: AppTextStyles.body1.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
                           ),
-                        ),
 
-                        4.sh,
+                          4.sh,
 
-                        // Question widget
-                        Expanded(
-                          child: question.type == PersonalizationQuestionType.challenges
-                              ? _buildQuestionWidget(question) // Do not scroll bubbles
-                              : SingleChildScrollView(
-                                  child: _buildQuestionWidget(question), // Lists can scroll
-                                ),
-                        ),
-                      ],
+                          // Question widget
+                          Expanded(
+                            child:
+                                question.type ==
+                                    PersonalizationQuestionType.challenges
+                                ? _buildQuestionWidget(
+                                    question,
+                                  ) // Do not scroll bubbles
+                                : SingleChildScrollView(
+                                    child: _buildQuestionWidget(
+                                      question,
+                                    ), // Lists can scroll
+                                  ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -225,8 +246,11 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
 
             // Next button
             Visibility(
-              visible: _questions[_currentPage].type == PersonalizationQuestionType.challenges ||
-                       _questions[_currentPage].type == PersonalizationQuestionType.goals,
+              visible:
+                  _questions[_currentPage].type ==
+                      PersonalizationQuestionType.challenges ||
+                  _questions[_currentPage].type ==
+                      PersonalizationQuestionType.goals,
               maintainSize: true,
               maintainAnimation: true,
               maintainState: true,

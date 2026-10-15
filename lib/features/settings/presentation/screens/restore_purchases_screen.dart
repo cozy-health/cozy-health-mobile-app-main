@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -65,11 +66,15 @@ class _RestorePurchasesScreenState extends State<RestorePurchasesScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppColors.border, width: 1),
+                    border: AppSurface.border(context),
                   ),
                   child: Column(
                     children: [
-                      Icon(Icons.restore, size: 64, color: Theme.of(context).colorScheme.primary),
+                      Icon(
+                        Icons.restore,
+                        size: 64,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       SizedBox(height: 24),
                       Text(
                         'Missing your Pro access?',
@@ -113,11 +118,14 @@ class _RestorePurchasesScreenState extends State<RestorePurchasesScreen> {
                 Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                    color: AppSurface.tint(
+                      context,
+                      Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.1),
                     ),
+                    borderRadius: BorderRadius.circular(24),
+                    border: AppSurface.border(context),
                   ),
                   child: Column(
                     children: [
@@ -157,7 +165,7 @@ class _RestorePurchasesScreenState extends State<RestorePurchasesScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppColors.border, width: 1),
+                    border: AppSurface.border(context),
                   ),
                   child: Column(
                     children: [

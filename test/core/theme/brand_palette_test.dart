@@ -39,15 +39,23 @@ void main() {
     },
   );
   test(
-    'both themes use black or white surfaces and identical brand accents',
+    'page backgrounds and separated surfaces retain identical brand accents',
     () {
       for (final theme in [AppTheme.light, AppTheme.dark]) {
         final background = theme.brightness == Brightness.dark
             ? Colors.black
             : Colors.white;
         expect(theme.scaffoldBackgroundColor, background);
-        expect(theme.colorScheme.surface, background);
-        expect(theme.colorScheme.surfaceContainer, background);
+        final surface = theme.brightness == Brightness.dark
+            ? AppColors.surfaceDark
+            : AppColors.surfaceLight;
+        expect(theme.colorScheme.surface, surface);
+        expect(theme.colorScheme.surfaceContainer, surface);
+        if (theme.brightness == Brightness.dark) {
+          expect(surface, isNot(background));
+          expect(theme.dialogTheme.backgroundColor, AppColors.dialogDark);
+          expect(theme.dialogTheme.backgroundColor, isNot(surface));
+        }
         expect(theme.colorScheme.primary, AppColors.primary);
         expect(theme.colorScheme.secondary, AppColors.success);
         expect(theme.colorScheme.tertiary, AppColors.warmYellow);

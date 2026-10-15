@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/app_dropdown.dart';
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -100,34 +102,24 @@ class _DownloadMyDataScreenState extends State<DownloadMyDataScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
+                        border: AppSurface.border(context),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedRange,
-                          icon: Icon(
-                            Icons.keyboard_arrow_down,
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? AppColors.textSubtleDark
-                                : AppColors.textSubtleLight,
-                          ),
-                          isExpanded: true,
-                          style: AppTextStyles.body1.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          items: _ranges.map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            if (newValue != null) {
-                              setState(() => _selectedRange = newValue);
-                            }
-                          },
-                        ),
+                      child: AppDropdown<String>(
+                        value: _selectedRange,
+                        compact: true,
+                        entries: _ranges
+                            .map(
+                              (value) => DropdownMenuEntry<String>(
+                                value: value,
+                                label: value,
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (newValue) {
+                          if (newValue != null) {
+                            setState(() => _selectedRange = newValue);
+                          }
+                        },
                       ),
                     ),
 
@@ -144,7 +136,7 @@ class _DownloadMyDataScreenState extends State<DownloadMyDataScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.border),
+                        border: AppSurface.border(context),
                       ),
                       child: Column(
                         children: [
@@ -246,9 +238,7 @@ class _CheckboxRow extends StatelessWidget {
                 value: value,
                 onChanged: onChanged,
                 activeColor: Theme.of(context).colorScheme.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
+                shape: AppSurface.shape(context, BorderRadius.circular(4)),
                 side: BorderSide(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? AppColors.textSubtleDark

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -78,6 +79,7 @@ class HomeQuizCard extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 179),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
+        border: AppSurface.border(context),
         color: dark
             ? theme.colorScheme.surfaceContainer
             : theme.colorScheme.surfaceContainerLow,

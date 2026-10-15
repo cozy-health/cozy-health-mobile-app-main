@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_scroll_body.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,62 +17,65 @@ class WelcomeScreen extends StatelessWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 47, 24, 24),
-          child: Column(
-            children: [
-              const Spacer(),
-              const AuthLogoMark(),
-              const SizedBox(height: 48),
-              Text(
-                'Welcome to\nCozy Health.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.heading1.copyWith(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 300),
-                child: Text(
-                  'A quiet space to check in with yourself.',
+          child: AppScrollBody(
+            minimumContentHeight: MediaQuery.textScalerOf(context).scale(600),
+            child: Column(
+              children: [
+                const Spacer(),
+                const AuthLogoMark(),
+                const SizedBox(height: 48),
+                Text(
+                  'Welcome to\nCozy Health.',
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.body1.copyWith(
-                    color: Theme.of(context).textTheme.bodyMedium?.color,
-                    height: 1.5,
+                  style: AppTextStyles.heading1.copyWith(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-              ),
-              const Spacer(),
-              AuthPrimaryButton(
-                text: 'Sign Up',
-                onPressed: () => context.push(AppRouter.createAccount),
-              ),
-              const SizedBox(height: 12),
-              AuthPrimaryButton(
-                text: 'Log In',
-                isOutlined: true,
-                onPressed: () => context.push(AppRouter.login),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () async {
-                  await TokenStorage().clearToken();
-                  await GuestSessionService().enterGuestSession();
-                  if (context.mounted) context.go(AppRouter.home);
-                },
-                child: Text(
-                  'Continue as Guest',
-                  style: AppTextStyles.body2.copyWith(
-                    color: Theme.of(context).textTheme.bodyMedium?.color,
-                    fontWeight: FontWeight.w500,
+                const SizedBox(height: 12),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 300),
+                  child: Text(
+                    'A quiet space to check in with yourself.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                      height: 1.5,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              const LegalFooter(),
-            ],
+                const Spacer(),
+                AuthPrimaryButton(
+                  text: 'Sign Up',
+                  onPressed: () => context.push(AppRouter.createAccount),
+                ),
+                const SizedBox(height: 12),
+                AuthPrimaryButton(
+                  text: 'Log In',
+                  isOutlined: true,
+                  onPressed: () => context.push(AppRouter.login),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () async {
+                    await TokenStorage().clearToken();
+                    await GuestSessionService().enterGuestSession();
+                    if (context.mounted) context.go(AppRouter.home);
+                  },
+                  child: Text(
+                    'Continue as Guest',
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const LegalFooter(),
+              ],
+            ),
           ),
         ),
       ),

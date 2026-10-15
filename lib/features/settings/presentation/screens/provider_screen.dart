@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'dart:async';
 import 'package:cozy_health/core/widgets/friendly_error.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
@@ -373,6 +374,7 @@ class _ProviderScreenState extends State<ProviderScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: const Text('Revoke provider access?'),
         content: const Text(
           'Your provider will lose access to your shared data and cannot add notes. You can reconnect later; all sharing choices will start off.',
@@ -459,7 +461,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 5.w),
@@ -493,7 +495,7 @@ class _ProviderScreenState extends State<ProviderScreen>
                                   : 'Enter the verification code to complete your existing request.')
                             : 'Add your personal therapist by entering their email address.',
                         style: AppTextStyles.body1.copyWith(
-                          color: AppColors.grey,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           height: 1.4,
                         ),
                       ),
@@ -532,10 +534,16 @@ class _ProviderScreenState extends State<ProviderScreen>
           onTap: () => context.pop(),
           child: Row(
             children: [
-              Icon(Icons.chevron_left, size: 22, color: AppColors.darkGrey),
+              Icon(
+                Icons.chevron_left,
+                size: 22,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               Text(
                 'Back',
-                style: AppTextStyles.body2.copyWith(color: AppColors.grey),
+                style: AppTextStyles.body2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -547,7 +555,7 @@ class _ProviderScreenState extends State<ProviderScreen>
               style: AppTextStyles.heading2.copyWith(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: AppColors.black,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -578,7 +586,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         Text(
           'Choose what to share. Cozy will email your provider a connection code. They will review your choices before connecting.',
           style: AppTextStyles.body2.copyWith(
-            color: AppColors.grey,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             height: 1.4,
           ),
         ),
@@ -702,6 +710,7 @@ class _ProviderScreenState extends State<ProviderScreen>
           width: double.infinity,
           padding: EdgeInsets.all(4.w),
           decoration: BoxDecoration(
+            border: AppSurface.border(context),
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
           ),
@@ -712,13 +721,15 @@ class _ProviderScreenState extends State<ProviderScreen>
                 name.isEmpty ? 'Pending Therapist' : name,
                 style: AppTextStyles.body1.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               1.sh,
               Text(
                 email,
-                style: AppTextStyles.body2.copyWith(color: AppColors.grey),
+                style: AppTextStyles.body2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               1.sh,
               Text(
@@ -768,6 +779,7 @@ class _ProviderScreenState extends State<ProviderScreen>
           width: double.infinity,
           padding: EdgeInsets.all(4.w),
           decoration: BoxDecoration(
+            border: AppSurface.border(context),
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
           ),
@@ -794,14 +806,14 @@ class _ProviderScreenState extends State<ProviderScreen>
                       name,
                       style: AppTextStyles.body1.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.black,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     0.8.sh,
                     Text(
                       email,
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.grey,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     if (phone.isNotEmpty) ...[
@@ -809,7 +821,7 @@ class _ProviderScreenState extends State<ProviderScreen>
                       Text(
                         phone,
                         style: AppTextStyles.body2.copyWith(
-                          color: AppColors.grey,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -890,7 +902,7 @@ class _ProviderScreenState extends State<ProviderScreen>
       child: Text(
         text,
         style: AppTextStyles.body2.copyWith(
-          color: AppColors.black,
+          color: Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -905,12 +917,17 @@ class _ProviderScreenState extends State<ProviderScreen>
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      style: AppTextStyles.body1.copyWith(color: AppColors.black, fontSize: 14),
+      style: AppTextStyles.body1.copyWith(
+        color: Theme.of(context).colorScheme.onSurface,
+        fontSize: 14,
+      ),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: AppTextStyles.body2.copyWith(color: AppColors.grey),
+        hintStyle: AppTextStyles.body2.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         filled: true,
-        fillColor: AppColors.white,
+        fillColor: Theme.of(context).colorScheme.surface,
         contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.8.h),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),

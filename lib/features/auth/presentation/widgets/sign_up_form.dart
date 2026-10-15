@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import 'package:go_router/go_router.dart';
@@ -98,14 +99,18 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        scrollable: true,
+        shape: AppSurface.shape(context, BorderRadius.circular(16)),
         titlePadding: const EdgeInsets.fromLTRB(24, 16, 16, 0),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Terms and Conditions', style: AppTextStyles.heading2),
             IconButton(
-              icon: Icon(Icons.close, color: AppColors.grey),
+              icon: Icon(
+                Icons.close,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               onPressed: () => Navigator.pop(context),
               padding: EdgeInsets.zero,
               constraints:
@@ -122,7 +127,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                 'Last Updated: September 2026\n',
                 style: AppTextStyles.body2.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               Text(
@@ -264,6 +269,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                 width: double.infinity,
                 padding: EdgeInsets.all(4.w),
                 decoration: BoxDecoration(
+                  border: AppSurface.border(context),
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -358,9 +364,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                             });
                           },
                     activeColor: Theme.of(context).colorScheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+                    shape: AppSurface.shape(context, BorderRadius.circular(4)),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -369,7 +373,7 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                     text: TextSpan(
                       text: 'By signing up, you are agreeing to our ',
                       style: AppTextStyles.body2.copyWith(
-                        color: AppColors.grey,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       children: [
                         TextSpan(
@@ -410,7 +414,9 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                   padding: EdgeInsets.symmetric(horizontal: 4.w),
                   child: Text(
                     'or',
-                    style: AppTextStyles.body2.copyWith(color: AppColors.grey),
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -431,7 +437,9 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
                 child: RichText(
                   text: TextSpan(
                     text: 'Already have an account? ',
-                    style: AppTextStyles.body1.copyWith(color: AppColors.grey),
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                     children: [
                       TextSpan(
                         text: 'Log In',

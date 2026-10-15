@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import '../../../../core/data/demo_mode.dart';
 import '../widgets/mood_chips_row.dart';
 import '../../../../core/theme/cozy_colors.dart';
@@ -327,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen>
                             child: const _Header(),
                           ),
                           InkWell(
-                            onTap: () => context.push(AppRouter.crisisHub),
+                            onTap: () => context.push(AppRouter.crisisContact),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
@@ -409,15 +410,12 @@ class _GuestBanner extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Theme.of(
+              color: AppSurface.tint(
                 context,
-              ).colorScheme.primary.withValues(alpha: .08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: .18),
+                Theme.of(context).colorScheme.primary.withValues(alpha: .08),
               ),
+              borderRadius: BorderRadius.circular(12),
+              border: AppSurface.border(context),
             ),
             child: Row(
               children: [
@@ -531,6 +529,7 @@ class _HomeDesignCards extends StatelessWidget {
           key: notificationFocus == 'affirmation' ? reminderKey : null,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
+            border: AppSurface.border(context),
             color: Theme.of(context).colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -799,6 +798,7 @@ class _HomeErrorView extends StatelessWidget {
                   width: 88,
                   height: 88,
                   decoration: BoxDecoration(
+                    border: AppSurface.border(context),
                     color: Theme.of(context).colorScheme.surfaceContainer,
                     borderRadius: BorderRadius.circular(24),
                   ),

@@ -42,23 +42,31 @@ class _CustomTextFieldState extends State<CustomTextField> {
           : null,
       onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       obscureText: widget.isPassword ? _obscureText : false,
-      style: AppTextStyles.body1.copyWith(color: AppColors.black),
+      style: AppTextStyles.body1.copyWith(
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: AppTextStyles.body1.copyWith(color: AppColors.grey),
+        hintStyle: AppTextStyles.body1.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         filled: true,
-        fillColor: AppColors.white,
+        fillColor: Theme.of(context).colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: widget.hasError ? AppColors.danger : AppColors.midGrey,
+            color: widget.hasError
+                ? AppColors.danger
+                : Theme.of(context).colorScheme.outline,
             width: 1.5,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: widget.hasError ? AppColors.danger : AppColors.midGrey,
+            color: widget.hasError
+                ? AppColors.danger
+                : Theme.of(context).colorScheme.outline,
             width: 1.5,
           ),
         ),
@@ -109,7 +117,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                           width: 20,
                           height: 20,
                           colorFilter: ColorFilter.mode(
-                            AppColors.grey,
+                            Theme.of(context).colorScheme.onSurfaceVariant,
                             BlendMode.srcIn,
                           ),
                         ),

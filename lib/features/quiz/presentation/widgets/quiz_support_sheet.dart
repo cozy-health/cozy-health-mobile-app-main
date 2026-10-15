@@ -32,9 +32,9 @@ class QuizSupportSheet extends StatelessWidget {
             onPressed: () {
               final router = GoRouter.of(context);
               Navigator.of(context).pop();
-              router.push(AppRouter.crisisHub);
+              router.push(AppRouter.crisisContact);
             },
-            child: const Text('View support resources'),
+            child: const Text('Contact next of kin'),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),

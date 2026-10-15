@@ -49,7 +49,7 @@ class _MoodChipsRowState extends State<MoodChipsRow> {
                     side: BorderSide(
                       color: _selected == mood
                           ? theme.colorScheme.primary
-                          : Colors.transparent,
+                          : theme.colorScheme.outline,
                       width: _selected == mood ? 2 : 1,
                     ),
                   ),

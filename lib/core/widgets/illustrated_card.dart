@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
@@ -79,6 +80,7 @@ class IllustratedCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
+        border: AppSurface.border(context),
         color:
             backgroundColor ??
             (dark ? AppColors.surfaceSubtleDark : AppColors.surfaceSubtle),

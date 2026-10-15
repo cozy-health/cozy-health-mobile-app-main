@@ -111,7 +111,10 @@ class ChallengeSelectionWidget extends StatelessWidget {
           color: Theme.of(context).colorScheme.surface,
           border: isSelected
               ? Border.all(color: theme.border, width: 2.5)
-              : Border.all(color: Colors.transparent, width: 2.5),
+              : Border.all(
+                  color: Theme.of(context).colorScheme.outline,
+                  width: 1,
+                ),
         ),
         child: Center(
           child: Padding(

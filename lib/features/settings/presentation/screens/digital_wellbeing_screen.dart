@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_dropdown.dart';
 import '../../../../core/models/digital_wellbeing_preferences.dart';
 import '../../../../core/services/digital_wellbeing_service.dart';
 import '../../../../core/widgets/app_snackbar.dart';
@@ -90,16 +91,14 @@ class _DigitalWellbeingScreenState extends State<DigitalWellbeingScreen> {
                             _save(preferences.copyWith(gentleReminders: value)),
                 ),
                 const SizedBox(height: 24),
-                DropdownButtonFormField<int>(
-                  initialValue: preferences.dailyLimitMinutes,
-                  decoration: const InputDecoration(
-                    labelText: 'Suggested daily usage limit',
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 15, child: Text('15 min')),
-                    DropdownMenuItem(value: 30, child: Text('30 min')),
-                    DropdownMenuItem(value: 60, child: Text('1 hour')),
-                    DropdownMenuItem(value: 0, child: Text('No limit')),
+                AppDropdown<int>(
+                  value: preferences.dailyLimitMinutes,
+                  label: const Text('Suggested daily usage limit'),
+                  entries: const [
+                    DropdownMenuEntry(value: 15, label: '15 min'),
+                    DropdownMenuEntry(value: 30, label: '30 min'),
+                    DropdownMenuEntry(value: 60, label: '1 hour'),
+                    DropdownMenuEntry(value: 0, label: 'No limit'),
                   ],
                   onChanged: _saving
                       ? null

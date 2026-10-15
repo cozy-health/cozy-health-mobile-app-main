@@ -96,7 +96,7 @@ class _RestoreScreenState extends State<RestoreScreen> {
                 if (controller.unavailable.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   const Text(
-                    'Saved articles and standalone emergency contacts are not available to download yet. Contacts included in your safety plan are restored with it.',
+                    'Saved articles may not be available to download yet. Your next-of-kin contact is restored separately from your safety plan.',
                   ),
                 ],
                 const SizedBox(height: 24),

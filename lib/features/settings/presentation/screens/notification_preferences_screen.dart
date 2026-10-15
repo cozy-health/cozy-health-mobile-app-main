@@ -94,6 +94,7 @@ class _NotificationPreferencesScreenState
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, update) => AlertDialog(
+          scrollable: true,
           title: const Text('Reminder days'),
           content: SingleChildScrollView(
             child: Column(

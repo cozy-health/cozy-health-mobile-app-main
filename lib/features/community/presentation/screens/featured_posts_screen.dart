@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../community_theme.dart';
@@ -77,11 +78,7 @@ class FeaturedPostsScreen extends StatelessWidget {
             ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
             : context.communitySurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isPrimary
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
-              : context.communityBorder,
-        ),
+        border: AppSurface.border(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +86,11 @@ class FeaturedPostsScreen extends StatelessWidget {
           if (isPrimary) ...[
             Row(
               children: [
-                Icon(Icons.star, color: Theme.of(context).colorScheme.primary, size: 20),
+                Icon(
+                  Icons.star,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 20,
+                ),
                 SizedBox(width: 8),
                 Text(
                   'Featured',

@@ -24,7 +24,7 @@ void main() {
         {
           'Getting Started': 3,
           'Mood & Journal': 4,
-          'Crisis Resources': 4,
+          'Next of kin': 4,
           'Privacy & Data': 3,
           'Account': 3,
           'Community': 3,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_surface.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
@@ -17,7 +18,6 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final dividerColor = Theme.of(context).dividerTheme.color;
 
     return Scaffold(
       appBar: AppBar(
@@ -60,7 +60,11 @@ class SettingsScreen extends StatelessWidget {
 
                       return Material(
                         color: colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
+                        shape: AppSurface.shape(
+                          context,
+                          BorderRadius.circular(16),
+                        ),
+                        clipBehavior: Clip.antiAlias,
                         child: InkWell(
                           onTap: () {
                             context.push(
@@ -74,10 +78,7 @@ class SettingsScreen extends StatelessWidget {
                             constraints: const BoxConstraints(minHeight: 88),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: dividerColor ?? AppColors.border,
-                                width: 1,
-                              ),
+                              border: AppSurface.border(context),
                             ),
                             padding: const EdgeInsets.all(16),
                             child: Row(
@@ -148,13 +149,19 @@ class SettingsScreen extends StatelessWidget {
               SizedBox(height: 32),
 
               _SettingsSection(
-                title: 'CRISIS SUPPORT',
+                title: 'SUPPORT',
                 children: [
                   _SettingsRow(
                     icon: Icons.favorite_outline,
-                    label: 'Crisis Resources',
-                    subtitle: 'Hotlines, safety plan, grounding',
+                    label: 'Next of kin',
+                    subtitle: 'Set up or contact someone you trust',
                     emphasisColor: AppColors.crisisPrimary,
+                    onTap: () => context.push(AppRouter.crisisContact),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.spa_outlined,
+                    label: 'Support tools',
+                    subtitle: 'Safety plan, breathing, grounding',
                     onTap: () => context.push(AppRouter.crisisHub),
                   ),
                 ],
@@ -344,16 +351,21 @@ class SettingsScreen extends StatelessWidget {
               // Logout button
               Material(
                 color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
+                shape: AppSurface.shape(context, BorderRadius.circular(16)),
+                clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: () {
                     showDialog(
                       context: context,
                       builder: (BuildContext dialogContext) {
                         return AlertDialog(
-                          backgroundColor: colorScheme.surface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                          scrollable: true,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).dialogTheme.backgroundColor,
+                          shape: AppSurface.shape(
+                            context,
+                            BorderRadius.circular(16),
                           ),
                           title: Text(
                             'Log out?',
@@ -409,10 +421,7 @@ class SettingsScreen extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: dividerColor ?? AppColors.border,
-                        width: 1,
-                      ),
+                      border: AppSurface.border(context),
                     ),
                     child: Text(
                       'Log out',
@@ -470,15 +479,11 @@ class _SettingsSection extends StatelessWidget {
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: dividerColor ?? AppColors.border,
-              width: 1,
-            ),
-          ),
+        Material(
+          color: colorScheme.surface,
+          shape: AppSurface.shape(context, BorderRadius.circular(16)),
+          clipBehavior: Clip.antiAlias,
+          borderOnForeground: true,
           child: Column(
             children: List.generate(children.length, (index) {
               final isLast = index == children.length - 1;
@@ -491,9 +496,7 @@ class _SettingsSection extends StatelessWidget {
                       child: Divider(
                         height: 1,
                         thickness: 1,
-                        color: (dividerColor ?? AppColors.border).withValues(
-                          alpha: 0.4,
-                        ),
+                        color: dividerColor ?? colorScheme.outlineVariant,
                       ),
                     ),
                 ],
@@ -536,7 +539,7 @@ class _SettingsRow extends StatelessWidget {
                   AppColors.textMuted);
 
     return Material(
-      color: Theme.of(context).colorScheme.surface,
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(

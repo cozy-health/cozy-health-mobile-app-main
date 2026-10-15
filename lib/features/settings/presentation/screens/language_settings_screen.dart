@@ -1,7 +1,7 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../data/profile_repository.dart';
@@ -88,12 +88,10 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 24),
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border, width: 1),
-                ),
+              Material(
+                color: Theme.of(context).colorScheme.surface,
+                shape: AppSurface.shape(context, BorderRadius.circular(16)),
+                clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: List.generate(_languages.length, (index) {
                     final lang = _languages[index];

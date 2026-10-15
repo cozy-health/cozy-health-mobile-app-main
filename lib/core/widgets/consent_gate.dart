@@ -78,6 +78,7 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
           ? AnimationStyle.noAnimation
           : null,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: Text(doc.title),
         content: SingleChildScrollView(
           child: Text(
