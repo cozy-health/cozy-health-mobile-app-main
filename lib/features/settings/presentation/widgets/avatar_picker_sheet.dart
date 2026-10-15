@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import '../../../../core/models/user_profile.dart';
+import '../../../../core/api/api_exceptions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -13,10 +17,16 @@ class AvatarPickerSheet extends StatefulWidget {
     this.picker,
     this.isGuest = false,
     this.onCreateAccount,
+    this.initialProfile,
+    this.accountScope,
+    this.guestLookup,
   });
   final AvatarRepository? repository;
   final AvatarPhotoPicker? picker;
   final bool isGuest;
+  final UserProfile? initialProfile;
+  final String? accountScope;
+  final Future<bool> Function()? guestLookup;
   final VoidCallback? onCreateAccount;
 
   @override
@@ -26,12 +36,20 @@ class AvatarPickerSheet extends StatefulWidget {
 class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
   late final _repository = widget.repository ?? AvatarRepository();
   late final _picker = widget.picker ?? AvatarPhotoPicker();
-  late final _scope = LocalDbService().boxName(
-    LocalDbService.userSettingsBoxName,
-  );
+  late final _scope =
+      widget.accountScope ??
+      LocalDbService().boxName(LocalDbService.userSettingsBoxName);
   bool _busy = false, _grid = false, _permissionError = false;
   String? _preset, _error, _recovered;
   Uint8List? _photo;
+  UserProfile? _profile;
+  bool? _guest;
+  bool _checkingSession = false;
+  bool _sessionFailed = false;
+  StreamSubscription<void>? _accountSubscription;
+  Route<dynamic>? _confirmationRoute;
+  final _scrollController = ScrollController();
+  bool get _canSave => _guest == false && !_checkingSession && !_sessionFailed;
   bool get _active =>
       mounted &&
       _scope == LocalDbService().boxName(LocalDbService.userSettingsBoxName);
@@ -39,7 +57,66 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
   @override
   void initState() {
     super.initState();
+    final scope = _scope;
+    _profile = widget.initialProfile;
+    if (_profile == null) {
+      try {
+        _profile = _repository.profile;
+      } catch (_) {
+        /* Browsing stays available. */
+      }
+    }
+    _guest = widget.guestLookup == null ? widget.isGuest : null;
+    if (widget.guestLookup != null) _checkSession();
+    _accountSubscription = LocalDbService().accountChanges.listen((_) {
+      if (mounted &&
+          scope !=
+              LocalDbService().boxName(LocalDbService.userSettingsBoxName)) {
+        final route = ModalRoute.of(context);
+        final confirmation = _confirmationRoute;
+        if (confirmation != null && confirmation.isActive) {
+          Navigator.of(context).removeRoute(confirmation);
+        }
+        if (route != null && route.isActive) {
+          Navigator.of(context).removeRoute(route);
+        }
+      }
+    });
     _recover();
+  }
+
+  @override
+  void dispose() {
+    _accountSubscription?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _changeView(VoidCallback update) {
+    setState(update);
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
+  }
+
+  Future<void> _checkSession() async {
+    if (_checkingSession) return;
+    setState(() {
+      _checkingSession = true;
+      _sessionFailed = false;
+      _guest = null;
+    });
+    try {
+      final guest = await widget.guestLookup!().timeout(
+        const Duration(seconds: 5),
+      );
+      if (_active) setState(() => _guest = guest);
+    } catch (error, stack) {
+      unawaited(Sentry.captureException(error, stackTrace: stack));
+      if (_active) setState(() => _sessionFailed = true);
+    } finally {
+      if (mounted) setState(() => _checkingSession = false);
+    }
   }
 
   Future<void> _recover() async {
@@ -67,7 +144,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
         if (bytes.length > 5 * 1024 * 1024) {
           throw const FormatException('Image too large');
         }
-        setState(() {
+        _changeView(() {
           _photo = bytes;
           _preset = null;
           _grid = false;
@@ -98,7 +175,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
   }
 
   Future<void> _save({bool remove = false}) async {
-    if (_busy || !_active || widget.isGuest) return;
+    if (_busy || !_active || !_canSave) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -106,38 +183,59 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
     try {
       await _repository.save(presetId: _preset, photo: _photo, remove: remove);
       if (!mounted || !_active) return;
-      Navigator.pop(context, true);
-    } catch (_) {
+      Navigator.pop(context);
+    } catch (error, stack) {
+      unawaited(Sentry.captureException(error, stackTrace: stack));
       if (_active) {
-        setState(
-          () => _error =
-              'Could not save your picture. Check your connection and try again. Your current picture is unchanged.',
-        );
+        setState(() => _error = _saveError(error));
       }
     } finally {
-      if (_active) setState(() => _busy = false);
+      if (mounted) setState(() => _busy = false);
     }
+  }
+
+  String _saveError(Object error) {
+    if (error is ApiAuthException) {
+      return 'Please sign in again before saving your picture.';
+    }
+    if (error is ApiException && error.statusCode == 409) {
+      return 'Your account changed. Reopen your profile to try again.';
+    }
+    if (error is ApiValidationException || error is FormatException) {
+      return 'This picture could not be saved. Choose an available avatar or a JPEG or PNG smaller than 5 MB.';
+    }
+    if (error is ApiServerException) {
+      return 'Picture storage is temporarily unavailable. Please try again.';
+    }
+    if (error is StateError) {
+      return 'Could not save your picture. Your profile is not ready. Reopen your profile and try again.';
+    }
+    return 'Could not save your picture. Check your connection and try again. Your current picture is unchanged.';
   }
 
   Future<void> _remove() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        scrollable: true,
-        title: const Text('Remove profile picture?'),
-        content: const Text('Your profile will use the default picture.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
+      builder: (context) {
+        _confirmationRoute = ModalRoute.of(context);
+        return AlertDialog(
+          scrollable: true,
+          title: const Text('Remove profile picture?'),
+          content: const Text('Your profile will use the default picture.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
     );
+    _confirmationRoute = null;
     if (confirmed == true && _active) await _save(remove: true);
   }
 
@@ -154,6 +252,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
           child: SizedBox(
             height: MediaQuery.sizeOf(context).height * .85,
             child: SingleChildScrollView(
+              controller: _scrollController,
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -173,7 +272,17 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                       ),
                     ],
                   ),
-                  if (widget.isGuest) ...[
+                  if (_checkingSession) const Text('Checking your account…'),
+                  if (_sessionFailed) ...[
+                    const Text(
+                      'Could not check your account. You can browse avatars and retry before saving.',
+                    ),
+                    TextButton(
+                      onPressed: _checkSession,
+                      child: const Text('Retry account check'),
+                    ),
+                  ],
+                  if (_guest == true) ...[
                     const Text(
                       'Create an account to save a profile picture. You can browse our built-in avatars here.',
                     ),
@@ -210,13 +319,13 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                     ),
                     const SizedBox(height: 20),
                     FilledButton(
-                      onPressed: _busy || widget.isGuest ? null : () => _save(),
+                      onPressed: _busy || !_canSave ? null : () => _save(),
                       child: const Text('Save picture'),
                     ),
                     TextButton(
                       onPressed: _busy
                           ? null
-                          : () => setState(() {
+                          : () => _changeView(() {
                               _preset = null;
                               _photo = null;
                               _error = null;
@@ -231,7 +340,9 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                       subtitle: const Text(
                         '24 Open Peeps avatars · available offline',
                       ),
-                      onTap: _busy ? null : () => setState(() => _grid = true),
+                      onTap: _busy
+                          ? null
+                          : () => _changeView(() => _grid = true),
                     ),
                     ListTile(
                       leading: const Icon(Icons.photo_library_outlined),
@@ -243,8 +354,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                       title: const Text('Take a photo'),
                       onTap: _busy ? null : () => _pick(true),
                     ),
-                    if (_repository.profile?.avatarUrl?.isNotEmpty == true &&
-                        !widget.isGuest)
+                    if (_profile?.avatarUrl?.isNotEmpty == true && _canSave)
                       ListTile(
                         leading: const Icon(Icons.delete_outline),
                         title: const Text('Remove photo'),
@@ -271,7 +381,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                               final selected =
                                   _preset == entry.value ||
                                   (_preset == null &&
-                                      _repository.profile?.avatarUrl ==
+                                      _profile?.avatarUrl ==
                                           'asset:${entry.value}');
                               final size = ((constraints.maxWidth - 24) / 3)
                                   .clamp(48.0, 100.0);
@@ -283,7 +393,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                                   borderRadius: BorderRadius.circular(size),
                                   onTap: _busy
                                       ? null
-                                      : () => setState(() {
+                                      : () => _changeView(() {
                                           _preset = entry.value;
                                           _grid = false;
                                           _photo = null;
@@ -322,7 +432,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                     TextButton(
                       onPressed: _busy
                           ? null
-                          : () => setState(() {
+                          : () => _changeView(() {
                               _grid = false;
                               _preset = null;
                             }),

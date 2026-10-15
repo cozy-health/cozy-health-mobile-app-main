@@ -65,6 +65,26 @@ jobs:
           xcodebuild -version
           flutter build ipa --release --no-codesign --build-number="$GITHUB_RUN_NUMBER" --dart-define-from-file=push-defines.json --dart-define=IOS_PUSH_ENABLED=false --dart-define=INTERNAL_TEST_BUILD=true --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
 
+      - name: Verify avatar assets and iOS plugin setup
+        run: |
+          python3 - <<'PY'
+          import plistlib
+          from pathlib import Path
+          app = Path('build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app')
+          with (app / 'Info.plist').open('rb') as stream:
+              info = plistlib.load(stream)
+          for key in ('NSCameraUsageDescription', 'NSPhotoLibraryUsageDescription'):
+              assert info.get(key), f'Missing {key}'
+          assets = app / 'Frameworks/App.framework/flutter_assets/assets/avatars/open_peeps'
+          for index in range(1, 25):
+              avatar = assets / f'open-peeps-{index:02d}.svg'
+              assert avatar.is_file() and avatar.stat().st_size > 0, f'Missing avatar: {avatar.name}'
+          lock = Path('ios/Podfile.lock').read_text()
+          registration = Path('ios/Runner/GeneratedPluginRegistrant.m').read_text()
+          for plugin, symbol in (('image_cropper', 'FLTImageCropperPlugin'), ('image_picker_ios', 'FLTImagePickerPlugin'), ('shared_preferences_foundation', 'SharedPreferencesPlugin')):
+              assert plugin in lock and f'[{symbol} registerWithRegistrar:' in registration, f'Missing plugin: {plugin}'
+          print('Verified 24 avatars, iOS permission descriptions, and native plugin setup.')
+          PY
       - name: Verify Sentry native SDK version
         run: |
           ruby -ryaml -e '

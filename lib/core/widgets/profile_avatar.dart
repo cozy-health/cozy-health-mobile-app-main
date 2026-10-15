@@ -12,11 +12,13 @@ class ProfileAvatar extends StatefulWidget {
     this.size = 48,
     this.url,
     this.label = 'Profile picture',
+    this.repository,
   });
   final UserProfile? profile;
   final String? url;
   final double size;
   final String label;
+  final AvatarRepository? repository;
   @override
   State<ProfileAvatar> createState() => _ProfileAvatarState();
 }
@@ -38,7 +40,7 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
         return;
       }
       try {
-        await AvatarRepository().refresh();
+        await (widget.repository ?? AvatarRepository()).refresh();
       } catch (_) {
         /* Keep the fallback offline. */
       }
@@ -83,13 +85,16 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
       );
       if (widget.profile != null && widget.profile!.avatarRevision > 0) {
         final key =
-            '${LocalDbService().boxName(LocalDbService.userSettingsBoxName)}:${widget.profile!.id}:${widget.profile!.avatarRevision}';
+            '${LocalDbService().boxName(LocalDbService.userSettingsBoxName)}:${widget.profile!.id}:${widget.profile!.avatarRevision}:$value';
         if (_cacheKey != key) {
           _cacheKey = key;
-          _cache = AvatarRepository().cachedPhoto(widget.profile!);
+          _cache = (widget.repository ?? AvatarRepository()).cachedPhoto(
+            widget.profile!,
+          );
         }
         final network = child;
         child = FutureBuilder<Uint8List?>(
+          key: ValueKey(key),
           future: _cache,
           builder: (_, snapshot) {
             if (snapshot.data != null) {

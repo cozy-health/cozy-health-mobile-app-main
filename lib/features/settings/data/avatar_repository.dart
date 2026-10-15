@@ -69,12 +69,31 @@ class AvatarRepository {
   }
 
   Future<void> _apply(dynamic data, String scope) async {
-    if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) return;
+    if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+      throw StateError('Account changed');
+    }
     final current = _local.getUserProfile();
-    if (current == null || data is! Map) return;
-    final revision = (data['avatar_revision'] as num?)?.toInt() ?? 0;
-    if (revision < current.avatarRevision) return;
-    final value = data['avatar_url']?.toString();
+    if (current == null) {
+      throw StateError('Profile is not ready');
+    }
+    if (data is! Map ||
+        !data.containsKey('avatar_url') ||
+        data['avatar_revision'] is! int ||
+        data['avatar_revision'] < 0 ||
+        (data['avatar_url'] != null && data['avatar_url'] is! String)) {
+      throw const FormatException('Invalid avatar response');
+    }
+    final revision = data['avatar_revision'] as int;
+    if (revision < current.avatarRevision) {
+      throw StateError('Stale avatar response');
+    }
+    final value = data['avatar_url'] as String?;
+    if (value != null &&
+        !(value.startsWith('asset:') &&
+            presetIds.contains(value.substring(6))) &&
+        Uri.tryParse(value)?.scheme != 'https') {
+      throw const FormatException('Invalid avatar reference');
+    }
     await _local.saveUserProfile(
       current.copyWith(
         avatarUrl: value,
@@ -91,7 +110,7 @@ class AvatarRepository {
   Future<void> refresh() async {
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     final response = await ApiClient.instance.get(endpoint);
-    await _apply(response.data['data'], scope);
+    await _apply(response.data is Map ? response.data['data'] : null, scope);
   }
 
   Future<void> save({
@@ -101,11 +120,18 @@ class AvatarRepository {
   }) async {
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     final owner = _local.activeUserId;
-    if (await GuestSessionService().isGuestSession()) {
+    if (await GuestSessionService().isGuestSession().timeout(
+      const Duration(seconds: 5),
+    )) {
       throw StateError('Create an account before saving a profile picture.');
     }
     if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
       throw StateError('Account changed');
+    }
+    if (owner == null ||
+        owner.startsWith('guest_') ||
+        _local.getUserProfile() == null) {
+      throw StateError('Profile is not ready');
     }
     final dynamic response;
     if (remove) {
@@ -133,7 +159,14 @@ class AvatarRepository {
         }),
       );
     }
-    await _apply(response.data['data'], scope);
+    await _apply(response.data is Map ? response.data['data'] : null, scope);
+    final saved = _local.getUserProfile();
+    if (scope != _local.boxName(LocalDbService.userSettingsBoxName) ||
+        saved == null ||
+        (remove && saved.avatarUrl != null) ||
+        (presetId != null && saved.avatarUrl != 'asset:$presetId')) {
+      throw StateError('Avatar selection was not applied');
+    }
   }
 
   UserProfile? get profile => _local.getUserProfile();

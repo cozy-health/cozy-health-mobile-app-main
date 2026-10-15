@@ -551,9 +551,18 @@ class LocalDbService {
   bool get isUserProfileBoxOpen => isBoxOpen(userProfileBoxName);
 
   Future<void> saveUserProfile(UserProfile profile) async {
-    await userProfileBox.put(profile.id, profile);
-    await (await settingsBox()).put('current_profile_id', profile.id);
-    _accountChanges.add(null);
+    final scope = boxName(userSettingsBoxName);
+    final profiles = userProfileBox;
+    final settings = await settingsBox();
+    if (scope != boxName(userSettingsBoxName)) {
+      throw StateError('Account changed');
+    }
+    await profiles.put(profile.id, profile);
+    // Retain the original account's boxes across asynchronous disk writes.
+    await settings.put('current_profile_id', profile.id);
+    if (scope == boxName(userSettingsBoxName)) {
+      _accountChanges.add(null);
+    }
   }
 
   Stream<UserProfile?> watchUserProfile() => _watchScoped(() {

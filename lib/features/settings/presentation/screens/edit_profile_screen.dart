@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import '../../data/avatar_repository.dart';
+import '../../services/avatar_photo_picker.dart';
 import '../../../../core/widgets/profile_avatar.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/guest_session_service.dart';
@@ -13,7 +17,15 @@ import '../../../../core/services/local_db_service.dart';
 import '../../data/profile_repository.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  const EditProfileScreen({
+    super.key,
+    this.guestLookup,
+    this.avatarRepository,
+    this.photoPicker,
+  });
+  final Future<bool> Function()? guestLookup;
+  final AvatarRepository? avatarRepository;
+  final AvatarPhotoPicker? photoPicker;
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -28,11 +40,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _hasChanges = false;
   bool _saving = false;
   UserProfile? _currentProfile;
+  StreamSubscription<UserProfile?>? _profileSubscription;
+  bool _pickerOpen = false;
+  late String _profileScope;
 
   @override
   void initState() {
     super.initState();
+    _profileScope = LocalDbService().boxName(
+      LocalDbService.userSettingsBoxName,
+    );
     _loadProfile();
+    _profileSubscription = ProfileRepository().watchProfile().listen((profile) {
+      if (!mounted) return;
+      final scope = LocalDbService().boxName(
+        LocalDbService.userSettingsBoxName,
+      );
+      if (scope != _profileScope) {
+        _profileScope = scope;
+        nameController.text = profile?.name ?? '';
+        usernameController.text = profile?.username ?? '';
+        bioController.text = profile?.bio ?? '';
+        emailController.text = profile?.email ?? '';
+        _hasChanges = false;
+      }
+      setState(() => _currentProfile = profile);
+    });
   }
 
   void _loadProfile() async {
@@ -47,28 +80,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _changePhoto() async {
-    final guest = await GuestSessionService().isGuestSession();
-    if (!mounted) return;
-    await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: false,
-      enableDrag: false,
-      builder: (_) => AvatarPickerSheet(
-        isGuest: guest,
-        onCreateAccount: () {
-          Navigator.pop(context);
-          context.push(AppRouter.createAccount);
-        },
-      ),
-    );
-    if (mounted) {
-      setState(() => _currentProfile = LocalDbService().getUserProfile());
+    if (_pickerOpen) return;
+    _pickerOpen = true;
+    FocusManager.instance.primaryFocus?.unfocus();
+    final scope = LocalDbService().boxName(LocalDbService.userSettingsBoxName);
+    try {
+      final createAccount = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: false,
+        enableDrag: false,
+        builder: (sheetContext) => AvatarPickerSheet(
+          repository: widget.avatarRepository,
+          picker: widget.photoPicker,
+          initialProfile: _currentProfile,
+          accountScope: scope,
+          guestLookup:
+              widget.guestLookup ?? GuestSessionService().isGuestSession,
+          onCreateAccount: () => Navigator.pop(sheetContext, true),
+        ),
+      );
+      if (mounted &&
+          createAccount == true &&
+          scope ==
+              LocalDbService().boxName(LocalDbService.userSettingsBoxName)) {
+        context.push(AppRouter.createAccount);
+      }
+    } catch (error, stack) {
+      unawaited(Sentry.captureException(error, stackTrace: stack));
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            "We couldn't open picture options. Please try again.",
+            onRetry: _changePhoto,
+          ),
+        );
+      }
+    } finally {
+      _pickerOpen = false;
     }
   }
 
   @override
   void dispose() {
+    _profileSubscription?.cancel();
     for (final controller in [
       nameController,
       usernameController,
@@ -166,6 +222,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   children: [
                     InkWell(
+                      key: const Key('edit-profile-picture'),
                       onTap: _changePhoto,
                       customBorder: const CircleBorder(),
                       child: Stack(
