@@ -11,6 +11,14 @@ class CozyColors extends ThemeExtension<CozyColors> {
     required this.triggerLow,
     required this.triggerMed,
     required this.triggerHigh,
+    this.recordingCategoryFills = const [
+      Color(0xFFF3F9F5),
+      Color(0xFFFEF6F1),
+      Color(0xFFF6F8FB),
+      Color(0xFFFCF7F6),
+      Color(0xFFF6E3E7),
+      Color(0xFFEDF7F8),
+    ],
   });
   final Color crisis,
       calendarBg,
@@ -19,6 +27,7 @@ class CozyColors extends ThemeExtension<CozyColors> {
       triggerLow,
       triggerMed,
       triggerHigh;
+  final List<Color> recordingCategoryFills;
 
   static const light = CozyColors(
     crisis: AppColors.crisisPrimary,
@@ -30,6 +39,14 @@ class CozyColors extends ThemeExtension<CozyColors> {
     triggerHigh: AppColors.danger,
   );
   static const dark = CozyColors(
+    recordingCategoryFills: [
+      Color(0xFF17251E),
+      Color(0xFF2B211B),
+      Color(0xFF1D2430),
+      Color(0xFF292122),
+      Color(0xFF302027),
+      Color(0xFF19292C),
+    ],
     crisis: AppColors.crisisPrimary,
     calendarBg: AppColors.accentPeachDark,
     journalingBg: AppColors.accentSageDark,
@@ -48,6 +65,7 @@ class CozyColors extends ThemeExtension<CozyColors> {
     Color? triggerLow,
     Color? triggerMed,
     Color? triggerHigh,
+    List<Color>? recordingCategoryFills,
   }) => CozyColors(
     crisis: crisis ?? this.crisis,
     calendarBg: calendarBg ?? this.calendarBg,
@@ -56,6 +74,8 @@ class CozyColors extends ThemeExtension<CozyColors> {
     triggerLow: triggerLow ?? this.triggerLow,
     triggerMed: triggerMed ?? this.triggerMed,
     triggerHigh: triggerHigh ?? this.triggerHigh,
+    recordingCategoryFills:
+        recordingCategoryFills ?? this.recordingCategoryFills,
   );
 
   @override
@@ -69,6 +89,14 @@ class CozyColors extends ThemeExtension<CozyColors> {
           triggerLow: Color.lerp(triggerLow, other.triggerLow, t)!,
           triggerMed: Color.lerp(triggerMed, other.triggerMed, t)!,
           triggerHigh: Color.lerp(triggerHigh, other.triggerHigh, t)!,
+          recordingCategoryFills: [
+            for (var i = 0; i < recordingCategoryFills.length; i++)
+              Color.lerp(
+                recordingCategoryFills[i],
+                other.recordingCategoryFills[i],
+                t,
+              )!,
+          ],
         );
 }
 

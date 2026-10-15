@@ -132,7 +132,7 @@ class CozyCalendar extends StatelessWidget {
                     entry.emoji,
                     style: const TextStyle(fontSize: 24),
                   ),
-                  title: Text(entry.mood),
+                  title: Text(entry.displayFeeling),
                   subtitle: Text(
                     '${entry.createdAt.toLocal().month}/${entry.createdAt.toLocal().day}, ${TimeOfDay.fromDateTime(entry.createdAt.toLocal()).format(context)}',
                   ),

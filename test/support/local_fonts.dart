@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_fonts/src/google_fonts_base.dart' as fonts;
 
-Future<void> installLocalTestFonts() async {
+Future<void> installLocalTestFonts({String? visualFontPath}) async {
   GoogleFonts.config.allowRuntimeFetching = false;
   final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
   final assets = <String, ByteData>{};
@@ -13,7 +13,7 @@ Future<void> installLocalTestFonts() async {
     assets[path] = await rootBundle.load(path);
   }
   final font = await rootBundle.load('fonts/MaterialIcons-Regular.otf');
-  final visualFont = File('build/surface-review/Outfit.ttf');
+  final visualFont = File(visualFontPath ?? 'build/surface-review/Outfit.ttf');
   const readableFonts =
       bool.fromEnvironment('SURFACE_SCREENSHOTS') ||
       bool.fromEnvironment('SURFACE_REAL_FONTS');

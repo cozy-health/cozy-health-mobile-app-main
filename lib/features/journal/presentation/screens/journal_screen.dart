@@ -1445,7 +1445,7 @@ class JournalEntryDetailScreen extends StatelessWidget {
           if (mood != null) ...[
             const SizedBox(height: 12),
             Text(
-              '${mood.emoji} ${mood.mood} | Intensity ${mood.intensity}/10',
+              '${mood.emoji} ${mood.displayFeeling} | Intensity ${mood.intensity}/10',
               style: _captionStyle(context),
             ),
           ],

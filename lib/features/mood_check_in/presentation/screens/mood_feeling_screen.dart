@@ -1,30 +1,29 @@
-import 'package:cozy_health/core/widgets/app_scroll_body.dart';
-import 'package:cozy_health/core/theme/app_surface.dart';
-import 'package:cozy_health/core/widgets/security_blur.dart';
-import '../../../../core/services/local_db_service.dart';
-import 'package:cozy_health/core/widgets/skeleton_loader.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import 'mood_recording_layout.dart';
+import '../../../../core/widgets/app_scroll_body.dart';
+import '../../../../core/widgets/skeleton_loader.dart';
 import '../../../../core/widgets/empty_state.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/theme/app_surface.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
+import '../../../../core/data/mood_recording_catalog.dart';
+import '../../../../core/models/mood_entry.dart';
 import '../../../../core/repositories/mood_repository.dart';
 import '../../../../core/repositories/wellness_repository.dart';
-import '../../../../core/models/mood_entry.dart';
-import '../../../crisis/presentation/screens/crisis_screens.dart';
-import '../../../crisis/services/crisis_detector.dart';
+import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/mood_draft_service.dart';
 import '../../../../core/widgets/app_snackbar.dart';
-import '../../../../core/widgets/chip.dart' as design;
-import '../../../../core/widgets/icon_chip.dart';
-import '../../../../core/widgets/progress_track.dart';
+import '../../../../core/widgets/security_blur.dart';
+import '../../../crisis/presentation/screens/crisis_screens.dart';
+import '../../../crisis/services/crisis_detector.dart';
 
 class MoodFeelingScreen extends StatefulWidget {
   const MoodFeelingScreen({super.key, this.entry, this.initialMood});
-
   final MoodEntry? entry;
   final String? initialMood;
 
@@ -32,242 +31,118 @@ class MoodFeelingScreen extends StatefulWidget {
   State<MoodFeelingScreen> createState() => _MoodFeelingScreenState();
 }
 
-class _MoodFeelingScreenState extends State<MoodFeelingScreen>
-    with SingleTickerProviderStateMixin {
-  static const int _totalSteps = 9;
-
-  final CrisisDetector _crisisDetector = const CrisisDetector();
-  late final AnimationController _entranceController;
-  final TextEditingController _triggerController = TextEditingController();
-  final TextEditingController _noteController = TextEditingController();
-
-  int _step = 1;
-  String? _moodLabel;
-  String? _moodEmoji;
-  String? _expressionSlug;
-  String? _copingHelped;
-  int _intensity = 5;
-  final Set<String> _bodyZones = {};
-  final Set<String> _triggers = {};
-  int? _sleepQuality;
-  int _energy = 5;
-  final Set<String> _coping = {};
-  bool _isSaving = false;
-  bool _discardDialogOpen = false;
-  final _draftService = MoodDraftService();
-  Map<String, dynamic>? _savedDraft;
-  Future<void> _draftWrites = Future.value();
-
-  Map<String, dynamic>? _catalog;
-  List<_MoodOption> get _moods {
-    if (_catalog != null) {
-      final expressions = (_catalog!['expressions'] as List).cast<Map>();
-      return (_catalog!['moods'] as List).cast<Map>().map((mood) {
-        final expression = expressions
-            .where((row) => row['feeling_id'] == mood['id'])
-            .firstOrNull;
-        return _MoodOption(
-          (expression?['emoji'] ?? MoodEntry.moodEmojis[mood['slug']] ?? '😐')
-              .toString(),
-          mood['slug'].toString(),
-          mood['name'].toString(),
-          Theme.of(context).colorScheme.primary,
-          (expression?['description'] ??
-                  mood['description'] ??
-                  'Thanks for checking in.')
-              .toString(),
-        );
-      }).toList();
-    }
-    return _defaultMoods;
-  }
-
-  List<_MoodOption> get _defaultMoods => [
-    _MoodOption(
-      MoodEntry.moodEmojis['good']!,
-      'good',
-      'Good',
-      AppColors.success,
-      "That's lovely to hear.",
-    ),
-    _MoodOption(
-      MoodEntry.moodEmojis['calm']!,
-      'calm',
-      'Calm',
-      Theme.of(context).colorScheme.primary,
-      'Peace looks good on you.',
-    ),
-    _MoodOption(
-      MoodEntry.moodEmojis['okay']!,
-      'okay',
-      'Okay',
-      Theme.of(context).colorScheme.onSurfaceVariant,
-      'Thanks for being honest.',
-    ),
-    _MoodOption(
-      MoodEntry.moodEmojis['low']!,
-      'low',
-      'Low',
-      AppColors.warning,
-      "I'm here with you.",
-    ),
-    _MoodOption(
-      MoodEntry.moodEmojis['anxious']!,
-      'anxious',
-      'Anxious',
-      AppColors.warmOrange,
-      "That sounds heavy. Let's slow down.",
-    ),
-    _MoodOption(
-      MoodEntry.moodEmojis['angry']!,
-      'angry',
-      'Angry',
-      AppColors.danger,
-      "That's valid. Let's work through it.",
-    ),
-    _MoodOption(
-      MoodEntry.moodEmojis['sad']!,
-      'sad',
-      'Sad',
-      Theme.of(context).colorScheme.primary,
-      'You can take this one step at a time.',
-    ),
-    _MoodOption(
-      MoodEntry.moodEmojis['tired']!,
-      'tired',
-      'Tired',
-      Theme.of(context).colorScheme.onSurfaceVariant,
-      'It is okay to make space for rest.',
-    ),
-    _MoodOption(
-      MoodEntry.moodEmojis['excited']!,
-      'excited',
-      'Excited',
-      AppColors.success,
-      'Let us make a note of this moment.',
-    ),
+class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
+  static const _groups = [
+    'Angry',
+    'Sad',
+    'Good',
+    'Upset',
+    'Spectacular',
+    'Happy',
   ];
-
-  List<String> get _triggerOptions => _catalog == null
-      ? _defaultTriggers
-      : (_catalog!['triggers'] as List)
-            .map((row) => row['name'].toString())
-            .toList();
-  final List<String> _defaultTriggers = const [
+  static const _causeGroups = [
     'Work',
-    'Family',
-    'Friends',
-    'Health',
     'School',
-    'Money',
+    'Relationship',
     'Sleep',
-    'Relationships',
-    'Body',
-    'Weather',
-    'News',
-    'Self',
+    'Health',
+    'Life changes',
   ];
+  static const _icons = [
+    Icons.hourglass_empty,
+    Icons.school_outlined,
+    Icons.people_outline,
+    Icons.bedtime_outlined,
+    Icons.favorite_border,
+    Icons.home_outlined,
+  ];
+  final _drafts = MoodDraftService();
+  final _scroll = ScrollController();
+  String _id = const Uuid().v4();
+  final Set<String> _causes = {}, _coping = {};
+  Map<String, dynamic> _catalog = moodRecordingCatalog;
+  Map<String, dynamic>? _resume;
+  Map<String, dynamic> _legacy = {};
+  Future<void> _writes = Future.value();
+  String? _mood, _expression;
+  int _step = 0, _storedIntensity = 6;
+  bool _saving = false, _loadingDraft = true, _closing = false;
 
-  final List<String> _bodyOptions = const [
-    'Head',
-    'Chest',
-    'Stomach',
-    'Shoulders',
-    'Arms',
-    'Legs',
-  ];
-
-  List<_CopingOption> get _copingOptions => _catalog == null
-      ? _defaultCoping
-      : (_catalog!['coping'] as List).map((row) {
-          final routes = {
-            'box-breathing': AppRouter.breathing,
-            '5-4-3-2-1-grounding': AppRouter.grounding,
-            'quick-journal': AppRouter.journal,
-          };
-          return _CopingOption(
-            (row['icon'] ?? '🌿').toString(),
-            row['name'].toString(),
-            (row['description'] ?? '').toString(),
-            routes[row['slug']],
-          );
-        }).toList();
-  final List<_CopingOption> _defaultCoping = const [
-    _CopingOption('🌬', 'Box breathing', '2 minutes', AppRouter.breathing),
-    _CopingOption(
-      '🧘',
-      '5-4-3-2-1 grounding',
-      '3 minutes',
-      AppRouter.grounding,
-    ),
-    _CopingOption('📝', 'Quick journal', '5 minutes', AppRouter.journal),
-  ];
+  List<Map<String, dynamic>> _rows(String key) => (_catalog[key] as List)
+      .map((r) => Map<String, dynamic>.from(r as Map))
+      .toList();
 
   @override
   void initState() {
     super.initState();
-    _entranceController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    );
     final entry = widget.entry;
-    if (entry == null && MoodEntry.moodEmojis.containsKey(widget.initialMood)) {
-      _moodLabel = widget.initialMood;
-      _moodEmoji = MoodEntry.moodEmojis[_moodLabel];
-    }
+    _mood = entry?.mood ?? widget.initialMood;
     if (entry != null) {
-      _moodLabel = MoodEntry.normalizeMoodKey(entry.mood);
-      _moodEmoji = entry.emoji;
-      _intensity = entry.intensity;
-      _bodyZones.addAll(entry.bodySensations ?? const []);
-      _triggers.addAll(entry.triggers ?? const []);
-      _triggerController.text = entry.customTrigger ?? '';
-      _sleepQuality = entry.sleepQuality;
-      _energy = entry.energyLevel ?? 5;
-      _noteController.text = entry.note ?? '';
-      _coping.addAll(entry.copingStrategies ?? const []);
-      _expressionSlug = entry.expressionSlug;
-      _copingHelped = entry.copingHelped;
+      _expression = entry.expressionSlug;
+      _storedIntensity = entry.intensity;
+      _causes.addAll(entry.triggers ?? []);
+      _coping.addAll(entry.copingStrategies ?? []);
+      _legacy = {
+        'body': entry.bodySensations,
+        'custom_trigger': entry.customTrigger,
+        'sleep': entry.sleepQuality,
+        'energy': entry.energyLevel,
+        'note': entry.note,
+        'coping_helped': entry.copingHelped,
+      };
+      _loadingDraft = false;
+    } else {
+      _loadDraft();
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) => _restartEntrance());
-    if (entry == null) _loadDraft();
-    WellnessRepository().catalog().then((catalog) {
-      if (mounted && catalog != null) setState(() => _catalog = catalog);
-    });
+    _loadCatalog();
+  }
+
+  Future<void> _loadCatalog() async {
+    final catalog = await WellnessRepository().catalog();
+    if (!mounted || catalog == null || catalog['mood_recording_version'] != 2) {
+      return;
+    }
+    if ([
+      'moods',
+      'expressions',
+      'triggers',
+      'coping',
+    ].every((key) => catalog[key] is List)) {
+      setState(() => _catalog = catalog);
+    }
   }
 
   Future<void> _loadDraft() async {
+    Map<String, dynamic>? draft;
     try {
-      final draft = await _draftService.loadToday();
-      if (mounted) setState(() => _savedDraft = draft);
+      draft = await _drafts.loadToday();
     } catch (_) {
-      // A storage issue must not block a fresh check-in.
+      /* Fresh recording remains available. */
+    }
+    if (mounted) {
+      setState(() {
+        _resume = draft;
+        _loadingDraft = false;
+      });
     }
   }
 
-  Map<String, dynamic> _draftData() => {
+  Map<String, dynamic> _draft() => {
+    ..._legacy,
+    'version': 2,
+    'id': _id,
     'step': _step,
-    'mood': _moodLabel,
-    'intensity': _intensity,
-    'body': _bodyZones.toList(),
-    'triggers': _triggers.toList(),
-    'custom_trigger': _triggerController.text,
-    'sleep': _sleepQuality,
-    'energy': _energy,
-    'note': _noteController.text,
+    'mood': _mood,
+    'expression_slug': _expression,
+    'intensity': _storedIntensity,
+    'triggers': _causes.toList(),
     'coping': _coping.toList(),
-    'expression_slug': _expressionSlug,
-    'coping_helped': _copingHelped,
   };
 
   void _queueDraft() {
-    if (widget.entry != null || _savedDraft != null || !_hasDraftContent()) {
-      return;
-    }
-    final data = _draftData();
-    _draftWrites = _draftWrites.then((_) => _draftService.save(data)).catchError((
-      Object _,
-    ) {
+    if (widget.entry != null || _resume != null || _loadingDraft) return;
+    final draft = _draft();
+    _writes = _writes.then((_) => _drafts.save(draft)).catchError((Object _) {
       if (mounted) {
         AppSnackbar.show(
           context,
@@ -280,122 +155,36 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
   }
 
   void _resumeDraft() {
-    final draft = _savedDraft!;
+    final draft = migrateMoodRecordingDraft(_resume!);
     setState(() {
-      _savedDraft = null;
-      _step = (draft['step'] as int? ?? 1).clamp(1, _totalSteps);
-      _moodLabel = draft['mood'] as String?;
-      _moodEmoji = MoodEntry.moodEmojis[_moodLabel];
-      _intensity = draft['intensity'] as int? ?? 5;
-      _bodyZones.addAll(List<String>.from(draft['body'] as List? ?? []));
-      _triggers.addAll(List<String>.from(draft['triggers'] as List? ?? []));
-      _triggerController.text = draft['custom_trigger'] as String? ?? '';
-      _sleepQuality = draft['sleep'] as int?;
-      _energy = draft['energy'] as int? ?? 5;
-      _noteController.text = draft['note'] as String? ?? '';
+      _legacy = Map.of(draft);
+      final id = draft['id'] as String?;
+      if (id != null && Uuid.isValidUUID(fromString: id)) {
+        _id = id;
+      }
+      _mood = draft['mood'] as String?;
+      _expression = draft['expression_slug'] as String?;
+      _storedIntensity = draft['intensity'] as int? ?? 6;
+      _causes.addAll(List<String>.from(draft['triggers'] as List? ?? []));
       _coping.addAll(List<String>.from(draft['coping'] as List? ?? []));
-      _expressionSlug = draft['expression_slug'] as String?;
-      _copingHelped = draft['coping_helped'] as String?;
+      _step = draft['step'] as int;
+      _resume = null;
     });
-    _restartEntrance();
   }
 
   Future<void> _clearDraft() async {
-    await _draftWrites;
-    await _draftService.clear();
-    if (mounted) setState(() => _savedDraft = null);
+    await _writes;
+    await _drafts.clear();
+    if (mounted) setState(() => _resume = null);
   }
 
-  @override
-  void dispose() {
-    _entranceController.dispose();
-    _triggerController.dispose();
-    _noteController.dispose();
-    super.dispose();
-  }
-
-  void _restartEntrance() {
-    if (!mounted) return;
-    if (MediaQuery.of(context).disableAnimations) {
-      _entranceController.value = 1;
-      return;
-    }
-    _entranceController.forward(from: 0);
-  }
-
-  void _goToStep(int step) {
-    setState(() => _step = step.clamp(1, _totalSteps));
-    _restartEntrance();
+  void _go(int step) {
+    setState(() => _step = step);
+    if (_scroll.hasClients) _scroll.jumpTo(0);
     _queueDraft();
   }
 
-  void _next() {
-    if (_step == _totalSteps) {
-      _saveEntry();
-      return;
-    }
-    _goToStep(_step + 1);
-  }
-
-  void _handleSystemBack() {
-    if (_isSaving || _discardDialogOpen) return;
-    if (_step > 1) {
-      _goToStep(_step - 1);
-      return;
-    }
-    if (_hasDraftContent()) {
-      _showDiscardDialog();
-    } else {
-      _exitFlow();
-    }
-  }
-
-  bool _hasDraftContent() =>
-      _moodLabel != null ||
-      _intensity != 5 ||
-      _bodyZones.isNotEmpty ||
-      _triggers.isNotEmpty ||
-      _triggerController.text.trim().isNotEmpty ||
-      _sleepQuality != null ||
-      _energy != 5 ||
-      _noteController.text.trim().isNotEmpty ||
-      _coping.isNotEmpty;
-
-  Future<void> _showDiscardDialog() async {
-    if (_isSaving || _discardDialogOpen) return;
-    _discardDialogOpen = true;
-    final colorScheme = Theme.of(context).colorScheme;
-    final discard = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        scrollable: true,
-        backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
-        title: Text(
-          'Discard this entry?',
-          style: TextStyle(color: colorScheme.onSurface),
-        ),
-        content: Text(
-          'Your progress will be lost.',
-          style: TextStyle(color: colorScheme.onSurfaceVariant),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Discard'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Keep editing'),
-          ),
-        ],
-      ),
-    );
-    _discardDialogOpen = false;
-    if (!mounted) return;
-    if (discard == true) _discardAndExit();
-  }
-
-  void _exitFlow() {
+  void _exit() {
     if (context.canPop()) {
       context.pop();
     } else {
@@ -403,749 +192,729 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen>
     }
   }
 
-  void _discardAndExit() async {
-    await _clearDraft();
-    if (!mounted) return;
-    _step = 1;
-    _moodLabel = null;
-    _moodEmoji = null;
-    _intensity = 5;
-    _bodyZones.clear();
-    _triggers.clear();
-    _triggerController.clear();
-    _sleepQuality = null;
-    _energy = 5;
-    _noteController.clear();
-    _coping.clear();
-    _exitFlow();
-  }
-
-  void _skip() {
-    if (_step == 3) _bodyZones.clear();
-    if (_step == 4) {
-      _triggers.clear();
-      _triggerController.clear();
-    }
-    if (_step == 5) _sleepQuality = null;
-    if (_step == 6) _energy = 5;
-    if (_step == 7) _noteController.clear();
-    if (_step == 8) _coping.clear();
-    _next();
-  }
-
-  Future<void> _saveEntry() async {
-    if (_isSaving) return;
-    setState(() => _isSaving = true);
-    final note = _noteController.text.trim();
-    final signal = _crisisDetector.analyze(note);
-    final shouldShowCrisisSupport = _crisisDetector.canTrigger('mood', signal);
-
-    final entry = MoodEntry(
-      id: widget.entry?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      mood: _moodLabel ?? 'okay',
-      intensity: _intensity,
-      bodySensations: _bodyZones.toList(),
-      triggers: _triggers.toList(),
-      customTrigger: _triggerController.text.trim().isNotEmpty
-          ? _triggerController.text.trim()
-          : null,
-      sleepQuality: _sleepQuality,
-      energyLevel: _energy,
-      note: note.isNotEmpty ? note : null,
-      copingStrategies: _coping.toList(),
-      copingHelped: _coping.isEmpty ? null : _copingHelped,
-      expressionSlug: _expressionSlug,
-      isCrisisFlagged: shouldShowCrisisSupport,
-      createdAt: widget.entry?.createdAt ?? DateTime.now(),
-      updatedAt: DateTime.now(),
+  Future<void> _close() async {
+    if (_saving || _closing) return;
+    _closing = true;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard this entry?'),
+        content: const Text('Your progress will be lost.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
     );
-
+    _closing = false;
+    if (discard != true || !mounted) return;
     try {
-      await MoodRepository().save(entry);
       if (widget.entry == null) await _clearDraft();
     } catch (_) {
       if (mounted) {
-        setState(() => _isSaving = false);
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error("We couldn't discard your draft. Try again."),
+        );
+      }
+      return;
+    }
+    if (mounted) _exit();
+  }
+
+  void _back() {
+    if (_saving || _closing) return;
+    if (_step > 0) {
+      _go(_step - 1);
+    } else {
+      _close();
+    }
+  }
+
+  Future<void> _selectFeeling(
+    Map<String, dynamic> mood,
+    Map<String, dynamic> feeling,
+  ) async {
+    var value = _expression == feeling['slug']
+        ? moodIntensityToDisplay(_storedIntensity)
+        : 3;
+    final result = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+        child: StatefulBuilder(
+          builder: (context, update) {
+            final theme = Theme.of(context);
+            final scheme = theme.colorScheme;
+            return Dialog(
+              key: const ValueKey('recording-intensity-dialog'),
+              constraints: const BoxConstraints(maxWidth: 270),
+              backgroundColor:
+                  theme.dialogTheme.backgroundColor ?? scheme.surface,
+              surfaceTintColor: Colors.transparent,
+              shape: AppSurface.shape(context, BorderRadius.circular(8)),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 24,
+              ),
+              child: SizedBox(
+                key: const ValueKey('recording-intensity-body'),
+                width: 270,
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _IntensityTitle(),
+                        const SizedBox(height: 20),
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 16,
+                            activeTrackColor: scheme.primary,
+                            inactiveTrackColor: scheme.outlineVariant,
+                            thumbColor: MediaQuery.highContrastOf(context)
+                                ? scheme.onSurface
+                                : scheme.primary,
+                            overlayColor: scheme.primary.withValues(alpha: .12),
+                            thumbShape: _IntensityThumb(
+                              centerColor: scheme.surface,
+                            ),
+                            activeTickMarkColor: Colors.transparent,
+                            inactiveTickMarkColor: Colors.transparent,
+                          ),
+                          child: Slider(
+                            key: const ValueKey('recording-intensity-slider'),
+                            padding: EdgeInsets.zero,
+                            value: value.toDouble(),
+                            min: 1,
+                            max: 5,
+                            divisions: 4,
+                            label: '$value',
+                            semanticFormatterCallback: (v) =>
+                                '${v.round()} out of 5',
+                            onChanged: (v) => update(() => value = v.round()),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('1', style: theme.textTheme.bodyMedium),
+                            Text('5', style: theme.textTheme.bodyMedium),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: TextButton(
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, value),
+                            child: const Text('Done'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _mood = mood['slug'] as String;
+      _expression = feeling['slug'] as String;
+      _storedIntensity = moodIntensityToStorage(result);
+    });
+    _queueDraft();
+  }
+
+  Future<void> _save() async {
+    if (_saving || _mood == null) return;
+    setState(() => _saving = true);
+    final old = widget.entry;
+    final note = _legacy['note'] as String?;
+    const detector = CrisisDetector();
+    final signal = detector.analyze(note ?? '');
+    final crisis = detector.canTrigger('mood', signal);
+    final draftId = _legacy['id'] as String?;
+    final entry = MoodEntry(
+      id:
+          old?.id ??
+          (draftId != null && Uuid.isValidUUID(fromString: draftId)
+              ? draftId
+              : _id),
+      mood: _mood!,
+      expressionSlug: _expression,
+      intensity: _storedIntensity,
+      triggers: _causes.toList(),
+      copingStrategies: _coping.toList(),
+      bodySensations: (_legacy['body'] as List?)?.cast<String>(),
+      customTrigger: _legacy['custom_trigger'] as String?,
+      sleepQuality: _legacy['sleep'] as int?,
+      energyLevel: _legacy['energy'] as int?,
+      note: note,
+      copingHelped: _legacy['coping_helped'] as String?,
+      isCrisisFlagged: crisis || (old?.isCrisisFlagged ?? false),
+      createdAt: old?.createdAt ?? DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    try {
+      await MoodRepository().save(entry);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saving = false);
         AppSnackbar.show(
           context,
           AppSnackbar.error(
             "We couldn't save your check-in. Your draft is still here.",
-            onRetry: _saveEntry,
+            onRetry: _save,
           ),
         );
       }
       return;
     }
-
+    if (old == null) {
+      try {
+        await _clearDraft();
+      } catch (_) {
+        /* The entry is already saved. */
+      }
+    }
     if (!mounted) return;
-    setState(() => _isSaving = false);
-
-    if (shouldShowCrisisSupport) {
-      _crisisDetector.markTriggered('mood');
+    if (crisis) {
+      detector.markTriggered('mood');
       await showCrisisSupportOverlay(context, signal: signal);
       if (!mounted) return;
     }
-
-    AppSnackbar.show(
-      context,
-      AppSnackbar.saved(type: 'mood_entry', id: entry.id),
-    );
     context.go(AppRouter.moodSuccess);
   }
 
-  bool get _canContinue =>
-      _savedDraft == null && (_step != 1 || _moodLabel != null);
-
-  String? get _selectedMoodLabel {
-    final key = _moodLabel;
-    if (key == null) return null;
-    return _moodDisplayLabel(key);
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final child = switch (_step) {
-      1 => _moodSelection(),
-      2 => _intensityStep(),
-      3 => _bodyStep(),
-      4 => _triggerStep(),
-      5 => _sleepStep(),
-      6 => _energyStep(),
-      7 => _journalStep(),
-      8 => _copingStep(),
-      _ => _reviewStep(),
-    };
-
+    final theme = Theme.of(context);
+    final enabled =
+        !_loadingDraft &&
+        _resume == null &&
+        !_saving &&
+        (_step != 0 || _expression != null || widget.entry != null);
     return PopScope<Object?>(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) _handleSystemBack();
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _back();
       },
       child: Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              if (_savedDraft != null)
-                MaterialBanner(
-                  content: const Text('You have an unsaved check-in. Resume?'),
-                  actions: [
-                    TextButton(
-                      onPressed: _resumeDraft,
-                      child: const Text('Resume'),
-                    ),
-                    TextButton(
-                      onPressed: _clearDraft,
-                      child: const Text('Discard'),
-                    ),
-                  ],
-                ),
-              _MoodProgressHeader(
-                step: _step,
-                totalSteps: _totalSteps,
-                onBack: _step == 1
-                    ? () => context.pop()
-                    : () => _goToStep(_step - 1),
-                onClose: _showDiscardDialog,
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 18),
-                  child: _AnimatedStep(
-                    controller: _entranceController,
-                    child: child,
-                  ),
-                ),
-              ),
-              _BottomActions(
-                moodSelection: _step == 1,
-                showSkip: _step >= 3 && _step <= 8,
-                label: _step == _totalSteps ? 'Save Entry' : 'Continue',
-                enabled: _canContinue && !_isSaving,
-                busy: _isSaving,
-                onContinue: _next,
-                onSkip: _skip,
-              ),
-              if (_step == _totalSteps)
-                TextButton(
-                  onPressed: _isSaving ? null : _showDiscardDialog,
-                  child: Text(
-                    'Cancel this entry',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _selectMood(_MoodOption mood) {
-    HapticFeedback.lightImpact();
-    setState(() {
-      if (_moodLabel != mood.key) _expressionSlug = null;
-      _moodLabel = mood.key;
-      _moodEmoji = mood.emoji;
-    });
-    SemanticsService.sendAnnouncement(
-      View.of(context),
-      'Mood selected: ${mood.label}. Continue button enabled.',
-      Directionality.of(context),
-    );
-  }
-
-  Widget _moodSelection() {
-    final selected = _moods.where((mood) => mood.key == _moodLabel).firstOrNull;
-    final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    return Column(
-      children: [
-        const _StepIntro(
-          title: 'How would you describe how you are feeling?',
-          subtitle: "Take your time. There's no wrong answer.",
-        ),
-        const SizedBox(height: 20),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (final mood in _moods)
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: SecurityBlur(
+          child: SafeArea(
+            child: Column(
+              children: [
                 Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minWidth: 103,
-                      minHeight: 45,
-                    ),
-                    child: design.Chip(
-                      label: mood.label,
-                      selected: mood.key == _moodLabel,
-                      leading: Text(
-                        _displayMoodEmoji(mood.emoji),
-                        style: const TextStyle(fontSize: 22),
+                  padding: const EdgeInsets.fromLTRB(8, 5, 8, 1),
+                  child: Row(
+                    children: [
+                      TextButton(
+                        onPressed: _saving ? null : _back,
+                        style: TextButton.styleFrom(
+                          foregroundColor: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.chevron_left, size: 18),
+                            Text('Back'),
+                          ],
+                        ),
                       ),
-                      backgroundColor:
-                          Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.accentWarmYellowDark
-                          : AppColors.accentWarmYellow,
-                      onTap: () => _selectMood(mood),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: LinearProgressIndicator(
+                            value: const [
+                              74 / 215,
+                              145 / 215,
+                              178 / 215,
+                              1.0,
+                            ][_step],
+                            minHeight: 4,
+                            color: theme.colorScheme.primary,
+                            backgroundColor: theme.colorScheme.outlineVariant
+                                .withValues(alpha: .35),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      IconButton(
+                        onPressed: _saving ? null : _close,
+                        tooltip: 'Close check-in',
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_resume != null)
+                  MaterialBanner(
+                    content: const Text(
+                      'You have an unsaved check-in. Resume?',
                     ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 275),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _moods.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisExtent: 110 * (scale < 1 ? 1 : scale),
-                crossAxisSpacing: 19,
-                mainAxisSpacing: 12,
-              ),
-              itemBuilder: (context, index) {
-                final mood = _moods[index];
-                return _MoodCard(
-                  mood: mood,
-                  selected: mood.key == _moodLabel,
-                  onTap: () => _selectMood(mood),
-                );
-              },
-            ),
-          ),
-        ),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: selected == null
-              ? const SizedBox(height: 122)
-              : Padding(
-                  padding: const EdgeInsets.only(top: 26),
-                  child: _MascotMessage(message: selected.message),
-                ),
-        ),
-        if (_catalog != null && _moodLabel != null) _expressionChoices(),
-      ],
-    );
-  }
-
-  Widget _intensityStep() => Column(
-    children: [
-      const _StepIntro(
-        title: 'How strong is\nthis feeling?',
-        subtitle: "There's no right\nanswer. Just notice.",
-      ),
-      const SizedBox(height: 28),
-      Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 270, minHeight: 156),
-          child: _WarmPanel(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Text(
-                  'Intensity · $_intensity / 10',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Mild', style: _captionStyle()),
-                    Text('Strong', style: _captionStyle()),
-                  ],
-                ),
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 16,
-                    activeTrackColor: Theme.of(context).colorScheme.primary,
-                    inactiveTrackColor:
-                        Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.borderSubtleDark
-                        : AppColors.borderSubtle,
-                    thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 10,
-                    ),
-                  ),
-                  child: Slider(
-                    min: 1,
-                    max: 10,
-                    divisions: 9,
-                    value: _intensity.toDouble(),
-                    semanticFormatterCallback: (value) =>
-                        'Intensity ${value.round()} of 10',
-                    onChanged: (value) {
-                      final next = value.round();
-                      if (next != _intensity) HapticFeedback.selectionClick();
-                      setState(() => _intensity = next);
-                    },
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(
-                    10,
-                    (index) => Text('${index + 1}', style: _captionStyle()),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(height: 24),
-      _MascotMessage(message: _intensityMessage),
-    ],
-  );
-  Widget _expressionChoices() {
-    final mood = (_catalog!['moods'] as List)
-        .cast<Map>()
-        .where((row) => row['slug'] == _moodLabel)
-        .firstOrNull;
-    if (mood == null) return const SizedBox.shrink();
-    final expressions = (_catalog!['expressions'] as List).cast<Map>().where(
-      (row) => row['feeling_id'] == mood['id'],
-    );
-    return Wrap(
-      spacing: 8,
-      children: expressions
-          .map(
-            (row) => ChoiceChip(
-              label: Text('${row['emoji'] ?? ''} ${row['name']}'),
-              selected: row['slug'] == _expressionSlug,
-              onSelected: (selected) {
-                setState(
-                  () => _expressionSlug = selected
-                      ? row['slug'].toString()
-                      : null,
-                );
-                _queueDraft();
-              },
-            ),
-          )
-          .toList(),
-    );
-  }
-
-  Widget _bodyStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _StepIntro(
-          title: 'Where do you\nfeel it?',
-          subtitle: 'Sometimes feelings\nshow up in our bodies.',
-        ),
-        const SizedBox(height: 26),
-        _BodyMap(selectedZones: _bodyZones, onToggle: _toggleBodyZone),
-        const SizedBox(height: 22),
-        Text(
-          'Or choose:',
-          style: AppTextStyles.body1.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _ChipWrap(
-          values: _bodyOptions,
-          selectedValues: _bodyZones,
-          onToggle: _toggleBodyZone,
-        ),
-      ],
-    );
-  }
-
-  Widget _triggerStep() {
-    // Presentation groups only: every stored trigger remains an existing option.
-    const groups = {
-      'Work': ['Work'],
-      'School': ['School'],
-      'Relationship': ['Relationships', 'Family', 'Friends'],
-      'Sleep': ['Sleep'],
-      'Health': ['Health', 'Body'],
-      'Life changes': ['Money', 'Weather', 'News', 'Self'],
-    };
-    const icons = {
-      'Work': Icons.work_outline,
-      'School': Icons.school_outlined,
-      'Relationship': Icons.people_outline,
-      'Sleep': Icons.bedtime_outlined,
-      'Health': Icons.favorite_outline,
-      'Life changes': Icons.public,
-    };
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _StepIntro(
-          title: 'What made you feel this way?',
-          subtitle: 'Choose anything that fits. Or skip.',
-        ),
-        const SizedBox(height: 24),
-        for (final group in groups.entries) ...[
-          _WarmPanel(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(group.key, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final value in _triggerOptions.where(
-                      group.value.contains,
-                    ))
-                      IconChip(
-                        label: value,
-                        icon: Icon(icons[group.key], size: 14),
-                        selected: _triggers.contains(value),
-                        onTap: () {
-                          setState(() {
-                            _triggers.contains(value)
-                                ? _triggers.remove(value)
-                                : _triggers.add(value);
-                          });
+                    actions: [
+                      TextButton(
+                        onPressed: _resumeDraft,
+                        child: const Text('Resume'),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          try {
+                            await _clearDraft();
+                          } catch (_) {
+                            if (context.mounted) {
+                              AppSnackbar.show(
+                                context,
+                                AppSnackbar.error(
+                                  "We couldn't discard your draft.",
+                                ),
+                              );
+                            }
+                          }
                         },
+                        child: const Text('Discard'),
                       ),
-                  ],
+                    ],
+                  ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _scroll,
+                    padding: const EdgeInsets.fromLTRB(15, 0, 15, 24),
+                    child: IgnorePointer(
+                      ignoring: _saving || _resume != null || _loadingDraft,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            [
+                              'How would you describe how you are feeling?',
+                              'What made you feel this way?',
+                              'How have you expressed these feelings?',
+                              'Review your check-in',
+                            ][_step],
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          if (_step == 0) ..._feelingCards(),
+                          if (_step == 1) ..._causeCards(),
+                          if (_step == 2)
+                            _panel(
+                              'Coping Mechanisms',
+                              _chips('coping', _rows('coping'), 2, _coping),
+                            ),
+                          if (_step == 3) ..._review(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: enabled
+                          ? () {
+                              if (_step == 3) {
+                                _save();
+                              } else {
+                                _go(_step + 1);
+                              }
+                            }
+                          : null,
+                      child: _saving
+                          ? SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: theme.colorScheme.onPrimary,
+                              ),
+                            )
+                          : Text(_step == 3 ? 'Save entry' : 'Continue'),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-        ],
-        const SizedBox(height: 12),
-        Text(
-          'Or describe it yourself:',
-          style: AppTextStyles.body1.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
         ),
-        const SizedBox(height: 10),
-        TextField(
-          controller: _triggerController,
-          minLines: 3,
-          maxLines: 4,
-          decoration: _inputDecoration(''),
-        ),
-      ],
-    );
-  }
-
-  Widget _sleepStep() {
-    return Column(
-      children: [
-        const _StepIntro(title: 'How did you\nsleep?', subtitle: ''),
-        const SizedBox(height: 42),
-        const Text('🌙', style: TextStyle(fontSize: 54)),
-        const SizedBox(height: 38),
-        _WarmPanel(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(5, (index) {
-                  final value = index + 1;
-                  final filled = (_sleepQuality ?? 0) >= value;
-                  return Semantics(
-                    button: true,
-                    label: 'Sleep quality $value of 5',
-                    child: IconButton(
-                      onPressed: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _sleepQuality = value);
-                      },
-                      iconSize: 42,
-                      icon: Icon(
-                        filled ? Icons.star_rounded : Icons.star_border_rounded,
-                        color: filled
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Poor', style: _captionStyle()),
-                  Text('Great', style: _captionStyle()),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _energyStep() {
-    return Column(
-      children: [
-        const _StepIntro(title: "How's your\nenergy?", subtitle: ''),
-        const SizedBox(height: 44),
-        const Text('🔋', style: TextStyle(fontSize: 54)),
-        const SizedBox(height: 38),
-        _WarmPanel(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Low', style: _captionStyle()),
-                  Text('High', style: _captionStyle()),
-                ],
-              ),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 8,
-                  activeTrackColor: AppColors.success,
-                  inactiveTrackColor: Theme.of(context).colorScheme.outline,
-                  thumbColor: Theme.of(context).colorScheme.onPrimary,
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 14,
-                  ),
-                ),
-                child: Slider(
-                  min: 1,
-                  max: 10,
-                  divisions: 9,
-                  value: _energy.toDouble(),
-                  semanticFormatterCallback: (value) =>
-                      'Energy ${value.round()} of 10',
-                  onChanged: (value) => setState(() => _energy = value.round()),
-                ),
-              ),
-              Text(
-                '$_energy / 10',
-                style: AppTextStyles.heading2.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _journalStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _StepIntro(
-          title: 'Want to say\nmore?',
-          subtitle: 'Anything you write\nstays private.',
-        ),
-        const SizedBox(height: 28),
-        TextField(
-          controller: _noteController,
-          minLines: 8,
-          maxLines: 10,
-          maxLength: 1000,
-          textAlignVertical: TextAlignVertical.top,
-          decoration: _inputDecoration("What's on your mind?"),
-        ),
-        const SizedBox(height: 12),
-        TextButton.icon(
-          onPressed: () => context.push(AppRouter.voiceRecording),
-          icon: Icon(Icons.mic_none_rounded),
-          label: const Text('Voice note'),
-        ),
-      ],
-    );
-  }
-
-  Widget _copingStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _StepIntro(
-          title: 'Want to try\nsomething?',
-          subtitle: 'Small things that\nmight help.',
-        ),
-        const SizedBox(height: 28),
-        for (final option in _copingOptions) ...[
-          _CopingCard(
-            option: option,
-            selected: _coping.contains(option.title),
-            onSelect: () {
-              setState(() {
-                _coping.contains(option.title)
-                    ? _coping.remove(option.title)
-                    : _coping.add(option.title);
-              });
-            },
-            onTry: option.route == null
-                ? null
-                : () => context.push(option.route!),
-          ),
-          const SizedBox(height: 10),
-        ],
-        if (_coping.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          const Text('Did these coping activities help?'),
-          Wrap(
-            spacing: 8,
-            children: ['yes', 'somewhat', 'no']
-                .map(
-                  (answer) => ChoiceChip(
-                    label: Text(answer),
-                    selected: _copingHelped == answer,
-                    onSelected: (selected) {
-                      setState(() => _copingHelped = selected ? answer : null);
-                      _queueDraft();
-                    },
-                  ),
-                )
-                .toList(),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _reviewStep() {
-    final rows = <_ReviewRowData>[
-      _ReviewRowData(
-        '${_moodEmoji ?? MoodEntry.moodEmojis['good']}  ${_selectedMoodLabel ?? 'Mood'}',
-        'Intensity: $_intensity',
-        1,
       ),
-      if (_bodyZones.isNotEmpty)
-        _ReviewRowData('Body', _bodyZones.join(', '), 3),
-      if (_triggers.isNotEmpty || _triggerController.text.trim().isNotEmpty)
-        _ReviewRowData(
-          'Triggers',
-          [
-            ..._triggers,
-            if (_triggerController.text.trim().isNotEmpty)
-              _triggerController.text.trim(),
-          ].join(', '),
-          4,
-        ),
-      if (_sleepQuality != null)
-        _ReviewRowData(
-          'Sleep',
-          '${'★' * _sleepQuality!}${'☆' * (5 - _sleepQuality!)}',
-          5,
-        ),
-      _ReviewRowData('Energy', '$_energy/10', 6),
-      if (_noteController.text.trim().isNotEmpty)
-        _ReviewRowData('Note', '"${_noteController.text.trim()}"', 7),
-      if (_coping.isNotEmpty) _ReviewRowData('Coping', _coping.join(', '), 8),
-    ];
+    );
+  }
 
+  void _toggle(Set<String> values, String value) {
+    setState(() {
+      if (!values.add(value)) values.remove(value);
+    });
+    _queueDraft();
+  }
+
+  List<Widget> _feelingCards() {
+    final moods = _rows('moods');
+    final expressions = _rows('expressions');
+    return [
+      for (var i = 0; i < _groups.length; i++)
+        for (final mood in moods.where(
+          (m) => m['slug'] == _groups[i].toLowerCase(),
+        ))
+          _panel(
+            mood['name'] as String,
+            _chips(
+              'expressions',
+              expressions.where((e) => e['feeling_id'] == mood['id']).toList(),
+              i,
+              null,
+              mood: mood,
+            ),
+          ),
+    ];
+  }
+
+  List<Widget> _causeCards() {
+    final rows = _rows('triggers');
+    final groups = [
+      ..._causeGroups,
+      ...rows
+          .map((r) => r['group_name'] as String? ?? 'Other')
+          .where((g) => !_causeGroups.contains(g))
+          .toSet(),
+    ];
+    return [
+      for (var i = 0; i < groups.length; i++)
+        if (rows.any((r) => (r['group_name'] ?? 'Other') == groups[i]))
+          _panel(
+            groups[i],
+            _chips(
+              'triggers',
+              rows
+                  .where((r) => (r['group_name'] ?? 'Other') == groups[i])
+                  .toList(),
+              i % 6,
+              _causes,
+            ),
+          ),
+    ];
+  }
+
+  Widget _chips(
+    String collection,
+    List<Map<String, dynamic>> options,
+    int category,
+    Set<String>? selection, {
+    Map<String, dynamic>? mood,
+  }) {
+    final pending = {for (final row in options) row['slug'] as String: row};
+    final rows = <List<Map<String, dynamic>>>[];
+    for (final reference in moodRecordingReferenceRows[collection]!) {
+      final row = [
+        for (final slug in reference)
+          if (pending.containsKey(slug)) pending.remove(slug)!,
+      ];
+      if (row.isNotEmpty) rows.add(row);
+    }
+    if (pending.isNotEmpty) rows.add(pending.values.toList());
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _StepIntro(
-          title: "Here's what\nyou logged.",
-          subtitle: 'Tap any section\nto edit.',
-        ),
-        const SizedBox(height: 28),
-        for (final row in rows) ...[
-          _ReviewRow(data: row, onEdit: () => _goToStep(row.step)),
-          const SizedBox(height: 10),
+        for (var i = 0; i < rows.length; i++) ...[
+          if (i > 0) const SizedBox(height: 12),
+          Wrap(
+            key: ValueKey('recording-row-${rows[i].first['slug']}'),
+            spacing: 10,
+            runSpacing: 12,
+            children: [
+              for (final row in rows[i])
+                _chip(
+                  collection,
+                  row,
+                  category,
+                  selection == null
+                      ? _expression == row['slug']
+                      : selection.contains(row['name']),
+                  () {
+                    if (mood != null) {
+                      _selectFeeling(mood, row);
+                    } else {
+                      _toggle(selection!, row['name'] as String);
+                    }
+                  },
+                ),
+            ],
+          ),
         ],
       ],
     );
   }
 
-  String get _intensityMessage {
-    if (_intensity <= 3) return 'A gentle feeling.';
-    if (_intensity <= 6) return "That's noticeable.";
-    if (_intensity <= 8) return "That's quite a lot.";
-    return "That sounds really intense. I'm here.";
-  }
-
-  void _toggleBodyZone(String zone) {
-    setState(() {
-      _bodyZones.contains(zone)
-          ? _bodyZones.remove(zone)
-          : _bodyZones.add(zone);
-    });
-  }
-
-  TextStyle _captionStyle() => AppTextStyles.body2.copyWith(
-    color: Theme.of(context).colorScheme.onSurfaceVariant,
-    fontSize: 13,
-    fontWeight: FontWeight.w500,
+  Widget _panel(String title, Widget child) => Container(
+    width: double.infinity,
+    margin: EdgeInsets.only(bottom: _step == 1 ? 24 : 16),
+    padding: const EdgeInsets.fromLTRB(9, 12, 9, 16),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surface,
+      border: AppSurface.border(context),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            fontSize: 16,
+            height: 1.25,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 16),
+        child,
+      ],
+    ),
   );
 
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: AppTextStyles.body1.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-      filled: true,
-      fillColor: Theme.of(context).colorScheme.surface,
-      counterStyle: AppTextStyles.body2.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-      contentPadding: const EdgeInsets.all(16),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: Theme.of(context).colorScheme.primary,
-          width: 1.5,
+  Widget _chip(
+    String collection,
+    Map<String, dynamic> row,
+    int category,
+    bool selected,
+    VoidCallback onTap,
+  ) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final contrast = MediaQuery.highContrastOf(context);
+    final fill = contrast
+        ? (selected ? scheme.primary : scheme.surface)
+        : context.cozyColors.recordingCategoryFills[category];
+    final foreground = contrast && selected
+        ? scheme.onPrimary
+        : scheme.onSurface;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: row['name'] as String,
+      excludeSemantics: true,
+      onTap: onTap,
+      child: Material(
+        key: ValueKey('recording-$collection-${row['slug']}'),
+        color: fill,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(
+            color: selected
+                ? (contrast ? scheme.onSurface : scheme.primary)
+                : (contrast ? scheme.outline : Colors.transparent),
+            width: contrast ? 2 : 1,
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _art(
+                  collection,
+                  row,
+                  category,
+                  foreground,
+                  selected: contrast && selected,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    row['name'] as String,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: 13,
+                      color: foreground,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  Widget _art(
+    String collection,
+    Map<String, dynamic> row,
+    int category,
+    Color foreground, {
+    bool selected = false,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final bundled = (moodRecordingCatalog[collection] as List).any(
+      (item) => item['slug'] == row['slug'],
+    );
+    if (collection == 'expressions') {
+      if (!bundled) {
+        return Text(
+          row['emoji'] as String? ?? '',
+          style: const TextStyle(fontSize: 18),
+        );
+      }
+      return Image.asset(
+        Theme.of(context).brightness == Brightness.dark ||
+                MediaQuery.highContrastOf(context)
+            ? 'assets/png/recording_emoji_${row['slug']}.png'
+            : 'assets/png/recording_${collection}_${row['slug']}.png',
+        width: 22,
+        height: 20,
+        excludeFromSemantics: true,
+      );
+    }
+    final ink = scheme.primary.computeLuminance();
+    final background = scheme.surface.computeLuminance();
+    final ratio = ink > background
+        ? (ink + .05) / (background + .05)
+        : (background + .05) / (ink + .05);
+    final readableAccent = selected || ratio < 3 ? foreground : scheme.primary;
+    final fallback = Icon(
+      collection == 'coping' ? Icons.favorite_border : _icons[category],
+      size: 17,
+      color: readableAccent,
+    );
+    return Container(
+      width: 22,
+      height: 20,
+      decoration: BoxDecoration(
+        color: MediaQuery.highContrastOf(context)
+            ? Colors.transparent
+            : scheme.primary.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: bundled
+          ? Image.asset(
+              'assets/png/recording_mask_${collection}_${row['slug']}.png',
+              color: readableAccent,
+              colorBlendMode: BlendMode.srcIn,
+              excludeFromSemantics: true,
+              errorBuilder: (_, _, _) => fallback,
+            )
+          : fallback,
+    );
+  }
+
+  List<Widget> _review() => [
+    _reviewRow(
+      'Feeling',
+      '${_expression == null ? _mood ?? "Not selected" : moodExpressionLabel(_expression!)} (${_mood ?? ""})\nIntensity: ${moodIntensityToDisplay(_storedIntensity)}/5',
+      0,
+    ),
+    _reviewRow(
+      'Causes',
+      _causes.isEmpty ? 'None selected' : _causes.join(', '),
+      1,
+    ),
+    _reviewRow(
+      'Coping mechanisms',
+      _coping.isEmpty ? 'None selected' : _coping.join(', '),
+      2,
+    ),
+  ];
+
+  Widget _reviewRow(String title, String value, int step) => _panel(
+    title,
+    Row(
+      children: [
+        Expanded(child: Text(value)),
+        IconButton(
+          tooltip: 'Edit $title',
+          onPressed: _saving ? null : () => _go(step),
+          icon: const Icon(Icons.edit_outlined),
+        ),
+      ],
+    ),
+  );
+}
+
+class _IntensityTitle extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final text = Text(
+      'How intense is this feeling?',
+      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
+    );
+    // Only fit at the default size; accessibility sizes keep their size and wrap.
+    return MediaQuery.textScalerOf(context).scale(18) <= 18
+        ? FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: text,
+          )
+        : text;
+  }
+}
+
+class _IntensityThumb extends SliderComponentShape {
+  const _IntensityThumb({required this.centerColor});
+  final Color centerColor;
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size(20, 20);
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) {
+    context.canvas.drawCircle(
+      center,
+      10,
+      Paint()..color = sliderTheme.thumbColor!,
+    );
+    context.canvas.drawCircle(center, 6, Paint()..color = centerColor);
   }
 }
 
@@ -1350,8 +1119,7 @@ class _MoodHistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label:
-          '${_moodDisplayLabel(entry.mood)}, intensity ${entry.intensity} of 10',
+      label: '${entry.displayFeeling}, intensity ${entry.intensity} of 10',
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: () => context.push(AppRouter.moodDetail, extra: entry),
@@ -1380,7 +1148,7 @@ class _MoodHistoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _moodDisplayLabel(entry.mood),
+                      entry.displayFeeling,
                       style: AppTextStyles.body1.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
@@ -1472,7 +1240,7 @@ class MoodDetailViewScreen extends StatelessWidget {
               else ...[
                 Text(moodEntry.emoji, style: const TextStyle(fontSize: 64)),
                 Text(
-                  _moodDisplayLabel(moodEntry.mood),
+                  moodEntry.displayFeeling,
                   style: AppTextStyles.heading1.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 28,
@@ -1513,25 +1281,6 @@ class MoodDetailViewScreen extends StatelessWidget {
   }
 }
 
-String _moodDisplayLabel(String mood) {
-  switch (MoodEntry.normalizeMoodKey(mood)) {
-    case 'good':
-      return 'Good';
-    case 'calm':
-      return 'Calm';
-    case 'okay':
-      return 'Okay';
-    case 'low':
-      return 'Low';
-    case 'anxious':
-      return 'Anxious';
-    case 'angry':
-      return 'Angry';
-    default:
-      return mood.trim().isEmpty ? 'Okay' : mood.trim();
-  }
-}
-
 String _formatMoodDate(DateTime date) {
   final local = date.toLocal();
   final now = DateTime.now();
@@ -1548,539 +1297,25 @@ String _formatMoodDate(DateTime date) {
   return '$dayLabel, $hour:$minute $period';
 }
 
-class _MoodProgressHeader extends StatelessWidget {
-  const _MoodProgressHeader({
-    required this.step,
-    required this.totalSteps,
-    required this.onBack,
-    required this.onClose,
-  });
-  final int step;
-  final int totalSteps;
-  final VoidCallback onBack;
-  final VoidCallback onClose;
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-    child: Column(
-      children: [
-        Row(
-          children: [
-            IconButton(
-              tooltip: 'Back',
-              onPressed: onBack,
-              icon: const Icon(Icons.chevron_left),
-            ),
-            Expanded(
-              child: ProgressTrack(
-                value: step / totalSteps,
-                semanticLabel: 'Check-in progress',
-              ),
-            ),
-            IconButton(
-              tooltip: 'Close check-in',
-              onPressed: onClose,
-              icon: const Icon(Icons.close),
-            ),
-          ],
-        ),
-        Text(
-          'Step $step of $totalSteps',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ],
-    ),
-  );
-}
-
-class _StepIntro extends StatelessWidget {
-  const _StepIntro({required this.title, required this.subtitle});
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            textAlign: TextAlign.start,
-            style: AppTextStyles.h3.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-              height: 1.12,
-            ),
-          ),
-          if (subtitle.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Text(
-              subtitle,
-              textAlign: TextAlign.start,
-              style: AppTextStyles.body1.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                height: 1.35,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _MoodCard extends StatelessWidget {
-  const _MoodCard({
-    required this.mood,
-    required this.selected,
-    required this.onTap,
-  });
-  final _MoodOption mood;
-  final bool selected;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    selected: selected,
-    label: mood.label,
-    child: Material(
-      color: Theme.of(context).brightness == Brightness.dark
-          ? AppColors.accentSkyDark
-          : AppColors.accentSky,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: selected
-              ? Theme.of(context).colorScheme.primary
-              : Colors.transparent,
-          width: 2,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                _displayMoodEmoji(mood.emoji),
-                style: const TextStyle(fontSize: 28),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                mood.label,
-                style: Theme.of(context).textTheme.labelMedium,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-// Decode legacy escape notation only for painting; persisted mood data is untouched.
-String _displayMoodEmoji(String emoji) {
-  final encoded = RegExp(r'^\\u\{([0-9A-Fa-f]+)\}$').firstMatch(emoji);
-  return encoded == null
-      ? emoji
-      : String.fromCharCode(int.parse(encoded[1]!, radix: 16));
-}
-
-class _MascotMessage extends StatelessWidget {
-  const _MascotMessage({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            border: AppSurface.border(context),
-            color: AppSurface.tint(context, AppColors.primarySoft),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Icon(
-            Icons.favorite_rounded,
-            color: Theme.of(context).colorScheme.primary,
-            size: 30,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          '"$message"',
-          textAlign: TextAlign.center,
-          style: AppTextStyles.body2.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            height: 1.35,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BodyMap extends StatelessWidget {
-  const _BodyMap({required this.selectedZones, required this.onToggle});
-
-  final Set<String> selectedZones;
-  final ValueChanged<String> onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WarmPanel(
-      child: Center(
-        child: SizedBox(
-          width: 220,
-          height: 320,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 106,
-                height: 260,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outline,
-                    width: 2,
-                  ),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(58),
-                    bottom: Radius.circular(44),
-                  ),
-                ),
-              ),
-              _BodyZone(
-                label: 'Head',
-                top: 14,
-                selected: selectedZones.contains('Head'),
-                onTap: onToggle,
-              ),
-              _BodyZone(
-                label: 'Shoulders',
-                top: 78,
-                selected: selectedZones.contains('Shoulders'),
-                onTap: onToggle,
-              ),
-              _BodyZone(
-                label: 'Chest',
-                top: 122,
-                selected: selectedZones.contains('Chest'),
-                onTap: onToggle,
-              ),
-              _BodyZone(
-                label: 'Stomach',
-                top: 168,
-                selected: selectedZones.contains('Stomach'),
-                onTap: onToggle,
-              ),
-              _BodyZone(
-                label: 'Arms',
-                top: 212,
-                selected: selectedZones.contains('Arms'),
-                onTap: onToggle,
-              ),
-              _BodyZone(
-                label: 'Legs',
-                top: 258,
-                selected: selectedZones.contains('Legs'),
-                onTap: onToggle,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BodyZone extends StatelessWidget {
-  const _BodyZone({
-    required this.label,
-    required this.top,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final double top;
-  final bool selected;
-  final ValueChanged<String> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      top: top,
-      child: InkWell(
-        onTap: () => onTap(label),
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          width: 112,
-          height: 34,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected
-                ? AppColors.primarySubtle
-                : Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outline,
-            ),
-          ),
-          child: Text(
-            label,
-            style: AppTextStyles.body2.copyWith(
-              color: selected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ChipWrap extends StatelessWidget {
-  const _ChipWrap({
-    required this.values,
-    required this.selectedValues,
-    required this.onToggle,
-  });
-  final List<String> values;
-  final Set<String> selectedValues;
-  final ValueChanged<String> onToggle;
-  @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: 8,
-    runSpacing: 10,
-    children: [
-      for (final value in values)
-        design.Chip(
-          label: value,
-          selected: selectedValues.contains(value),
-          onTap: () => onToggle(value),
-          leading: selectedValues.contains(value)
-              ? const Icon(Icons.check, size: 16)
-              : null,
-        ),
-    ],
-  );
-}
-
-class _CopingCard extends StatelessWidget {
-  const _CopingCard({
-    required this.option,
-    required this.selected,
-    required this.onSelect,
-    required this.onTry,
-  });
-
-  final _CopingOption option;
-  final bool selected;
-  final VoidCallback onSelect;
-  final VoidCallback? onTry;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WarmPanel(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Text(option.emoji, style: const TextStyle(fontSize: 26)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: InkWell(
-              onTap: onSelect,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    option.title,
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    option.duration,
-                    style: AppTextStyles.body2.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (onTry != null)
-            TextButton(onPressed: onTry, child: const Text('Try')),
-          Checkbox(value: selected, onChanged: (_) => onSelect()),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReviewRow extends StatelessWidget {
-  const _ReviewRow({required this.data, required this.onEdit});
-
-  final _ReviewRowData data;
-  final VoidCallback onEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WarmPanel(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data.title,
-                  style: AppTextStyles.body1.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (data.subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    data.subtitle,
-                    style: AppTextStyles.body2.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          IconButton(
-            tooltip: 'Edit ${data.title}',
-            onPressed: onEdit,
-            icon: Icon(
-              Icons.edit_outlined,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomActions extends StatelessWidget {
-  const _BottomActions({
-    required this.moodSelection,
-    required this.showSkip,
-    required this.label,
-    required this.enabled,
-    required this.busy,
-    required this.onContinue,
-    required this.onSkip,
-  });
-
-  final bool moodSelection;
-  final bool showSkip;
-  final String label;
-  final bool enabled;
-  final bool busy;
-  final VoidCallback onContinue;
-  final VoidCallback onSkip;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 10, 24, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _PrimaryButton(
-            isLoading: busy,
-            label: label,
-            onPressed: enabled ? onContinue : null,
-            disabledBackgroundColor: moodSelection
-                ? Theme.of(context).colorScheme.surfaceContainerHighest
-                : null,
-            disabledForegroundColor: moodSelection
-                ? Theme.of(context).colorScheme.onSurfaceVariant
-                : null,
-          ),
-          if (showSkip) ...[
-            const SizedBox(height: 10),
-            TextButton(onPressed: onSkip, child: const Text('Skip')),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton({
-    required this.label,
-    required this.onPressed,
-    this.disabledBackgroundColor,
-    this.disabledForegroundColor,
-    this.isLoading = false,
-  });
-
+  const _PrimaryButton({required this.label, required this.onPressed});
   final String label;
-  final VoidCallback? onPressed;
-  final Color? disabledBackgroundColor;
-  final Color? disabledForegroundColor;
-  final bool isLoading;
-
+  final VoidCallback onPressed;
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          disabledBackgroundColor:
-              disabledBackgroundColor ?? Theme.of(context).colorScheme.outline,
-          disabledForegroundColor: disabledForegroundColor,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: isLoading
-            ? const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 12),
-                  Text('Loading...'),
-                ],
-              )
-            : Text(label),
+  Widget build(BuildContext context) => SizedBox(
+    width: double.infinity,
+    height: 48,
+    child: ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-    );
-  }
+      child: Text(label),
+    ),
+  );
 }
 
 class _SecondaryButton extends StatelessWidget {
@@ -2134,32 +1369,6 @@ class _WarmPanel extends StatelessWidget {
   }
 }
 
-class _AnimatedStep extends StatelessWidget {
-  const _AnimatedStep({required this.controller, required this.child});
-
-  final AnimationController controller;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    if (MediaQuery.of(context).disableAnimations) return child;
-    final animation = CurvedAnimation(
-      parent: controller,
-      curve: Curves.easeOutCubic,
-    );
-    return FadeTransition(
-      opacity: animation,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, .05),
-          end: Offset.zero,
-        ).animate(animation),
-        child: child,
-      ),
-    );
-  }
-}
-
 class _Sparkle extends StatelessWidget {
   const _Sparkle({this.size = 7});
 
@@ -2201,31 +1410,4 @@ class _DetailRow extends StatelessWidget {
       ),
     );
   }
-}
-
-class _MoodOption {
-  const _MoodOption(this.emoji, this.key, this.label, this.color, this.message);
-
-  final String emoji;
-  final String key;
-  final String label;
-  final Color color;
-  final String message;
-}
-
-class _CopingOption {
-  const _CopingOption(this.emoji, this.title, this.duration, this.route);
-
-  final String emoji;
-  final String title;
-  final String duration;
-  final String? route;
-}
-
-class _ReviewRowData {
-  const _ReviewRowData(this.title, this.subtitle, this.step);
-
-  final String title;
-  final String subtitle;
-  final int step;
 }

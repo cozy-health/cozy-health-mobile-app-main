@@ -1,8 +1,12 @@
 import 'package:hive/hive.dart';
+import '../data/mood_recording_catalog.dart';
 
 @HiveType(typeId: 1)
 class MoodEntry extends HiveObject {
   static const Map<String, String> moodEmojis = {
+    'upset': '\u{1F61F}',
+    'spectacular': '\u{1F929}',
+    'happy': '\u{1F600}',
     'good': '\u{1F60A}',
     'calm': '\u{1F60C}',
     'okay': '\u{1F610}',
@@ -16,6 +20,12 @@ class MoodEntry extends HiveObject {
 
   static String normalizeMoodKey(String raw) => raw.toLowerCase().trim();
 
+  String get displayFeeling => expressionSlug?.isNotEmpty == true
+      ? moodExpressionLabel(expressionSlug!)
+      : mood.isEmpty
+      ? mood
+      : mood[0].toUpperCase() + mood.substring(1);
+
   String get emoji {
     final normalized = normalizeMoodKey(mood);
     return moodEmojis[normalized] ?? '\u{1F610}';
@@ -28,7 +38,7 @@ class MoodEntry extends HiveObject {
   final String mood; // 'good', 'calm', 'okay', 'low', 'anxious', 'angry'
 
   @HiveField(2)
-  final int intensity; // 1-10
+  final int intensity; // Stored on the historical 1-10 scale; recording UI uses 1-5.
 
   @HiveField(3)
   final List<String>? bodySensations;
