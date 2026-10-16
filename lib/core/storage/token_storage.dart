@@ -5,6 +5,9 @@ import 'package:uuid/uuid.dart';
 class TokenStorage {
   static final _sessionClearing = StreamController<void>.broadcast(sync: true);
   static Stream<void> get sessionClearing => _sessionClearing.stream;
+  // Announces a completed token change without exposing the token itself.
+  static final _sessionChanges = StreamController<void>.broadcast(sync: true);
+  static Stream<void> get sessionChanges => _sessionChanges.stream;
   static Future<void> Function()? beforeClear;
   static const String _tokenKey = 'cozy_health_access_token';
 
@@ -62,9 +65,11 @@ class TokenStorage {
     _sessionOnly = !stayLoggedIn;
     if (!stayLoggedIn) {
       await _storage.delete(key: _tokenKey);
+      _sessionChanges.add(null);
       return;
     }
     await _storage.write(key: _tokenKey, value: token);
+    _sessionChanges.add(null);
   }
 
   Future<String?> getToken() async {
@@ -82,5 +87,6 @@ class TokenStorage {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: 'cozy_health_refresh_token');
     await _storage.delete(key: 'cozy_health_last_activity');
+    _sessionChanges.add(null);
   }
 }

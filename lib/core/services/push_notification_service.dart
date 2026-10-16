@@ -52,7 +52,7 @@ class PushNotificationService extends ChangeNotifier
       return phonePermission.allowed;
     },
     onOpen: open,
-    affirmation: () => AffirmationRepository().getCachedToday(),
+    affirmation: () async => (await AffirmationRepository().cached())?.body,
   );
   AppNotification? _pendingTap;
   Timer? _timer;

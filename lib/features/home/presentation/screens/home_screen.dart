@@ -14,8 +14,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/home_quiz_card.dart';
 import '../widgets/cozy_calendar.dart';
 import '../widgets/journaling_card.dart';
-import 'dart:async';
-import '../../../../core/repositories/affirmation_repository.dart';
+import '../../../../core/widgets/affirmation_panel.dart';
+import '../../../../core/services/affirmation_controller.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/repositories/home_repository.dart';
 import '../../../../core/api/auth_token_service.dart';
@@ -48,9 +48,11 @@ class HomeScreen extends StatefulWidget {
     this.state = HomeDashboardState.returningUser,
     this.tourTargets,
     this.notificationFocus,
+    this.affirmationController,
   });
   final FeatureTourTargets? tourTargets;
   final String? notificationFocus;
+  final AffirmationController? affirmationController;
 
   final HomeDashboardState state;
 
@@ -59,9 +61,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with SingleTickerProviderStateMixin {
   late final AnimationController _entranceController;
-  int _affirmationIndex = 0;
   final _reminderTarget = GlobalKey();
   bool _reminderFocused = false;
 
@@ -84,26 +85,11 @@ class _HomeScreenState extends State<HomeScreen>
   late final Stream<List<MoodEntry>> _moodStream;
   DashboardData? _dashboard;
   bool _loadingDashboard = true;
-  final _affirmationRepo = AffirmationRepository();
-  Timer? _affirmationTimer;
-  String? _dailyAffirmation;
-  bool _loadingAffirmation = false;
-
-  List<String> get _affirmations =>
-      _dailyAffirmation == null ? _fallbackAffirmations : [_dailyAffirmation!];
-  static const _fallbackAffirmations = [
-    "You're doing great.\nSmall steps count.",
-    "It's okay to rest.",
-    "Feelings are visitors.\nLet them come and go.",
-  ];
-
   @override
   void initState() {
     super.initState();
     _moodStream = _moodRepo.watchMoodEntries();
-    WidgetsBinding.instance.addObserver(this);
-    _showCachedAffirmation();
-    _loadDashboard().then((_) => _loadAffirmation());
+    _loadDashboard();
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -119,62 +105,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _affirmationTimer?.cancel();
     _entranceController.dispose();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _loadAffirmation();
-  }
-
-  Future<void> _showCachedAffirmation() async {
-    if (DemoMode.instance.enabled) return;
-    final cached = await _affirmationRepo.getCachedToday();
-    if (mounted && cached != null) {
-      setState(() {
-        _dailyAffirmation = cached;
-        _affirmationIndex = 0;
-      });
-    }
-  }
-
-  Future<void> _loadAffirmation() async {
-    if (DemoMode.instance.enabled) return;
-    if (!mounted || _loadingAffirmation) return;
-    _loadingAffirmation = true;
-    try {
-      final cached = await _affirmationRepo.getCachedToday();
-      if (!mounted) return;
-      setState(() {
-        _dailyAffirmation = cached;
-        _affirmationIndex = 0;
-      });
-      if (!await AuthTokenService.hasToken()) return;
-      final body = await _affirmationRepo.fetchToday();
-      if (mounted) {
-        setState(() {
-          _dailyAffirmation = body;
-          _affirmationIndex = 0;
-        });
-      }
-    } catch (_) {
-      // Retain today's cached copy, or the existing offline safety net.
-    } finally {
-      _loadingAffirmation = false;
-      _affirmationTimer?.cancel();
-      if (mounted) {
-        final delay = await _affirmationRepo.untilNextDay();
-        if (mounted) {
-          _affirmationTimer = Timer(
-            delay + const Duration(seconds: 1),
-            _loadAffirmation,
-          );
-        }
-      }
-    }
   }
 
   Future<void> _loadDashboard() async {
@@ -354,21 +286,9 @@ class _HomeScreenState extends State<HomeScreen>
                             streak: streak,
                             isEmpty: isEmpty,
                             hasMoodToday: hasMoodToday,
-                            affirmation: _AffirmationCard(
-                              text: _affirmations[_affirmationIndex],
-                              index: _affirmationIndex,
-                              count: _affirmations.length,
-                              onSwipe: (direction) {
-                                setState(() {
-                                  _affirmationIndex =
-                                      (_affirmationIndex + direction) %
-                                      _affirmations.length;
-                                  if (_affirmationIndex < 0) {
-                                    _affirmationIndex =
-                                        _affirmations.length - 1;
-                                  }
-                                });
-                              },
+                            affirmation: AffirmationPanel(
+                              compact: true,
+                              controller: widget.affirmationController,
                             ),
                           ),
                           SizedBox(height: 24),
@@ -637,81 +557,6 @@ class _Header extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-}
-
-class _AffirmationCard extends StatelessWidget {
-  const _AffirmationCard({
-    required this.text,
-    required this.index,
-    required this.count,
-    required this.onSwipe,
-  });
-
-  final String text;
-  final int index;
-  final int count;
-  final ValueChanged<int> onSwipe;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if ((details.primaryVelocity ?? 0) < 0) onSwipe(1);
-        if ((details.primaryVelocity ?? 0) > 0) onSwipe(-1);
-      },
-      onLongPress: () {
-        AppSnackbar.show(
-          context,
-          AppSnackbar.fromLegacy(
-            content: Text('Affirmation copied privately.'),
-          ),
-        );
-      },
-      child: Padding(
-        padding: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('💛', style: TextStyle(fontSize: 22)),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    text,
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      height: 1.35,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 18),
-            Row(
-              children: List.generate(
-                count,
-                (dot) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.only(right: 6),
-                  width: dot == index ? 16 : 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: dot == index
-                        ? AppColors.warmYellow
-                        : Theme.of(context).colorScheme.outline,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
