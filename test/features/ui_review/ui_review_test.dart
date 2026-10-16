@@ -40,6 +40,7 @@ import 'package:cozy_health/features/notifications/presentation/screens/notifica
 import '../../support/local_fonts.dart';
 import '../../support/surface_capture.dart';
 import 'package:cozy_health/features/settings/presentation/screens/settings_screen.dart';
+import 'package:cozy_health/features/settings/presentation/screens/provider_hub_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -162,6 +163,23 @@ void main() {
           nav.onTap(index);
           await tester.pump(const Duration(milliseconds: 500));
           final buttons = find.byType(FloatingActionButton);
+          if (index == 2) {
+            expect(find.byType(ProviderHubScreen), findsOneWidget);
+            expect(
+              buttons,
+              findsNothing,
+              reason: 'Provider composer must remain clear of overlays',
+            );
+            final page = tester.getRect(
+              find.byKey(const ValueKey('main-tab-content')),
+            );
+            final navigation = tester.getRect(
+              find.byType(CustomBottomNavigationBar),
+            );
+            expect(page.bottom, closeTo(navigation.top, 0.01));
+            expect(tester.takeException(), isNull, reason: 'Provider tab');
+            continue;
+          }
           expect(buttons, findsNWidgets(2));
           final crisis = tester.getRect(find.byType(CrisisFab));
           final quick = tester.getRect(
