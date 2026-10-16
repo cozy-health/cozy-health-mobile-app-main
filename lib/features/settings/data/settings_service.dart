@@ -63,6 +63,12 @@ class SettingsService {
     return responseMap(await _apiClient.delete(ApiConstants.provider));
   }
 
+  Future<void> cancelProviderInvitation(String linkId) async {
+    await _apiClient.delete(
+      '/provider/invitations/${Uri.encodeComponent(linkId)}',
+    );
+  }
+
   Future<void> updateConsent({
     required String linkId,
     required String consentType,

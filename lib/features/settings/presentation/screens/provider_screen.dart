@@ -1,5 +1,7 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'dart:async';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:cozy_health/core/widgets/friendly_error.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +39,8 @@ class _ProviderScreenState extends State<ProviderScreen>
     'notes': false,
   };
   Timer? _resendTimer;
+  Timer? _invitationExpiryTimer;
+  bool _invitationExpired = true;
   int _resendSeconds = 0;
   bool _loading = true;
   bool _sending = false;
@@ -50,6 +54,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   Map<String, dynamic>? _provider;
   bool _hasProvider = false;
   bool _showResources = false;
+  String? _correctionEmail;
 
   @override
   void initState() {
@@ -64,6 +69,7 @@ class _ProviderScreenState extends State<ProviderScreen>
     WidgetsBinding.instance.removeObserver(this);
     _resendTimer?.cancel();
     emailController.dispose();
+    _invitationExpiryTimer?.cancel();
     nameController.dispose();
     codeController.dispose();
     super.dispose();
@@ -120,6 +126,7 @@ class _ProviderScreenState extends State<ProviderScreen>
 
       setState(() {
         _provider = provider is Map<String, dynamic> ? provider : null;
+        _scheduleInvitationExpiry();
         _hasProvider = response['has_provider'] == true;
         if (_provider?['verification_actor'] == 'provider' && !_hasProvider) {
           final flags = _provider?['consent_flags'] as Map? ?? {};
@@ -166,6 +173,7 @@ class _ProviderScreenState extends State<ProviderScreen>
 
     setState(() {
       _sending = true;
+      _provider?['invitation_code'] = null;
       _error = null;
     });
 
@@ -182,6 +190,7 @@ class _ProviderScreenState extends State<ProviderScreen>
 
       setState(() {
         _provider = provider is Map<String, dynamic> ? provider : null;
+        _scheduleInvitationExpiry();
         _hasProvider = response['has_provider'] == true;
       });
 
@@ -202,6 +211,11 @@ class _ProviderScreenState extends State<ProviderScreen>
       );
     } on ApiException catch (e) {
       if (!mounted) return;
+      if (e.statusCode == 503) {
+        await _loadProvider();
+        if (!mounted) return;
+        _retry = _requestProvider;
+      }
       _failures++;
       setState(() {
         _error = AppSnackbar.friendly(e.message);
@@ -246,6 +260,7 @@ class _ProviderScreenState extends State<ProviderScreen>
 
       setState(() {
         _provider = provider is Map<String, dynamic> ? provider : null;
+        _scheduleInvitationExpiry();
         _hasProvider = true;
       });
 
@@ -643,6 +658,187 @@ class _ProviderScreenState extends State<ProviderScreen>
     );
   }
 
+  Future<void> _editProviderEmail() async {
+    final original = _provider?['provider_email']?.toString() ?? '';
+    var corrected = _correctionEmail ?? original;
+    final formKey = GlobalKey<FormState>();
+    final email = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Correct provider email'),
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Sending to the corrected address cancels the old invitation and replaces its code. Your sharing choices will stay the same.',
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  initialValue: corrected,
+                  autofocus: true,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Correct provider email',
+                  ),
+                  onChanged: (value) => corrected = value,
+                  validator: (value) {
+                    final email = (value ?? '').trim();
+                    if (!RegExp(
+                          r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+                        ).hasMatch(email) ||
+                        email.length > 190) {
+                      return 'Enter a valid email address.';
+                    }
+                    if (email.toLowerCase() == original.toLowerCase()) {
+                      return 'Enter a different email address.';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Keep current invitation'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(dialogContext, corrected.trim());
+              }
+            },
+            child: const Text('Send corrected invitation'),
+          ),
+        ],
+      ),
+    );
+    if (email != null && mounted) {
+      await _correctProviderEmail(email);
+    }
+  }
+
+  Future<void> _correctProviderEmail(String email) async {
+    if (_sending || _removing || _hasProvider || _provider == null) return;
+    final linkId = (_provider!['link_id'] ?? _provider!['id']).toString();
+    final name = _provider!['provider_name']?.toString() ?? '';
+    final flags = Map<String, bool>.from(_invitationFlags);
+    _correctionEmail = email;
+    _retry = () => _correctProviderEmail(email);
+    setState(() {
+      _sending = true;
+      _error = null;
+    });
+    try {
+      await _settingsService.cancelProviderInvitation(linkId);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      if (e.statusCode == 409) {
+        await _loadProvider();
+        if (!mounted) return;
+      }
+      setState(() {
+        _sending = false;
+        _error = e.statusCode == 409
+            ? 'Your provider already accepted. The connection has been refreshed.'
+            : 'Unable to cancel the original invitation. Please retry.';
+      });
+      return;
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _sending = false;
+          _error = 'Unable to cancel the original invitation. Please retry.';
+        });
+      }
+      return;
+    }
+    if (!mounted) return;
+    _resendTimer?.cancel();
+    _invitationExpiryTimer?.cancel();
+    setState(() {
+      _provider = null;
+      _hasProvider = false;
+      _resendSeconds = 0;
+      emailController.text = email;
+      nameController.text = name;
+      _invitationFlags.addAll(flags);
+      _sending = false;
+      _correctionEmail = null;
+    });
+    await _requestProvider();
+  }
+
+  DateTime? get _invitationExpiresAt =>
+      DateTime.tryParse(_provider?['invitation_expires_at']?.toString() ?? '');
+
+  bool get _canShareInvitation =>
+      !_hasProvider &&
+      !_invitationExpired &&
+      _provider?['verification_actor'] == 'provider' &&
+      _provider?['invitation_code'] != null &&
+      _invitationExpiresAt?.isAfter(DateTime.now()) == true;
+
+  void _scheduleInvitationExpiry() {
+    _invitationExpiryTimer?.cancel();
+    final expires = _invitationExpiresAt;
+    _invitationExpired = expires == null || !expires.isAfter(DateTime.now());
+    if (expires != null && expires.isAfter(DateTime.now())) {
+      _invitationExpiryTimer = Timer(expires.difference(DateTime.now()), () {
+        if (mounted) setState(() => _invitationExpired = true);
+      });
+    }
+  }
+
+  Future<void> _copyInvitationCode() async {
+    if (!_canShareInvitation || _sending) return;
+    await Clipboard.setData(
+      ClipboardData(text: _provider!['invitation_code'].toString()),
+    );
+    if (mounted) {
+      AppSnackbar.show(
+        context,
+        AppSnackbar.fromLegacy(content: const Text('Connection code copied.')),
+      );
+    }
+  }
+
+  Future<void> _shareInvitation() async {
+    if (!_canShareInvitation || _sending) return;
+    final box = context.findRenderObject() as RenderBox?;
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text:
+              'I invited you to connect as my provider on Cozy Health. '
+              'Sign in or register using ${_provider!['provider_email']}, then choose Accept patient invitation.\n'
+              'Connection code: ${_provider!['invitation_code']}\n'
+              'Expires: ${_invitationExpiresAt!.toUtc()}\n'
+              '${_provider!['invitation_portal_url']}',
+          sharePositionOrigin: box == null
+              ? null
+              : box.localToGlobal(Offset.zero) & box.size,
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.fromLegacy(
+            content: const Text(
+              'Unable to open sharing. You can copy the code instead.',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   Widget _pendingInvitation() {
     final email = _provider?['provider_email']?.toString() ?? '';
     return Column(
@@ -658,8 +854,43 @@ class _ProviderScreenState extends State<ProviderScreen>
         Text(
           _provider?['invitation_sent_at'] == null
               ? 'The invitation email could not be queued. Resend it to $email or cancel this request.'
-              : 'The invitation was queued for $email. Your provider signs in with this email and selects Add patient to enter the code. Codes expire after 15 minutes.',
+              : 'The invitation was queued for $email. Your provider signs in with this email and selects Accept patient invitation to enter the code. Codes expire after 15 minutes.',
         ),
+        const SizedBox(height: 16),
+        if (_canShareInvitation) ...[
+          const Text('Your connection code'),
+          SelectableText(
+            _provider!['invitation_code'].toString(),
+            key: const ValueKey('provider-invitation-code'),
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          Text(
+            'Expires ${_invitationExpiresAt!.toLocal().toString().substring(0, 16)}',
+          ),
+          const Text(
+            'You can share this invitation elsewhere. Only the provider signed in with the invited email can accept it.',
+          ),
+          Wrap(
+            spacing: 8,
+            children: [
+              TextButton.icon(
+                onPressed: _sending ? null : _copyInvitationCode,
+                icon: const Icon(Icons.copy_outlined),
+                label: const Text('Copy code'),
+              ),
+              TextButton.icon(
+                onPressed: _sending ? null : _shareInvitation,
+                icon: const Icon(Icons.share_outlined),
+                label: const Text('Share invitation'),
+              ),
+            ],
+          ),
+        ] else
+          Text(
+            _invitationExpiresAt != null && _invitationExpired
+                ? 'This connection code has expired. Resend the invitation to get a new code.'
+                : 'Resend the invitation to get a code you can copy or share.',
+          ),
         const SizedBox(height: 16),
         for (final type in _invitationFlags.keys)
           Text(
@@ -672,7 +903,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         const SizedBox(height: 24),
         AppButton(
           text: 'Check connection status',
-          onPressed: _loadProvider,
+          onPressed: _sending || _removing ? null : _loadProvider,
           isOutlined: true,
         ),
         const SizedBox(height: 12),
@@ -686,6 +917,10 @@ class _ProviderScreenState extends State<ProviderScreen>
               : _requestProvider,
         ),
         const SizedBox(height: 12),
+        TextButton(
+          onPressed: _sending || _removing ? null : _editProviderEmail,
+          child: const Text('Wrong provider email?'),
+        ),
         AppButton(
           text: 'Cancel request',
           isLoading: _removing,
