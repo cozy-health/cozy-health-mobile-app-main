@@ -718,9 +718,20 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
     final fill = contrast
         ? (selected ? scheme.primary : scheme.surface)
         : context.cozyColors.recordingCategoryFills[category];
-    final foreground = contrast && selected
+    final preferredForeground = contrast && selected
         ? scheme.onPrimary
         : scheme.onSurface;
+    double contrastRatio(Color ink) {
+      final a = ink.computeLuminance();
+      final b = fill.computeLuminance();
+      return (a > b ? a + .05 : b + .05) / (a > b ? b + .05 : a + .05);
+    }
+
+    final foreground = contrastRatio(preferredForeground) >= 4.5
+        ? preferredForeground
+        : contrastRatio(Colors.black) > contrastRatio(Colors.white)
+        ? Colors.black
+        : Colors.white;
     return Semantics(
       button: true,
       selected: selected,
@@ -736,14 +747,15 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
             color: selected
                 ? (contrast ? scheme.onSurface : scheme.primary)
                 : (contrast ? scheme.outline : Colors.transparent),
-            width: contrast ? 2 : 1,
+            width: 2,
           ),
         ),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 56),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -759,10 +771,19 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                   child: Text(
                     row['name'] as String,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      fontSize: 13,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
                       color: foreground,
                     ),
                   ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: selected
+                      ? Icon(Icons.check_rounded, size: 18, color: foreground)
+                      : null,
                 ),
               ],
             ),
@@ -787,7 +808,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
       if (!bundled) {
         return Text(
           row['emoji'] as String? ?? '',
-          style: const TextStyle(fontSize: 18),
+          style: const TextStyle(fontSize: 32),
         );
       }
       return Image.asset(
@@ -795,8 +816,9 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                 MediaQuery.highContrastOf(context)
             ? 'assets/png/recording_emoji_${row['slug']}.png'
             : 'assets/png/recording_${collection}_${row['slug']}.png',
-        width: 22,
-        height: 20,
+        width: 32,
+        height: 32,
+        fit: BoxFit.contain,
         excludeFromSemantics: true,
       );
     }
@@ -808,12 +830,12 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
     final readableAccent = selected || ratio < 3 ? foreground : scheme.primary;
     final fallback = Icon(
       collection == 'coping' ? Icons.favorite_border : _icons[category],
-      size: 17,
+      size: 24,
       color: readableAccent,
     );
     return Container(
-      width: 22,
-      height: 20,
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
         color: MediaQuery.highContrastOf(context)
             ? Colors.transparent
@@ -823,6 +845,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
       child: bundled
           ? Image.asset(
               'assets/png/recording_mask_${collection}_${row['slug']}.png',
+              fit: BoxFit.contain,
               color: readableAccent,
               colorBlendMode: BlendMode.srcIn,
               excludeFromSemantics: true,

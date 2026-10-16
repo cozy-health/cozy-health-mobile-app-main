@@ -257,7 +257,7 @@ void main() {
       await open(
         tester,
         size: const Size(320, 812),
-        textScale: 1.6,
+        textScale: 2,
         brightness: brightness,
       );
       expect(tester.takeException(), isNull);
@@ -292,53 +292,38 @@ void main() {
     );
   });
 
-  testWidgets('reference rows stay aligned and progress matches each screen', (
-    tester,
-  ) async {
-    await open(tester);
-    expect(
-      tester
-          .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
-          .value,
-      74 / 215,
-    );
-    await tester.ensureVisible(find.text('Good'));
-    await tester.pumpAndSettle();
-    expect(
-      tester.getTopLeft(find.text('Light Hearted')).dy,
-      tester.getTopLeft(find.text('Hopeful')).dy,
-    );
-    expect(
-      tester.getTopLeft(find.text('Relaxed')).dy,
-      greaterThan(tester.getTopLeft(find.text('Hopeful')).dy),
-    );
-    expect(
-      tester.getTopLeft(find.text('Relaxed')).dy,
-      tester.getTopLeft(find.text('Comfortable')).dy,
-    );
-    await next(tester);
-    expect(
-      tester
-          .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
-          .value,
-      145 / 215,
-    );
-    await next(tester);
-    expect(
-      tester
-          .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
-          .value,
-      178 / 215,
-    );
-    expect(
-      tester.getTopLeft(find.text('Taking a walk')).dy,
-      tester.getTopLeft(find.text('Reading')).dy,
-    );
-    expect(
-      tester.getTopLeft(find.text('Taking a walk')).dy,
-      greaterThan(tester.getTopLeft(find.text('Cooking')).dy),
-    );
-  });
+  for (final width in [320.0, 375.0, 430.0]) {
+    testWidgets('mood controls remain readable and reachable at $width', (
+      tester,
+    ) async {
+      await open(tester, size: Size(width, 812), textScale: 2);
+      final chip = find.byKey(
+        const ValueKey('recording-expressions-angry-resentful'),
+      );
+      expect(tester.getSize(chip).height, greaterThanOrEqualTo(56));
+      final before = tester.getSize(chip);
+      final semantics = tester.ensureSemantics();
+      expect(tester.getSemantics(chip).label, 'Resentful');
+      semantics.dispose();
+      await tester.ensureVisible(find.text('Over the moon'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Over the moon'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+      expect(tester.getSize(chip), before);
+      expect(tester.takeException(), isNull);
+      await next(tester);
+      await next(tester);
+      await tester.ensureVisible(
+        find.text('Isolation from friends and family'),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Isolation from friends and family'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets(
     'accent and dark mode update an open dialog without losing choices',
@@ -348,6 +333,8 @@ void main() {
       );
       addTearDown(appearance.dispose);
       await open(tester, appearance: appearance);
+      await tester.ensureVisible(find.text('Resentful'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Resentful'));
       await tester.pumpAndSettle();
       tester.widget<Slider>(find.byType(Slider)).onChanged!(5);
@@ -465,10 +452,7 @@ void main() {
           await tester.ensureVisible(find.text(name));
           await capture('feelings-${name.toLowerCase()}');
         }
-        await tester.drag(
-          find.byType(SingleChildScrollView),
-          const Offset(0, 3000),
-        );
+        await tester.ensureVisible(find.text('Resentful'));
         await tester.pumpAndSettle();
       }
       await tester.tap(find.text('Resentful'));

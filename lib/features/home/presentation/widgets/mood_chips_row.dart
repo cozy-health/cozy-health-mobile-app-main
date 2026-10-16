@@ -35,11 +35,9 @@ class _MoodChipsRowState extends State<MoodChipsRow> {
           for (final mood in moods)
             Padding(
               padding: const EdgeInsets.only(right: 10),
-              child: AnimatedScale(
-                scale: _selected == mood ? 1.05 : 1,
-                duration: MediaQuery.disableAnimationsOf(context)
-                    ? Duration.zero
-                    : const Duration(milliseconds: 150),
+              child: Semantics(
+                button: true,
+                selected: _selected == mood,
                 child: Material(
                   color: theme.brightness == Brightness.dark
                       ? AppColors.accentWarmYellowDark
@@ -61,13 +59,13 @@ class _MoodChipsRowState extends State<MoodChipsRow> {
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 0,
+                        horizontal: 12,
+                        vertical: 6,
                       ),
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(
                           minWidth: 83,
-                          minHeight: 45,
+                          minHeight: 56,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -82,17 +80,30 @@ class _MoodChipsRowState extends State<MoodChipsRow> {
                             else
                               Text(
                                 MoodEntry.moodEmojis[mood]!,
-                                style: const TextStyle(fontSize: 23),
+                                style: const TextStyle(fontSize: 32),
                               ),
-                            const SizedBox(width: 2),
+                            const SizedBox(width: 8),
                             Text(
                               '${mood[0].toUpperCase()}${mood.substring(1)}',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                fontSize: 12,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
                                 color: theme.brightness == Brightness.dark
                                     ? theme.colorScheme.onSurface
                                     : const Color(0xFF454545),
                               ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: _selected == mood
+                                  ? Icon(
+                                      Icons.check_rounded,
+                                      size: 18,
+                                      color: theme.colorScheme.onSurface,
+                                    )
+                                  : null,
                             ),
                           ],
                         ),
