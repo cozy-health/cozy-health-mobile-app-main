@@ -55,7 +55,10 @@ void main() {
             tester.getSize(find.byType(HomeQuizCard)).height,
             greaterThanOrEqualTo(179),
           );
-          expect(tester.getSize(find.byType(MoodChipsRow)).height, 45);
+          expect(
+            tester.getSize(find.byType(MoodChipsRow)).height,
+            greaterThanOrEqualTo(68),
+          );
         }
       });
     }

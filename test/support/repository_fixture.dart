@@ -73,12 +73,13 @@ class _FixtureAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     requests.add(options.uri);
-    if (options.data != null)
+    if (options.data != null) {
       requestBodies.add(
         options.data is String
             ? jsonDecode(options.data as String)
             : options.data,
       );
+    }
     return ResponseBody.fromString(
       jsonEncode(body()),
       200,

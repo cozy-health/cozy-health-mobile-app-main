@@ -4,8 +4,9 @@ import 'package:path_provider/path_provider.dart';
 Future<bool> hasLocalHiveFiles() async {
   final directory = await getApplicationDocumentsDirectory();
   await for (final entry in directory.list(recursive: true)) {
-    if (entry is File && entry.path.toLowerCase().endsWith('.hive'))
+    if (entry is File && entry.path.toLowerCase().endsWith('.hive')) {
       return true;
+    }
   }
   return false;
 }

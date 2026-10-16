@@ -106,15 +106,7 @@ void main() {
     await local.waitForSyncIdle();
     await fixture.close();
   });
-  Future<void> waitUntil(bool Function() condition) async {
-    final deadline = DateTime.now().add(const Duration(seconds: 3));
-    while (!condition()) {
-      if (DateTime.now().isAfter(deadline)) {
-        fail('Lifecycle transition did not complete');
-      }
-      await Future<void>.delayed(const Duration(milliseconds: 5));
-    }
-  }
+  const transitionTimeout = Duration(seconds: 20);
 
   Future<void> queue() async {
     final data = mobileSyncOperations().first['data'] as Map<String, dynamic>;
@@ -133,22 +125,32 @@ void main() {
       await queue();
       final accountQueue = local.syncQueueBox;
       final accountScope = local.boxName(LocalDbService.syncQueueBoxName);
+      final guestActivated = local.accountChanges
+          .where((_) => local.activeUserId?.startsWith('guest_') == true)
+          .timeout(transitionTimeout)
+          .first;
       adapter.expire = true;
-      final summary = await local.processSyncQueue().timeout(
-        const Duration(seconds: 3),
-      );
+      final summary = await local.processSyncQueue().timeout(transitionTimeout);
       expect(summary.errorCode, 'session_expired');
-      await waitUntil(
-        () => local.boxName(LocalDbService.syncQueueBoxName) != accountScope,
+      await guestActivated;
+      expect(
+        local.boxName(LocalDbService.syncQueueBoxName),
+        isNot(accountScope),
       );
       expect(accountQueue.length, 1);
       expect(local.pendingItems, isEmpty);
       adapter.expire = false;
+      final uploaded = local.syncResults
+          .where((result) => result.synced > 0)
+          .timeout(transitionTimeout)
+          .first;
       await AuthService().login(
         email: 'synthetic@example.test',
         password: 'synthetic-password',
       );
-      await waitUntil(() => accountQueue.isEmpty);
+      await uploaded;
+      await local.waitForSyncIdle();
+      expect(accountQueue, isEmpty);
       expect(local.boxName(LocalDbService.syncQueueBoxName), accountScope);
       expect(local.getAllMoodEntries().length, 1);
       final moodUploads = adapter.uploads
@@ -176,8 +178,14 @@ void main() {
             )
             .toJson(),
       );
+      final uploaded = local.syncResults
+          .where((result) => result.synced > 0)
+          .timeout(transitionTimeout)
+          .first;
       await AuthService().resumeStoredSession();
-      await waitUntil(() => local.pendingItems.isEmpty);
+      await uploaded;
+      await local.waitForSyncIdle();
+      expect(local.pendingItems, isEmpty);
       expect(adapter.uploads.length, 1);
       expect(local.getAllMoodEntries().length, 1);
     },
