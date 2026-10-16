@@ -1,6 +1,6 @@
 import '../../../../core/services/feature_flags_service.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
-import 'package:cozy_health/features/assistant/presentation/screens/assistant_screen.dart';
+import 'package:cozy_health/features/settings/presentation/screens/provider_hub_screen.dart';
 import 'package:cozy_health/features/community/presentation/screens/community_hub_screen.dart';
 import 'package:cozy_health/features/settings/presentation/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +32,7 @@ class _MainScreenState extends State<MainScreen> {
       notificationFocus: widget.notificationFocus,
     ),
     const ActivityScreen(),
-    const AssistantScreen(),
+    const ProviderHubScreen(),
     const CommunityHubScreen(),
     const SettingsScreen(),
   ];
@@ -51,7 +51,8 @@ class _MainScreenState extends State<MainScreen> {
                 key: const ValueKey('main-tab-content'),
                 child: _screens[_currentIndex],
               ),
-              if (MediaQuery.viewInsetsOf(context).bottom == 0) ...[
+              if (_currentIndex != 2 &&
+                  MediaQuery.viewInsetsOf(context).bottom == 0) ...[
                 Positioned(
                   right: 16,
                   bottom: 88,
@@ -83,7 +84,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ),
         bottomNavigationBar: CustomBottomNavigationBar(
-          showAssistant: FeatureFlags.isEnabled('ai_assistant'),
+          showAssistant: true,
           assistantTourKey: _tourTargets.assistant,
           currentIndex: _currentIndex,
           onTap: (index) {
@@ -170,15 +171,15 @@ class _MainScreenState extends State<MainScreen> {
                             context.push(AppRouter.journal);
                           },
                         ),
-                        if (FeatureFlags.isEnabled('ai_assistant'))
-                          _QuickActionTile(
-                            icon: '💬',
-                            label: 'Chat',
-                            onTap: () {
-                              Navigator.of(context).pop();
-                              setState(() => _currentIndex = 2);
-                            },
-                          ),
+
+                        _QuickActionTile(
+                          icon: '💬',
+                          label: 'Provider',
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            setState(() => _currentIndex = 2);
+                          },
+                        ),
                         _QuickActionTile(
                           icon: '🌬',
                           label: 'Breathe',

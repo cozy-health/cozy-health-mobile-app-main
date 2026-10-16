@@ -107,7 +107,7 @@ void main() {
                       IconButton(
                         key: targets.assistant,
                         onPressed: () {},
-                        tooltip: 'Assistant',
+                        tooltip: 'Provider',
                         icon: const Icon(Icons.chat),
                       ),
                       SizedBox(
@@ -195,7 +195,7 @@ void main() {
     final messages = [
       "Log how you're feeling",
       'Keep a private journal',
-      'Talk to your assistant',
+      'Talk to your provider',
       'Get help when you need it',
       "You're all set",
     ];
@@ -279,7 +279,7 @@ void main() {
     for (final message in [
       "Log how you're feeling",
       'Keep a private journal',
-      'Talk to your assistant',
+      'Talk to your provider',
       'Get help when you need it',
     ]) {
       expect(find.text(message), findsOneWidget);

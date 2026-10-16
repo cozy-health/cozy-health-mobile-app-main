@@ -112,8 +112,8 @@ class _FeatureTourState extends State<FeatureTour> {
       if (targets.assistant.currentContext != null)
         (
           targets.assistant,
-          'Talk to your assistant',
-          'Find a space to talk in the Assistant tab.',
+          'Talk to your provider',
+          'Message your provider and share selected history in the Provider tab.',
           ContentAlign.top,
         ),
       (

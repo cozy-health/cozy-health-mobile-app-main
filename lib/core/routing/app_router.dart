@@ -59,7 +59,7 @@ import '../../features/insights/presentation/screens/monthly_report_screen.dart'
 import '../../features/mood_check_in/presentation/screens/mood_feeling_screen.dart';
 import '../../features/journal/presentation/screens/journal_screen.dart';
 import '../../features/journal/presentation/screens/voice_recording_screen.dart';
-import '../../features/assistant/presentation/screens/assistant_screen.dart';
+import '../../features/settings/presentation/screens/provider_hub_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/edit_profile_screen.dart';
 import '../../features/settings/presentation/screens/privacy_settings_screen.dart';
@@ -67,7 +67,6 @@ import '../../features/settings/presentation/screens/help_support_screen.dart';
 import '../../features/settings/presentation/screens/terms_policies_screen.dart';
 import '../../features/settings/presentation/screens/report_problem_screen.dart';
 
-import '../../features/settings/presentation/screens/provider_screen.dart';
 import '../../features/settings/presentation/screens/provider_access_log_screen.dart';
 import '../../features/settings/presentation/screens/subscription_screen.dart';
 import '../../features/settings/presentation/screens/profile_view_screen.dart';
@@ -575,7 +574,7 @@ class AppRouter {
       GoRoute(
         path: assistant,
         name: 'assistant',
-        builder: (_, __) => const AssistantScreen(),
+        redirect: (_, __) => provider,
       ),
       GoRoute(
         path: settings,
@@ -625,7 +624,7 @@ class AppRouter {
       GoRoute(
         path: provider,
         name: 'provider',
-        builder: (_, __) => const ProviderScreen(),
+        builder: (_, __) => const ProviderHubScreen(),
       ),
       GoRoute(
         path: providerAccessLog,

@@ -49,7 +49,13 @@ class CustomBottomNavigationBar extends StatelessWidget {
               _buildNavItem(context, 0, 'Home', Assets.svg.home),
               _buildNavItem(context, 1, 'Activity', Assets.svg.activity),
               if (showAssistant)
-                _buildNavItem(context, 2, 'Assistant', Assets.svg.assistant),
+                _buildNavItem(
+                  context,
+                  2,
+                  'Provider',
+                  Assets.svg.community,
+                  icon: Icons.medical_services_outlined,
+                ),
               _buildNavItem(context, 3, 'Community', Assets.svg.community),
               _buildNavItem(context, 4, 'Settings', Assets.svg.settings),
             ],
@@ -63,8 +69,9 @@ class CustomBottomNavigationBar extends StatelessWidget {
     BuildContext context,
     int index,
     String label,
-    String assetPath,
-  ) {
+    String assetPath, {
+    IconData? icon,
+  }) {
     final isSelected = currentIndex == index;
     final navTheme = Theme.of(context).bottomNavigationBarTheme;
     final selectedColor =
@@ -98,15 +105,21 @@ class CustomBottomNavigationBar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Center(
-                  child: SvgPicture.asset(
-                    assetPath,
-                    width: 24,
-                    height: 24,
-                    colorFilter: ColorFilter.mode(
-                      isSelected ? selectedColor : unselectedColor,
-                      BlendMode.srcIn,
-                    ),
-                  ),
+                  child: icon != null
+                      ? Icon(
+                          icon,
+                          size: 24,
+                          color: isSelected ? selectedColor : unselectedColor,
+                        )
+                      : SvgPicture.asset(
+                          assetPath,
+                          width: 24,
+                          height: 24,
+                          colorFilter: ColorFilter.mode(
+                            isSelected ? selectedColor : unselectedColor,
+                            BlendMode.srcIn,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 3),
