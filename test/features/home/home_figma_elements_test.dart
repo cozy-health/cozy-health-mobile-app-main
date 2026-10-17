@@ -57,7 +57,8 @@ void main() {
           );
           expect(
             tester.getSize(find.byType(MoodChipsRow)).height,
-            greaterThanOrEqualTo(68),
+            56,
+            reason: 'Mood chips use the compact layout introduced in 71a65cd.',
           );
         }
       });

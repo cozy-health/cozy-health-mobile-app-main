@@ -6,12 +6,13 @@ class StepHeading extends StatelessWidget {
   final String? subtitle;
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Text(
         title,
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-          fontWeight: FontWeight.w600,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
           color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
@@ -19,6 +20,7 @@ class StepHeading extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           subtitle!,
+          textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
             height: 1.5,
@@ -48,7 +50,8 @@ class MultiSelectCards extends StatelessWidget {
     children: [
       StepHeading(
         title: title,
-        subtitle: 'Choose what feels relevant. You can select more than one.',
+        subtitle:
+            'Choose any that feel relevant, or continue without answering. We’ll use your choices to suggest a starting point on Home.',
       ),
       for (final option in options.entries)
         Padding(
@@ -70,7 +73,7 @@ class MultiSelectCards extends StatelessWidget {
                       : Theme.of(context).colorScheme.outlineVariant,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: Row(

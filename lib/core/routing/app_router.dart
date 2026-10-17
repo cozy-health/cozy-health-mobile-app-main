@@ -551,10 +551,15 @@ class AppRouter {
       ),
       GoRoute(
         path: '/journal-compose',
-        builder: (_, __) => const SecurityGate(
+        builder: (_, state) => SecurityGate(
           journal: true,
           journalRoot: true,
-          child: JournalScreen(openCompose: true),
+          child: JournalScreen(
+            openCompose: true,
+            initialPrompt: state.extra is JournalPrompt
+                ? state.extra as JournalPrompt
+                : null,
+          ),
         ),
       ),
       GoRoute(

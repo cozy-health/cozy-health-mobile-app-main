@@ -14,6 +14,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/home_quiz_card.dart';
 import '../widgets/cozy_calendar.dart';
 import '../widgets/journaling_card.dart';
+import '../widgets/preference_suggestions.dart';
 import '../../../../core/widgets/affirmation_panel.dart';
 import '../../../../core/services/affirmation_controller.dart';
 import 'package:go_router/go_router.dart';
@@ -277,6 +278,7 @@ class _HomeScreenState extends State<HomeScreen>
                           SizedBox(height: 24),
                           _HomeEmotionStrip(key: widget.tourTargets?.hero),
                           SizedBox(height: 16),
+                          const PreferenceSuggestions(),
                           _HomeDesignCards(
                             reminderKey: _reminderTarget,
                             notificationFocus: widget.notificationFocus,

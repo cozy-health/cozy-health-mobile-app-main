@@ -27,10 +27,12 @@ class JournalScreen extends StatefulWidget {
     super.key,
     this.viewState = JournalViewState.populated,
     this.openCompose = false,
+    this.initialPrompt,
   });
 
   final JournalViewState viewState;
   final bool openCompose;
+  final JournalPrompt? initialPrompt;
 
   @override
   State<JournalScreen> createState() => _JournalScreenState();
@@ -60,7 +62,14 @@ class _JournalScreenState extends State<JournalScreen>
       } else {
         _entranceController.forward();
       }
-      if (widget.openCompose) unawaited(_openEditor(type: 'free'));
+      if (widget.openCompose) {
+        unawaited(
+          _openEditor(
+            type: widget.initialPrompt == null ? 'free' : 'guided',
+            prompt: widget.initialPrompt,
+          ),
+        );
+      }
     });
   }
 
