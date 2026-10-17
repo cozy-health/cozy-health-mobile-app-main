@@ -1,3 +1,4 @@
+import 'mood_intensity_control.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import 'mood_recording_layout.dart';
 import '../../../../core/widgets/app_scroll_body.dart';
@@ -254,18 +255,18 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
             final scheme = theme.colorScheme;
             return Dialog(
               key: const ValueKey('recording-intensity-dialog'),
-              constraints: const BoxConstraints(maxWidth: 270),
+              constraints: const BoxConstraints(maxWidth: 360),
               backgroundColor:
                   theme.dialogTheme.backgroundColor ?? scheme.surface,
               surfaceTintColor: Colors.transparent,
-              shape: AppSurface.shape(context, BorderRadius.circular(8)),
+              shape: AppSurface.shape(context, BorderRadius.circular(24)),
               insetPadding: const EdgeInsets.symmetric(
                 horizontal: 24,
                 vertical: 24,
               ),
               child: SizedBox(
                 key: const ValueKey('recording-intensity-body'),
-                width: 270,
+                width: 360,
                 child: SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
@@ -273,43 +274,23 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _IntensityTitle(),
-                        const SizedBox(height: 20),
-                        SliderTheme(
-                          data: SliderTheme.of(context).copyWith(
-                            trackHeight: 16,
-                            activeTrackColor: scheme.primary,
-                            inactiveTrackColor: scheme.outlineVariant,
-                            thumbColor: MediaQuery.highContrastOf(context)
-                                ? scheme.onSurface
-                                : scheme.primary,
-                            overlayColor: scheme.primary.withValues(alpha: .12),
-                            thumbShape: _IntensityThumb(
-                              centerColor: scheme.surface,
-                            ),
-                            activeTickMarkColor: Colors.transparent,
-                            inactiveTickMarkColor: Colors.transparent,
-                          ),
-                          child: Slider(
-                            key: const ValueKey('recording-intensity-slider'),
-                            padding: EdgeInsets.zero,
-                            value: value.toDouble(),
-                            min: 1,
-                            max: 5,
-                            divisions: 4,
-                            label: '$value',
-                            semanticFormatterCallback: (v) =>
-                                '${v.round()} out of 5',
-                            onChanged: (v) => update(() => value = v.round()),
+                        Text(
+                          'How intense is this feeling?',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('1', style: theme.textTheme.bodyMedium),
-                            Text('5', style: theme.textTheme.bodyMedium),
-                          ],
+                        const SizedBox(height: 8),
+                        Text(
+                          feeling['name'] as String,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                        MoodIntensityControl(
+                          value: value,
+                          feeling: feeling['name'] as String,
+                          onChanged: (next) => update(() => value = next),
                         ),
                         const SizedBox(height: 4),
                         Align(
@@ -898,59 +879,6 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
       ],
     ),
   );
-}
-
-class _IntensityTitle extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final text = Text(
-      'How intense is this feeling?',
-      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: Theme.of(context).colorScheme.onSurface,
-      ),
-    );
-    // Only fit at the default size; accessibility sizes keep their size and wrap.
-    return MediaQuery.textScalerOf(context).scale(18) <= 18
-        ? FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: AlignmentDirectional.centerStart,
-            child: text,
-          )
-        : text;
-  }
-}
-
-class _IntensityThumb extends SliderComponentShape {
-  const _IntensityThumb({required this.centerColor});
-  final Color centerColor;
-
-  @override
-  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size(20, 20);
-
-  @override
-  void paint(
-    PaintingContext context,
-    Offset center, {
-    required Animation<double> activationAnimation,
-    required Animation<double> enableAnimation,
-    required bool isDiscrete,
-    required TextPainter labelPainter,
-    required RenderBox parentBox,
-    required SliderThemeData sliderTheme,
-    required TextDirection textDirection,
-    required double value,
-    required double textScaleFactor,
-    required Size sizeWithOverflow,
-  }) {
-    context.canvas.drawCircle(
-      center,
-      10,
-      Paint()..color = sliderTheme.thumbColor!,
-    );
-    context.canvas.drawCircle(center, 6, Paint()..color = centerColor);
-  }
 }
 
 class MoodCheckInSuccessScreen extends StatefulWidget {

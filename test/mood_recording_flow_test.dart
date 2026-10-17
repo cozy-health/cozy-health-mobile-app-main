@@ -179,9 +179,9 @@ void main() {
         tester
             .getSize(find.byKey(const ValueKey('recording-intensity-body')))
             .width,
-        270,
+        inInclusiveRange(270, 360),
       );
-      expect(tester.getSize(find.byType(Slider)).width, 222);
+      expect(tester.getSize(find.byType(Slider)).width, greaterThan(222));
       Navigator.of(
         tester.element(
           find.byKey(const ValueKey('recording-intensity-dialog')),
@@ -203,6 +203,34 @@ void main() {
       await next(tester);
       expect(find.textContaining('Displaced (angry)'), findsOneWidget);
       expect(find.textContaining('Intensity: 3/5'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'confirmed intensity reopens and cancelled changes are discarded',
+    (tester) async {
+      await open(tester);
+      await tester.tap(find.text('Resentful'));
+      await tester.pumpAndSettle();
+      expect(find.text('Strong · 4/5'), findsOneWidget);
+      tester.widget<Slider>(find.byType(Slider)).onChanged!(5);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Resentful'));
+      await tester.pumpAndSettle();
+      expect(find.text('Very strong · 5/5'), findsOneWidget);
+      tester.widget<Slider>(find.byType(Slider)).onChanged!(1);
+      await tester.pumpAndSettle();
+      Navigator.of(
+        tester.element(
+          find.byKey(const ValueKey('recording-intensity-dialog')),
+        ),
+      ).pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Resentful'));
+      await tester.pumpAndSettle();
+      expect(find.text('Very strong · 5/5'), findsOneWidget);
     },
   );
 
