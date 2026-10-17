@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:async';
 import 'dart:math';
 import '../api/api_client.dart';
+import '../audio/voice_audio.dart';
 import '../api/api_exceptions.dart';
 import '../models/sync_item.dart';
 import '../models/sync_summary.dart';
@@ -447,6 +448,11 @@ class LocalDbService {
       _watchScoped(getAllJournalEntries, () => journalBox.watch());
 
   Future<void> deleteJournalEntry(String id) async {
+    final entry = journalBox.get(id);
+    await VoiceAudio.removeLocal(entry?.localVoicePath);
+    if (entry?.voiceUrl?.startsWith('/audio-attachments/') == false) {
+      await VoiceAudio.removeLocal(entry?.voiceUrl);
+    }
     await journalBox.delete(id);
   }
 
@@ -853,7 +859,7 @@ class LocalDbService {
             final scope = boxName(userSettingsBoxName);
             final response = await ApiClient.instance.post(
               '/sync/batch',
-              data: {'operations': batch.map(_operationForSyncItem).toList()},
+              data: {'operations': await _prepareVoiceOperations(batch, owner)},
             );
             if (owner != activeUserId ||
                 scope != boxName(userSettingsBoxName)) {
@@ -944,6 +950,50 @@ class LocalDbService {
       }
       return null;
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _prepareVoiceOperations(
+    List<SyncItem> batch,
+    String? owner,
+  ) async {
+    final operations = <Map<String, dynamic>>[];
+    for (final item in batch) {
+      if (owner != activeUserId) throw StateError('Account changed');
+      final op = _operationForSyncItem(item);
+      if (item.type == 'journal_entry' &&
+          item.action == 'upsert' &&
+          op['data'] is Map) {
+        final data = Map<String, dynamic>.from(op['data'] as Map);
+        data.remove('local_voice_path');
+        final source = data['voice_url'] as String?;
+        if (source != null &&
+            source.isNotEmpty &&
+            !source.startsWith('/audio-attachments/') &&
+            !source.startsWith('https://')) {
+          final cacheKey = 'voice_upload_${item.recordId}';
+          final settings = await settingsBox();
+          var remote = settings.get(cacheKey) as String?;
+          remote ??=
+              '/audio-attachments/${await VoiceAudio.upload(audio: RecordedAudio(source, data['voice_duration'] as int? ?? 1), clientId: item.recordId)}';
+          if (owner != activeUserId) throw StateError('Account changed');
+          await settings.put(cacheKey, remote);
+          data['voice_url'] = remote;
+          final current = journalBox.get(item.recordId);
+          if (current != null && current.voiceUrl == source) {
+            await saveJournalEntry(
+              JournalEntry.fromJson({
+                ...current.toJson(),
+                'voice_url': remote,
+                'local_voice_path': current.localVoicePath ?? source,
+              }),
+            );
+          }
+        }
+        op['data'] = data;
+      }
+      operations.add(op);
+    }
+    return operations;
   }
 
   Map<String, dynamic> _operationForSyncItem(SyncItem item) {
@@ -1132,6 +1182,7 @@ class LocalDbService {
 
   // --- Scoping / Logout ---
   Future<void> clearAllUserData() async {
+    await VoiceAudio.clearAccount();
     await moodBox.clear();
     await journalBox.clear();
     await EncryptedHive.box<ChatMessage>(boxName(chatMessageBoxName)).clear();

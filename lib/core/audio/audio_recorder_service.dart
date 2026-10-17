@@ -3,9 +3,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
 class AudioRecorderService {
-  AudioRecorderService()
-    : _recorder = AudioRecorder(),
-      _player = AudioPlayer();
+  AudioRecorderService() : _recorder = AudioRecorder(), _player = AudioPlayer();
 
   final AudioRecorder _recorder;
   final AudioPlayer _player;
@@ -17,7 +15,15 @@ class AudioRecorderService {
     final directory = await getTemporaryDirectory();
     final path =
         '${directory.path}/cozy_voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
-    await _recorder.start(const RecordConfig(), path: path);
+    await _recorder.start(
+      const RecordConfig(
+        encoder: AudioEncoder.aacLc,
+        bitRate: 64000,
+        sampleRate: 44100,
+        numChannels: 1,
+      ),
+      path: path,
+    );
   }
 
   Future<String?> stop() {

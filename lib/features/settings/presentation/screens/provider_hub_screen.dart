@@ -1,4 +1,8 @@
 import 'dart:async';
+import '../../../../core/audio/voice_audio.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/audio/voice_player.dart';
+import '../../../../core/audio/voice_recorder_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/api/api_client.dart';
@@ -170,6 +174,43 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
     } finally {
       if (mounted) setState(() => _sending = false);
     }
+  }
+
+  Future<void> _recordVoice(BuildContext anchor) async {
+    final threadId = _thread?['id'] as int?;
+    if (threadId == null) return;
+    final ownerPath = '/provider-conversations/$threadId';
+    var clientId = const Uuid().v4();
+    final owner = LocalDbService().activeUserId;
+    String? attachmentId, recordedPath;
+    await showVoiceRecorder(
+      anchor,
+      journal: false,
+      onConfirm: (audio) async {
+        if (owner != LocalDbService().activeUserId) {
+          throw StateError('Account changed');
+        }
+        if (recordedPath != audio.path) {
+          attachmentId = null;
+          clientId = const Uuid().v4();
+          recordedPath = audio.path;
+        }
+        attachmentId ??= await VoiceAudio.upload(
+          audio: audio,
+          clientId: clientId,
+          conversationId: threadId,
+          api: _api,
+        );
+        if (owner != LocalDbService().activeUserId) {
+          throw StateError('Account changed');
+        }
+        await _api.post(
+          '$ownerPath/messages',
+          body: {'client_id': clientId, 'audio_attachment_id': attachmentId},
+        );
+        await _refresh();
+      },
+    );
   }
 
   Future<void> _pick(String type) async {
@@ -416,6 +457,18 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                                           ...records.map(
                                             (r) => SharedRecordCard(record: r),
                                           ),
+                                          if (m['audio'] is Map)
+                                            VoicePlayer(
+                                              key: ValueKey(m['id']),
+                                              source:
+                                                  '/audio-attachments/${(m['audio'] as Map)['id']}',
+                                              duration:
+                                                  (m['audio']
+                                                          as Map)['duration']
+                                                      as int? ??
+                                                  0,
+                                              api: _api,
+                                            ),
                                           if ((m['content'] ?? '')
                                               .toString()
                                               .isNotEmpty)
@@ -520,6 +573,15 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                                   hintText: 'Write a message…',
                                   counterText: '',
                                 ),
+                              ),
+                            ),
+                            Builder(
+                              builder: (anchor) => IconButton(
+                                tooltip: 'Record voice message',
+                                icon: const Icon(Icons.mic_none),
+                                onPressed: _sending
+                                    ? null
+                                    : () => _recordVoice(anchor),
                               ),
                             ),
                             TextButton(

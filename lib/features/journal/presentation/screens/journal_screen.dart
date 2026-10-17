@@ -1,4 +1,3 @@
-import 'package:cozy_health/core/widgets/app_scroll_body.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
@@ -9,14 +8,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/security_gate.dart';
 
-import '../../../../core/audio/audio_recorder_service.dart';
-import '../../../../core/permissions/permission_service.dart';
+import 'package:uuid/uuid.dart';
+import '../../../../core/audio/voice_audio.dart';
+import '../../../../core/audio/voice_player.dart';
+import '../../../../core/audio/voice_recorder_popup.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../crisis/presentation/screens/crisis_screens.dart';
 import '../../../crisis/services/crisis_detector.dart';
 import '../../../../core/repositories/journal_repository.dart';
 import '../../../../core/models/journal_entry.dart';
+import '../../../../core/models/sync_item.dart';
 import '../../../../core/repositories/mood_repository.dart';
 import '../../../../core/services/local_db_service.dart';
 
@@ -27,11 +29,13 @@ class JournalScreen extends StatefulWidget {
     super.key,
     this.viewState = JournalViewState.populated,
     this.openCompose = false,
+    this.recordVoiceOnOpen = false,
     this.initialPrompt,
   });
 
   final JournalViewState viewState;
   final bool openCompose;
+  final bool recordVoiceOnOpen;
   final JournalPrompt? initialPrompt;
 
   @override
@@ -62,6 +66,7 @@ class _JournalScreenState extends State<JournalScreen>
       } else {
         _entranceController.forward();
       }
+      if (widget.recordVoiceOnOpen) unawaited(_openVoiceRecording());
       if (widget.openCompose) {
         unawaited(
           _openEditor(
@@ -265,6 +270,7 @@ class _JournalScreenState extends State<JournalScreen>
             title: entry.title,
             body: entry.body,
             voiceUrl: entry.voiceUrl,
+            localVoicePath: entry.localVoicePath,
             voiceDuration: entry.voiceDuration,
             transcription: entry.transcription,
             promptId: entry.promptId,
@@ -341,15 +347,35 @@ class _JournalScreenState extends State<JournalScreen>
   }
 
   Future<void> _openVoiceRecording() async {
-    final entry = await Navigator.of(context).push<JournalEntry>(
-      MaterialPageRoute(
-        builder: (_) => const SecurityGate(
-          journal: true,
-          child: JournalVoiceRecordingScreen(),
-        ),
-      ),
+    final id = const Uuid().v4();
+    final owner = LocalDbService().activeUserId;
+    await showVoiceRecorder(
+      context,
+      journal: true,
+      onConfirm: (audio) async {
+        if (owner != LocalDbService().activeUserId) {
+          throw StateError('Account changed');
+        }
+        final path = await VoiceAudio.save(audio, id);
+        final now = DateTime.now();
+        final saved = await _saveEntry(
+          JournalEntry(
+            id: id,
+            type: 'voice',
+            title: 'Voice note',
+            body: '',
+            voiceUrl: path,
+            localVoicePath: path,
+            voiceDuration: audio.duration,
+            tags: [],
+            wordCount: 0,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        if (!saved) throw StateError('Could not save journal');
+      },
     );
-    if (entry != null) await _saveEntry(entry);
   }
 
   Future<void> _openSearch(List<JournalEntry> allEntries) async {
@@ -488,6 +514,7 @@ class _JournalScreenState extends State<JournalScreen>
             title: entry.title,
             body: entry.body,
             voiceUrl: entry.voiceUrl,
+            localVoicePath: entry.localVoicePath,
             voiceDuration: entry.voiceDuration,
             transcription: entry.transcription,
             promptId: entry.promptId,
@@ -624,10 +651,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   }
 
   @override
-  Widget build(BuildContext context) =>
-      // Screenshot protection disabled so users can capture their journal.
-      // SecurityBlur(child: _buildProtected(context));
-      _buildProtected(context);
+  Widget build(BuildContext context) => _buildProtected(context);
 
   Widget _buildProtected(BuildContext context) {
     final prompt =
@@ -811,6 +835,10 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
             widget.existing?.title ??
             'Journal entry',
         body: body,
+        voiceUrl: widget.existing?.voiceUrl,
+        localVoicePath: widget.existing?.localVoicePath,
+        voiceDuration: widget.existing?.voiceDuration,
+        transcription: widget.existing?.transcription,
         tags: _tags,
         promptId: widget.prompt?.id ?? widget.existing?.promptId,
         promptText: widget.prompt?.text ?? widget.existing?.promptText,
@@ -862,6 +890,10 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
       title:
           widget.prompt?.category ?? widget.existing?.title ?? 'Journal entry',
       body: body,
+      voiceUrl: widget.existing?.voiceUrl,
+      localVoicePath: widget.existing?.localVoicePath,
+      voiceDuration: widget.existing?.voiceDuration,
+      transcription: widget.existing?.transcription,
       tags: _tags,
       promptId: widget.prompt?.id ?? widget.existing?.promptId,
       promptText: widget.prompt?.text ?? widget.existing?.promptText,
@@ -958,375 +990,12 @@ class _GuidedPromptsScreenState extends State<GuidedPromptsScreen> {
   }
 }
 
-class JournalVoiceRecordingScreen extends StatefulWidget {
+// Compatibility entry point for existing routes; the recorder itself stays compact.
+class JournalVoiceRecordingScreen extends StatelessWidget {
   const JournalVoiceRecordingScreen({super.key});
-
   @override
-  State<JournalVoiceRecordingScreen> createState() =>
-      _JournalVoiceRecordingScreenState();
-}
-
-class _JournalVoiceRecordingScreenState
-    extends State<JournalVoiceRecordingScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulseController;
-  bool _isRecording = false;
-  bool _hasRecording = false;
-  bool _isPlaying = false;
-  bool _showTranscription = false;
-  int _seconds = 0;
-  Timer? _timer;
-  final AudioRecorderService _audioRecorder = AudioRecorderService();
-  final TextEditingController _transcriptionController =
-      TextEditingController();
-  String? _recordingPath;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-      lowerBound: .98,
-      upperBound: 1.05,
-    );
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    unawaited(_audioRecorder.dispose());
-    _pulseController.dispose();
-    _transcriptionController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_hasRecording) return _playbackView();
-
-    return _JournalSubScaffold(
-      action: TextButton(onPressed: _cancel, child: Text('Cancel')),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: AppScrollBody(
-          child: Column(
-            children: [
-              const Spacer(),
-              ScaleTransition(
-                scale: MediaQuery.of(context).disableAnimations
-                    ? const AlwaysStoppedAnimation(1)
-                    : _pulseController,
-                child: GestureDetector(
-                  onTap: _toggleRecording,
-                  child: Container(
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      color: _isRecording
-                          ? AppColors.danger
-                          : Theme.of(context).colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
-                      color: AppColors.white,
-                      size: 28,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 32),
-              Text(
-                _formatDuration(_seconds),
-                style: AppTextStyles.heading1.copyWith(
-                  fontSize: 32,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                _isRecording ? 'Recording...' : 'Tap to start',
-                style: _captionStyle(context),
-              ),
-              SizedBox(height: 34),
-              _Waveform(active: _isRecording),
-              const Spacer(),
-              _PrimaryButton(
-                label: _isRecording ? 'Tap to stop' : 'Start recording',
-                onPressed: _toggleRecording,
-              ),
-              SizedBox(height: 12),
-              _SecondaryButton(label: 'Cancel', onPressed: _cancel),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _playbackView() {
-    return _JournalSubScaffold(
-      action: TextButton(onPressed: _rerecord, child: Text('Re-record')),
-      child: ListView(
-        padding: EdgeInsets.all(24),
-        children: [
-          SizedBox(height: 50),
-          Center(
-            child: GestureDetector(
-              onTap: _togglePlayback,
-              child: Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  color: AppColors.white,
-                  size: 46,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: 26),
-          Center(
-            child: Text(
-              _formatDuration(_seconds),
-              style: AppTextStyles.heading1.copyWith(
-                fontSize: 32,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-          SizedBox(height: 28),
-          _Waveform(
-            active: _isPlaying,
-            caption: '0:14 / ${_formatDuration(_seconds)}',
-          ),
-          SizedBox(height: 18),
-          _TagRow(tags: [], onAddTag: () {}),
-          SizedBox(height: 12),
-          _WarmPanel(
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.edit_note_rounded,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              title: Text(
-                'Transcribe (optional)',
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              onTap: () {
-                setState(() {
-                  _showTranscription = true;
-                  _transcriptionController.text =
-                      "So today was really tough. I wanted to talk it through instead of holding it in.";
-                });
-                AppSnackbar.show(
-                  context,
-                  AppSnackbar.fromLegacy(content: Text('Transcription ready.')),
-                );
-              },
-            ),
-          ),
-          if (_showTranscription) ...[
-            SizedBox(height: 24),
-            Text(
-              'Transcription',
-              style: AppTextStyles.heading2.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: _transcriptionController,
-              minLines: 6,
-              maxLines: 8,
-              decoration: _inputDecoration(context, ''),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'AI-generated. Edit as needed.',
-              style: _captionStyle(context),
-            ),
-          ],
-          SizedBox(height: 28),
-          _PrimaryButton(label: 'Save entry', onPressed: _saveVoice),
-          SizedBox(height: 12),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Delete',
-              style: AppTextStyles.body1.copyWith(color: AppColors.danger),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _toggleRecording() async {
-    if (_isRecording) {
-      HapticFeedback.lightImpact();
-      _timer?.cancel();
-      _pulseController.stop();
-      final path = await _audioRecorder.stop();
-      if (!mounted) return;
-      if (_seconds < 1) {
-        setState(() {
-          _isRecording = false;
-          _seconds = 0;
-        });
-        AppSnackbar.show(
-          context,
-          AppSnackbar.fromLegacy(content: Text('Hold longer to record.')),
-        );
-        return;
-      }
-      if (path == null) {
-        setState(() => _isRecording = false);
-        AppSnackbar.show(
-          context,
-          AppSnackbar.fromLegacy(
-            content: Text("Couldn't save recording. Try again?"),
-          ),
-        );
-        return;
-      }
-      setState(() {
-        _isRecording = false;
-        _hasRecording = true;
-        _recordingPath = path;
-        if (_seconds == 0) _seconds = 42;
-      });
-    } else {
-      final result = await PermissionService.requestMicrophone();
-      if (!mounted) return;
-      if (result == MicPermissionResult.permanentlyDenied) {
-        AppSnackbar.show(
-          context,
-          AppSnackbar.fromLegacy(
-            content: Text('Microphone access is needed to record.'),
-            action: SnackBarAction(
-              label: 'Open Settings',
-              onPressed: PermissionService.openAppSettings,
-            ),
-          ),
-        );
-        return;
-      }
-      if (result != MicPermissionResult.granted) {
-        AppSnackbar.show(
-          context,
-          AppSnackbar.fromLegacy(
-            content: Text('Microphone access is needed to record.'),
-          ),
-        );
-        return;
-      }
-      try {
-        await _audioRecorder.start();
-      } catch (_) {
-        if (!mounted) return;
-        AppSnackbar.show(
-          context,
-          AppSnackbar.fromLegacy(
-            content: Text("Couldn't save recording. Try again?"),
-          ),
-        );
-        return;
-      }
-      HapticFeedback.mediumImpact();
-      _pulseController.repeat(reverse: true);
-      setState(() {
-        _isRecording = true;
-        _seconds = 0;
-      });
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() => _seconds++);
-      });
-    }
-  }
-
-  void _cancel() {
-    if (_isRecording) {
-      showDialog<void>(
-        context: context,
-        builder: (context) => _DiscardRecordingDialog(
-          onDiscard: () {
-            Navigator.pop(context);
-            Navigator.pop(context);
-          },
-        ),
-      );
-    } else {
-      Navigator.pop(context);
-    }
-  }
-
-  void _rerecord() {
-    unawaited(_audioRecorder.stopPlayback());
-    setState(() {
-      _hasRecording = false;
-      _isPlaying = false;
-      _showTranscription = false;
-      _seconds = 0;
-      _recordingPath = null;
-    });
-  }
-
-  Future<void> _togglePlayback() async {
-    final path = _recordingPath;
-    if (_isPlaying) {
-      await _audioRecorder.stopPlayback();
-      if (mounted) setState(() => _isPlaying = false);
-      return;
-    }
-    if (path == null) {
-      AppSnackbar.show(
-        context,
-        AppSnackbar.fromLegacy(content: Text("Couldn't play recording.")),
-      );
-      return;
-    }
-    setState(() => _isPlaying = true);
-    try {
-      await _audioRecorder.play(path);
-    } catch (_) {
-      if (!mounted) return;
-      AppSnackbar.show(
-        context,
-        AppSnackbar.fromLegacy(content: Text("Couldn't play recording.")),
-      );
-    } finally {
-      if (mounted) setState(() => _isPlaying = false);
-    }
-  }
-
-  void _saveVoice() {
-    Navigator.pop(
-      context,
-      JournalEntry(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
-        type: 'voice',
-        title: 'Voice note',
-        body: _transcriptionController.text.trim(),
-        tags: [],
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        wordCount: 0,
-        voiceDuration: _seconds,
-        transcription: _showTranscription
-            ? _transcriptionController.text.trim()
-            : null,
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      const JournalScreen(recordVoiceOnOpen: true);
 }
 
 class JournalSearchScreen extends StatefulWidget {
@@ -1431,12 +1100,14 @@ class JournalEntryDetailScreen extends StatelessWidget {
   final JournalEntry entry;
 
   @override
-  Widget build(BuildContext context) =>
-      // Screenshot protection disabled so users can capture their journal.
-      // SecurityBlur(child: _buildProtected(context));
-      _buildProtected(context);
+  Widget build(BuildContext context) => StreamBuilder<JournalEntry?>(
+    stream: JournalRepository().watchEntryById(entry.id),
+    initialData: entry,
+    builder: (context, snapshot) =>
+        _buildProtected(context, snapshot.data ?? entry),
+  );
 
-  Widget _buildProtected(BuildContext context) {
+  Widget _buildProtected(BuildContext context, JournalEntry entry) {
     final linked = MoodRepository().currentEntries().where(
       (mood) => mood.id == entry.linkedMoodEntryId,
     );
@@ -1480,23 +1151,41 @@ class JournalEntryDetailScreen extends StatelessWidget {
           _TagRow(tags: entry.tags ?? [], onAddTag: () {}, compact: true),
           if (entry.type == 'voice') ...[
             SizedBox(height: 18),
-            _WarmPanel(
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.play_arrow_rounded,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  SizedBox(width: 12),
-                  Text(
-                    'Voice note · ${_formatDuration(entry.voiceDuration ?? 0)}',
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ],
+            if (entry.voiceUrl?.isNotEmpty == true ||
+                entry.localVoicePath?.isNotEmpty == true)
+              VoicePlayer(
+                journal: true,
+                source: entry.voiceUrl ?? '',
+                localPath: entry.localVoicePath,
+                duration: entry.voiceDuration ?? 0,
+              )
+            else
+              const Text('Audio is unavailable for this older entry.'),
+            if (entry.voiceUrl?.isNotEmpty == true ||
+                entry.localVoicePath?.isNotEmpty == true)
+              StreamBuilder<List<SyncItem>>(
+                stream: LocalDbService().watchPendingItems(),
+                initialData: LocalDbService().pendingItems,
+                builder: (context, snapshot) {
+                  final pending =
+                      snapshot.data?.any(
+                        (item) =>
+                            item.type == 'journal_entry' &&
+                            item.recordId == entry.id,
+                      ) ??
+                      false;
+                  final uploaded =
+                      entry.voiceUrl?.startsWith('/audio-attachments/') == true;
+                  return Text(
+                    uploaded && !pending
+                        ? 'Synced privately to your account'
+                        : 'Saved on device - Waiting to sync',
+                    style: _captionStyle(context),
+                  );
+                },
               ),
-            ),
+            if (entry.transcription?.isNotEmpty == true)
+              Text(entry.transcription!),
           ],
           SizedBox(height: 32),
           Text(
@@ -2259,28 +1948,6 @@ class _DeleteConfirmation extends StatelessWidget {
   }
 }
 
-class _DiscardRecordingDialog extends StatelessWidget {
-  const _DiscardRecordingDialog({required this.onDiscard});
-
-  final VoidCallback onDiscard;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      scrollable: true,
-      title: Text('Discard recording?'),
-      content: Text('This recording has not been saved.'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('Cancel'),
-        ),
-        TextButton(onPressed: onDiscard, child: Text('Discard')),
-      ],
-    );
-  }
-}
-
 class _AddTagSheet extends StatelessWidget {
   const _AddTagSheet({required this.controller, required this.onAdd});
 
@@ -2434,51 +2101,6 @@ class _EditorFooter extends StatelessWidget {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Waveform extends StatelessWidget {
-  const _Waveform({required this.active, this.caption});
-
-  final bool active;
-  final String? caption;
-
-  @override
-  Widget build(BuildContext context) {
-    final bars = List.generate(42, (index) {
-      final height = active
-          ? 10 + ((index * 11) % 48).toDouble()
-          : 8 + ((index * 7) % 28).toDouble();
-      return Container(
-        width: 4,
-        height: height,
-        decoration: BoxDecoration(
-          color: active
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.outline,
-          borderRadius: BorderRadius.circular(8),
-        ),
-      );
-    });
-
-    return _WarmPanel(
-      child: Column(
-        children: [
-          SizedBox(
-            height: 62,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: bars,
-            ),
-          ),
-          if (caption != null) ...[
-            SizedBox(height: 8),
-            Text(caption!, style: _captionStyle(context)),
-          ],
         ],
       ),
     );

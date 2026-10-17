@@ -17,6 +17,9 @@ class JournalEntry extends HiveObject {
   @HiveField(4)
   final String? voiceUrl;
 
+  @HiveField(16)
+  final String? localVoicePath;
+
   @HiveField(5)
   final int? voiceDuration; // seconds
 
@@ -56,6 +59,7 @@ class JournalEntry extends HiveObject {
     this.title,
     required this.body,
     this.voiceUrl,
+    this.localVoicePath,
     this.voiceDuration,
     this.transcription,
     this.promptId,
@@ -80,6 +84,7 @@ class JournalEntry extends HiveObject {
       'client_created_at': createdAt.toUtc().toIso8601String(),
     };
     if (title != null) json['title'] = title;
+    if (localVoicePath != null) json['local_voice_path'] = localVoicePath;
     if (voiceUrl != null) json['voice_url'] = voiceUrl;
     if (voiceDuration != null) json['voice_duration'] = voiceDuration;
     if (transcription != null) json['transcription'] = transcription;
@@ -100,6 +105,7 @@ class JournalEntry extends HiveObject {
       title: json['title'] as String?,
       body: json['body'] as String? ?? '',
       voiceUrl: json['voice_url'] as String?,
+      localVoicePath: json['local_voice_path'] as String?,
       voiceDuration: json['voice_duration'] as int?,
       transcription: json['transcription'] as String?,
       promptId: json['prompt_id']?.toString(),
@@ -144,6 +150,7 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
       updatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
       isDraft: reader.readBool(),
       isCrisisFlagged: reader.availableBytes > 0 ? reader.readBool() : false,
+      localVoicePath: reader.availableBytes > 0 ? reader.readString() : null,
     );
   }
 
@@ -165,5 +172,6 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
     writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
     writer.writeBool(obj.isDraft);
     writer.writeBool(obj.isCrisisFlagged);
+    writer.writeString(obj.localVoicePath ?? '');
   }
 }
