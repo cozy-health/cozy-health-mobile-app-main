@@ -216,7 +216,7 @@ void main() {
         );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
-        expect(find.text('What would you\nlike to do?'), findsOneWidget);
+        expect(find.text('Quick actions'), findsOneWidget);
         await tester.ensureVisible(find.text('Journal'));
         await tester.pump(const Duration(milliseconds: 500));
         await tester.tap(find.text('Journal'));

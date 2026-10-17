@@ -115,7 +115,7 @@ const List<_Action> _actions = [
   (
     title: 'Log mood',
     description: 'Check in with how you feel',
-    icon: Icons.sentiment_satisfied_alt_outlined,
+    icon: Icons.favorite_border_rounded,
     color: Color(0xFF28764D),
   ),
   (

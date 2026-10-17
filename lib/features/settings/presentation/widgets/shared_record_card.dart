@@ -42,7 +42,7 @@ class _SharedRecordCardState extends State<SharedRecordCard> {
     final (label, icon, accent) = switch (type) {
       'moods' => (
         'Mood check-in',
-        Icons.sentiment_satisfied_alt_outlined,
+        Icons.favorite_border_rounded,
         const Color(0xFF00BC4C),
       ),
       'journals' => (
