@@ -754,36 +754,48 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
           onTap: onTap,
           borderRadius: BorderRadius.circular(8),
           child: Container(
-            constraints: const BoxConstraints(minHeight: 56),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _art(
-                  collection,
-                  row,
-                  category,
-                  foreground,
-                  selected: contrast && selected,
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    _art(
+                      collection,
+                      row,
+                      category,
+                      foreground,
+                      selected: contrast && selected,
+                    ),
+                    if (selected)
+                      Positioned(
+                        right: -3,
+                        bottom: -3,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: fill,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.check_rounded,
+                            size: 12,
+                            color: foreground,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     row['name'] as String,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                       color: foreground,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: selected
-                      ? Icon(Icons.check_rounded, size: 18, color: foreground)
-                      : null,
                 ),
               ],
             ),
@@ -808,7 +820,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
       if (!bundled) {
         return Text(
           row['emoji'] as String? ?? '',
-          style: const TextStyle(fontSize: 32),
+          style: const TextStyle(fontSize: 24),
         );
       }
       return Image.asset(
@@ -816,8 +828,8 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                 MediaQuery.highContrastOf(context)
             ? 'assets/png/recording_emoji_${row['slug']}.png'
             : 'assets/png/recording_${collection}_${row['slug']}.png',
-        width: 32,
-        height: 32,
+        width: 24,
+        height: 24,
         fit: BoxFit.contain,
         excludeFromSemantics: true,
       );
@@ -830,12 +842,12 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
     final readableAccent = selected || ratio < 3 ? foreground : scheme.primary;
     final fallback = Icon(
       collection == 'coping' ? Icons.favorite_border : _icons[category],
-      size: 24,
+      size: 18,
       color: readableAccent,
     );
     return Container(
-      width: 32,
-      height: 32,
+      width: 24,
+      height: 24,
       decoration: BoxDecoration(
         color: MediaQuery.highContrastOf(context)
             ? Colors.transparent

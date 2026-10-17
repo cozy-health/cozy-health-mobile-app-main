@@ -60,12 +60,12 @@ class _MoodChipsRowState extends State<MoodChipsRow> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 6,
+                        vertical: 4,
                       ),
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(
                           minWidth: 83,
-                          minHeight: 56,
+                          minHeight: 48,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -73,21 +73,20 @@ class _MoodChipsRowState extends State<MoodChipsRow> {
                             if (['good', 'sad', 'angry'].contains(mood))
                               Image.asset(
                                 'assets/png/home_mood_$mood.png',
-                                width: 42,
-                                height: 45,
+                                width: 32,
+                                height: 34,
                                 excludeFromSemantics: true,
                               )
                             else
                               Text(
                                 MoodEntry.moodEmojis[mood]!,
-                                style: const TextStyle(fontSize: 32),
+                                style: const TextStyle(fontSize: 24),
                               ),
                             const SizedBox(width: 8),
                             Text(
                               '${mood[0].toUpperCase()}${mood.substring(1)}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w400,
                                 color: theme.brightness == Brightness.dark
                                     ? theme.colorScheme.onSurface
                                     : const Color(0xFF454545),
@@ -95,12 +94,12 @@ class _MoodChipsRowState extends State<MoodChipsRow> {
                             ),
                             const SizedBox(width: 8),
                             SizedBox(
-                              width: 18,
-                              height: 18,
+                              width: 12,
+                              height: 12,
                               child: _selected == mood
                                   ? Icon(
                                       Icons.check_rounded,
-                                      size: 18,
+                                      size: 12,
                                       color: theme.colorScheme.onSurface,
                                     )
                                   : null,

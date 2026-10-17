@@ -51,8 +51,8 @@ void main() {
         of: find.text('Angry'),
         matching: find.byType(InkWell),
       );
-      expect(tester.getSize(control).height, greaterThanOrEqualTo(56));
-      expect(tester.widget<Text>(find.text('Angry')).style!.fontSize, 16);
+      expect(tester.getSize(control).height, greaterThanOrEqualTo(48));
+      expect(tester.widget<Text>(find.text('Angry')).style!.fontSize, 14);
       await tester.ensureVisible(find.text('Excited'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Excited'));

@@ -300,7 +300,7 @@ void main() {
       final chip = find.byKey(
         const ValueKey('recording-expressions-angry-resentful'),
       );
-      expect(tester.getSize(chip).height, greaterThanOrEqualTo(56));
+      expect(tester.getSize(chip).height, greaterThanOrEqualTo(48));
       final before = tester.getSize(chip);
       final semantics = tester.ensureSemantics();
       expect(tester.getSemantics(chip).label, 'Resentful');
