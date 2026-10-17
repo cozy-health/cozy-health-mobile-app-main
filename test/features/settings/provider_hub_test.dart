@@ -67,6 +67,43 @@ class MessagingApi extends Fake implements ApiClient {
 void main() {
   setUpAll(installLocalTestFonts);
   tearDownAll(resetLocalTestFonts);
+  testWidgets(
+    'shared records use the same named card in chat and history without dates',
+    (tester) async {
+      final api = MessagingApi();
+      api.messages.add({
+        'id': 1,
+        'sender': 'patient',
+        'content': '',
+        'created_at': '2026-10-17T12:00:00Z',
+        'records': [
+          {
+            'id': 'mood-1',
+            'type': 'moods',
+            'owner': {'name': 'Taylor', 'initials': 'T'},
+            'data': {
+              'mood': 'calm',
+              'intensity': 3,
+              'created_at': '2026-10-17T11:00:00Z',
+            },
+          },
+        ],
+      });
+      await tester.pumpWidget(
+        MaterialApp(home: ProviderHubScreen(apiClient: api)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Shared by Taylor'), findsOneWidget);
+      expect(find.text('Feeling calm'), findsOneWidget);
+      expect(find.textContaining('2026-10-17'), findsNothing);
+      await tester.tap(find.text('Shared history'));
+      await tester.pumpAndSettle();
+      expect(find.text('Shared by Taylor'), findsOneWidget);
+      expect(find.text('Feeling calm'), findsOneWidget);
+      expect(find.textContaining('2026-10-17'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
   testWidgets('unconnected users see provider connection action', (
     tester,
   ) async {

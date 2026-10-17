@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/response_data.dart';
 import 'provider_screen.dart';
+import '../widgets/shared_record_card.dart';
 import '../../data/settings_service.dart';
 import 'provider_resources_screen.dart';
 
@@ -193,7 +194,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      'Select $type',
+                      'Select ${_recordCategory(type).toLowerCase()}',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
@@ -204,7 +205,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                           const ListTile(title: Text('No records available.')),
                         ...rows.map(
                           (r) => ListTile(
-                            title: Text(_recordText(r)),
+                            title: SharedRecordCard(record: r, preview: true),
                             onTap: () => Navigator.pop(context, r),
                           ),
                         ),
@@ -249,13 +250,13 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
     }
   }
 
-  String _recordText(Map<String, dynamic> r) {
-    if (r['unavailable'] == true) {
-      return '${r['type']}: Record unavailable or sharing disabled.';
-    }
-    final data = Map<String, dynamic>.from(r['data'] as Map? ?? {});
-    return '${r['type']}\n${data.entries.where((e) => e.value != null).map((e) => '${e.key.replaceAll('_', ' ')}: ${e.value}').join('\n')}';
-  }
+  String _recordCategory(String type) => switch (type) {
+    'moods' => 'Mood check-in',
+    'journals' => 'Journal summary',
+    'quizzes' => 'Assessment result',
+    'notes' => 'Care note',
+    _ => 'Record',
+  };
 
   Future<void> _manage() async {
     await Navigator.of(context).push(
@@ -385,6 +386,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                                   }
                                   final m = _messages[_messages.length - 1 - i];
                                   final mine = m['sender'] == 'patient';
+                                  final records = _maps(m['records'] ?? []);
                                   return Align(
                                     alignment: mine
                                         ? Alignment.centerRight
@@ -393,12 +395,16 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                                       constraints: BoxConstraints(
                                         maxWidth:
                                             MediaQuery.sizeOf(context).width *
-                                            .8,
+                                            (records.isEmpty ? .8 : .94),
                                       ),
                                       margin: const EdgeInsets.only(bottom: 10),
-                                      padding: const EdgeInsets.all(12),
+                                      padding: EdgeInsets.all(
+                                        records.isEmpty ? 12 : 0,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: mine
+                                        color: records.isNotEmpty
+                                            ? Colors.transparent
+                                            : mine
                                             ? colors.primaryContainer
                                             : colors.surfaceContainerHighest,
                                         borderRadius: BorderRadius.circular(18),
@@ -407,34 +413,28 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          ..._maps(m['records'] ?? []).map(
-                                            (r) => Card(
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(
-                                                  10,
-                                                ),
-                                                child: Text(_recordText(r)),
-                                              ),
-                                            ),
+                                          ...records.map(
+                                            (r) => SharedRecordCard(record: r),
                                           ),
                                           if ((m['content'] ?? '')
                                               .toString()
                                               .isNotEmpty)
                                             Text(m['content'].toString()),
                                           const SizedBox(height: 4),
-                                          Text(
-                                            DateTime.tryParse(
-                                                      m['created_at']
-                                                          .toString(),
-                                                    )
-                                                    ?.toLocal()
-                                                    .toString()
-                                                    .substring(0, 16) ??
-                                                '',
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.labelSmall,
-                                          ),
+                                          if (records.isEmpty)
+                                            Text(
+                                              DateTime.tryParse(
+                                                        m['created_at']
+                                                            .toString(),
+                                                      )
+                                                      ?.toLocal()
+                                                      .toString()
+                                                      .substring(0, 16) ??
+                                                  '',
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.labelSmall,
+                                            ),
                                         ],
                                       ),
                                     ),
@@ -452,13 +452,18 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                                   (r) => Padding(
                                     padding: const EdgeInsets.all(4),
                                     child: InputChip(
-                                      label: Text('${r['type']} record'),
+                                      label: Text(
+                                        _recordCategory(r['type'].toString()),
+                                      ),
                                       onPressed: () => showDialog<void>(
                                         context: context,
                                         builder: (context) => AlertDialog(
                                           title: const Text('Record to share'),
                                           content: SingleChildScrollView(
-                                            child: Text(_recordText(r)),
+                                            child: SharedRecordCard(
+                                              record: r,
+                                              preview: true,
+                                            ),
                                           ),
                                           actions: [
                                             TextButton(
@@ -499,7 +504,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                                               (_thread!['consent_flags']
                                                   as Map)[type] ==
                                               true,
-                                          child: Text(type),
+                                          child: Text(_recordCategory(type)),
                                         ),
                                       )
                                       .toList(),
@@ -544,14 +549,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                       ),
                       ..._messages
                           .expand((m) => _maps(m['records'] ?? []))
-                          .map(
-                            (r) => Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Text(_recordText(r)),
-                              ),
-                            ),
-                          ),
+                          .map((r) => SharedRecordCard(record: r)),
                       if (_more)
                         TextButton(
                           onPressed: _older,
