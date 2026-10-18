@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'app_snackbar.dart';
 import '../models/sync_item.dart';
 import '../services/local_db_service.dart';
 import 'app_button.dart';
@@ -39,7 +42,18 @@ class _QueueSheetState extends State<_QueueSheet> {
   Future<void> _retry() async {
     setState(() => _retrying = true);
     try {
-      final result = await LocalDbService().processSyncQueue(force: true);
+      final result = await LocalDbService().processSyncQueue(
+        force: true,
+        trigger: 'pending_sheet',
+      );
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          result.failed == 0
+              ? AppSnackbar.success(result.message)
+              : AppSnackbar.error(result.message),
+        );
+      }
       if (mounted &&
           result.failed == 0 &&
           LocalDbService().pendingItems.isEmpty) {
@@ -63,6 +77,7 @@ class _QueueSheetState extends State<_QueueSheet> {
         'quiz_attempt': 'Assessment result',
         'saved_article': 'Saved article',
         'app_notification': 'Notification',
+        'affirmation_read': 'Affirmation read today',
       }[type] ??
       'Saved change';
   @override
@@ -89,10 +104,8 @@ class _QueueSheetState extends State<_QueueSheet> {
                       leading: const Icon(Icons.cloud_upload_outlined),
                       title: Text(_label(item.type)),
                       subtitle: Text(
-                        _failureLabel(item.lastErrorCode) ??
-                            (item.action == 'delete'
-                                ? 'Removal pending'
-                                : 'Saved on this device'),
+                        '${_failureLabel(item.lastErrorCode) ?? (item.action == 'delete' ? 'Removal pending' : 'Saved on this device')}'
+                        '${LocalDbService.syncDiagnosticsEnabled ? '\nOperation: ${item.id}\nType: ${item.type} · ${item.action}\nRetries: ${item.retryCount} · Error: ${item.lastErrorCode ?? 'none'}\nCreated: ${item.createdAt.toIso8601String()}\nNext retry: ${item.nextRetryAt?.toIso8601String() ?? 'ready'}' : ''}',
                       ),
                     ),
                 ],
@@ -107,6 +120,15 @@ class _QueueSheetState extends State<_QueueSheet> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Close'),
             ),
+            if (LocalDbService.syncDiagnosticsEnabled)
+              TextButton(
+                onPressed: () => Clipboard.setData(
+                  ClipboardData(
+                    text: jsonEncode(LocalDbService().syncDiagnostics),
+                  ),
+                ),
+                child: const Text('Copy sync diagnostics (no saved content)'),
+              ),
           ],
         ),
       ),
@@ -124,5 +146,7 @@ class _QueueSheetState extends State<_QueueSheet> {
     'ownership_conflict': 'This change could not be linked to your account.',
     'dependency_missing': 'Waiting for its related record to sync.',
     'database': 'The server could not save this change. Retry later.',
+    'unknown_type': 'This change requires an app update or support.',
+    'unknown_action': 'This change requires an app update or support.',
   }[code];
 }

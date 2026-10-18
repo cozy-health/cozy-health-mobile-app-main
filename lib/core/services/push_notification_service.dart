@@ -325,13 +325,14 @@ class PushNotificationService extends ChangeNotifier
   }
 
   Future<void> unregisterBeforeLogout() async {
-    await phoneTests.cancel();
+    final owner = _local.activeUserId;
     _generation++;
+    final generation = _generation;
     _pendingTap = null;
     _registeredSignature = null;
     _seen.clear();
     try {
-      final owner = _local.activeUserId;
+      await phoneTests.cancel();
       if (owner == null || owner.startsWith('guest_')) return;
       // Secure, account-scoped cleanup survives an offline logout. It never uses the next account's session.
       final raw = await _secure.read(key: 'push_registration_$owner');
@@ -339,7 +340,9 @@ class PushNotificationService extends ChangeNotifier
         await _queueCleanup(Map<String, dynamic>.from(jsonDecode(raw) as Map));
       }
       await _secure.delete(key: 'push_registration_$owner');
-      if (_ready) await FirebaseMessaging.instance.deleteToken();
+      if (_ready && generation == _generation) {
+        await FirebaseMessaging.instance.deleteToken();
+      }
     } catch (_) {
       /* Retain cleanup; ownership conflicts fail closed. */
     }
@@ -407,7 +410,7 @@ class PushNotificationService extends ChangeNotifier
     'mood' => AppRouter.moodFeeling,
     'journal' => '/journal-compose',
     'streak' => '${AppRouter.home}?focus=streak',
-    'affirmation' => '${AppRouter.home}?focus=affirmation',
+    'affirmation' => AppRouter.dailyAffirmation,
     'quiz_share' => '/quiz-shared',
     _ => AppRouter.notifications,
   };

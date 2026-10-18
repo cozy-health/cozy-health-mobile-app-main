@@ -5,6 +5,26 @@ import '../../../core/api/api_client.dart';
 
 class SubscriptionRepository {
   final LocalDbService _local = LocalDbService();
+  Future<Map<String, dynamic>> fetchPrices(String country) async {
+    final owner = _local.activeUserId;
+    final settings = await _local.settingsBox();
+    try {
+      final response = await ApiClient.instance.get(
+        '/subscription/prices',
+        query: {'country': country},
+      );
+      if (owner != _local.activeUserId) throw StateError('Account changed');
+      final data = Map<String, dynamic>.from(response.data['data'] as Map);
+      await settings.put('billing_country', country);
+      await settings.put('mobile_prices_$country', data);
+      return data;
+    } catch (_) {
+      if (owner != _local.activeUserId) rethrow;
+      final cached = settings.get('mobile_prices_$country');
+      if (cached is Map) return Map<String, dynamic>.from(cached);
+      rethrow;
+    }
+  }
 
   Map<String, dynamic>? _extractMapData(dynamic data) {
     if (data is Map<String, dynamic>) {
@@ -61,50 +81,9 @@ class SubscriptionRepository {
     return _local.watchSubscriptionStatus();
   }
 
-  Future<SubscriptionStatus> purchase(String plan) async {
-    final current = _local.getSubscriptionStatus();
-    final updated =
-        (current ??
-                SubscriptionStatus(
-                  id: 'sub_${DateTime.now().millisecondsSinceEpoch}',
-                  isActive: false,
-                  tier: 'free',
-                  cancelAtPeriodEnd: false,
-                ))
-            .copyWith(
-              tier: plan,
-              isActive: true,
-              expiresAt: DateTime.now().add(const Duration(days: 30)).toUtc(),
-              cancelAtPeriodEnd: false,
-            );
+  Future<SubscriptionStatus> purchase(String plan) async =>
+      throw UnsupportedError('Purchasing is not available yet.');
 
-    await _local.saveSubscriptionStatus(updated);
-    await _local.enqueueSync(
-      type: 'subscription',
-      action: 'upsert',
-      recordId: updated.id,
-      payload: updated.toJson(),
-    );
-    _local.processSyncQueue();
-
-    return updated;
-  }
-
-  Future<void> cancel() async {
-    final current = _local.getSubscriptionStatus();
-    if (current != null) {
-      final updated = current.copyWith(
-        isActive: false,
-        cancelAtPeriodEnd: true,
-      );
-      await _local.saveSubscriptionStatus(updated);
-      await _local.enqueueSync(
-        type: 'subscription',
-        action: 'cancel',
-        recordId: updated.id,
-        payload: updated.toJson(),
-      );
-      _local.processSyncQueue();
-    }
-  }
+  Future<void> cancel() async =>
+      throw UnsupportedError('Subscription management is not available yet.');
 }

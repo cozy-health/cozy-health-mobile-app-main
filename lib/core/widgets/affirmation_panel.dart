@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:go_router/go_router.dart';
 import '../data/demo_mode.dart';
 import '../routing/app_router.dart';
 import '../services/affirmation_controller.dart';
+import '../repositories/affirmation_repository.dart';
 
 class AffirmationPanel extends StatefulWidget {
   const AffirmationPanel({super.key, this.controller, this.compact = false});
@@ -12,11 +14,42 @@ class AffirmationPanel extends StatefulWidget {
   State<AffirmationPanel> createState() => _AffirmationPanelState();
 }
 
-class _AffirmationPanelState extends State<AffirmationPanel> {
+class _AffirmationPanelState extends State<AffirmationPanel>
+    with WidgetsBindingObserver {
   late final _controller = widget.controller ?? AffirmationController.instance;
   late final bool _live =
       !DemoMode.instance.enabled || widget.controller != null;
   bool _attached = false;
+  bool _reading = false;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _readIfVisible();
+  }
+
+  void _readIfVisible() {
+    if (_live &&
+        _attached &&
+        !_reading &&
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
+        !widget.compact &&
+        _controller.state.assignment != null &&
+        _controller.state.status == AffirmationStatus.ready) {
+      _reading = true;
+      unawaited(
+        AffirmationRepository()
+            .markRead()
+            .catchError((Object _) {})
+            .whenComplete(() => _reading = false),
+      );
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -25,6 +58,7 @@ class _AffirmationPanelState extends State<AffirmationPanel> {
       _attached = true;
       _controller.addListener(_changed);
       _controller.attach();
+      _readIfVisible();
     } else if (!active && _attached) {
       _attached = false;
       _controller.removeListener(_changed);
@@ -33,11 +67,13 @@ class _AffirmationPanelState extends State<AffirmationPanel> {
   }
 
   void _changed() {
+    _readIfVisible();
     if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (_attached) {
       _controller.removeListener(_changed);
       _controller.detach();
@@ -104,7 +140,15 @@ class _AffirmationPanelState extends State<AffirmationPanel> {
       child: InkWell(
         key: const Key('home-affirmation-card'),
         onTap: () => context.push(AppRouter.dailyAffirmation),
-        child: Padding(padding: const EdgeInsets.all(4), child: content),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: content,
+        ),
       ),
     );
   }

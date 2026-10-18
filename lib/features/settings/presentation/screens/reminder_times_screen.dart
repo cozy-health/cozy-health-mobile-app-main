@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/models/reminder_settings.dart';
+import '../../data/profile_repository.dart';
 
 class ReminderTimesScreen extends StatefulWidget {
   const ReminderTimesScreen({super.key});
@@ -17,14 +20,64 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
   TimeOfDay _selectedTime = const TimeOfDay(hour: 20, minute: 0); // 8:00 PM
   final List<String> _days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   final List<bool> _selectedDays = [true, true, true, true, true, false, false];
+  bool _saving = false;
 
-  void _saveReminder() {
-    final formattedTime = _selectedTime.format(context);
-    AppSnackbar.show(
-      context,
-      AppSnackbar.fromLegacy(content: Text('Reminder set for $formattedTime.')),
+  @override
+  void initState() {
+    super.initState();
+    final profile = LocalDbService().getUserProfile();
+    if (profile == null) return;
+    final time = profile.dailyCheckinTime.split(':');
+    _selectedTime = TimeOfDay(
+      hour: int.tryParse(time.first) ?? 20,
+      minute: int.tryParse(time.last) ?? 0,
     );
-    context.pop();
+    final days =
+        ReminderSettings.resolve(profile.reminderSettings)['mood_days'] as List;
+    for (var i = 0; i < 7; i++) {
+      _selectedDays[i] = days.contains(i + 1);
+    }
+  }
+
+  Future<void> _saveReminder() async {
+    final profile = LocalDbService().getUserProfile();
+    if (_saving || profile == null) return;
+    setState(() => _saving = true);
+    try {
+      await ProfileRepository().saveProfile(
+        profile
+            .copyWithField(
+              'daily_checkin_time',
+              '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+            )
+            .copyWithField('reminder_settings', {
+              ...ReminderSettings.resolve(profile.reminderSettings),
+              'mood_days': [
+                for (var i = 0; i < 7; i++)
+                  if (_selectedDays[i]) i + 1,
+              ],
+            })
+            .copyWith(updatedAt: DateTime.now()),
+      );
+      if (!mounted) return;
+      final formattedTime = _selectedTime.format(context);
+      AppSnackbar.show(
+        context,
+        AppSnackbar.info(
+          'Reminder saved for $formattedTime. Changes will sync when connected.',
+        ),
+      );
+      context.pop();
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error('Could not save reminder. Please try again.'),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -210,7 +263,11 @@ class _ReminderTimesScreenState extends State<ReminderTimesScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(24),
-              child: AppButton(text: 'Save', onPressed: _saveReminder),
+              child: AppButton(
+                text: 'Save',
+                isLoading: _saving,
+                onPressed: _saving ? null : _saveReminder,
+              ),
             ),
           ],
         ),

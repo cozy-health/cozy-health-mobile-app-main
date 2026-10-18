@@ -8,6 +8,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../community_theme.dart';
 import '../widgets/visibility_sheet.dart';
 import '../community_local_state.dart';
+import '../../../../core/data/demo_mode.dart';
+import '../../../../core/api/api_client.dart';
+import '../../data/community_repository.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -44,42 +47,91 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   void _handlePost() async {
-    setState(() {
-      _isPublishing = true;
-    });
-
-    // Mock network request
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-
-    // Check for mock keywords
-    if (_textController.text.toLowerCase().contains('harm')) {
+    if (!_canPost) return;
+    if (!DemoMode.instance.enabled && _visibility == PostVisibility.followers) {
       AppSnackbar.show(
         context,
-        AppSnackbar.fromLegacy(
-          content: Text(
-            'Your post is being reviewed. It may take a moment to appear.',
-          ),
-          behavior: SnackBarBehavior.floating,
+        AppSnackbar.info(
+          'Followers-only posting is not available. Choose Public or Anonymous.',
         ),
       );
-    } else {
-      CommunityLocalState.instance.publish(
-        content: _textController.text.trim(),
-        topic: _selectedTopic == 'Topic (optional)' ? '' : _selectedTopic,
-        visibility: _visibility.name,
-      );
-      AppSnackbar.show(
-        context,
-        AppSnackbar.fromLegacy(
-          content: Text('Post added.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      return;
     }
-
-    context.pop();
+    setState(() => _isPublishing = true);
+    try {
+      if (DemoMode.instance.enabled) {
+        CommunityLocalState.instance.publish(
+          content: _textController.text.trim(),
+          topic: _selectedTopic == 'Topic (optional)' ? '' : _selectedTopic,
+          visibility: _visibility.name,
+        );
+      } else {
+        final response = await ApiClient().get('/config', withAuth: false);
+        final document =
+            response.data['consent']?['documents']?['ugc_guidelines'];
+        if (document is! Map ||
+            document['published'] != true ||
+            '${document['content'] ?? ''}'.trim().isEmpty) {
+          throw StateError('Guidelines are not available');
+        }
+        if (!mounted) return;
+        final yes = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('${document['title']}'),
+            scrollable: true,
+            content: Text('${document['content']}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Agree and post'),
+              ),
+            ],
+          ),
+        );
+        if (yes != true) return;
+        final saved = await ApiClient().post(
+          '/community/posts',
+          data: {
+            'body': _textController.text.trim(),
+            'is_anonymous': _visibility == PostVisibility.anonymous,
+            'mood': _selectedTopic == 'Topic (optional)'
+                ? null
+                : _selectedTopic,
+            'guidelines_version': document['version'],
+            'guidelines_accepted': true,
+          },
+        );
+        CommunityLocalState.instance.ingestPost(
+          CommunityRepository.post(saved.data['data'] as Map),
+        );
+        if (!mounted) return;
+        AppSnackbar.show(
+          context,
+          AppSnackbar.info(
+            saved.data['data']['status'] == 'pending'
+                ? 'Your post was saved for review.'
+                : 'Your post was published.',
+          ),
+        );
+      }
+      if (mounted) context.pop();
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            'Could not publish. Community or its approved guidelines may be unavailable. Your draft is still here.',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPublishing = false);
+    }
   }
 
   String get _authorName {

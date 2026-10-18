@@ -47,8 +47,7 @@ class UserDataFetcher {
       _list('/notifications', 'app_notification');
   Future<void> fetchQuizAttempts() =>
       _list('/quiz-attempts', 'quiz_attempt', includeDeleted: true);
-  Future<void> fetchSavedArticles() =>
-      _list('/saved-articles', 'saved_article');
+  Future<void> fetchSavedArticles() => _list('/content/saved', 'saved_article');
   Future<void> fetchProfile() => _single('/user/profile', 'user_profile');
   Future<void> fetchSafetyPlan() => _single('/safety-plan', 'safety_plan');
   Future<void> fetchSubscription() async {

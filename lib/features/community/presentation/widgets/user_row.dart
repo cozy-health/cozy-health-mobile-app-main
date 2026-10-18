@@ -29,7 +29,9 @@ class UserRow extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
@@ -48,13 +50,17 @@ class UserRow extends StatelessWidget {
                 children: [
                   Text(
                     '@$username',
-                    style: context.communityBody1.copyWith(fontWeight: FontWeight.w500),
+                    style: context.communityBody1.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   if (bio != null && bio.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       bio,
-                      style: context.communityBody2.copyWith(color: context.communityMuted),
+                      style: context.communityBody2.copyWith(
+                        color: context.communityMuted,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -66,10 +72,17 @@ class UserRow extends StatelessWidget {
             GestureDetector(
               onTap: onFollowToggle,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: isFollowing ? Colors.transparent : Theme.of(context).colorScheme.primary,
-                  border: isFollowing ? Border.all(color: context.communityBorder) : null,
+                  color: isFollowing
+                      ? Colors.transparent
+                      : Theme.of(context).colorScheme.primary,
+                  border: isFollowing
+                      ? Border.all(color: context.communityBorder)
+                      : null,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(

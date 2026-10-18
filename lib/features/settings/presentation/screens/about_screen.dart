@@ -50,9 +50,6 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mock 7+ days of use check
-    final bool hasUsedAppFor7Days = true;
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -204,7 +201,7 @@ class AboutScreen extends StatelessWidget {
                         );
                       },
                     ),
-                    if (hasUsedAppFor7Days) ...[
+                    ...[
                       Padding(
                         padding: const EdgeInsets.only(left: 16, right: 16),
                         child: Divider(
@@ -222,7 +219,9 @@ class AboutScreen extends StatelessWidget {
                           AppSnackbar.show(
                             context,
                             AppSnackbar.fromLegacy(
-                              content: Text('Opening app store...'),
+                              content: Text(
+                                'Store ratings are not available in this build yet.',
+                              ),
                             ),
                           );
                         },

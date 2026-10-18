@@ -1,5 +1,6 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/data/demo_mode.dart';
 import 'package:go_router/go_router.dart';
 import '../community_theme.dart';
 
@@ -8,6 +9,19 @@ class FeaturedPostsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!DemoMode.instance.enabled) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Featured posts')),
+        body: const SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'Curated featured posts are not available yet. Browse the community feed for current posts.',
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: context.communityBackground,
       appBar: AppBar(

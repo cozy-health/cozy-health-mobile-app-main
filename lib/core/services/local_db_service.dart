@@ -23,9 +23,30 @@ import '../models/app_notification.dart';
 import '../models/subscription_status.dart';
 import '../models/user_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'package:timezone/data/latest.dart' as timezone_data;
+import 'package:timezone/timezone.dart' as tz;
 import '../storage/token_storage.dart';
 
 class LocalDbService {
+  static bool _timezonesReady = false;
+  DateTime accountTime(DateTime value) {
+    if (!_timezonesReady) {
+      timezone_data.initializeTimeZones();
+      _timezonesReady = true;
+    }
+    final name = isBoxOpen(userSettingsBoxName)
+        ? EncryptedHive.box<dynamic>(
+                boxName(userSettingsBoxName),
+              ).get('account_timezone')
+              as String?
+        : null;
+    try {
+      return tz.TZDateTime.from(value, tz.getLocation(name ?? 'UTC'));
+    } catch (_) {
+      return value.toUtc();
+    }
+  }
+
   // Singleton pattern
   static final LocalDbService _instance = LocalDbService._internal();
   factory LocalDbService() => _instance;
@@ -34,6 +55,38 @@ class LocalDbService {
   bool _isProcessingSyncQueue = false;
   bool syncPaused = false;
   bool _forceSyncRequested = false;
+  Timer? _syncTimer;
+  final List<Map<String, dynamic>> _syncDiagnostics = [];
+  static const syncDiagnosticsEnabled =
+      kDebugMode || bool.fromEnvironment('INTERNAL_TEST_BUILD');
+  List<Map<String, dynamic>> get syncDiagnostics =>
+      syncDiagnosticsEnabled ? List.unmodifiable(_syncDiagnostics) : const [];
+  void _traceSync(String event, {String? trigger, SyncSummary? summary}) {
+    if (!syncDiagnosticsEnabled) return;
+    _syncDiagnostics.add({
+      'at': DateTime.now().toUtc().toIso8601String(),
+      'event': event,
+      if (trigger != null) 'trigger': trigger,
+      'paused': syncPaused,
+      'running': _isProcessingSyncQueue,
+      if (summary != null) 'synced': summary.synced,
+      if (summary != null) 'failed': summary.failed,
+      'operations': [
+        for (final item in pendingItems)
+          {
+            'operation': item.id,
+            'type': item.type,
+            'action': item.action,
+            'retries': item.retryCount,
+            'error': item.lastErrorCode,
+            'created': item.createdAt.toIso8601String(),
+            'next_retry': item.nextRetryAt?.toIso8601String(),
+          },
+      ],
+    });
+    if (_syncDiagnostics.length > 50) _syncDiagnostics.removeAt(0);
+  }
+
   Future<void> waitForSyncIdle() async {
     await _currentSync;
   }
@@ -250,6 +303,7 @@ class LocalDbService {
     }
     _activeUser = userId;
     await registry.put('active_user_id', userId);
+    _syncDiagnostics.clear();
     _accountChanges.add(null);
   }
 
@@ -396,8 +450,9 @@ class LocalDbService {
       await migrate<String>(syncQueueBoxName);
       await migrate<dynamic>(userSettingsBoxName);
     }
-    Timer.periodic(const Duration(minutes: 5), (_) {
-      processSyncQueue();
+    _syncTimer?.cancel();
+    _syncTimer = Timer.periodic(const Duration(minutes: 5), (_) {
+      processSyncQueue(trigger: 'periodic');
     });
     final registry = await EncryptedHive.openBox<dynamic>('device_registry');
     final active = registry.get('active_user_id') as String?;
@@ -408,7 +463,7 @@ class LocalDbService {
     } else if (await TokenStorage().getToken() == null) {
       await activateGuest();
     }
-    Future.microtask(() => processSyncQueue());
+    Future.microtask(() => processSyncQueue(trigger: 'startup'));
   }
 
   // --- Moods ---
@@ -417,6 +472,7 @@ class LocalDbService {
 
   Future<void> saveMoodEntry(MoodEntry entry) async {
     await moodBox.put(entry.id, entry);
+    await _retainEarnedMilestones();
   }
 
   List<MoodEntry> getAllMoodEntries() {
@@ -428,6 +484,7 @@ class LocalDbService {
       _watchScoped(getAllMoodEntries, () => moodBox.watch());
 
   Future<void> deleteMoodEntry(String id) async {
+    await _retainEarnedMilestones();
     await moodBox.delete(id);
   }
 
@@ -437,6 +494,7 @@ class LocalDbService {
 
   Future<void> saveJournalEntry(JournalEntry entry) async {
     await journalBox.put(entry.id, entry);
+    if (!entry.isDraft) await _retainEarnedMilestones();
   }
 
   List<JournalEntry> getAllJournalEntries() {
@@ -448,6 +506,7 @@ class LocalDbService {
       _watchScoped(getAllJournalEntries, () => journalBox.watch());
 
   Future<void> deleteJournalEntry(String id) async {
+    await _retainEarnedMilestones();
     final entry = journalBox.get(id);
     await VoiceAudio.removeLocal(entry?.localVoicePath);
     if (entry?.voiceUrl?.startsWith('/audio-attachments/') == false) {
@@ -458,6 +517,60 @@ class LocalDbService {
 
   Future<void> saveJournalDraft(JournalEntry entry) async {
     await journalBox.put(entry.id, entry);
+  }
+
+  Future<void> _retainEarnedMilestones() async {
+    final owner = activeUserId;
+    if (owner == null || owner.startsWith('guest_')) return;
+    final settings = await settingsBox();
+    if (owner != activeUserId) return;
+    final stored = settings.get('earned_milestones_v1');
+    final awards = <String, dynamic>{
+      if (stored is Map) ...stored.cast<String, dynamic>(),
+    };
+    final moods = isBoxOpen(moodBoxName) ? getAllMoodEntries() : <MoodEntry>[];
+    final journals = isBoxOpen(journalBoxName)
+        ? getAllJournalEntries()
+        : <JournalEntry>[];
+    if (moods.isNotEmpty) {
+      moods.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      awards.putIfAbsent(
+        'first_mood',
+        () => moods.first.createdAt.toIso8601String(),
+      );
+    }
+    if (journals.isNotEmpty) {
+      journals.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      awards.putIfAbsent(
+        'first_journal',
+        () => journals.first.createdAt.toIso8601String(),
+      );
+    }
+    final dates =
+        moods
+            .map((mood) {
+              final date = accountTime(mood.createdAt);
+              return DateTime.utc(date.year, date.month, date.day);
+            })
+            .toSet()
+            .toList()
+          ..sort();
+    DateTime? previous;
+    var streak = 0;
+    for (final date in dates) {
+      streak = previous != null && date.difference(previous).inDays == 1
+          ? streak + 1
+          : 1;
+      for (final target in [3, 7, 30]) {
+        if (streak >= target) {
+          awards.putIfAbsent('streak_$target', () => date.toIso8601String());
+        }
+      }
+      previous = date;
+    }
+    if (owner == activeUserId) {
+      await settings.put('earned_milestones_v1', awards);
+    }
   }
 
   JournalEntry? getJournalDraft(String id) {
@@ -797,7 +910,11 @@ class LocalDbService {
       ? _watchScoped(() => pendingItems, () => syncQueueBox.watch())
       : Stream.value([]);
 
-  Future<SyncSummary> processSyncQueue({bool force = false}) {
+  Future<SyncSummary> processSyncQueue({
+    bool force = false,
+    String trigger = 'saved_change',
+  }) {
+    _traceSync('trigger', trigger: trigger);
     if (syncPaused ||
         _activeUser?.startsWith('guest_') == true ||
         !isBoxOpen(syncQueueBoxName)) {
@@ -921,6 +1038,7 @@ class LocalDbService {
       errorCode: errorCode,
     );
     if (summary.attempted > 0) _syncResults.add(summary);
+    _traceSync('result', summary: summary);
     return summary;
   }
 
@@ -1148,6 +1266,7 @@ class LocalDbService {
         'conflict',
         'gone',
         'definition_unavailable',
+        'access_denied',
       }.contains(code)
       ? code as String
       : null;

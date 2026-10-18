@@ -1,4 +1,5 @@
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
+import 'dart:async';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'chat_shared_widgets.dart';
@@ -7,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../data/chat_repository.dart';
 import '../../models/chat.dart';
+import '../../../../core/services/local_db_service.dart';
 
 class ConversationHistoryScreen extends StatefulWidget {
   const ConversationHistoryScreen({super.key, required this.conversations});
@@ -20,6 +22,39 @@ class ConversationHistoryScreen extends StatefulWidget {
 
 class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
   late final List<Conversation> _conversations = [...widget.conversations];
+  StreamSubscription<void>? _account;
+  @override
+  void initState() {
+    super.initState();
+    _account = LocalDbService().accountChanges.listen((_) {
+      if (mounted) setState(_conversations.clear);
+    });
+  }
+
+  @override
+  void dispose() {
+    _account?.cancel();
+    super.dispose();
+  }
+
+  Map<String, List<Conversation>> get _sections {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    final sections = <String, List<Conversation>>{};
+    final sorted = [..._conversations]
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    for (final conversation in sorted) {
+      final date = conversation.updatedAt.toLocal();
+      final label = !date.isBefore(today)
+          ? 'Today'
+          : !date.isBefore(yesterday)
+          ? 'Yesterday'
+          : 'Earlier';
+      sections.putIfAbsent(label, () => []).add(conversation);
+    }
+    return sections;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,26 +90,15 @@ class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
               onPrimaryCta: () => Navigator.pop(context, Conversation.empty()),
             )
           else ...[
-            HistorySection(
-              title: 'Today',
-              conversations: _conversations.take(1).toList(),
-              onOpen: _openConversation,
-              onDelete: _confirmDelete,
-            ),
-            const SizedBox(height: 28),
-            HistorySection(
-              title: 'Yesterday',
-              conversations: _conversations.skip(1).take(2).toList(),
-              onOpen: _openConversation,
-              onDelete: _confirmDelete,
-            ),
-            const SizedBox(height: 28),
-            HistorySection(
-              title: 'Earlier this week',
-              conversations: _conversations.skip(3).toList(),
-              onOpen: _openConversation,
-              onDelete: _confirmDelete,
-            ),
+            for (final section in _sections.entries) ...[
+              HistorySection(
+                title: section.key,
+                conversations: section.value,
+                onOpen: _openConversation,
+                onDelete: _confirmDelete,
+              ),
+              const SizedBox(height: 28),
+            ],
           ],
         ],
       ),
@@ -82,6 +106,25 @@ class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
   }
 
   Future<void> _openConversation(Conversation conversation) async {
+    final owner = LocalDbService().activeUserId;
+    final messages = await ChatRepository().fetchMessages(conversation.id);
+    if (!mounted || owner != LocalDbService().activeUserId) return;
+    conversation.messages
+      ..clear()
+      ..addAll(
+        messages.map(
+          (message) => ChatMessage(
+            id: message.id,
+            role: ChatRole.values.firstWhere(
+              (role) => role.name == message.role,
+              orElse: () => ChatRole.user,
+            ),
+            text: message.content,
+            createdAt: message.createdAt,
+            isCrisisFlagged: message.isCrisisFlagged,
+          ),
+        ),
+      );
     final resume = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => PastConversationScreen(conversation: conversation),
@@ -110,17 +153,7 @@ class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
           setState(() => _conversations.removeAt(index));
           AppSnackbar.show(
             context,
-            AppSnackbar.fromLegacy(
-              content: const Text('Conversation deleted'),
-              action: SnackBarAction(
-                label: 'Undo',
-                onPressed: () {
-                  setState(() => _conversations.insert(index, conversation));
-                  repo.saveConversation(conversation.toChatConversation());
-                  // also need to restore messages, but for now just saving the conversation back is enough
-                },
-              ),
-            ),
+            AppSnackbar.fromLegacy(content: const Text('Conversation deleted')),
           );
         },
       ),

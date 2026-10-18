@@ -16,6 +16,27 @@ void main() {
   setUp(fixture.reset);
   tearDownAll(fixture.close);
 
+  test('a restored conversation cannot resurrect an owner deletion', () async {
+    final settings = await LocalDbService().settingsBox();
+    await settings.put('deleted_conversations', ['deleted-chat']);
+    fixture.body = {
+      'data': {
+        'data': [
+          {
+            'id': 'deleted-chat',
+            'title': 'Removed',
+            'client_created_at': '2026-10-07T12:00:00Z',
+            'client_updated_at': '2026-10-07T12:00:00Z',
+          },
+        ],
+        'last_page': 1,
+      },
+    };
+    expect(await repository.fetchConversations(), isEmpty);
+    expect(fixture.box.containsKey('deleted-chat'), isFalse);
+    await settings.delete('deleted_conversations');
+  });
+
   for (final shape in ['paginator', 'raw list', 'data list']) {
     test(
       'fetchConversations parses $shape and caches the returned records',

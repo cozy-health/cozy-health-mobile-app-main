@@ -8,6 +8,10 @@ import '../widgets/comment_card.dart';
 import '../community_local_state.dart';
 import 'comments_screen.dart';
 import '../widgets/post_actions.dart';
+import '../../../../core/data/demo_mode.dart';
+import '../../../../core/api/api_client.dart';
+import '../../data/community_repository.dart';
+import '../../../../core/services/local_db_service.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -24,6 +28,60 @@ class PostDetailScreen extends StatefulWidget {
 }
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
+  final _owner = LocalDbService().activeUserId;
+  bool _sending = false;
+  Future<void> _loadComments() async {
+    try {
+      final rows = await CommunityRepository.pages(
+        '/community/posts/${widget.post['id']}/comments',
+      );
+      if (mounted && _owner == LocalDbService().activeUserId) {
+        CommunityLocalState.instance.replaceThread(
+          widget.post,
+          rows.map(CommunityRepository.post).toList(),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            'Could not load comments. Please reopen this post to retry.',
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendComment() async {
+    if (_sending || _commentController.text.trim().isEmpty) return;
+    setState(() => _sending = true);
+    try {
+      await ApiClient().post(
+        '/community/posts/${widget.post['id']}/comments',
+        data: {
+          'body': _commentController.text.trim(),
+          'parent_id': _replyTo?['id'],
+        },
+      );
+      if (!mounted || _owner != LocalDbService().activeUserId) return;
+      _commentController.clear();
+      setState(() => _replyTo = null);
+      await _loadComments();
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            'Could not add your comment. Your draft is still here.',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
   final TextEditingController _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
   Map<String, dynamic>? _replyTo;
@@ -58,6 +116,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   @override
   void initState() {
     super.initState();
+    if (!DemoMode.instance.enabled) {
+      _comments.clear();
+      _loadComments();
+    }
     if ((widget.post['comments'] as int? ?? 0) == 0) _comments.clear();
     final saved = CommunityLocalState.instance.thread(widget.post, _comments);
     _comments.clear();
@@ -269,7 +331,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     }
                                   },
                                   onAvatarTap: () {},
-                                  onLongPress: () {},
+                                  onLongPress: () =>
+                                      PostActions.show(context, comment),
                                 ),
                                 for (final reply
                                     in (comment['replies'] as List? ??
@@ -375,6 +438,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       color: Theme.of(context).colorScheme.primary,
                     ),
                     onPressed: () {
+                      if (!DemoMode.instance.enabled) {
+                        _sendComment();
+                        return;
+                      }
                       if (_commentController.text.trim().isNotEmpty) {
                         final thread = CommunityLocalState.instance.thread(
                           widget.post,

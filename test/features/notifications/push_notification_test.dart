@@ -85,7 +85,7 @@ void main() {
     expect(PushNotificationService.destination('streak'), '/home?focus=streak');
     expect(
       PushNotificationService.destination('affirmation'),
-      '/home?focus=affirmation',
+        '/daily-affirmation',
     );
     expect(
       PushNotificationService.destination('https://example.com'),

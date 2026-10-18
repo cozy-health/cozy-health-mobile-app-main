@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cozy_health/core/data/demo_mode.dart';
 import 'package:cozy_health/features/community/presentation/community_local_state.dart';
 
 void main() {
@@ -56,6 +57,8 @@ void main() {
     expect(post['comments'], 2);
   });
   test('likes toggle without creating negative counts', () {
+    DemoMode.instance.enabled = true;
+    addTearDown(() => DemoMode.instance.enabled = false);
     final post = <String, dynamic>{'likes': 0, 'isLiked': false};
     state.toggleLike(post);
     expect(post['likes'], 1);

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'local_db_service.dart';
 
 /// Telemetry accepts diagnostics, never user-authored text or interaction data.
 class CrashReporting {
@@ -36,7 +37,7 @@ class CrashReporting {
   static void configure(SentryFlutterOptions options) {
     options.dsn = dsn;
     options.tracesSampleRate = 0.2;
-    options.enableAutoSessionTracking = true;
+    options.enableAutoSessionTracking = false;
     options.sendDefaultPii = false;
     options.enablePrintBreadcrumbs = false;
     options.enableAutoNativeBreadcrumbs = false;
@@ -63,7 +64,24 @@ class CrashReporting {
     options.enableWatchdogTerminationTracking = false;
     options.enableAutoPerformanceTracing = false;
     options.beforeBreadcrumb = (_, __) => null;
-    options.beforeSend = (event, _) => sanitize(event);
+    options.beforeSend = (event, _) async {
+      try {
+        final local = LocalDbService();
+        final owner = local.activeUserId;
+        if (owner == null || owner.startsWith('guest_')) return null;
+        final preferences = (await local.settingsBox()).get(
+          'privacy_preferences',
+        );
+        if (owner != local.activeUserId ||
+            preferences is! Map ||
+            preferences['crash_reports'] != true) {
+          return null;
+        }
+        return sanitize(event);
+      } catch (_) {
+        return null;
+      }
+    };
     // Transaction descriptions/spans can contain URLs and arbitrary content.
     // Error reporting is enabled; performance uploads wait for a safe schema.
     options.beforeSendTransaction = (_) => null;

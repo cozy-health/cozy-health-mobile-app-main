@@ -1,6 +1,7 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/data/demo_mode.dart';
 import 'package:go_router/go_router.dart';
 import '../community_theme.dart';
 
@@ -28,6 +29,17 @@ class _MessageRequestsScreenState extends State<MessageRequestsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!DemoMode.instance.enabled) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Message requests')),
+        body: const SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('Community message requests are not available yet.'),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: context.communityBackground,
       appBar: AppBar(

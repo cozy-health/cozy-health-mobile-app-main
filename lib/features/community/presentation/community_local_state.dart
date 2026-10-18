@@ -1,6 +1,10 @@
 // TODO: wire to backend when endpoint exists
 import 'package:flutter/foundation.dart';
 import '../../../core/data/demo_mode.dart';
+import '../../../core/api/api_client.dart';
+import '../../../core/services/local_db_service.dart';
+import '../../../core/routing/app_router.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 class CommunityGroup {
   CommunityGroup({
@@ -21,8 +25,21 @@ class CommunityGroup {
 
 /// Session-only preview state. No remote persistence or access control is implied.
 class CommunityLocalState extends ChangeNotifier {
+  void ingestPost(Map<String, dynamic> post) {
+    posts.removeWhere((old) => old['id'] == post['id']);
+    posts.insert(0, post);
+    notifyListeners();
+  }
+
   CommunityLocalState();
   static final instance = CommunityLocalState();
+  void clearAccountState() {
+    posts.clear();
+    _threads.clear();
+    _blockedUsers.clear();
+    _hiddenPosts.clear();
+  }
+
   static const topics = [
     'Anxiety',
     'Depression',
@@ -80,6 +97,15 @@ class CommunityLocalState extends ChangeNotifier {
   }
 
   final Map<String, List<Map<String, dynamic>>> _threads = {};
+  void replaceThread(
+    Map<String, dynamic> post,
+    List<Map<String, dynamic>> rows,
+  ) {
+    _threads[postKey(post)] = rows;
+    post['comments'] = rows.length;
+    notifyListeners();
+  }
+
   int _sequence = 0;
 
   void toggleMembership(CommunityGroup group) {
@@ -161,8 +187,30 @@ class CommunityLocalState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleLike(Map<String, dynamic> item) {
+  Future<void> toggleLike(Map<String, dynamic> item) async {
     final liked = item['isLiked'] as bool? ?? false;
+    if (!DemoMode.instance.enabled) {
+      final owner = LocalDbService().activeUserId;
+      try {
+        final response = await ApiClient().put(
+          '/community/${item['kind'] ?? 'posts'}/${item['id']}/reaction',
+          data: {'liked': !liked},
+        );
+        if (owner != LocalDbService().activeUserId) return;
+        item['isLiked'] = response.data['data']['liked'];
+        item['likes'] = response.data['data']['count'];
+        notifyListeners();
+      } catch (_) {
+        final context = AppRouter.navigatorKey.currentContext;
+        if (context != null && context.mounted) {
+          AppSnackbar.show(
+            context,
+            AppSnackbar.error('Could not update your reaction. Please retry.'),
+          );
+        }
+      }
+      return;
+    }
     item['isLiked'] = !liked;
     item['likes'] = ((item['likes'] as int? ?? 0) + (liked ? -1 : 1)).clamp(
       0,

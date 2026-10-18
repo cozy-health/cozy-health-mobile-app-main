@@ -10,6 +10,13 @@ import 'api_interceptors.dart';
 class ApiClient {
   static final ApiClient instance = ApiClient._internal();
   late Dio _dio;
+  CancelToken _requests = CancelToken();
+
+  /// Stop requests owned by the departing session before switching storage.
+  void cancelSessionRequests() {
+    _requests.cancel('Session ended');
+    _requests = CancelToken();
+  }
 
   factory ApiClient() {
     return instance;
@@ -62,6 +69,7 @@ class ApiClient {
     return await _request(
       () => _dio.get(
         path,
+        cancelToken: withAuth ? _requests : null,
         queryParameters: queryParameters ?? query,
         options: _options(options, withAuth),
       ),
@@ -79,6 +87,7 @@ class ApiClient {
     return await _request(
       () => _dio.post(
         path,
+        cancelToken: withAuth ? _requests : null,
         data: data ?? body,
         queryParameters: queryParameters,
         options: _options(options, withAuth),
@@ -97,6 +106,7 @@ class ApiClient {
     return await _request(
       () => _dio.patch(
         path,
+        cancelToken: withAuth ? _requests : null,
         data: data ?? body,
         queryParameters: queryParameters,
         options: _options(options, withAuth),
@@ -115,6 +125,7 @@ class ApiClient {
     return await _request(
       () => _dio.put(
         path,
+        cancelToken: withAuth ? _requests : null,
         data: data ?? body,
         queryParameters: queryParameters,
         options: _options(options, withAuth),
@@ -133,6 +144,7 @@ class ApiClient {
     return await _request(
       () => _dio.delete(
         path,
+        cancelToken: withAuth ? _requests : null,
         data: data ?? body,
         queryParameters: queryParameters,
         options: _options(options, withAuth),

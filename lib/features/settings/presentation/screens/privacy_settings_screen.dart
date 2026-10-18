@@ -30,11 +30,45 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   bool _referenceJournal = false;
   bool _improveAi = false;
   bool _shareAnalytics = false;
-  bool _shareCrashReports = true;
+  bool _shareCrashReports = false;
+  final _owner = LocalDbService().activeUserId;
+  Future<void> _loadPrivacy() async {
+    final box = await LocalDbService().settingsBox();
+    final value = box.get('privacy_preferences');
+    if (!mounted || _owner != LocalDbService().activeUserId || value is! Map) {
+      return;
+    }
+    setState(() {
+      _referenceMood = value['reference_mood'] == true;
+      _referenceJournal = value['reference_journal'] == true;
+      _improveAi = value['improve_ai'] == true;
+      _shareAnalytics = value['analytics'] == true;
+      _shareCrashReports = value['crash_reports'] == true;
+    });
+  }
+
+  Future<void> _savePrivacy() async {
+    final box = await LocalDbService().settingsBox();
+    if (_owner != LocalDbService().activeUserId) return;
+    await box.put('privacy_preferences', {
+      'reference_mood': _referenceMood,
+      'reference_journal': _referenceJournal,
+      'improve_ai': _improveAi,
+      'analytics': _shareAnalytics,
+      'crash_reports': _shareCrashReports,
+    });
+    final assistant = box.get('assistant_preferences');
+    await box.put('assistant_preferences', {
+      ...(assistant is Map ? assistant : {}),
+      'reference_mood': _referenceMood,
+      'reference_journal': _referenceJournal,
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    _loadPrivacy();
     _loadSecurity();
     final profile = LocalDbService().getUserProfile();
     if (profile != null) {
@@ -201,17 +235,26 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   _SettingsToggleRow(
                     label: 'Let Cozy reference my mood logs',
                     value: _referenceMood,
-                    onChanged: (v) => setState(() => _referenceMood = v),
+                    onChanged: (v) {
+                      setState(() => _referenceMood = v);
+                      _savePrivacy();
+                    },
                   ),
                   _SettingsToggleRow(
                     label: 'Let Cozy reference my journal',
                     value: _referenceJournal,
-                    onChanged: (v) => setState(() => _referenceJournal = v),
+                    onChanged: (v) {
+                      setState(() => _referenceJournal = v);
+                      _savePrivacy();
+                    },
                   ),
                   _SettingsToggleRow(
-                    label: 'Improve AI with my conversations',
+                    label: 'Future preference: improve AI with my conversations',
                     value: _improveAi,
-                    onChanged: (v) => setState(() => _improveAi = v),
+                    onChanged: (v) {
+                      setState(() => _improveAi = v);
+                      _savePrivacy();
+                    },
                   ),
                 ],
               ),
@@ -223,12 +266,18 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   _SettingsToggleRow(
                     label: 'Share anonymous usage data',
                     value: _shareAnalytics,
-                    onChanged: (v) => setState(() => _shareAnalytics = v),
+                    onChanged: (v) {
+                      setState(() => _shareAnalytics = v);
+                      _savePrivacy();
+                    },
                   ),
                   _SettingsToggleRow(
                     label: 'Share crash reports',
                     value: _shareCrashReports,
-                    onChanged: (v) => setState(() => _shareCrashReports = v),
+                    onChanged: (v) {
+                      setState(() => _shareCrashReports = v);
+                      _savePrivacy();
+                    },
                   ),
                 ],
               ),

@@ -19,6 +19,7 @@ class AuthInterceptor extends Interceptor {
   final _tokens = TokenStorage();
 
   Future<String?> _refresh() async {
+    final generation = TokenStorage.generation;
     final refresh = await _tokens.getRefreshToken();
     if (refresh == null || dio == null) return null;
     try {
@@ -35,7 +36,8 @@ class AuthInterceptor extends Interceptor {
         return null;
       }
       // A logout while refresh is in flight must not restore the session.
-      if (await _tokens.getRefreshToken() != refresh) {
+      if (generation != TokenStorage.generation ||
+          await _tokens.getRefreshToken() != refresh) {
         return null;
       }
       await _tokens.saveToken(
@@ -59,7 +61,14 @@ class AuthInterceptor extends Interceptor {
       return handler.next(options);
     }
 
+    final generation = TokenStorage.generation;
     final token = await AuthTokenService.getToken();
+    if (generation != TokenStorage.generation) {
+      return handler.reject(
+        DioException(requestOptions: options, type: DioExceptionType.cancel),
+      );
+    }
+    options.extra['sessionGeneration'] = generation;
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }
@@ -67,7 +76,27 @@ class AuthInterceptor extends Interceptor {
   }
 
   @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    final generation = response.requestOptions.extra['sessionGeneration'];
+    if (generation != null && generation != TokenStorage.generation) {
+      return handler.reject(
+        DioException(
+          requestOptions: response.requestOptions,
+          type: DioExceptionType.cancel,
+          error: 'Session ended',
+        ),
+      );
+    }
+    handler.next(response);
+  }
+
+  @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
+    if (err.requestOptions.extra['sessionGeneration'] != null &&
+        err.requestOptions.extra['sessionGeneration'] !=
+            TokenStorage.generation) {
+      return handler.next(err);
+    }
     if (err.response?.statusCode == 401 &&
         err.requestOptions.extra['skipAuth'] != true &&
         !err.requestOptions.path.endsWith('/auth/google') &&

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/data/demo_mode.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../community_theme.dart';
@@ -47,6 +48,17 @@ class _FollowListScreenState extends State<FollowListScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (!DemoMode.instance.enabled) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Following')),
+        body: const SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('Following and follower lists are not available yet.'),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: context.communityBackground,
       appBar: AppBar(

@@ -1,5 +1,6 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/data/demo_mode.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../community_theme.dart';
@@ -84,6 +85,17 @@ class _DirectMessagesScreenState extends State<DirectMessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!DemoMode.instance.enabled) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Messages')),
+        body: const SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('Private community messaging is not available yet.'),
+          ),
+        ),
+      );
+    }
     final username = widget.extra['username'] as String? ?? 'user';
 
     return Scaffold(

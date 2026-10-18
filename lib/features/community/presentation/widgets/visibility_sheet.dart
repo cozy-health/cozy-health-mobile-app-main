@@ -1,6 +1,7 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../community_theme.dart';
+import '../../../../core/data/demo_mode.dart';
 
 enum PostVisibility { public, followers, anonymous }
 
@@ -52,12 +53,13 @@ class VisibilitySheet extends StatelessWidget {
               subtitle: 'Anyone here can see',
               value: PostVisibility.public,
             ),
-            _buildOption(
-              context,
-              title: 'Followers only',
-              subtitle: 'Only people who follow you',
-              value: PostVisibility.followers,
-            ),
+            if (DemoMode.instance.enabled)
+              _buildOption(
+                context,
+                title: 'Followers only',
+                subtitle: 'Only people who follow you',
+                value: PostVisibility.followers,
+              ),
             _buildOption(
               context,
               title: 'Anonymous',

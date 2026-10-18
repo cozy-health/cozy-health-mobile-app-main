@@ -1,6 +1,7 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/data/demo_mode.dart';
 import 'package:go_router/go_router.dart';
 import '../community_theme.dart';
 
@@ -36,6 +37,19 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (!DemoMode.instance.enabled) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Community search')),
+        body: const SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'Community search is not available yet. Browse the community feed or groups.',
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: context.communityBackground,
       appBar: AppBar(

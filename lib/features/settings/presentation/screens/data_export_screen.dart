@@ -1,119 +1,117 @@
-import 'package:cozy_health/core/widgets/app_snackbar.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_button.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/storage/token_storage.dart';
 
-class DataExportScreen extends StatelessWidget {
+class DataExportScreen extends StatefulWidget {
   const DataExportScreen({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(height: 16),
-              Text(
-                'Export my data',
-                style: AppTextStyles.heading2.copyWith(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              SizedBox(height: 24),
-              Text(
-                'Get a copy of everything you\'ve shared with Cozy. This includes:',
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              SizedBox(height: 16),
-              _BulletPoint('Journal entries'),
-              SizedBox(height: 8),
-              _BulletPoint('Mood logs'),
-              SizedBox(height: 8),
-              _BulletPoint('AI Conversations'),
-              SizedBox(height: 8),
-              _BulletPoint('Account details'),
-              SizedBox(height: 24),
-              Text(
-                'Your data will be exported as a .ZIP file containing JSON and text files.',
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              SizedBox(height: 24),
-              Text(
-                'It may take up to 24 hours to process your request. We\'ll email you when it\'s ready.',
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              SizedBox(height: 48),
-              AppButton(
-                text: 'Request Data Export',
-                onPressed: () {
-                  AppSnackbar.show(
-                    context,
-                    AppSnackbar.fromLegacy(
-                      content: Text('Export requested. Check your email.'),
-                    ),
-                  );
-                  context.pop();
-                },
-              ),
-              SizedBox(height: 48),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  State<DataExportScreen> createState() => _DataExportScreenState();
 }
 
-class _BulletPoint extends StatelessWidget {
-  final String text;
-
-  const _BulletPoint(this.text);
+class _DataExportScreenState extends State<DataExportScreen> {
+  bool _busy = false;
+  String? _status;
+  Future<void> _export() async {
+    if (_busy) return;
+    final local = LocalDbService();
+    final owner = local.activeUserId;
+    if (owner == null ||
+        owner.startsWith('guest_') ||
+        await TokenStorage().getToken() == null) {
+      if (mounted) {
+        setState(() => _status = 'Sign in to export your account data.');
+      }
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _status = null;
+    });
+    try {
+      final payload = {
+        'exported_at': DateTime.now().toUtc().toIso8601String(),
+        'scope':
+            'Records currently saved on this device. Cloud-only records and audio files are not included.',
+        'profile': local.getUserProfile()?.toJson(),
+        'moods': local.getAllMoodEntries().map((row) => row.toJson()).toList(),
+        'journals': local
+            .getAllJournalEntries()
+            .map((row) => row.toJson()..remove('local_voice_path'))
+            .toList(),
+        'conversations': local
+            .getAllChatConversations()
+            .map((row) => row.toJson())
+            .toList(),
+        'messages': local.chatMessageBox.values
+            .map((row) => row.toJson())
+            .toList(),
+      };
+      if (owner != local.activeUserId ||
+          await TokenStorage().getToken() == null) {
+        return;
+      }
+      final box = await local.settingsBox();
+      final result = await SharePlus.instance.share(
+        ShareParams(
+          files: [
+            XFile.fromData(
+              utf8.encode(const JsonEncoder.withIndent('  ').convert(payload)),
+              mimeType: 'application/json',
+            ),
+          ],
+          fileNameOverrides: ['cozy-device-data.json'],
+        ),
+      );
+      if (owner != local.activeUserId || !mounted) return;
+      if (result.status == ShareResultStatus.success) {
+        await box.put(
+          'last_device_export',
+          DateTime.now().toUtc().toIso8601String(),
+        );
+        setState(() => _status = 'Export shared.');
+      } else {
+        setState(
+          () => _status =
+              'The share sheet closed. No download or delivery has been confirmed.',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _status = 'Could not create or share the export. Please retry.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Export your saved data')),
+    body: ListView(
+      padding: const EdgeInsets.all(24),
       children: [
-        Padding(
-          padding: EdgeInsets.only(top: 8, right: 12),
-          child: CircleAvatar(
-            radius: 3,
-            backgroundColor: Theme.of(context).colorScheme.onSurface,
-          ),
+        const Text(
+          'Create a JSON file containing the account details, mood logs, journals, and conversations currently saved on this device.',
         ),
-        Expanded(
-          child: Text(
-            text,
-            style: AppTextStyles.body1.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
+        const SizedBox(height: 16),
+        const Text(
+          'This is a device export, not a complete cloud archive. Cloud-only records and audio files are not included. No export email is sent.',
         ),
+        const SizedBox(height: 20),
+        FilledButton(
+          onPressed: _busy ? null : _export,
+          child: Text(_busy ? 'Preparing…' : 'Create and share JSON'),
+        ),
+        if (_status != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Text(_status!),
+          ),
       ],
-    );
-  }
+    ),
+  );
 }

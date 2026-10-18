@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/api/api_client.dart';
+import '../../../../core/services/consent_service.dart';
 
 class LegalHubScreen extends StatelessWidget {
   const LegalHubScreen({super.key});
@@ -144,7 +146,7 @@ class LegalHubScreen extends StatelessWidget {
               ),
               SizedBox(height: 32),
               Text(
-                'Last updated: October 1, 2026',
+                'Published documents show their configured version. Drafts are not approved policies.',
                 style: AppTextStyles.body2.copyWith(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? AppColors.textMutedDark
@@ -159,26 +161,43 @@ class LegalHubScreen extends StatelessWidget {
     );
   }
 
-  void _pushDocument(BuildContext context, String title, String content) {
+  Future<void> _pushDocument(
+    BuildContext context,
+    String title,
+    String content,
+  ) async {
+    var text = 'This document has not been published yet.';
+    final type = {
+      'Terms of Service': 'tos',
+      'Privacy Policy': 'privacy_policy',
+    }[title];
+    if (type != null) {
+      try {
+        final response = await ApiClient().get('/config', withAuth: false);
+        final raw = response.data['consent']?['documents']?[type];
+        if (raw is Map) {
+          final document = ConsentDocument(
+            type,
+            Map<String, dynamic>.from(raw),
+          );
+          if (document.reviewable) {
+            text = 'Version ${document.version}\n\n${document.content}';
+          }
+        }
+      } catch (_) {
+        text = 'This document could not be loaded. Please close and retry.';
+      }
+    }
+    if (!context.mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => _DocumentScreen(title: title, content: content),
+        builder: (context) => _DocumentScreen(title: title, content: text),
       ),
     );
   }
 
   static const String _mockDocText =
-      "1. Introduction\n\n"
-      "Welcome to Cozy Health. These documents outline our commitment to your privacy and the terms under which we provide our services. We believe in plain language and transparency.\n\n"
-      "2. Data Privacy\n\n"
-      "Your data is yours. We do not sell your data, nor do we share it with third parties for marketing purposes. Your journal entries and mood logs are encrypted and private by default.\n\n"
-      "3. Your Rights\n\n"
-      "You have the right to export your data at any time. You also have the right to request full deletion of your account and all associated data, which we will honor within 30 days.\n\n"
-      "4. Usage Guidelines\n\n"
-      "Cozy Health is a tool for self-reflection and is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.\n\n"
-      "5. Changes to This Policy\n\n"
-      "We may update our policies from time to time. We will notify you of any changes by posting the new policy on this page and updating the 'Last updated' date.\n\n"
-      "If you have any questions about this document, please contact us via the Help & Support section.";
+      'This document has not been published yet.';
 }
 
 class _LegalRow extends StatelessWidget {

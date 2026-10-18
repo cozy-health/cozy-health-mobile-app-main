@@ -1703,7 +1703,7 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen> {
                 child: CrisisButton(
                   label: 'Better',
                   outlined: true,
-                  onPressed: () {},
+                  onPressed: () => context.go(AppRouter.home),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1711,7 +1711,7 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen> {
                 child: CrisisButton(
                   label: 'Same',
                   outlined: true,
-                  onPressed: () {},
+                  onPressed: () => context.push(AppRouter.crisisFollowUp),
                 ),
               ),
             ],

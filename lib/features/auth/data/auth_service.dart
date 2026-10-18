@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
 
 import '../../../core/constants/api_constants.dart';
 
@@ -23,6 +24,7 @@ class AuthLocalDataException implements Exception {
 }
 
 class AuthService {
+  static Future<void>? _loggingOut;
   final ApiClient _apiClient;
   final TokenStorage _tokenStorage;
   final BackgroundRestoreService _backgroundRestore;
@@ -158,18 +160,39 @@ class AuthService {
     return restore;
   }
 
-  Future<void> logout() async {
+  Future<void> logout() => _loggingOut ??= _logout().whenComplete(() {
+    _loggingOut = null;
+  });
+
+  Future<void> _logout() async {
+    final local = LocalDbService.instance;
+    local.syncPaused = true;
+    final token = await _tokenStorage.getToken();
+    final device = await _tokenStorage.deviceId();
+    _apiClient.cancelSessionRequests();
     try {
-      await _apiClient.post(
-        ApiConstants.logout,
-        data: {'device_id': await _tokenStorage.deviceId()},
-      );
-    } catch (e) {
-      debugPrint('Logout API failed: details withheld.');
-    } finally {
       await _tokenStorage.clearToken();
       await GuestSessionService().exitGuestSession();
-      await LocalDbService.instance.activateGuest();
+      await local.activateGuest();
+    } finally {
+      local.syncPaused = false;
+      if (token != null) {
+        unawaited(
+          _apiClient
+              .post(
+                ApiConstants.logout,
+                withAuth: false,
+                data: {'device_id': device},
+                options: Options(
+                  headers: {'Authorization': 'Bearer $token'},
+                  sendTimeout: const Duration(seconds: 5),
+                  receiveTimeout: const Duration(seconds: 5),
+                ),
+              )
+              .timeout(const Duration(seconds: 5))
+              .then<void>((_) {}, onError: (Object _) {}),
+        );
+      }
     }
   }
 
@@ -251,6 +274,7 @@ class AuthService {
     required bool stayLoggedIn,
     bool registration = false,
   }) async {
+    await _loggingOut;
     final token = data['token']?.toString();
     final user = data['user'];
     if (token == null || token.isEmpty || user is! Map || user['id'] == null) {

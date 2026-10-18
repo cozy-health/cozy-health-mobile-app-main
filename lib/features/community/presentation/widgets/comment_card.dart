@@ -41,6 +41,11 @@ class CommentCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (comment['parentId'] != null)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Text('Reply in this thread'),
+              ),
             // Author Row
             GestureDetector(
               onTap: onAvatarTap,

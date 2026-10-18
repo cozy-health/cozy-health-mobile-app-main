@@ -17,6 +17,7 @@ import '../support/repository_fixture.dart';
 
 class LifecycleAdapter implements HttpClientAdapter {
   bool expire = false;
+  Completer<void>? hold;
   final uploads = <Map>[];
   @override
   Future<ResponseBody> fetch(
@@ -28,6 +29,7 @@ class LifecycleAdapter implements HttpClientAdapter {
     var status = 200;
     if (options.path == '/sync/batch') {
       uploads.add(options.data as Map);
+      if (hold != null) await hold!.future;
       status = expire ? 401 : 200;
       body = {
         'data': {
@@ -118,6 +120,46 @@ void main() {
       payload: data,
     );
   }
+
+  test(
+    'logout cancels a stalled upload and preserves both owner records',
+    () async {
+      await queue();
+      await local.enqueueSync(
+        type: 'journal_entry',
+        action: 'upsert',
+        recordId: 'second-record',
+        payload: {'id': 'second-record', 'content': 'private'},
+      );
+      final ownerQueue = local.syncQueueBox;
+      final ownerMoods = local.moodBox;
+      adapter.hold = Completer<void>();
+      final cleanup = Completer<void>();
+      TokenStorage.beforeClear = () => cleanup.future;
+      final upload = local.processSyncQueue();
+      while (adapter.uploads.isEmpty) {
+        await Future<void>.delayed(const Duration(milliseconds: 1));
+      }
+      try {
+        await AuthService().logout().timeout(const Duration(seconds: 3));
+        await upload;
+        expect(await TokenStorage().getToken(), isNull);
+        expect(local.activeUserId, startsWith('guest_'));
+        expect(local.pendingItems, isEmpty);
+        expect(ownerQueue.length, 2);
+        expect(ownerMoods.length, 1);
+        await local.activateAccount('different-user');
+        expect(local.pendingItems, isEmpty);
+        expect(local.getAllMoodEntries(), isEmpty);
+        await local.activateAccount('42');
+        expect(local.pendingItems.length, 2);
+      } finally {
+        adapter.hold!.complete();
+        cleanup.complete();
+        TokenStorage.beforeClear = null;
+      }
+    },
+  );
 
   test(
     'expired upload exits without deadlock and relogin uploads the preserved account draft',

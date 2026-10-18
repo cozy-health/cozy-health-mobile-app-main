@@ -1,285 +1,149 @@
-import 'package:cozy_health/core/theme/app_surface.dart';
-import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:go_router/go_router.dart';
+import '../../../../core/api/api_client.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../community_theme.dart';
-import '../../../../core/widgets/app_button.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/widgets/app_snackbar.dart';
+import '../../data/community_repository.dart';
 import '../widgets/post_card.dart';
-import '../widgets/report_sheet.dart';
+import '../widgets/post_actions.dart';
 
 class UserProfileScreen extends StatefulWidget {
-  final Map<String, dynamic> extra;
-
   const UserProfileScreen({super.key, required this.extra});
-
+  final Map<String, dynamic> extra;
   @override
   State<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  bool _isFollowing = false;
+  List<Map<String, dynamic>> _posts = [];
+  bool _loading = true, _blocking = false;
+  String? _error;
+  final _owner = LocalDbService().activeUserId;
+  StreamSubscription<void>? _account;
+  @override
+  void initState() {
+    super.initState();
+    _account = LocalDbService().accountChanges.listen((_) {
+      if (mounted) {
+        setState(() {
+          _posts = [];
+          _error = 'Account changed. Reopen this profile.';
+        });
+      }
+    });
+    _load();
+  }
 
-  // Mock recent posts
-  final List<Map<String, dynamic>> _recentPosts = [
-    {
-      'username': 'sarahchen',
-      'isAnonymous': false,
-      'timeAgo': '2h',
-      'content':
-          'Today was hard but I wanted to share that I\'m still here. Small wins.',
-      'likes': 12,
-      'comments': 4,
-      'isLiked': true,
-      'topic': 'Self-compassion',
-    },
-  ];
+  @override
+  void dispose() {
+    _account?.cancel();
+    super.dispose();
+  }
 
-  void _showContextMenu() {
-    showModalBottomSheet(
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final id = widget.extra['authorId'];
+      if (id == null) throw StateError('Author unavailable');
+      final rows = await CommunityRepository.pages(
+        '/community/users/$id/posts',
+      );
+      if (!mounted || _owner != LocalDbService().activeUserId) return;
+      setState(() => _posts = rows.map(CommunityRepository.post).toList());
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'This person’s public posts could not be loaded.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _block() async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(),
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          border: AppSurface.border(context),
-          color: Theme.of(context).bottomSheetTheme.backgroundColor,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      builder: (context) => AlertDialog(
+        title: const Text('Block this person?'),
+        content: const Text(
+          'Their posts will be hidden. You can unblock them in settings.',
         ),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(
-                Icons.link,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              title: Text('Copy link'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.notifications_off_outlined,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              title: Text('Mute (hide posts)'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.block,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              title: Text('Block user'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: Icon(Icons.flag_outlined, color: AppColors.danger),
-              title: Text(
-                'Report user',
-                style: context.communityBody1.copyWith(color: AppColors.danger),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                ReportSheet.show(
-                  context,
-                  onSubmit: () {
-                    AppSnackbar.show(
-                      context,
-                      AppSnackbar.fromLegacy(
-                        content: Text('Report submitted. Thank you.'),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Block'),
+          ),
+        ],
       ),
     );
+    if (confirmed != true || !mounted) return;
+    setState(() => _blocking = true);
+    try {
+      await ApiClient().post(
+        '/community/users/${widget.extra['authorId']}/block',
+      );
+      if (!mounted || _owner != LocalDbService().activeUserId) return;
+      AppSnackbar.show(context, AppSnackbar.info('User blocked'));
+      context.pop();
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error('Could not block this person. Please retry.'),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _blocking = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final username = widget.extra['username'] as String? ?? 'user';
-
+    final username = widget.extra['username'] as String? ?? 'Community member';
     return Scaffold(
-      backgroundColor: context.communityBackground,
-      appBar: AppBar(
-        backgroundColor: context.communityBackground,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.more_horiz,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            onPressed: _showContextMenu,
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Avatar
-              Center(
-                child: Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    username.substring(0, 1).toUpperCase(),
-                    style: context.communityHeading1.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontSize: 40,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // Name & Join Date
-              Text(
-                '@$username',
-                style: context.communityHeading1.copyWith(fontSize: 28),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Joined March 2026',
-                style: context.communityBody2.copyWith(
-                  color: context.communityMuted,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 16),
-
-              // Bio
-              Text(
-                '"Trying to be kinder to myself."',
-                style: context.communityBody1.copyWith(
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 32),
-
-              // Stats
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildStatCard('42', 'Posts'),
-                  SizedBox(width: 16),
-                  _buildStatCard('28', 'Followers'),
-                ],
-              ),
-              SizedBox(height: 32),
-
-              // Actions
-              Row(
-                children: [
-                  Expanded(
-                    child: AppButton(
-                      text: _isFollowing ? 'Following' : 'Follow',
-                      isOutlined: _isFollowing,
-                      onPressed: () {
-                        setState(() {
-                          _isFollowing = !_isFollowing;
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: AppSurface.border(context),
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.chat_bubble_outline,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      onPressed: () {
-                        context.push(
-                          AppRouter.directMessages,
-                          extra: {'username': username},
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 48),
-
-              // Recent Posts
-              Text('Recent posts', style: context.communityHeading2),
-              SizedBox(height: 16),
-
-              ..._recentPosts.map(
-                (post) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: PostCard(
-                    post: post,
-                    onTap: () => context.push(
-                      AppRouter.postDetail,
-                      extra: {'post': post},
-                    ),
-                    onAvatarTap: () {},
-                    onLongPress: () {},
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 64),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String count, String label) {
-    return Container(
-      width: 100,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: AppSurface.border(context),
-      ),
-      child: Column(
+      appBar: AppBar(title: Text(username)),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
         children: [
-          Text(count, style: context.communityHeading2),
-          SizedBox(height: 4),
-          Text(
-            label,
-            style: context.communityBody2.copyWith(
-              color: context.communityMuted,
-            ),
+          const Text('Public, non-anonymous posts'),
+          const SizedBox(height: 12),
+          const Text(
+            'Following, private messages and profile links are not available yet. You can report individual posts from their action menu.',
           ),
+          if (widget.extra['authorId'] != null)
+            OutlinedButton(
+              onPressed: _blocking ? null : _block,
+              child: Text(_blocking ? 'Blocking…' : 'Block user'),
+            ),
+          if (_loading)
+            const Center(child: CircularProgressIndicator())
+          else if (_error != null) ...[
+            Text(_error!),
+            TextButton(onPressed: _load, child: const Text('Retry')),
+          ] else if (_posts.isEmpty)
+            const Text('No public posts to show.')
+          else
+            for (final post in _posts)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: PostCard(
+                  post: post,
+                  onTap: () =>
+                      context.push(AppRouter.postDetail, extra: {'post': post}),
+                  onAvatarTap: () {},
+                  onLongPress: () => PostActions.show(context, post),
+                ),
+              ),
         ],
       ),
     );

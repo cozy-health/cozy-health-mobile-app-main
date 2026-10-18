@@ -5,16 +5,22 @@ import '../../../../core/services/local_db_service.dart';
 
 /// Metrics without a matching Insights endpoint use the existing offline records.
 class LocalInsights {
-  static List<MoodEntry> moods({int days = 7, bool month = false}) {
+  static List<MoodEntry> moods({
+    int days = 7,
+    bool month = false,
+    DateTime? period,
+  }) {
     if (!DemoMode.instance.enabled &&
         !LocalDbService().isBoxOpen(LocalDbService.moodBoxName)) {
       return [];
     }
-    final now = DateTime.now();
+    final now = period ?? DateTime.now();
     final start = month
         ? DateTime(now.year, now.month)
         : DateTime(now.year, now.month, now.day - days + 1);
-    final end = DateTime(now.year, now.month, now.day + 1);
+    final end = period != null && month
+        ? DateTime(now.year, now.month + 1)
+        : DateTime(now.year, now.month, now.day + 1);
     return (DemoMode.instance.enabled
             ? DemoMode.instance.moods
             : LocalDbService.instance.getAllMoodEntries())
@@ -26,9 +32,13 @@ class LocalInsights {
         .toList();
   }
 
-  static List<Map<String, dynamic>> daily({int days = 7, bool month = false}) {
+  static List<Map<String, dynamic>> daily({
+    int days = 7,
+    bool month = false,
+    DateTime? period,
+  }) {
     final groups = <String, List<MoodEntry>>{};
-    for (final entry in moods(days: days, month: month)) {
+    for (final entry in moods(days: days, month: month, period: period)) {
       final date = entry.createdAt.toLocal().toIso8601String().substring(0, 10);
       (groups[date] ??= []).add(entry);
     }
@@ -49,15 +59,20 @@ class LocalInsights {
       : entries.fold<int>(0, (sum, entry) => sum + entry.intensity) /
             entries.length;
 
-  static String averageText({int days = 7, bool month = false}) {
-    final entries = moods(days: days, month: month);
+  static String averageText({
+    int days = 7,
+    bool month = false,
+    DateTime? period,
+  }) {
+    final entries = moods(days: days, month: month, period: period);
     return entries.isEmpty ? '—' : average(entries).toStringAsFixed(1);
   }
 
-  static double? averageSleep({bool month = false}) {
+  static double? averageSleep({bool month = false, DateTime? period}) {
     final entries = moods(
       days: 30,
       month: month,
+      period: period,
     ).where((entry) => entry.sleepQuality != null).toList();
     return entries.isEmpty
         ? null
@@ -65,16 +80,22 @@ class LocalInsights {
               entries.length;
   }
 
-  static List<JournalEntry> journals({int days = 7, bool month = false}) {
+  static List<JournalEntry> journals({
+    int days = 7,
+    bool month = false,
+    DateTime? period,
+  }) {
     if (!DemoMode.instance.enabled &&
         !LocalDbService().isBoxOpen(LocalDbService.journalBoxName)) {
       return [];
     }
-    final now = DateTime.now();
+    final now = period ?? DateTime.now();
     final start = month
         ? DateTime(now.year, now.month)
         : DateTime(now.year, now.month, now.day - days + 1);
-    final end = DateTime(now.year, now.month, now.day + 1);
+    final end = period != null && month
+        ? DateTime(now.year, now.month + 1)
+        : DateTime(now.year, now.month, now.day + 1);
     return (DemoMode.instance.enabled
             ? DemoMode.instance.journals
             : LocalDbService.instance.getAllJournalEntries())
@@ -124,9 +145,9 @@ class LocalInsights {
     return 'Average mood intensity was ${withAvg.toStringAsFixed(1)} on days you journaled and ${withoutAvg.toStringAsFixed(1)} on other logged days.';
   }
 
-  static String topTriggers() {
+  static String topTriggers({DateTime? period}) {
     final counts = <String, int>{};
-    for (final entry in moods(month: true)) {
+    for (final entry in moods(month: true, period: period)) {
       for (final name in (entry.triggers ?? []).toSet()) {
         counts[name] = (counts[name] ?? 0) + 1;
       }
@@ -140,9 +161,10 @@ class LocalInsights {
     return names.isEmpty ? 'No triggers logged yet.' : names.take(3).join(', ');
   }
 
-  static int longestStreak() {
+  static int longestStreak({DateTime? period}) {
     final dates = daily(
       month: true,
+      period: period,
     ).map((row) => DateTime.parse(row['day'] as String)).toList();
     var longest = 0;
     var streak = 0;

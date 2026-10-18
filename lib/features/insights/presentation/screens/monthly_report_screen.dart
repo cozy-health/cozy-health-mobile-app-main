@@ -6,9 +6,52 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../widgets/local_insights.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
 
-class MonthlyReportScreen extends StatelessWidget {
+class MonthlyReportScreen extends StatefulWidget {
   const MonthlyReportScreen({super.key});
+
+  @override
+  State<MonthlyReportScreen> createState() => _MonthlyReportScreenState();
+}
+
+class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
+  DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+  String get _summary =>
+      'Cozy Health — ${DateFormat.yMMMM().format(_month)}\n'
+      'Based on records saved on this device.\n'
+      'Check-ins: ${LocalInsights.moods(month: true, period: _month).length}\n'
+      'Average intensity: ${LocalInsights.averageText(month: true, period: _month)}\n'
+      'Longest streak: ${LocalInsights.longestStreak(period: _month)} days\n'
+      'Common triggers: ${LocalInsights.topTriggers(period: _month)}';
+  Future<void> _shareSummary() async {
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: _summary,
+          sharePositionOrigin: const Rect.fromLTWH(0, 0, 1, 1),
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not share this summary. Please retry.'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _copySummary() async {
+    await Clipboard.setData(ClipboardData(text: _summary));
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Monthly summary copied.')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +88,12 @@ class MonthlyReportScreen extends StatelessWidget {
                       Icons.chevron_left,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    onPressed: () {},
+                    onPressed: () => setState(
+                      () => _month = DateTime(_month.year, _month.month - 1),
+                    ),
                   ),
                   Text(
-                    DateFormat('MMMM yyyy').format(DateTime.now()),
+                    DateFormat('MMMM yyyy').format(_month),
                     style: AppTextStyles.body1.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onSurface,
@@ -59,7 +104,17 @@ class MonthlyReportScreen extends StatelessWidget {
                       Icons.chevron_right,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                    onPressed: () {},
+                    onPressed:
+                        _month.isBefore(
+                          DateTime(DateTime.now().year, DateTime.now().month),
+                        )
+                        ? () => setState(
+                            () => _month = DateTime(
+                              _month.year,
+                              _month.month + 1,
+                            ),
+                          )
+                        : null,
                   ),
                 ],
               ),
@@ -88,13 +143,16 @@ class MonthlyReportScreen extends StatelessWidget {
                   children: [
                     _buildStatRow(
                       context,
-                      LocalInsights.moods(month: true).length.toString(),
+                      LocalInsights.moods(
+                        month: true,
+                        period: _month,
+                      ).length.toString(),
                       'entries',
                     ),
                     SizedBox(height: 12),
                     _buildStatRow(
                       context,
-                      LocalInsights.averageText(month: true),
+                      LocalInsights.averageText(month: true, period: _month),
                       'avg intensity',
                     ),
                     SizedBox(height: 12),
@@ -102,6 +160,7 @@ class MonthlyReportScreen extends StatelessWidget {
                       context,
                       LocalInsights.averageSleep(
                             month: true,
+                            period: _month,
                           )?.toStringAsFixed(1) ??
                           '\u2014',
                       'avg sleep (1-5)',
@@ -109,7 +168,7 @@ class MonthlyReportScreen extends StatelessWidget {
                     SizedBox(height: 12),
                     _buildStatRow(
                       context,
-                      '${LocalInsights.longestStreak()}-day',
+                      '${LocalInsights.longestStreak(period: _month)}-day',
                       'longest streak',
                     ),
                   ],
@@ -136,13 +195,17 @@ class MonthlyReportScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 16),
-                    if (LocalInsights.moods(month: true).length < 3)
+                    if (LocalInsights.moods(
+                          month: true,
+                          period: _month,
+                        ).length <
+                        3)
                       const Text('Log 3 moods to see trends'),
                     SizedBox(
                       height: 120,
                       child: CustomPaint(
                         size: const Size(double.infinity, double.infinity),
-                        painter: _MonthlyAreaChartPainter(),
+                        painter: _MonthlyAreaChartPainter(_month),
                       ),
                     ),
                   ],
@@ -170,7 +233,7 @@ class MonthlyReportScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      LocalInsights.topTriggers(),
+                      LocalInsights.topTriggers(period: _month),
                       style: AppTextStyles.body1.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -200,7 +263,7 @@ class MonthlyReportScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      LocalInsights.moods(month: true)
+                      LocalInsights.moods(month: true, period: _month)
                               .expand(
                                 (entry) => entry.copingStrategies ?? <String>[],
                               )
@@ -208,7 +271,7 @@ class MonthlyReportScreen extends StatelessWidget {
                               .join(', ')
                               .isEmpty
                           ? 'No coping strategies logged yet.'
-                          : LocalInsights.moods(month: true)
+                          : LocalInsights.moods(month: true, period: _month)
                                 .expand(
                                   (entry) =>
                                       entry.copingStrategies ?? <String>[],
@@ -225,20 +288,16 @@ class MonthlyReportScreen extends StatelessWidget {
               SizedBox(height: 32),
 
               AppButton(
-                text: 'Export for provider',
+                text: 'Share monthly summary',
                 trailingIcon: Icons.description_outlined,
-                onPressed: () {
-                  // Trigger export
-                },
+                onPressed: _shareSummary,
               ),
               SizedBox(height: 16),
               AppButton(
-                text: 'Download PDF',
+                text: 'Copy monthly summary',
                 trailingIcon: Icons.download_outlined,
                 isOutlined: true,
-                onPressed: () {
-                  // Trigger download
-                },
+                onPressed: _copySummary,
               ),
               SizedBox(height: 64),
             ],
@@ -271,10 +330,13 @@ class MonthlyReportScreen extends StatelessWidget {
 }
 
 class _MonthlyAreaChartPainter extends CustomPainter {
+  _MonthlyAreaChartPainter(this._month);
+  final DateTime _month;
   @override
   void paint(Canvas canvas, Size size) {
     final data = LocalInsights.daily(
       month: true,
+      period: _month,
     ).map((row) => (row['avg_intensity'] as num).toDouble()).toList();
     if (data.isEmpty) return;
 

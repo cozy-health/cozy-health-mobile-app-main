@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:share_plus/share_plus.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../data/chat_repository.dart';
 import 'chat_shared_widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -16,6 +22,91 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
   bool _referenceMood = true;
   bool _referenceJournal = false;
   bool _voiceInput = true;
+  final _owner = LocalDbService().activeUserId;
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final settings = await LocalDbService().settingsBox();
+    final saved = settings.get('assistant_preferences');
+    if (!mounted || _owner != LocalDbService().activeUserId || saved is! Map) {
+      return;
+    }
+    setState(() {
+      _tone = saved['tone'] as String? ?? 'Warm';
+      _rememberContext = saved['remember_context'] == true;
+      _referenceMood = saved['reference_mood'] == true;
+      _referenceJournal = saved['reference_journal'] == true;
+      _voiceInput = saved['voice_input'] == true;
+    });
+  }
+
+  Future<void> _persist() async {
+    final settings = await LocalDbService().settingsBox();
+    if (_owner != LocalDbService().activeUserId) return;
+    await settings.put('assistant_preferences', {
+      'tone': _tone,
+      'remember_context': _rememberContext,
+      'reference_mood': _referenceMood,
+      'reference_journal': _referenceJournal,
+      'voice_input': _voiceInput,
+    });
+  }
+
+  Future<void> _export() async {
+    final local = LocalDbService();
+    if (_owner != local.activeUserId) return;
+    final json = jsonEncode({
+      'exported_at': DateTime.now().toUtc().toIso8601String(),
+      'scope':
+          'Conversations currently saved on this device; cloud-only records may not be included.',
+      'conversations': local
+          .getAllChatConversations()
+          .map((row) => row.toJson())
+          .toList(),
+      'messages': local.chatMessageBox.values
+          .map((row) => row.toJson())
+          .toList(),
+    });
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [
+          XFile.fromData(utf8.encode(json), mimeType: 'application/json'),
+        ],
+        fileNameOverrides: ['cozy-conversations.json'],
+      ),
+    );
+  }
+
+  Future<void> _clear() async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete all saved conversations?'),
+        content: const Text(
+          'This removes conversations saved on this device and queues their deletion for your account. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (yes != true || _owner != LocalDbService().activeUserId) return;
+    for (final conversation in LocalDbService().getAllChatConversations()) {
+      if (_owner != LocalDbService().activeUserId) return;
+      await ChatRepository().deleteConversation(conversation.id);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,19 +142,28 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                 title: 'Remember context',
                 subtitle: 'Cozy remembers previous conversations',
                 value: _rememberContext,
-                onChanged: (value) => setState(() => _rememberContext = value),
+                onChanged: (value) {
+                  setState(() => _rememberContext = value);
+                  _persist();
+                },
               ),
               SettingSwitch(
                 title: 'Reference my mood logs',
                 subtitle: 'Cozy can see your mood entries for context',
                 value: _referenceMood,
-                onChanged: (value) => setState(() => _referenceMood = value),
+                onChanged: (value) {
+                  setState(() => _referenceMood = value);
+                  _persist();
+                },
               ),
               SettingSwitch(
                 title: 'Reference my journal',
                 subtitle: 'Cozy can see your journal entries for context',
                 value: _referenceJournal,
-                onChanged: (value) => setState(() => _referenceJournal = value),
+                onChanged: (value) {
+                  setState(() => _referenceJournal = value);
+                  _persist();
+                },
               ),
             ],
           ),
@@ -74,24 +174,30 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                 title: 'Voice input',
                 subtitle: 'Speak instead of typing',
                 value: _voiceInput,
-                onChanged: (value) => setState(() => _voiceInput = value),
+                onChanged: (value) {
+                  setState(() => _voiceInput = value);
+                  _persist();
+                },
               ),
             ],
           ),
           SettingsSection(
             title: 'Data',
             children: [
-              SettingRow(title: 'Export conversations', onTap: () {}),
+              SettingRow(
+                title: 'Export conversations saved on this device',
+                onTap: _export,
+              ),
               SettingRow(
                 title: 'Clear all conversations',
                 danger: true,
-                onTap: () {},
+                onTap: _clear,
               ),
               SettingRow(
                 title: 'About Cozy',
                 subtitle:
                     "I'm here to listen and help you reflect. For anything clinical, a real person is better.",
-                onTap: () {},
+                onTap: () => context.push(AppRouter.about),
               ),
             ],
           ),
@@ -115,6 +221,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                 label: tone,
                 onTap: () {
                   setState(() => _tone = tone);
+                  _persist();
                   Navigator.pop(context);
                 },
               ),

@@ -1,5 +1,6 @@
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'dart:async';
+import '../../../../core/data/demo_mode.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -291,6 +292,19 @@ class _AssistantScreenState extends State<_AssistantContent>
   }
 
   void _sendMessage() {
+    if (!DemoMode.instance.enabled) {
+      final signal = _crisisDetector.analyze(_controller.text);
+      if (_crisisDetector.canTrigger('chat', signal)) {
+        showCrisisSupportOverlay(context, signal: signal);
+      }
+      AppSnackbar.show(
+        context,
+        AppSnackbar.info(
+          'Cozy replies are not available yet. Your message has not been sent. You can still use your journal and support tools.',
+        ),
+      );
+      return;
+    }
     final text = _controller.text.trim();
     if (text.isEmpty || _isTyping || _isStreaming) return;
 
@@ -473,17 +487,19 @@ class _AssistantScreenState extends State<_AssistantContent>
   }
 
   Future<void> _openHistory() async {
+    await _repo.fetchConversations();
+    if (!mounted) return;
     final conversation = await Navigator.of(context).push<Conversation>(
       MaterialPageRoute(
         builder: (_) => ConversationHistoryScreen(
           conversations: [
-            _activeConversation,
-            ..._history,
-          ].where((conversation) => conversation.messages.isNotEmpty).toList(),
+            if (_activeConversation.messages.isNotEmpty) _activeConversation,
+            ..._history.where((item) => item.id != _activeConversation.id),
+          ],
         ),
       ),
     );
-    if (conversation != null) {
+    if (conversation != null && mounted) {
       setState(() {
         _activeConversation = conversation.copy();
       });
@@ -526,6 +542,15 @@ class _AssistantScreenState extends State<_AssistantContent>
             danger: true,
             onTap: () {
               Navigator.pop(context);
+              if (!DemoMode.instance.enabled) {
+                AppSnackbar.show(
+                  context,
+                  AppSnackbar.info(
+                    'Individual message deletion is not available. You can delete the conversation from History.',
+                  ),
+                );
+                return;
+              }
               setState(() => _activeConversation.messages.remove(message));
             },
           ),
@@ -535,6 +560,15 @@ class _AssistantScreenState extends State<_AssistantContent>
   }
 
   void _retryAssistantResponse(ChatMessage message) {
+    if (!DemoMode.instance.enabled) {
+      AppSnackbar.show(
+        context,
+        AppSnackbar.info(
+          'Assistant responses are not available yet. Your saved messages are retained.',
+        ),
+      );
+      return;
+    }
     final index = _activeConversation.messages.indexOf(message);
     final previousUser = _activeConversation.messages
         .take(index < 0 ? _activeConversation.messages.length : index)

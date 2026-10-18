@@ -1,464 +1,192 @@
-import 'package:cozy_health/core/theme/app_surface.dart';
-import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/models/subscription_status.dart';
-import '../../data/subscription_repository.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/routing/app_router.dart';
+import 'package:go_router/go_router.dart';
+import '../../data/subscription_repository.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
-
   @override
   State<SubscriptionScreen> createState() => _SubscriptionScreenState();
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
+  final _repo = SubscriptionRepository();
+  final _country = TextEditingController();
+  Map<String, dynamic>? _catalog;
+  bool _yearly = false, _loading = true;
+  String? _error;
+  int _generation = 0;
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    final settings = await LocalDbService().settingsBox();
+    if (!mounted) return;
+    _country.text =
+        settings.get('billing_country') as String? ??
+        WidgetsBinding.instance.platformDispatcher.locale.countryCode ??
+        '';
+    if (_country.text.isEmpty) {
+      setState(() => _loading = false);
+      return;
+    }
+    await _load();
+  }
+
+  Future<void> _load() async {
+    final country = _country.text.trim().toUpperCase();
+    if (!RegExp(r'^[A-Z]{2}$').hasMatch(country)) {
+      setState(() {
+        _error = 'Enter a two-letter billing country code, such as NG.';
+        _loading = false;
+      });
+      return;
+    }
+    final generation = ++_generation;
+    setState(() {
+      _loading = true;
+      _error = null;
+      _catalog = null;
+    });
+    try {
+      final data = await _repo.fetchPrices(country);
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _catalog = data;
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted && generation == _generation) {
+        setState(() {
+          _loading = false;
+          _error =
+              'Could not load regional prices. Check your connection and retry.';
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    _country.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final rows = (_catalog?['packages'] as List? ?? []).whereType<Map>();
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onSurface,
+      appBar: AppBar(title: const Text('Plans and pricing')),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(
+            'Choose your pace',
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
-          onPressed: () => context.pop(),
-          tooltip: 'Back',
-        ),
-        title: Text(
-          'Subscription',
-          style: AppTextStyles.heading2.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
+          const SizedBox(height: 12),
+          const Text(
+            'Free, Student, and Premium. Prices depend on your confirmed billing country.',
           ),
-        ),
-        centerTitle: false,
-        actions: [
-          // Temp toggle for development removed, using stream
+          const SizedBox(height: 20),
+          TextField(
+            controller: _country,
+            maxLength: 2,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              labelText: 'Billing country code',
+              helperText: 'For example NG for Nigeria or GB for United Kingdom',
+            ),
+          ),
+          FilledButton(
+            onPressed: _loading ? null : _load,
+            child: const Text('Confirm country and load prices'),
+          ),
+          SwitchListTile(
+            title: const Text('Pay yearly'),
+            subtitle: const Text('See the full annual charge and savings'),
+            value: _yearly,
+            onChanged: (value) => setState(() => _yearly = value),
+          ),
+          if (_loading) const Center(child: CircularProgressIndicator()),
+          if (_error != null) Text(_error!),
+          if (!_loading && _error == null && _catalog != null && rows.isEmpty)
+            const Text(
+              'Pricing is not available for this country yet. No other region’s prices have been substituted.',
+            ),
+          for (final row in rows) _plan(row),
+          const SizedBox(height: 20),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Text(
+                'Purchasing is not available yet. Selecting a plan does not charge you or activate paid access. Student and Premium have the same paid benefits; Student eligibility will be required before activation.',
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => context.push(AppRouter.billingHistory),
+            child: const Text('Billing history'),
+          ),
+          TextButton(
+            onPressed: () => context.push(AppRouter.restorePurchases),
+            child: const Text('Restore purchases'),
+          ),
         ],
       ),
-      body: SafeArea(
-        child: StreamBuilder<SubscriptionStatus?>(
-          stream: SubscriptionRepository().watchStatus(),
-          builder: (context, snapshot) {
-            final status = snapshot.data;
-            final isPro =
-                status?.isActive == true && status?.cancelAtPeriodEnd == false;
-
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(height: 24),
-                  isPro ? _buildProState(status!) : _buildFreeState(),
-                  SizedBox(height: 48),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
     );
   }
 
-  Widget _buildFreeState() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Current Plan',
-          style: AppTextStyles.body2.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: AppSurface.border(context),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: AppSurface.border(context),
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.favorite_border,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  size: 28,
-                ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Cozy Free',
-                      style: AppTextStyles.body1.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Basic journaling and mood tracking',
-                      style: AppTextStyles.body2.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.textMutedDark
-                            : AppColors.textMutedLight,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: 32),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppSurface.tint(
-                  context,
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                ),
-                AppSurface.tint(
-                  context,
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
-                ),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+  Widget _plan(Map row) {
+    final currency = row['currency']?.toString() ?? '';
+    final digits = (row['currency_decimals'] as num?)?.toInt() ?? 2;
+    final format = NumberFormat.currency(
+      name: currency,
+      symbol: '$currency ',
+      decimalDigits: digits,
+    );
+    final monthly = num.tryParse('${row['price']}') ?? 0;
+    final annual = num.tryParse('${row['yearly_price']}') ?? 0;
+    final free = row['tier'] == 'free';
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${row['package_name']}',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-            borderRadius: BorderRadius.circular(24),
-            border: AppSurface.border(context),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Cozy Pro',
-                      style: AppTextStyles.heading2.copyWith(
-                        fontSize: 24,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      'Popular',
-                      style: AppTextStyles.body2.copyWith(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.end,
-                children: [
-                  Text(
-                    '\$7.99',
-                    style: AppTextStyles.heading1.copyWith(
-                      fontSize: 36,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Text(
-                      '/month',
-                      style: AppTextStyles.body1.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.textMutedDark
-                            : AppColors.textMutedLight,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 24),
-              _buildFeatureRow('Unlimited AI therapy conversations'),
-              SizedBox(height: 12),
-              _buildFeatureRow('Detailed mood analytics and trends'),
-              SizedBox(height: 12),
-              _buildFeatureRow('Priority customer support'),
-              SizedBox(height: 12),
-              _buildFeatureRow('Data export and backup'),
-              SizedBox(height: 32),
-              AppButton(
-                text: 'Start Free Trial',
-                onPressed: () async {
-                  await SubscriptionRepository().purchase('pro');
-                  if (mounted) {
-                    AppSnackbar.show(
-                      context,
-                      AppSnackbar.fromLegacy(
-                        content: Text('Welcome to Cozy Pro!'),
-                      ),
-                    );
-                  }
-                },
-              ),
-              SizedBox(height: 16),
+            const SizedBox(height: 10),
+            Text(
+              '${format.format(_yearly ? annual : monthly)}/${_yearly ? 'year' : 'month'}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            if (_yearly && !free)
               Text(
-                '7 days free, then \$7.99/month. Cancel anytime.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.body2.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textMutedDark
-                      : AppColors.textMutedLight,
-                  fontSize: 12,
-                ),
+                '${format.format(annual / 12)} equivalent per month · ${row['annual_discount']}% annual saving',
               ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProState(SubscriptionStatus status) {
-    final renewText = status.expiresAt != null
-        ? 'Renews on ${DateFormat('MMM d, yyyy').format(status.expiresAt!)}'
-        : 'Active Subscription';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Current Plan',
-          style: AppTextStyles.body2.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: AppSurface.border(context),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: AppSurface.border(context),
-                  color: AppSurface.tint(
-                    context,
-                    Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.1),
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.star,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 28,
-                ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Cozy Pro',
-                      style: AppTextStyles.body1.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      renewText,
-                      style: AppTextStyles.body2.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.textMutedDark
-                            : AppColors.textMutedLight,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: 32),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: AppSurface.border(context),
-          ),
-          child: Column(
-            children: [
-              _SettingsRow(
-                icon: Icons.autorenew,
-                label: 'Change Plan',
-                onTap: () {},
-              ),
+            const SizedBox(height: 12),
+            for (final feature in row['features'] as List? ?? [])
               Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
-                ),
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text('✓ $feature'),
               ),
-              _SettingsRow(
-                icon: Icons.receipt_long_outlined,
-                label: 'Billing History',
-                onTap: () => context.push(AppRouter.billingHistory),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
-                ),
-              ),
-              _SettingsRow(
-                icon: Icons.restore,
-                label: 'Restore Purchases',
-                onTap: () => context.push(AppRouter.restorePurchases),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
-                ),
-              ),
-              _SettingsRow(
-                icon: Icons.cancel_outlined,
-                label: 'Cancel Subscription',
-                isDanger: true,
-                onTap: () => context.push(AppRouter.cancelSubscription),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFeatureRow(String text) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          Icons.check_circle,
-          color: Theme.of(context).colorScheme.primary,
-          size: 20,
-        ),
-        SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: AppTextStyles.body1.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
+            Text(
+              free
+                  ? 'Basic tracking and journaling'
+                  : 'Paid activation coming later',
+              style: Theme.of(context).textTheme.labelLarge,
             ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SettingsRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isDanger;
-
-  const _SettingsRow({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.isDanger = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isDanger ? AppColors.danger : AppColors.text;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Icon(icon, color: color, size: 24),
-              SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppTextStyles.body1.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.textMutedDark
-                    : AppColors.textMutedLight,
-                size: 24,
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );

@@ -7,6 +7,35 @@ import '../../../core/api/api_client.dart';
 
 class ChatRepository {
   final LocalDbService _local = LocalDbService();
+  Future<List<dynamic>> _pages(String path, String scope) async {
+    final result = <dynamic>[];
+    var page = 1;
+    var last = 1;
+    do {
+      final response = await ApiClient.instance.get(
+        path,
+        query: {'page': page, 'per_page': 50},
+      );
+      if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+        throw StateError('Account changed');
+      }
+      result.addAll(_extractListData(response.data, path));
+      final envelope = response.data is Map ? response.data['data'] : null;
+      last = envelope is Map
+          ? (envelope['last_page'] as num?)?.toInt() ?? 1
+          : 1;
+      page++;
+    } while (page <= last);
+    return result;
+  }
+
+  Future<bool> _deleted(String id) async =>
+      ((await _local.settingsBox()).get(
+                'deleted_conversations',
+                defaultValue: <String>[],
+              )
+              as List)
+          .contains(id);
 
   List<dynamic> _extractListData(dynamic data, String label) {
     if (data is List) return data;
@@ -24,8 +53,7 @@ class ChatRepository {
   Future<List<ChatConversation>> fetchConversations() async {
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
-      final response = await ApiClient.instance.get('/conversations');
-      final items = _extractListData(response.data, 'conversations')
+      final items = (await _pages('/conversations', scope))
           .whereType<Map>()
           .map(
             (json) =>
@@ -33,6 +61,10 @@ class ChatRepository {
           )
           .toList();
       for (final item in items) {
+        if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+          return [];
+        }
+        if (await _deleted(item.id)) continue;
         await UserDataMerge().apply(
           'chat_conversation',
           item.toJson(),
@@ -40,8 +72,11 @@ class ChatRepository {
               scope == _local.boxName(LocalDbService.userSettingsBoxName),
         );
       }
-      return items;
+      return _local.getAllChatConversations();
     } catch (e) {
+      if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+        return [];
+      }
       return _local.getAllChatConversations();
     }
   }
@@ -53,10 +88,8 @@ class ChatRepository {
   Future<List<ChatMessage>> fetchMessages(String convId) async {
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
-      final response = await ApiClient.instance.get(
-        '/conversations/$convId/messages',
-      );
-      final items = _extractListData(response.data, 'messages')
+      if (await _deleted(convId)) return [];
+      final items = (await _pages('/conversations/$convId/messages', scope))
           .whereType<Map>()
           .map((json) => ChatMessage.fromJson(Map<String, dynamic>.from(json)))
           .toList();
@@ -64,10 +97,16 @@ class ChatRepository {
         if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
           return [];
         }
-        await _local.saveChatMessage(item);
+        if (await _deleted(convId)) return [];
+        if (!_local.hasPending('chat_message', item.id)) {
+          await _local.saveChatMessage(item);
+        }
       }
-      return items;
+      return _local.getMessagesForConversation(convId);
     } catch (e) {
+      if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+        return [];
+      }
       return _local.getMessagesForConversation(convId);
     }
   }
@@ -89,6 +128,17 @@ class ChatRepository {
   }
 
   Future<void> deleteConversation(String id) async {
+    final settings = await _local.settingsBox();
+    final deleted =
+        (settings.get('deleted_conversations', defaultValue: <String>[])
+                as List)
+            .cast<String>()
+            .toSet()
+          ..add(id);
+    await settings.put('deleted_conversations', deleted.toList());
+    for (final message in _local.getMessagesForConversation(id)) {
+      await _local.removeFromQueue('chat_message', message.id);
+    }
     await _local.deleteChatConversation(id);
     await _local.enqueueSync(
       type: 'chat_conversation',

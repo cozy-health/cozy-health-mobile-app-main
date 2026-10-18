@@ -508,14 +508,17 @@ void main() {
     expect(find.text('A gentle read'), findsOneWidget);
   });
 
-  testWidgets('Community search reports query and clears it', (tester) async {
+  testWidgets('Community search explains availability without fake results', (
+    tester,
+  ) async {
     await mount(tester, const CommunitySearchScreen());
-    await tester.enterText(find.byType(TextField), 'rest');
-    await tester.pumpAndSettle();
-    expect(find.text("No posts match 'rest'."), findsOneWidget);
-    await tester.tap(find.text('Clear search'));
-    await tester.pumpAndSettle();
-    expect(find.text('Type to search public posts.'), findsOneWidget);
+    expect(
+      find.text(
+        'Community search is not available yet. Browse the community feed or groups.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.byType(TextField), findsNothing);
   });
 
   testWidgets('Content feed has an empty featured state', (tester) async {

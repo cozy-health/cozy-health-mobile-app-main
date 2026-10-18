@@ -4,6 +4,28 @@ import '../services/local_db_service.dart';
 import 'endpoint_cache.dart';
 
 class AffirmationRepository {
+  Future<void> markRead() async {
+    final scope = await owner();
+    if (scope == null) return;
+    final local = LocalDbService();
+    final settings = await local.settingsBox();
+    final now = local.accountTime(_now());
+    final date =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    if (scope != await owner() ||
+        settings.get('affirmation_read_date') == date) {
+      return;
+    }
+    await local.enqueueSync(
+      type: 'affirmation_read',
+      action: 'upsert',
+      recordId: date,
+      payload: {'id': date, 'read_at': now.toUtc().toIso8601String()},
+    );
+    await settings.put('affirmation_read_date', date);
+    if (scope == await owner()) await local.processSyncQueue();
+  }
+
   AffirmationRepository({EndpointCache? cache, DateTime Function()? now})
     : _cache = cache ?? EndpointCache(),
       _now = now ?? DateTime.now;
@@ -40,7 +62,14 @@ class AffirmationRepository {
       if (scope != await owner()) throw StateError('Session changed');
       if (saved != null) return saved;
     }
-    final response = await ApiClient.instance.get('/affirmations/today');
+    final response = await (() async {
+      try {
+        return await ApiClient.instance.get('/affirmations/today');
+      } catch (_) {
+        if (scope != await owner()) throw StateError('Session changed');
+        rethrow;
+      }
+    })();
     if (scope != await owner()) throw StateError('Session changed');
     final envelope = response.data;
     if (envelope is! Map || !envelope.containsKey('data')) {

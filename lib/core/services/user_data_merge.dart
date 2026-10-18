@@ -81,7 +81,19 @@ class UserDataMerge {
     if (id == null || id.isEmpty) {
       throw const FormatException('Missing record identifier');
     }
+    if (type == 'chat_conversation' &&
+        (settings.get('deleted_conversations', defaultValue: <String>[])
+                as List)
+            .contains(id)) {
+      return;
+    }
     if (type == 'user_profile') {
+      if (incoming['timezone'] is String && active()) {
+        await settings.put('account_timezone', incoming['timezone']);
+      }
+      if (incoming['account_created_at'] is String && active()) {
+        await settings.put('account_created_at', incoming['account_created_at']);
+      }
       final profile = _local.getUserProfile();
       final revision = (incoming['avatar_revision'] as num?)?.toInt() ?? 0;
       if (profile != null) {

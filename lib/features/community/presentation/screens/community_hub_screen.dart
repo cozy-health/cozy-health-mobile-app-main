@@ -271,6 +271,14 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
       ),
       children: [
         Text('General Posts', style: context.communityHeading3),
+        if (_repository.loading) const LinearProgressIndicator(),
+        if (_repository.error != null) ...[
+          Text(_repository.error!),
+          TextButton(
+            onPressed: _repository.load,
+            child: const Text('Retry community'),
+          ),
+        ],
         SizedBox(height: 12),
         if (filteredPosts.isEmpty) _buildEmptyState(reduceMotion),
         // Compose Bar
@@ -331,7 +339,10 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                   if (!(post['isAnonymous'] as bool? ?? false)) {
                     context.push(
                       AppRouter.userProfile,
-                      extra: {'username': post['username']},
+                      extra: {
+                        'username': post['username'],
+                        'authorId': post['authorId'],
+                      },
                     );
                   }
                 },

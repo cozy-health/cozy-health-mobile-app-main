@@ -35,6 +35,7 @@ class _NetworkObserverState extends State<NetworkObserver> {
   bool _known = false;
   bool _onlineCandidate = false;
   int _revision = 0;
+  String? _lastSyncError;
   @override
   void initState() {
     super.initState();
@@ -47,21 +48,31 @@ class _NetworkObserverState extends State<NetworkObserver> {
         })
         .catchError((Object _) {});
     _summaries = LocalDbService().syncResults.listen((summary) {
-      if (mounted && !_offline && summary.attempted > 0) {
+      if (summary.failed == 0) {
+        _lastSyncError = null;
+        return;
+      }
+      if (mounted &&
+          !_offline &&
+          summary.attempted > 0 &&
+          _lastSyncError != summary.message) {
+        _lastSyncError = summary.message;
         AppSnackbar.show(
           context,
-          summary.failed == 0
-              ? AppSnackbar.success(summary.message)
-              : AppSnackbar.error(summary.message, onRetry: _retry),
+          AppSnackbar.error(summary.message, onRetry: _retry),
         );
       }
     });
   }
 
-  void _retry() {
+  void _retry({bool manual = true}) {
     unawaited(BackgroundRestoreService.instance.retry(automatic: true));
     unawaited(
-      (widget.sync?.call() ?? LocalDbService().processSyncQueue(force: true)),
+      (widget.sync?.call() ??
+          LocalDbService().processSyncQueue(
+            force: manual,
+            trigger: manual ? 'manual_retry' : 'connectivity',
+          )),
     );
   }
 
@@ -77,7 +88,7 @@ class _NetworkObserverState extends State<NetworkObserver> {
         _offline = offline;
       });
       networkOffline.value = offline;
-      if (!offline) _retry();
+      if (!offline) _retry(manual: false);
       return;
     }
     if (offline) {
@@ -96,7 +107,7 @@ class _NetworkObserverState extends State<NetworkObserver> {
         networkOffline.value = false;
         AppSnackbar.show(context, AppSnackbar.info('Connection restored'));
         unawaited((widget.playSound?.call() ?? ConnectionSound().play()));
-        _retry();
+        _retry(manual: false);
       });
     }
   }

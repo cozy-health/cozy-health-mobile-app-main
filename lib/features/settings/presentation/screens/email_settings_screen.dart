@@ -1,251 +1,85 @@
-import 'package:cozy_health/core/theme/app_surface.dart';
-import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_button.dart';
+import '../../../../core/api/api_client.dart';
+import '../../../../core/services/local_db_service.dart';
 
 class EmailSettingsScreen extends StatefulWidget {
   const EmailSettingsScreen({super.key});
-
   @override
   State<EmailSettingsScreen> createState() => _EmailSettingsScreenState();
 }
 
 class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
-  final _emailController = TextEditingController();
-  bool _isLoading = false;
-  bool _isSent = false;
+  final _code = TextEditingController();
+  bool _busy = false;
+  String? _status;
+  Future<void> _request(bool verify) async {
+    if (_busy) return;
+    if (verify && !RegExp(r'^\d{6}$').hasMatch(_code.text.trim())) {
+      setState(() => _status = 'Enter the six-digit code from your email.');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final response = await ApiClient().post(
+        verify
+            ? '/auth/email-verification/verify'
+            : '/auth/email-verification/resend',
+        data: verify ? {'code': _code.text.trim()} : null,
+      );
+      if (mounted) {
+        setState(
+          () => _status =
+              response.data['message']?.toString() ?? 'Request accepted.',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _status =
+              'Could not complete verification. Check the code or request a new one and retry.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _code.dispose();
     super.dispose();
   }
 
-  Future<void> _sendVerification() async {
-    if (_emailController.text.isEmpty) return;
-
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1)); // Mock network
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-      _isSent = true;
-    });
-
-    AppSnackbar.show(
-      context,
-      AppSnackbar.fromLegacy(content: Text('Verification email sent')),
-    );
-  }
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onPressed: () => context.pop(),
-          tooltip: 'Back',
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Email verification')),
+    body: ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        Text(
+          LocalDbService().getUserProfile()?.email ??
+              'Sign in to view your email.',
         ),
-        title: Text(
-          'Email Settings',
-          style: AppTextStyles.heading2.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
+        const SizedBox(height: 12),
+        const Text(
+          'Verification is for your registered email. Changing your email address is not available here yet.',
         ),
-        centerTitle: false,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(height: 24),
-              Text(
-                'Current Email',
-                style: AppTextStyles.body2.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: AppSurface.border(context),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.email_outlined,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textMutedDark
-                          : AppColors.textMutedLight,
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'user@example.com',
-                        style: AppTextStyles.body1.copyWith(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? AppColors.textMutedDark
-                              : AppColors.textMutedLight,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        border: AppSurface.border(context),
-                        color: AppSurface.tint(
-                          context,
-                          Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.1),
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Verified',
-                        style: AppTextStyles.body2.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 32),
-
-              if (_isSent) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppSurface.tint(
-                      context,
-                      Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.1),
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    border: AppSurface.border(context),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.mark_email_read,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 32,
-                      ),
-                      SizedBox(height: 12),
-                      Text(
-                        'Check your inbox to confirm.',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.body1.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'We sent a verification link to ${_emailController.text}.',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.body2.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                Text(
-                  'New Email',
-                  style: AppTextStyles.body2.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Semantics(
-                  label: 'New Email Input',
-                  child: TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Enter new email address',
-                      hintStyle: AppTextStyles.body1.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.textMutedDark
-                            : AppColors.textMutedLight,
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surface,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Your old email will be notified of this change for security purposes.',
-                  style: AppTextStyles.body2.copyWith(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
-                  ),
-                ),
-                SizedBox(height: 32),
-                AppButton(
-                  text: _isLoading ? 'Sending...' : 'Send Verification',
-                  onPressed: _isLoading ? null : _sendVerification,
-                ),
-              ],
-              SizedBox(height: 48),
-            ],
-          ),
+        OutlinedButton(
+          onPressed: _busy ? null : () => _request(false),
+          child: const Text('Send verification code'),
         ),
-      ),
-    );
-  }
+        TextField(
+          controller: _code,
+          keyboardType: TextInputType.number,
+          maxLength: 6,
+          decoration: const InputDecoration(labelText: 'Verification code'),
+        ),
+        FilledButton(
+          onPressed: _busy ? null : () => _request(true),
+          child: const Text('Verify registered email'),
+        ),
+        if (_status != null) Text(_status!),
+      ],
+    ),
+  );
 }

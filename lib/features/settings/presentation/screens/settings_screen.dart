@@ -359,7 +359,9 @@ class SettingsScreen extends StatelessWidget {
                             ),
                           ),
                           content: Text(
-                            'You\'ll need to log in again.',
+                            LocalDbService().pendingItems.isEmpty
+                                ? 'You\'ll need to log in again.'
+                                : '${LocalDbService().pendingItems.length} changes are saved securely on this device. They will upload only when you sign in to this account again.',
                             style: AppTextStyles.body1.copyWith(
                               color: colorScheme.onSurface,
                             ),

@@ -1,223 +1,126 @@
-import 'package:cozy_health/core/theme/app_surface.dart';
-import 'package:cozy_health/core/widgets/app_snackbar.dart';
-import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/api/api_client.dart';
+import '../../../../core/services/local_db_service.dart';
 
 class BlockedUsersScreen extends StatefulWidget {
-  const BlockedUsersScreen({
-    super.key,
-    this.blockedUsers = const [
-      'toxic_user99',
-      'spam_bot_2026',
-      'unwanted_contact',
-    ],
-  });
-
-  final List<String> blockedUsers;
-
+  const BlockedUsersScreen({super.key, this.blockedUsers});
+  final List<String>? blockedUsers;
   @override
   State<BlockedUsersScreen> createState() => _BlockedUsersScreenState();
 }
 
 class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
-  // Mock data
-  late final List<String> _blockedUsers = [...widget.blockedUsers];
-
+  final _owner = LocalDbService().activeUserId;
+  List<Map<String, dynamic>> _rows = [];
+  bool _busy = true;
+  String? _error;
   @override
-  void didUpdateWidget(covariant BlockedUsersScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.blockedUsers != widget.blockedUsers) {
-      _blockedUsers
-        ..clear()
-        ..addAll(widget.blockedUsers);
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    if (widget.blockedUsers != null) {
+      setState(() {
+        _rows = [
+          for (final name in widget.blockedUsers!) {'name': name},
+        ];
+        _busy = false;
+      });
+      return;
+    }
+    try {
+      final rows = <Map<String, dynamic>>[];
+      var page = 1, last = 1;
+      do {
+        final response = await ApiClient().get(
+          '/community/blocked',
+          query: {'page': page, 'per_page': 50},
+        );
+        final data = response.data['data'] as Map;
+        rows.addAll(
+          (data['data'] as List).map(
+            (row) => Map<String, dynamic>.from(row as Map),
+          ),
+        );
+        last = (data['last_page'] as num).toInt();
+        page++;
+      } while (page <= last);
+      if (mounted && _owner == LocalDbService().activeUserId) {
+        setState(() => _rows = rows);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error =
+              'Could not load blocked users. Community may be unavailable.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
-  void _unblockUser(String username) {
-    showDialog(
+  Future<void> _unblock(Map row) async {
+    if (row['id'] == null || _owner != LocalDbService().activeUserId) return;
+    final yes = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          scrollable: true,
-          backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
-          shape: AppSurface.shape(context, BorderRadius.circular(16)),
-          title: Text(
-            'Unblock @$username?',
-            style: AppTextStyles.heading2.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+      builder: (context) => AlertDialog(
+        title: Text('Unblock ${row['name']}?'),
+        content: const Text(
+          'They may be able to interact with you in community again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
           ),
-          content: Text(
-            'They will be able to see your public profile and interact with you again.',
-            style: AppTextStyles.body1.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Unblock'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Cancel',
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                setState(() {
-                  _blockedUsers.remove(username);
-                });
-                AppSnackbar.show(
-                  context,
-                  AppSnackbar.fromLegacy(
-                    content: Text('@$username has been unblocked.'),
-                  ),
-                );
-              },
-              child: Text(
-                'Unblock',
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
+    if (yes != true) return;
+    try {
+      await ApiClient().delete('/community/users/${row['id']}/block');
+      await _load();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Could not unblock this person. Please retry.');
+      }
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onPressed: () => context.pop(),
-          tooltip: 'Back',
-        ),
-      ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                'Blocked users',
-                style: AppTextStyles.heading1.copyWith(
-                  fontSize: 28,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ),
-            SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                'These users cannot see your profile or interact with you.',
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textMutedDark
-                      : AppColors.textMutedLight,
-                ),
-              ),
-            ),
-            SizedBox(height: 32),
-
-            Expanded(
-              child: _blockedUsers.isEmpty ? _buildEmptyState() : _buildList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() => const EmptyState(
-    icon: Icons.shield_outlined,
-    title: "You haven't blocked anyone.",
-  );
-  Widget _buildList() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      itemCount: _blockedUsers.length,
-      itemBuilder: (context, index) {
-        final username = _blockedUsers[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: AppSurface.border(context),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.primary.withValues(alpha: 0.1),
-                  child: Text(
-                    username[0].toUpperCase(),
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    '@$username',
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => _unblockUser(username),
-                  style: TextButton.styleFrom(
-                    foregroundColor:
-                        Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                  ),
-                  child: Text(
-                    'Unblock',
-                    style: AppTextStyles.body2.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Blocked users')),
+    body: _busy
+        ? const Center(child: CircularProgressIndicator())
+        : ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              if (_error != null) ...[
+                Text(_error!),
+                TextButton(onPressed: _load, child: const Text('Retry')),
               ],
-            ),
+              if (_rows.isEmpty && _error == null)
+                const Text("You haven't blocked anyone."),
+              for (final row in _rows)
+                ListTile(
+                  title: Text('${row['name']}'),
+                  trailing: TextButton(
+                    onPressed: row['id'] == null ? null : () => _unblock(row),
+                    child: const Text('Unblock'),
+                  ),
+                ),
+            ],
           ),
-        );
-      },
-    );
-  }
+  );
 }

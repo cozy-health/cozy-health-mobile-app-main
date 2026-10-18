@@ -29,18 +29,11 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
     super.initState();
     final profile = LocalDbService().getUserProfile();
     if (profile != null) {
-      _selectedLanguage = _languageMap[profile.language] ?? 'English';
+      _selectedLanguage = 'English';
     }
   }
 
-  final List<String> _languages = [
-    'English',
-    'Español (Spanish)',
-    'Français (French)',
-    'Deutsch (German)',
-    '日本語 (Japanese)',
-    '한국어 (Korean)',
-  ];
+  final List<String> _languages = ['English'];
 
   void _onLanguageSelected(String lang) {
     setState(() => _selectedLanguage = lang);
@@ -54,7 +47,9 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
 
     AppSnackbar.show(
       context,
-      AppSnackbar.fromLegacy(content: Text('Language changed to $lang')),
+      AppSnackbar.fromLegacy(
+        content: Text('English is the currently supported interface language.'),
+      ),
     );
   }
 

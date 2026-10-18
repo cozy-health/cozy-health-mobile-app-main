@@ -14,6 +14,9 @@ class TokenStorage {
   static String? _sessionToken;
   static String? _sessionRefresh;
   static bool _sessionOnly = false;
+  static bool _signedOut = false;
+  static int _generation = 0;
+  static int get generation => _generation;
   bool get isSessionOnly => _sessionOnly;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -26,7 +29,9 @@ class TokenStorage {
     }
   }
 
-  Future<String?> getRefreshToken() async => _sessionOnly
+  Future<String?> getRefreshToken() async => _signedOut
+      ? null
+      : _sessionOnly
       ? _sessionRefresh
       : await _storage.read(key: 'cozy_health_refresh_token');
 
@@ -61,6 +66,8 @@ class TokenStorage {
   }
 
   Future<void> saveToken(String token, {bool stayLoggedIn = true}) async {
+    _generation++;
+    _signedOut = false;
     _sessionToken = token;
     _sessionOnly = !stayLoggedIn;
     if (!stayLoggedIn) {
@@ -73,14 +80,19 @@ class TokenStorage {
   }
 
   Future<String?> getToken() async {
+    if (_signedOut) return null;
     if (_sessionOnly) return _sessionToken;
     final result = await _storage.read(key: _tokenKey);
     return result;
   }
 
   Future<void> clearToken() async {
+    _generation++;
+    _signedOut = true;
     _sessionClearing.add(null);
-    await beforeClear?.call();
+    // Cleanup must capture its owner immediately, but never delay local logout.
+    final cleanup = beforeClear?.call();
+    if (cleanup != null) unawaited(cleanup.catchError((Object _) {}));
     _sessionToken = null;
     _sessionOnly = false;
     _sessionRefresh = null;
