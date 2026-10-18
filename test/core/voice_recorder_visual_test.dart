@@ -124,10 +124,14 @@ void main() {
         expect(bounds.height, lessThan(400));
         await capture('recording');
         await tester.tap(find.byTooltip('How is this saved?'));
-        await tester.pumpAndSettle();
+        // The live recording timer keeps scheduling frames. Wait for the
+        // interaction rather than requiring an intentionally live UI to settle.
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
         expect(find.textContaining('Offline recordings'), findsOneWidget);
         await tester.tap(find.byTooltip('How is this saved?'));
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
         await tester.runAsync(() async {
           await tester.tap(find.byTooltip('Stop'));
           await Future<void>.delayed(const Duration(milliseconds: 100));

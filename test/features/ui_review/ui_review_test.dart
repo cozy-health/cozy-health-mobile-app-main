@@ -39,6 +39,7 @@ import 'package:cozy_health/features/notifications/presentation/screens/notifica
 import 'package:cozy_health/features/notifications/presentation/screens/notification_detail_screen.dart';
 import '../../support/local_fonts.dart';
 import '../../support/surface_capture.dart';
+import '../../support/mood_review_capture.dart';
 import 'package:cozy_health/features/settings/presentation/screens/settings_screen.dart';
 import 'package:cozy_health/features/settings/presentation/screens/provider_hub_screen.dart';
 
@@ -48,7 +49,10 @@ void main() {
   setUpAll(() async {
     FlutterSecureStorage.setMockInitialValues({});
     SharedPreferences.setMockInitialValues({});
-    await installLocalTestFonts();
+    await installLocalTestFonts(
+      visualFontPath: 'test/golden_assets/Outfit.ttf',
+      useRealFonts: true,
+    );
     directory = await Directory.systemTemp.createTemp('cozy_ui_review_');
     Hive.init(directory.path);
     Hive.registerAdapter(UserProfileAdapter());
@@ -89,6 +93,7 @@ void main() {
     Widget screen, {
     required bool dark,
     Size size = const Size(375, 667),
+    double textScale = 1.6,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -129,7 +134,7 @@ void main() {
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(
             context,
-          ).copyWith(textScaler: TextScaler.linear(1.6)),
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
           child: RepaintBoundary(key: surfaceCaptureKey, child: child!),
         ),
         routerConfig: router,
@@ -421,15 +426,45 @@ void main() {
     }
   }
 
-  testWidgets('Home chips scroll to Excited and carry the selected mood', (
+  testWidgets('capture production Home with the reference mood selector', (
+    tester,
+  ) async {
+    await mount(
+      tester,
+      const HomeScreen(),
+      dark: false,
+      size: const Size(375, 812),
+      textScale: 1,
+    );
+    // A single-screen run must await decoding instead of relying on image
+    // caches warmed by earlier UI tests.
+    final imageProviders = tester
+        .widgetList<Image>(find.byType(Image))
+        .map((image) => image.image)
+        .toList();
+    final screenContext = tester.element(find.byType(HomeScreen));
+    await tester.runAsync(
+      () => Future.wait([
+        for (final provider in imageProviders)
+          precacheImage(provider, screenContext),
+      ]),
+    );
+    await captureMoodReview(
+      tester,
+      'home-screen',
+      captureKey: surfaceCaptureKey,
+    );
+  });
+
+  testWidgets('Home chips scroll to Happy and carry the selected mood', (
     tester,
   ) async {
     await mount(tester, const HomeScreen(), dark: true);
-    await tester.ensureVisible(find.text('Excited'));
-    await tester.tap(find.text('Excited'));
+    await tester.ensureVisible(find.text('Happy'));
+    await tester.tap(find.text('Happy'));
     await tester.pumpAndSettle();
     expect(
-      find.text('destination:${AppRouter.moodFeeling}?mood=excited'),
+      find.text('destination:${AppRouter.moodFeeling}?mood=happy'),
       findsOneWidget,
     );
   });

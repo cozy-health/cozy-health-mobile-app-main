@@ -13,6 +13,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'support/local_fonts.dart';
+import 'support/mood_review_capture.dart';
+import 'package:cozy_health/core/services/mood_draft_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive/hive.dart';
+import 'package:cozy_health/features/mood_check_in/presentation/screens/mood_recording_layout.dart';
 
 ThemeData themeFor(
   Brightness brightness,
@@ -72,6 +77,8 @@ void main() {
     Color accent = AppColors.primary,
     bool highContrast = false,
     bool safeAreas = false,
+    bool freshEntry = false,
+    String? initialMood,
     ValueNotifier<ThemeData>? appearance,
   }) async {
     tester.view.physicalSize = size;
@@ -87,11 +94,14 @@ void main() {
       routes: [
         GoRoute(
           path: '/mood',
-          builder: (_, _) => MoodFeelingScreen(entry: legacy()),
+          builder: (_, _) => MoodFeelingScreen(
+            entry: freshEntry ? null : legacy(),
+            initialMood: initialMood,
+          ),
         ),
         GoRoute(
           path: '/mood-success',
-          builder: (_, _) => const Scaffold(body: Text('Saved fixture')),
+          builder: (_, _) => const MoodCheckInSuccessScreen(),
         ),
       ],
     );
@@ -127,6 +137,43 @@ void main() {
   Future<void> next(WidgetTester tester) async {
     await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
     await tester.pumpAndSettle();
+  }
+
+  for (final mood in ['sad', 'good', 'upset', 'spectacular', 'happy']) {
+    testWidgets('Home $mood reveals the matching feelings category', (
+      tester,
+    ) async {
+      FlutterSecureStorage.setMockInitialValues({});
+      late Directory directory;
+      await tester.runAsync(() async {
+        directory = await Directory.systemTemp.createTemp(
+          'cozy_mood_shortcut_',
+        );
+        Hive.init(directory.path);
+        await MoodDraftService().clear();
+      });
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox());
+        await tester.runAsync(() async {
+          await Hive.close();
+          await directory.delete(recursive: true);
+        });
+      });
+      await open(tester, freshEntry: true, initialMood: mood);
+      final title = '${mood[0].toUpperCase()}${mood.substring(1)}';
+      final heading = tester.getRect(find.text(title));
+      final viewport = tester.getRect(find.byType(SingleChildScrollView));
+      expect(heading.top, greaterThanOrEqualTo(viewport.top));
+      expect(heading.bottom, lessThanOrEqualTo(viewport.bottom));
+      expect(
+        tester
+            .widget<FilledButton>(find.widgetWithText(FilledButton, 'Continue'))
+            .onPressed,
+        isNull,
+        reason: 'A category shortcut must still require a confirmed feeling.',
+      );
+      expect(tester.takeException(), isNull);
+    });
   }
 
   test('legacy drafts map every old step while preserving hidden values', () {
@@ -182,11 +229,7 @@ void main() {
         inInclusiveRange(270, 360),
       );
       expect(tester.getSize(find.byType(Slider)).width, greaterThan(222));
-      Navigator.of(
-        tester.element(
-          find.byKey(const ValueKey('recording-intensity-dialog')),
-        ),
-      ).pop();
+      await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       await next(tester);
       await next(tester);
@@ -222,11 +265,7 @@ void main() {
       expect(find.text('Very strong · 5/5'), findsOneWidget);
       tester.widget<Slider>(find.byType(Slider)).onChanged!(1);
       await tester.pumpAndSettle();
-      Navigator.of(
-        tester.element(
-          find.byKey(const ValueKey('recording-intensity-dialog')),
-        ),
-      ).pop();
+      await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Resentful'));
       await tester.pumpAndSettle();
@@ -276,6 +315,10 @@ void main() {
     expect(saved.note, 'A long day');
     expect(saved.sleepQuality, 2);
     expect(saved.energyLevel, 4);
+    await captureMoodReview(tester, 'save-success');
+    // The production success screen schedules a saved reminder after 5 seconds.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
   });
 
   for (final brightness in Brightness.values) {
@@ -325,13 +368,23 @@ void main() {
       tester,
     ) async {
       await open(tester, size: Size(width, 812), textScale: 2);
+      await captureMoodReview(tester, 'large-text-$width');
       final chip = find.byKey(
         const ValueKey('recording-expressions-angry-resentful'),
       );
       expect(tester.getSize(chip).height, greaterThanOrEqualTo(48));
       final before = tester.getSize(chip);
       final semantics = tester.ensureSemantics();
-      expect(tester.getSemantics(chip).label, 'Resentful');
+      expect(
+        tester
+            .getSemantics(
+              find.byKey(
+                const ValueKey('recording-hit-expressions-angry-resentful'),
+              ),
+            )
+            .label,
+        'Resentful',
+      );
       semantics.dispose();
       await tester.ensureVisible(find.text('Over the moon'));
       await tester.pumpAndSettle();
@@ -431,6 +484,7 @@ void main() {
       expect(selected.color, AppColors.warmYellow);
       final shape = selected.shape! as RoundedRectangleBorder;
       expect(shape.side.width, 2);
+      await captureMoodReview(tester, 'high-contrast-${brightness.name}');
       await tester.tap(find.text('Resentful'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
@@ -441,6 +495,95 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets(
+    'reference rows fit at 375px with compact non-overlapping targets',
+    (tester) async {
+      await open(tester);
+      for (final collection in ['expressions', 'triggers', 'coping']) {
+        for (final row in moodRecordingReferenceRows[collection]!) {
+          final rects = [
+            for (final slug in row)
+              tester.getRect(
+                find.byKey(ValueKey('recording-$collection-$slug')),
+              ),
+          ];
+          final hits = [
+            for (final slug in row)
+              tester.getRect(
+                find.byKey(ValueKey('recording-hit-$collection-$slug')),
+              ),
+          ];
+          for (var i = 0; i < rects.length; i++) {
+            expect(
+              rects[i].height,
+              closeTo(28, .1),
+              reason: '$collection: ${row[i]}',
+            );
+            expect(
+              rects[i].top,
+              closeTo(rects.first.top, .1),
+              reason: 'Reference row must fit: $row',
+            );
+            expect(hits[i].height, greaterThanOrEqualTo(48));
+            if (i > 0) {
+              expect(hits[i].left, greaterThanOrEqualTo(hits[i - 1].right));
+            }
+          }
+        }
+        if (collection != 'coping') await next(tester);
+      }
+    },
+  );
+
+  testWidgets('full page reference review captures', (tester) async {
+    await open(tester, size: const Size(375, 2300), safeAreas: true);
+    await captureMoodReview(tester, 'full-feelings');
+    await next(tester);
+    await tester.tap(find.text('Deadlines'));
+    await tester.tap(find.text('Family tension'));
+    await captureMoodReview(tester, 'full-causes-selected');
+    await next(tester);
+    await captureMoodReview(tester, 'full-coping');
+  });
+
+  testWidgets('today draft resumes its selections and review', (tester) async {
+    late Directory directory;
+    FlutterSecureStorage.setMockInitialValues({});
+    await tester.runAsync(() async {
+      directory = await Directory.systemTemp.createTemp('cozy_mood_review_');
+      Hive.init(directory.path);
+      await MoodDraftService().save({
+        'version': 2,
+        'step': 3,
+        'mood': 'sad',
+        'expression_slug': 'sad-gloomy',
+        'intensity': 8,
+        'triggers': ['Deadlines', 'Family tension'],
+        'coping': ['Meditation'],
+      });
+    });
+    try {
+      await open(tester, freshEntry: true);
+      expect(
+        find.text('You have an unsaved check-in. Resume?'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Resume'));
+      await tester.pumpAndSettle();
+      expect(find.text('Review your check-in'), findsOneWidget);
+      expect(find.textContaining('Gloomy (sad)'), findsOneWidget);
+      expect(find.text('Deadlines, Family tension'), findsOneWidget);
+      expect(find.text('Meditation'), findsOneWidget);
+      await captureMoodReview(tester, 'resumed-draft-review');
+    } finally {
+      await tester.pumpWidget(const SizedBox());
+      await tester.runAsync(() async {
+        await Hive.close();
+        await directory.delete(recursive: true);
+      });
+    }
+  });
 
   for (final variant in ['light', 'dark', 'green']) {
     testWidgets('review production-theme golden captures $variant', (
@@ -453,7 +596,7 @@ void main() {
         accent: variant == 'green' ? AppColors.warmGreen : AppColors.primary,
       );
       Future<void> capture(String name) async {
-        await tester.pumpAndSettle();
+        await settleMoodReviewImages(tester);
         final finder = find.byKey(const ValueKey('capture'));
         if (const bool.fromEnvironment('SURFACE_REAL_FONTS')) {
           await expectLater(
@@ -465,7 +608,7 @@ void main() {
         await tester.runAsync(() async {
           final image = await boundary.toImage();
           final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-          final dir = Directory('build/mood-recording-review');
+          final dir = Directory('build/mood-selection-review');
           await dir.create(recursive: true);
           await File(
             '${dir.path}/$variant-$name.png',
@@ -476,7 +619,7 @@ void main() {
 
       await capture('feelings');
       if (variant == 'light') {
-        for (final name in ['Good', 'Upset', 'Spectacular', 'Happy']) {
+        for (final name in ['Sad', 'Good', 'Upset', 'Spectacular', 'Happy']) {
           await tester.ensureVisible(find.text(name));
           await capture('feelings-${name.toLowerCase()}');
         }

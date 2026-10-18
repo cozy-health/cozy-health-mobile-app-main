@@ -214,7 +214,7 @@ void main() {
               find.byType(LinearProgressIndicator),
             )
             .value,
-        74 / 215,
+        .25,
       );
       expect(find.text('You have an unsaved check-in. Resume?'), findsNothing);
       final feeling = find.byKey(
@@ -224,7 +224,14 @@ void main() {
         tester
             .widget<Semantics>(
               find
-                  .ancestor(of: feeling, matching: find.byType(Semantics))
+                  .ancestor(
+                    of: feeling,
+                    matching: find.byWidgetPredicate(
+                      (widget) =>
+                          widget is Semantics &&
+                          widget.properties.selected != null,
+                    ),
+                  )
                   .first,
             )
             .properties
@@ -267,7 +274,7 @@ void main() {
               find.byType(LinearProgressIndicator),
             )
             .value,
-        145 / 215,
+        .5,
       );
       expect(find.text('You have an unsaved check-in. Resume?'), findsNothing);
       final cause = find.byKey(
@@ -276,7 +283,16 @@ void main() {
       expect(
         tester
             .widget<Semantics>(
-              find.ancestor(of: cause, matching: find.byType(Semantics)).first,
+              find
+                  .ancestor(
+                    of: cause,
+                    matching: find.byWidgetPredicate(
+                      (widget) =>
+                          widget is Semantics &&
+                          widget.properties.selected != null,
+                    ),
+                  )
+                  .first,
             )
             .properties
             .selected,

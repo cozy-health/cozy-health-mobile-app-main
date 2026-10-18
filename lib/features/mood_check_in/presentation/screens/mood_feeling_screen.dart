@@ -59,6 +59,9 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
   ];
   final _drafts = MoodDraftService();
   final _scroll = ScrollController();
+  final _feelingKeys = {
+    for (final group in _groups) group.toLowerCase(): GlobalKey(),
+  };
   String _id = const Uuid().v4();
   final Set<String> _causes = {}, _coping = {};
   Map<String, dynamic> _catalog = moodRecordingCatalog;
@@ -125,7 +128,18 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
         _resume = draft;
         _loadingDraft = false;
       });
+      if (draft == null) _revealInitialMood();
     }
+  }
+
+  void _revealInitialMood() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _step != 0 || _resume != null) return;
+      final target = _feelingKeys[widget.initialMood]?.currentContext;
+      if (target != null) {
+        Scrollable.ensureVisible(target, alignment: 0);
+      }
+    });
   }
 
   Map<String, dynamic> _draft() => {
@@ -176,7 +190,10 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
   Future<void> _clearDraft() async {
     await _writes;
     await _drafts.clear();
-    if (mounted) setState(() => _resume = null);
+    if (mounted) {
+      setState(() => _resume = null);
+      _revealInitialMood();
+    }
   }
 
   void _go(int step) {
@@ -293,13 +310,24 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                           onChanged: (next) => update(() => value = next),
                         ),
                         const SizedBox(height: 4),
-                        Align(
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: TextButton(
-                            onPressed: () =>
-                                Navigator.pop(dialogContext, value),
-                            child: const Text('Done'),
-                          ),
+                        OverflowBar(
+                          alignment: MainAxisAlignment.end,
+                          spacing: 8,
+                          overflowSpacing: 8,
+                          children: [
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                foregroundColor: scheme.onSurfaceVariant,
+                              ),
+                              onPressed: () => Navigator.pop(dialogContext),
+                              child: const Text('Cancel'),
+                            ),
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, value),
+                              child: const Text('Done'),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -427,12 +455,8 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(3),
                           child: LinearProgressIndicator(
-                            value: const [
-                              74 / 215,
-                              145 / 215,
-                              178 / 215,
-                              1.0,
-                            ][_step],
+                            value: (_step + 1) / 4,
+                            semanticsLabel: 'Check-in, step ${_step + 1} of 4',
                             minHeight: 4,
                             color: theme.colorScheme.primary,
                             backgroundColor: theme.colorScheme.outlineVariant
@@ -487,18 +511,30 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            [
-                              'How would you describe how you are feeling?',
-                              'What made you feel this way?',
-                              'How have you expressed these feelings?',
-                              'Review your check-in',
-                            ][_step],
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
+                          Semantics(
+                            header: true,
+                            child: Text(
+                              [
+                                'How would you describe how you are feeling?',
+                                'What made you feel this way?',
+                                'How have you expressed these feelings?',
+                                'Review your check-in',
+                              ][_step],
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
+                          if (_step == 1 || _step == 2) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'Choose any that apply, or continue without selecting.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 24),
                           if (_step == 0) ..._feelingCards(),
                           if (_step == 1) ..._causeCards(),
@@ -517,9 +553,13 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                   child: SizedBox(
                     width: double.infinity,
-                    height: 48,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                         backgroundColor: theme.colorScheme.primary,
                         foregroundColor: theme.colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(
@@ -536,12 +576,16 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                             }
                           : null,
                       child: _saving
-                          ? SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: theme.colorScheme.onPrimary,
+                          ? Semantics(
+                              label: 'Saving check-in',
+                              liveRegion: true,
+                              child: SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
                               ),
                             )
                           : Text(_step == 3 ? 'Save entry' : 'Continue'),
@@ -580,6 +624,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
               null,
               mood: mood,
             ),
+            key: _feelingKeys[_groups[i].toLowerCase()],
           ),
     ];
   }
@@ -631,42 +676,74 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) const SizedBox(height: 12),
-          Wrap(
-            key: ValueKey('recording-row-${rows[i].first['slug']}'),
-            spacing: 10,
-            runSpacing: 12,
-            children: [
-              for (final row in rows[i])
-                _chip(
-                  collection,
-                  row,
-                  category,
-                  selection == null
-                      ? _expression == row['slug']
-                      : selection.contains(row['name']),
-                  () {
-                    if (mood != null) {
-                      _selectFeeling(mood, row);
-                    } else {
-                      _toggle(selection!, row['name'] as String);
-                    }
-                  },
-                ),
-            ],
+          // Each 48px interaction row centers a 28px visual chip.
+          // Adjacent rows share no hit area; large text expands naturally.
+          LayoutBuilder(
+            builder: (context, constraints) => Wrap(
+              key: ValueKey('recording-row-${rows[i].first['slug']}'),
+              spacing: _rowSpacing(rows[i], constraints.maxWidth),
+              runSpacing: 0,
+              children: [
+                for (final row in rows[i])
+                  _chip(
+                    collection,
+                    row,
+                    category,
+                    selection == null
+                        ? _expression == row['slug']
+                        : selection.contains(row['name']),
+                    () {
+                      if (mood != null) {
+                        _selectFeeling(mood, row);
+                      } else {
+                        _toggle(selection!, row['name'] as String);
+                      }
+                    },
+                  ),
+              ],
+            ),
           ),
         ],
       ],
     );
   }
 
-  Widget _panel(String title, Widget child) => Container(
+  double _rowSpacing(List<Map<String, dynamic>> rows, double available) {
+    if (rows.length < 2) return 0;
+    var contentWidth = 0.0;
+    for (final row in rows) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: row['name'] as String,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontSize: 13,
+            height: 20 / 13,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout();
+      contentWidth += painter.width.ceilToDouble() + 44;
+      painter.dispose();
+    }
+    // Some supplied rows have intentionally tighter gaps (not smaller text).
+    // When the labels cannot fit, Wrap retains readable text on another line.
+    return ((available - contentWidth) / (rows.length - 1)).clamp(4, 10);
+  }
+
+  Widget _panel(String title, Widget child, {Key? key}) => Container(
+    key: key,
     width: double.infinity,
     margin: EdgeInsets.only(bottom: _step == 1 ? 24 : 16),
-    padding: const EdgeInsets.fromLTRB(9, 12, 9, 16),
+    padding: const EdgeInsets.fromLTRB(9, 12, 9, 11),
     decoration: BoxDecoration(
       color: Theme.of(context).colorScheme.surface,
-      border: AppSurface.border(context),
+      border:
+          MediaQuery.highContrastOf(context) ||
+              Theme.of(context).brightness == Brightness.dark
+          ? AppSurface.border(context)
+          : Border.all(color: const Color(0xFFF0F0F0)),
       borderRadius: BorderRadius.circular(8),
     ),
     child: Column(
@@ -676,11 +753,16 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
           title,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             fontSize: 16,
+            color:
+                Theme.of(context).brightness == Brightness.light &&
+                    !MediaQuery.highContrastOf(context)
+                ? const Color(0xFF535862)
+                : null,
             height: 1.25,
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 11),
         child,
       ],
     ),
@@ -701,6 +783,8 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
         : context.cozyColors.recordingCategoryFills[category];
     final preferredForeground = contrast && selected
         ? scheme.onPrimary
+        : theme.brightness == Brightness.light
+        ? const Color(0xFF535862)
         : scheme.onSurface;
     double contrastRatio(Color ink) {
       final a = ink.computeLuminance();
@@ -719,71 +803,102 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
       label: row['name'] as String,
       excludeSemantics: true,
       onTap: onTap,
-      child: Material(
-        key: ValueKey('recording-$collection-${row['slug']}'),
-        color: fill,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(
-            color: selected
-                ? (contrast ? scheme.onSurface : scheme.primary)
-                : (contrast ? scheme.outline : Colors.transparent),
-            width: 2,
-          ),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 48),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+      child: InkWell(
+        key: ValueKey('recording-hit-$collection-${row['slug']}'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Material(
+            key: ValueKey('recording-$collection-${row['slug']}'),
+            color: fill,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                color: selected
+                    ? (contrast ? scheme.onSurface : _categoryInk(category))
+                    : (contrast ? scheme.outline : Colors.transparent),
+                width: selected || contrast ? 2 : 1,
+              ),
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
               children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    _art(
-                      collection,
-                      row,
-                      category,
-                      foreground,
-                      selected: contrast && selected,
-                    ),
-                    if (selected)
-                      Positioned(
-                        right: -3,
-                        bottom: -3,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: fill,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.check_rounded,
-                            size: 12,
+                Container(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.textScalerOf(context).scale(13) > 20
+                        ? 48
+                        : 28,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _art(
+                        collection,
+                        row,
+                        category,
+                        foreground,
+                        selected: contrast && selected,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          row['name'] as String,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 13,
+                            height: 20 / 13,
+                            fontWeight: FontWeight.w400,
                             color: foreground,
                           ),
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    row['name'] as String,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: foreground,
-                    ),
+                    ],
                   ),
                 ),
+                if (selected)
+                  PositionedDirectional(
+                    top: -3,
+                    end: -3,
+                    child: ExcludeSemantics(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: scheme.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: scheme.surface, width: 1),
+                        ),
+                        child: Icon(
+                          Icons.check,
+                          size: 12,
+                          color: scheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Color _categoryInk(int category) {
+    const inks = [
+      Color(0xFF00C853),
+      Color(0xFFF25C05),
+      Color(0xFF0460D8),
+      Color(0xFFF97066),
+      Color(0xFFF04D6E),
+      Color(0xFF00A0A6),
+    ];
+    final ink = inks[category];
+    return Theme.of(context).brightness == Brightness.dark
+        ? Color.lerp(ink, Colors.white, .35)!
+        : ink;
   }
 
   Widget _art(
@@ -809,33 +924,47 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                 MediaQuery.highContrastOf(context)
             ? 'assets/png/recording_emoji_${row['slug']}.png'
             : 'assets/png/recording_${collection}_${row['slug']}.png',
-        width: 24,
-        height: 24,
+        width: 22,
+        height: 20,
         fit: BoxFit.contain,
         excludeFromSemantics: true,
       );
     }
-    final ink = scheme.primary.computeLuminance();
+    final categoryInk = _categoryInk(category);
+    final ink = categoryInk.computeLuminance();
     final background = scheme.surface.computeLuminance();
     final ratio = ink > background
         ? (ink + .05) / (background + .05)
         : (background + .05) / (ink + .05);
-    final readableAccent = selected || ratio < 3 ? foreground : scheme.primary;
+    final readableAccent =
+        selected || (MediaQuery.highContrastOf(context) && ratio < 3)
+        ? foreground
+        : categoryInk;
     final fallback = Icon(
       collection == 'coping' ? Icons.favorite_border : _icons[category],
       size: 18,
       color: readableAccent,
     );
     return Container(
-      width: 24,
-      height: 24,
+      width: 22,
+      height: 20,
       decoration: BoxDecoration(
         color: MediaQuery.highContrastOf(context)
             ? Colors.transparent
-            : scheme.primary.withValues(alpha: .12),
+            : _categoryInk(category).withValues(alpha: .16),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: bundled
+      child:
+          bundled &&
+              Theme.of(context).brightness == Brightness.light &&
+              !MediaQuery.highContrastOf(context)
+          ? Image.asset(
+              'assets/png/recording_${collection}_${row['slug']}.png',
+              fit: BoxFit.contain,
+              excludeFromSemantics: true,
+              errorBuilder: (_, _, _) => fallback,
+            )
+          : bundled
           ? Image.asset(
               'assets/png/recording_mask_${collection}_${row['slug']}.png',
               fit: BoxFit.contain,

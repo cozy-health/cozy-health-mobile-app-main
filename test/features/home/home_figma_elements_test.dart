@@ -57,8 +57,8 @@ void main() {
           );
           expect(
             tester.getSize(find.byType(MoodChipsRow)).height,
-            56,
-            reason: 'Mood chips use the compact layout introduced in 71a65cd.',
+            greaterThanOrEqualTo(48),
+            reason: 'Home mood choices must meet the minimum touch target.',
           );
         }
       });
