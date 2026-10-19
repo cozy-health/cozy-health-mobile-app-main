@@ -37,8 +37,10 @@ class QuizRepository {
       if (error is ApiAuthException ||
           error is ApiServerException ||
           (error is ApiException && error.statusCode != null)) {
-        return [];
+        rethrow;
       }
+      final cached = settings.get('quiz_definitions_v1') as List?;
+      if (cached == null || cached.isEmpty) rethrow;
       return (settings.get('quiz_definitions_v1') as List? ?? [])
           .map(
             (row) => ClinicalAssessment.fromDefinition(

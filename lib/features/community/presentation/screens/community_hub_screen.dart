@@ -25,6 +25,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   String _selectedFilter = 'All';
+  bool _showGroups = false;
 
   final List<String> _filters = [
     'All',
@@ -40,12 +41,15 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
     'Grief & Loss',
   ];
 
-  final _repository = CommunityRepository();
+  late final CommunityRepository _repository;
   List<Map<String, dynamic>> get _posts => widget.posts ?? _repository.posts;
 
   @override
   void initState() {
     super.initState();
+    _repository = CommunityRepository(
+      usePlaceholderData: widget.posts != null ? true : null,
+    );
     _repository.addListener(_refreshLocal);
     _controller = AnimationController(
       vsync: this,
@@ -73,46 +77,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
     if (mounted) setState(() {});
   }
 
-  void _showCreateMenu() {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    Navigator.of(sheetContext).pop();
-                    context.push(AppRouter.createPost);
-                  },
-                  child: Text('Create post'),
-                ),
-              ),
-              SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.of(sheetContext).pop();
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const CreateCommunityGroupScreen(),
-                      ),
-                    );
-                  },
-                  child: Text('Create new group'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  void _showCreateMenu() => context.push(AppRouter.createPost);
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +133,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                         minimumSize: const Size(48, 48),
                       ),
                       icon: const Icon(Icons.add),
-                      label: Text('Create'),
+                      label: Text('Post'),
                     ),
                     IconButton(
                       icon: Icon(
@@ -183,64 +148,92 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
             ),
             SizedBox(height: 20),
 
-            // Filter Chips
-            SizedBox(
-              height: 48 * MediaQuery.textScalerOf(context).scale(1),
-              child: _animatedWidget(
-                reduceMotion: reduceMotion,
-                animation: _createAnimation(0.1, 0.5),
-                offset: const Offset(0, 8),
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _filters.length,
-                  separatorBuilder: (_, __) => SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final filter = _filters[index];
-                    final isSelected = _selectedFilter == filter;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedFilter = filter;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? Theme.of(context).colorScheme.primary
-                              : context.communitySurface,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : context.communityBorder.withValues(
-                                    alpha: 0.7,
-                                  ),
-                          ),
-                        ),
-                        child: Text(
-                          filter,
-                          style: context.communityBody2.copyWith(
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.onPrimary
-                                : context.communityText,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(
+                    value: false,
+                    icon: Icon(Icons.forum_outlined),
+                    label: Text('Posts'),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    icon: Icon(Icons.groups_outlined),
+                    label: Text('Groups'),
+                  ),
+                ],
+                selected: {_showGroups},
+                onSelectionChanged: (value) =>
+                    setState(() => _showGroups = value.single),
               ),
             ),
+            const SizedBox(height: 12),
+            if (!_showGroups)
+              SizedBox(
+                height: 48 * MediaQuery.textScalerOf(context).scale(1),
+                child: _animatedWidget(
+                  reduceMotion: reduceMotion,
+                  animation: _createAnimation(0.1, 0.5),
+                  offset: const Offset(0, 8),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _filters.length,
+                    separatorBuilder: (_, __) => SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final filter = _filters[index];
+                      final isSelected = _selectedFilter == filter;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedFilter = filter;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : context.communitySurface,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: isSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : context.communityBorder.withValues(
+                                      alpha: 0.7,
+                                    ),
+                            ),
+                          ),
+                          child: Text(
+                            filter,
+                            style: context.communityBody2.copyWith(
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: isSelected
+                                  ? Theme.of(context).colorScheme.onPrimary
+                                  : context.communityText,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
             SizedBox(height: 20),
 
             // Main Content (Feed)
-            Expanded(child: _buildFeed(reduceMotion)),
+            Expanded(
+              child: _showGroups
+                  ? ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: const [CommunityGroups()],
+                    )
+                  : _buildFeed(reduceMotion),
+            ),
           ],
         ),
       ),
@@ -280,7 +273,10 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
           ),
         ],
         SizedBox(height: 12),
-        if (filteredPosts.isEmpty) _buildEmptyState(reduceMotion),
+        if (!_repository.loading &&
+            _repository.error == null &&
+            filteredPosts.isEmpty)
+          _buildEmptyState(reduceMotion),
         // Compose Bar
         _animatedWidget(
           reduceMotion: reduceMotion,
@@ -352,7 +348,6 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
           );
         }),
         SizedBox(height: 16),
-        const CommunityGroups(),
       ],
     );
   }

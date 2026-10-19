@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -202,7 +203,8 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
         }
       });
       if (result == LaunchResult.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbar.show(
+          context,
           SnackBar(
             content: Text(
               sms

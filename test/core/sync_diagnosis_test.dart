@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/services/user_data_merge.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -69,6 +70,8 @@ void main() {
   setUpAll(() async {
     await fixture.open();
     Hive.registerAdapter(QuizAttemptAdapter());
+    Hive.registerAdapter(UserProfileAdapter());
+    await EncryptedHive.openBox<UserProfile>(LocalDbService.userProfileBoxName);
     await EncryptedHive.openBox<QuizAttempt>(LocalDbService.quizAttemptBoxName);
     await EncryptedHive.openBox<String>(LocalDbService.syncQueueBoxName);
   });
@@ -84,6 +87,74 @@ void main() {
     action: 'upsert',
     recordId: id,
     payload: {'id': id, 'mood': 'good', 'intensity': 5, 'note': note},
+  );
+
+  test(
+    'acknowledged fractional timestamps do not requeue after repeated restore',
+    () async {
+      final time = DateTime.utc(2026, 10, 18, 21, 48, 45, 277);
+      final value = {
+        'id': 'rounded',
+        'mood': 'good',
+        'intensity': 5,
+        'client_created_at': time.toIso8601String(),
+        'client_updated_at': time.toIso8601String(),
+      };
+      await local.saveMoodEntry(MoodEntry.fromJson(value));
+      await local.enqueueSync(
+        type: 'mood_entry',
+        action: 'upsert',
+        recordId: 'rounded',
+        payload: value,
+      );
+      expect((await local.processSyncQueue()).synced, 1);
+      await (await local.settingsBox()).close();
+      final remote = {...value, 'client_updated_at': '2026-10-18T21:48:45Z'};
+      for (var i = 0; i < 3; i++) {
+        await UserDataMerge().apply('mood_entry', remote);
+        expect(local.pendingItems, isEmpty);
+      }
+      await local.saveMoodEntry(
+        MoodEntry.fromJson({
+          ...value,
+          'client_updated_at': time
+              .add(const Duration(seconds: 1))
+              .toIso8601String(),
+          'mood': 'okay',
+        }),
+      );
+      await UserDataMerge().apply('mood_entry', remote);
+      expect(local.hasPending('mood_entry', 'rounded'), isTrue);
+    },
+  );
+
+  test(
+    'acknowledged profile does not requeue after reopening and restore',
+    () async {
+      final time = DateTime.utc(2026, 10, 18, 21, 48, 45, 277);
+      final profile = UserProfile(
+        id: 'rounded-profile',
+        name: 'Taylor',
+        email: 'taylor@example.test',
+        updatedAt: time,
+      );
+      await local.saveUserProfile(profile);
+      await local.enqueueSync(
+        type: 'user_profile',
+        action: 'upsert',
+        recordId: profile.id,
+        payload: profile.toJson(),
+      );
+      expect((await local.processSyncQueue()).synced, 1);
+      await (await local.settingsBox()).close();
+      for (var i = 0; i < 3; i++) {
+        await UserDataMerge().apply('user_profile', {
+          ...profile.toJson(),
+          'client_updated_at': '2026-10-18T21:48:45Z',
+        });
+        expect(local.pendingItems, isEmpty);
+      }
+    },
   );
 
   test(

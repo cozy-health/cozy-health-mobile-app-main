@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 // TODO: wire to backend when endpoint exists
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +27,37 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   PostVisibility _visibility = PostVisibility.public;
   String _selectedTopic = 'Topic (optional)';
   bool _isPublishing = false;
+  Uint8List? _image;
+  Future<void> _pickImage() async {
+    try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1280,
+        maxHeight: 1280,
+        imageQuality: 85,
+      );
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      if (bytes.length >= 5 * 1024 * 1024) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error('Choose an image smaller than 5 MB.'),
+        );
+        return;
+      }
+      setState(() => _image = bytes);
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            'We could not open that image. Please try another photo.',
+          ),
+        );
+      }
+    }
+  }
 
   final int _maxLength = 500;
 
@@ -94,17 +128,26 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ),
         );
         if (yes != true) return;
+        final payload = <String, dynamic>{
+          'body': _textController.text.trim(),
+          'is_anonymous': _visibility == PostVisibility.anonymous,
+          'mood': _selectedTopic == 'Topic (optional)' ? null : _selectedTopic,
+          'guidelines_version': document['version'],
+          'guidelines_accepted': _image == null ? true : '1',
+          if (_image != null)
+            'image': MultipartFile.fromBytes(
+              _image!,
+              filename: 'community.jpg',
+            ),
+        };
+        if (_image != null) {
+          payload['is_anonymous'] = _visibility == PostVisibility.anonymous
+              ? '1'
+              : '0';
+        }
         final saved = await ApiClient().post(
           '/community/posts',
-          data: {
-            'body': _textController.text.trim(),
-            'is_anonymous': _visibility == PostVisibility.anonymous,
-            'mood': _selectedTopic == 'Topic (optional)'
-                ? null
-                : _selectedTopic,
-            'guidelines_version': document['version'],
-            'guidelines_accepted': true,
-          },
+          data: _image == null ? payload : FormData.fromMap(payload),
         );
         CommunityLocalState.instance.ingestPost(
           CommunityRepository.post(saved.data['data'] as Map),
@@ -353,29 +396,31 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   ),
                   SizedBox(height: 16),
 
-                  // Attach Image
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.image_outlined,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            SizedBox(width: 12),
-                            Flexible(
-                              child: Text(
-                                'Add image',
-                                style: context.communityBody1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  OutlinedButton.icon(
+                    onPressed: _isPublishing ? null : _pickImage,
+                    icon: const Icon(Icons.add_photo_alternate_outlined),
+                    label: Text(_image == null ? 'Add image' : 'Change image'),
                   ),
+                  if (_image != null) ...[
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.memory(
+                        _image!,
+                        height: 200,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    const Text(
+                      'Image posts are reviewed before they appear in the community.',
+                    ),
+                    TextButton(
+                      onPressed: _isPublishing
+                          ? null
+                          : () => setState(() => _image = null),
+                      child: const Text('Remove image'),
+                    ),
+                  ],
                   SizedBox(height: 16),
 
                   // Guidelines Reminder

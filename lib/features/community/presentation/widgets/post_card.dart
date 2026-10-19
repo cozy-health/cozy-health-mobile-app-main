@@ -130,6 +130,22 @@ class PostCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
+            if (post['imageUrl'] case final String url)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    url,
+                    height: 240,
+                    width: double.infinity,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, error, stack) => const Text(
+                      'Image unavailable. Refresh the feed to try again.',
+                    ),
+                  ),
+                ),
+              ),
             // Content
             LayoutBuilder(
               builder: (context, constraints) {

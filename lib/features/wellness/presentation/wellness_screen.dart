@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import '../../../core/repositories/wellness_repository.dart';
 
@@ -53,7 +54,8 @@ class _WellnessScreenState extends State<WellnessScreen> {
       await _load();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbar.show(
+          context,
           const SnackBar(
             content: Text(
               'Could not save progress. Check your connection and task availability.',

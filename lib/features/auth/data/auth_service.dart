@@ -299,6 +299,10 @@ class AuthService {
         user['id'].toString(),
       );
       await _cacheUserProfile(user);
+      await (await local.settingsBox()).put(
+        'new_account_tour_pending',
+        registration || data['is_new_user'] == true,
+      );
       await RestoreService.prepare(
         user['id'].toString(),
         registration: registration,

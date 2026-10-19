@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/data/demo_mode.dart';
-import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/affirmation_controller.dart';
 import '../../../../core/widgets/affirmation_panel.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -54,7 +52,7 @@ class DailyAffirmationScreen extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(height: 24),
-              AffirmationPanel(controller: controller),
+              AffirmationPanel(controller: controller, showReflection: true),
               const SizedBox(height: 32),
               const Spacer(),
               AppButton(
@@ -63,13 +61,6 @@ class DailyAffirmationScreen extends StatelessWidget {
                 onPressed: () => _copy(context),
               ),
               const SizedBox(height: 12),
-              AppButton(
-                text: 'Read related articles',
-                onPressed: () => context.push(
-                  AppRouter.categoryDetail,
-                  extra: {'id': 'self-compassion', 'title': 'Self-compassion'},
-                ),
-              ),
               const SizedBox(height: 8),
             ],
           ),

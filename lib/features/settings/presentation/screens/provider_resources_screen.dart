@@ -1,3 +1,4 @@
+import '../../../../core/services/network_status.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -25,10 +26,21 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
   int _lastPage = 1;
   String? _updating;
   String? _error;
+  bool get _offline => networkOffline.value == true;
+  void _connectionChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    networkOffline.removeListener(_connectionChanged);
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
+    networkOffline.addListener(_connectionChanged);
     _service = widget.settingsService ?? SettingsService();
     _load();
   }
@@ -62,6 +74,7 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
   }
 
   Future<void> _update(Map<String, dynamic> item, String status) async {
+    if (_offline) return;
     final id = item['id'].toString();
     setState(() {
       _updating = id;
@@ -144,7 +157,7 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
             ),
             if (url != null && url.isNotEmpty)
               TextButton(
-                onPressed: () => _open(url),
+                onPressed: _offline ? null : () => _open(url),
                 child: const Text('Open resource'),
               ),
             if (status == 'assigned')
@@ -152,7 +165,7 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
                 spacing: 8,
                 children: [
                   FilledButton(
-                    onPressed: _updating != null
+                    onPressed: _offline || _updating != null
                         ? null
                         : () => _update(item, 'completed'),
                     child: const Text('Mark complete'),

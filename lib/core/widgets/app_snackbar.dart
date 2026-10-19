@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/app_surface.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,9 @@ import '../utils/motion.dart';
 enum _NoticeKind { success, error, info, warning }
 
 class AppSnackbar {
+  static OverlayEntry? _entry;
+  static VoidCallback? _dismissCurrent;
+  static void dismiss() => _dismissCurrent?.call();
   static SnackBar saved({required String type, required String id}) => success(
     LocalDbService().hasPending(type, id)
         ? 'Saved locally — will sync when online'
@@ -81,6 +85,9 @@ class AppSnackbar {
   }
 
   static void show(BuildContext context, SnackBar snack) {
+    if (snack is! _Notice) {
+      snack = fromLegacy(content: snack.content, action: snack.action);
+    }
     final route =
         ModalRoute.of(context)?.settings.name ??
         context.widget.runtimeType.toString();
@@ -102,16 +109,125 @@ class AppSnackbar {
         outline: AppSurface.shape(context, BorderRadius.circular(16)),
       );
     }
-    final media = MediaQuery.of(context);
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        snack,
-        snackBarAnimationStyle:
-            media.disableAnimations || media.accessibleNavigation
-            ? AnimationStyle.noAnimation
-            : null,
-      );
+    final overlay =
+        AppRouter.navigatorKey.currentState?.overlay ??
+        Overlay.maybeOf(context, rootOverlay: true);
+    if (overlay == null) return;
+    _dismissCurrent?.call();
+    final notice = snack;
+    late final OverlayEntry entry;
+    var removed = false;
+    void dismiss() {
+      if (removed) return;
+      removed = true;
+      if (overlay.mounted) entry.remove();
+      if (_entry == entry) {
+        _entry = null;
+        _dismissCurrent = null;
+      }
+    }
+
+    entry = OverlayEntry(
+      builder: (_) => _TopNotice(snack: notice, onDismiss: dismiss),
+    );
+    _entry = entry;
+    _dismissCurrent = dismiss;
+    overlay.insert(entry);
+  }
+}
+
+/// One top position for app notices, independent of the selected tab/keyboard.
+class _TopNotice extends StatefulWidget {
+  const _TopNotice({required this.snack, required this.onDismiss});
+  final SnackBar snack;
+  final VoidCallback onDismiss;
+  @override
+  State<_TopNotice> createState() => _TopNoticeState();
+}
+
+class _TopNoticeState extends State<_TopNotice> {
+  Timer? _timer;
+  bool _started = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (!MediaQuery.accessibleNavigationOf(context)) {
+      _timer = Timer(widget.snack.duration, widget.onDismiss);
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Positioned(
+      top: 0,
+      left: 16,
+      right: 16,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Semantics(
+            liveRegion: true,
+            child: Material(
+              key: const Key('app-top-notice'),
+              color: colors.inverseSurface,
+              elevation: 4,
+              shape: widget.snack.shape,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * .6,
+                ),
+                child: SingleChildScrollView(
+                  child: DefaultTextStyle(
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                      color: colors.onInverseSurface,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: widget.snack.content),
+                          if (widget.snack.action case final action?)
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                foregroundColor: colors.onInverseSurface,
+                              ),
+                              onPressed: () {
+                                widget.onDismiss();
+                                action.onPressed();
+                              },
+                              child: Text(action.label),
+                            ),
+                          IconButton(
+                            tooltip: 'Dismiss notification',
+                            onPressed: widget.onDismiss,
+                            icon: Icon(
+                              Icons.close,
+                              color: colors.onInverseSurface,
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -141,17 +257,12 @@ class _Notice extends SnackBar {
                  Opacity(opacity: value, child: child),
              child: Row(
                children: [
-                 Icon(
-                   switch (kind) {
-                     _NoticeKind.success => Icons.check_circle_outline,
-                     _NoticeKind.error => Icons.error_outline,
-                     _NoticeKind.info => Icons.info_outline,
-                     _NoticeKind.warning => Icons.warning_amber_rounded,
-                   },
-                   color: Theme.of(
-                     context,
-                   ).snackBarTheme.contentTextStyle?.color,
-                 ),
+                 Icon(switch (kind) {
+                   _NoticeKind.success => Icons.check_circle_outline,
+                   _NoticeKind.error => Icons.error_outline,
+                   _NoticeKind.info => Icons.info_outline,
+                   _NoticeKind.warning => Icons.warning_amber_rounded,
+                 }, color: Theme.of(context).colorScheme.onInverseSurface),
                  const SizedBox(width: 12),
                  Expanded(
                    child: Column(
@@ -172,7 +283,7 @@ class _Notice extends SnackBar {
                              style: TextStyle(
                                color: Theme.of(
                                  context,
-                               ).snackBarTheme.contentTextStyle?.color,
+                               ).colorScheme.onInverseSurface,
                              ),
                            ),
                          ),

@@ -7,7 +7,6 @@ import '../services/connection_sound.dart';
 import '../models/sync_summary.dart';
 import '../services/network_status.dart';
 import 'app_snackbar.dart';
-import 'offline_status_banner.dart';
 
 class NetworkObserver extends StatefulWidget {
   const NetworkObserver({
@@ -89,9 +88,15 @@ class _NetworkObserverState extends State<NetworkObserver> {
       });
       networkOffline.value = offline;
       if (!offline) _retry(manual: false);
+      if (offline) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _offline) _offlineNotice();
+        });
+      }
       return;
     }
     if (offline) {
+      if (!_offline) _offlineNotice();
       _debounce?.cancel();
       _onlineCandidate = false;
       setState(() => _offline = true);
@@ -105,7 +110,7 @@ class _NetworkObserverState extends State<NetworkObserver> {
           _onlineCandidate = false;
         });
         networkOffline.value = false;
-        AppSnackbar.show(context, AppSnackbar.info('Connection restored'));
+        AppSnackbar.show(context, AppSnackbar.success('Connection restored'));
         unawaited((widget.playSound?.call() ?? ConnectionSound().play()));
         _retry(manual: false);
       });
@@ -121,27 +126,13 @@ class _NetworkObserverState extends State<NetworkObserver> {
     super.dispose();
   }
 
+  void _offlineNotice() => AppSnackbar.show(
+    context,
+    AppSnackbar.info(
+      'You are offline. Saved content is available; messages pause until you reconnect.',
+    ),
+  );
+
   @override
-  Widget build(BuildContext context) {
-    final visibleBanner = OfflineStatusBanner(
-      onRetry: () async {
-        final results =
-            await (widget.check?.call() ?? Connectivity().checkConnectivity());
-        _changed(results);
-        if (!results.contains(ConnectivityResult.none)) _retry();
-      },
-    );
-    return Column(
-      children: [
-        SafeArea(top: _offline, bottom: false, child: visibleBanner),
-        Expanded(
-          child: MediaQuery.removePadding(
-            context: context,
-            removeTop: _offline,
-            child: widget.child,
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => widget.child;
 }

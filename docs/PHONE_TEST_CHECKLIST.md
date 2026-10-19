@@ -96,3 +96,41 @@ Expected:
 Actual (include elapsed time and pending count):
 Evidence / safe error code:
 ```
+
+## Follow-up build: phone feedback from 18-19 October
+
+Do not treat this section as passed until tested on the installed follow-up build. The changes need the updated API/dashboard and the community image migration as well as the mobile build.
+
+- Sync: save one mood and change the profile while online. Wait for pending=0; capture diagnostics. Force-close/reopen three times and manually refresh. The same acknowledged records must not return as new operations. Then edit while offline: the new edit must remain pending, survive restart and upload once on reconnect. Logout must still complete with pending edits, preserving them only for that account.
+- First installation: test device Light and Dark separately; onboarding must match the device. Swipe left/right through all three introductions, use Back/Skip/Continue, select preferences, and finish at Welcome to Cozy Health. There must be no extra account-choice page. Test large text and a short screen.
+- Returning account: sign in on a clean installation; no Show me around offer. New account: accept the tour, finish it, and repeat with Skip on another test account. The gentle-reminder request must follow the tour, never overlap it.
+- Reminders: allow/deny from the improved prompt; check Settings reflects the result. With affirmation reminders enabled, leave today's affirmation unread, test the scheduled reminder, open its full view and check no duplicate reminder for that day. Verify timezone and next-day behavior. OS permissions and push delivery need a real signed build with push configuration.
+- Home: affirmation text is readable directly on the card; tap for the comforting reflection and practise section. Copy works, article button is absent. Confirm journal art is left of the text at ordinary text sizes and the writing action opens Journal. Confirm the exact journal reference with the owner.
+- Notices: switch airplane mode on/off repeatedly. Offline/restored notices must use the same top position/style; no duplicate reconnect message. Saved/copy/error and foreground push notices must also use that position. Dismiss/retry actions must work with the keyboard open and large text.
+- Provider: open each conversation online and load older messages. Force-close, enable airplane mode, reopen: cached provider names, text and shared records remain readable. Text/voice/share/send actions must be disabled. Reconnect: draft is not sent automatically; pressing Send sends once. Switch accounts and confirm no prior account conversation appears. Remove a provider online and confirm its cache is removed on refresh.
+- Community: Posts and Groups are separate; no Create group entry for patients. Confirm active groups load, join/leave, counts, loading/error/empty states. The live service currently has community disabled and draft unpublished guidelines; publish reviewed guidelines, configure readiness, active groups and moderation staffing before enabling it.
+- Images: choose/cancel/change/remove a photo; preview must match. Submit text+photo once; it must show pending review, remain invisible to another user, and be visible to a moderator. Approve in dashboard: image appears to the permitted audience. Reject/remove and block-author cases must hide it. Test large/invalid files, denied photo access, interrupted upload and retry without losing draft. Verify private storage, cleanup worker and image migration on deployment.
+- Assessments: refresh the catalog online. A server failure must show Retry, not an endless spinner or a false coming-soon claim. An empty approved catalog needs publication from the care/admin team. With an approved instrument, complete all questions, submit, view results/history, then reopen a downloaded definition offline. Never use fixture clinical questions for a real assessment.
+
+Report build commit, device/OS, light/dark setting, the action taken, expected/actual result and screenshots. For recurring pending records, attach exported metadata before sync, after sync and after restart; do not send private journal/message contents.
+
+## UI reference map for this follow-up
+
+The supplied connection-restored and pending-record screenshots are the connection/sync references. The workspace Figma exports provide the existing app design direction; the exact requested journal PNG still needs identification.
+
+| Component | Visual reference | Interaction/component reference |
+|---|---|---|
+| Onboarding | Workspace `cozyhealth mobilescreen figma/scren1 refix/Onboarding screen.png`, -1 and -2; existing app illustrations | [Horizontal PageView](https://api.flutter.dev/flutter/widgets/PageView-class.html), [system appearance](https://api.flutter.dev/flutter/material/ThemeMode.html) |
+| Welcome/login/signup transition | Existing Welcome to Cozy Health screen; remove the extra account-choice step | Existing app authentication routes |
+| Tour | Existing FeatureTour spotlight cards at their target controls | Existing optional Skip/Show me/Done flow |
+| Gentle reminders | Existing app colors; notification, plant and sparkle icons | [Modal sheets](https://api.flutter.dev/flutter/material/showModalBottomSheet.html), [Material icons](https://api.flutter.dev/flutter/material/Icons-class.html) |
+| Home affirmation/full reflection | Existing AffirmationPanel, app typography and color system; prominent quote, supportive explanation and small reflection exercise | [Card surfaces](https://api.flutter.dev/flutter/material/Card-class.html); full view retains Copy and removes the article action |
+| Journaling | Workspace `cozyhealth mobilescreen figma/Home.svg`; existing `assets/svg/journaling.svg` | Illustration left, text and writing action right; vertical arrangement when large text needs more room |
+| Offline/restored and other app notices | User's Connection restored screenshot; existing notice styling | Shared top [overlay](https://api.flutter.dev/flutter/widgets/Overlay-class.html), safe-area placement, close/retry, reduced-motion/accessibility handling |
+| Provider/read-only offline | Existing ProviderHubScreen, linked-provider screen and SharedRecordCard | Saved conversation/provider/resource reads; disabled mutation and sending controls |
+| Community | Workspace `cozyhealth mobilescreen figma/Community.svg` and `Community - joined posts.svg`; existing PostCard | Separate Posts/Groups using [segmented buttons](https://api.flutter.dev/flutter/material/SegmentedButton-class.html); photo picker, preview, pending review |
+| Assessments | Workspace `cozyhealth mobilescreen figma/Home-1.svg`; existing assessment cards/history | Approved API catalog, separate loading/error/empty states and Retry |
+
+Transient app notices share the top position. Decision sheets remain modal because they collect input; native permission placement is controlled by Android/iOS; tour instructions sit beside the control being explained.
+
+The community image schema migration must be deployed before the updated image endpoint is used. The server needs GD, configured private `profile_avatars` storage, and the existing `avatars:cleanup` schedule. Uploaded community images use random identity-free object names and the shared durable cleanup queue. Publishing reviewed guidelines, enabling community readiness and activating groups remain deployment/content steps, separate from installing the APK.

@@ -1,3 +1,4 @@
+import '../../../../core/services/network_status.dart';
 import 'dart:async';
 import '../../../../core/audio/voice_audio.dart';
 import '../../../../core/services/local_db_service.dart';
@@ -24,6 +25,67 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
   late final ApiClient _api;
   final _draft = TextEditingController();
   Timer? _timer;
+  StreamSubscription<void>? _account;
+  String? _owner;
+  bool get _offline => networkOffline.value == true;
+  bool get _current => mounted && _owner == LocalDbService().activeUserId;
+  Future<void> _loadCache() async {
+    final owner = _owner;
+    final settings = await LocalDbService().settingsBox();
+    if (!_current || owner != _owner) return;
+    final cached = settings.get('provider_conversations_v1');
+    if (cached is Map) {
+      final threads = _maps(cached['threads'] ?? []);
+      final selected =
+          threads.where((t) => t['id'] == _thread?['id']).firstOrNull ??
+          threads.firstOrNull;
+      setState(() {
+        _threads = threads;
+        _thread = selected;
+        _messages = _maps(
+          (cached['messages'] as Map?)?[selected?['id'].toString()] ?? [],
+        );
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _saveCache() async {
+    final owner = _owner;
+    final settings = await LocalDbService().settingsBox();
+    if (!_current || owner != _owner) return;
+    final cached = settings.get('provider_conversations_v1');
+    final messages = <String, dynamic>{
+      if (cached is Map && cached['messages'] is Map)
+        ...Map<String, dynamic>.from(cached['messages'] as Map),
+      if (_thread != null)
+        _thread!['id'].toString(): _messages.length > 500
+            ? _messages.sublist(_messages.length - 500)
+            : _messages,
+    };
+    final allowed = _threads.map((t) => t['id'].toString()).toSet();
+    messages.removeWhere((id, _) => !allowed.contains(id));
+    await settings.put('provider_conversations_v1', {
+      'threads': _threads,
+      'messages': messages,
+    });
+  }
+
+  void _connectionChanged() {
+    if (!_current) return;
+    setState(() {});
+    if (!_offline) _refresh();
+  }
+
+  Future<void> _start() async {
+    try {
+      await _loadCache();
+    } catch (_) {
+      /* A first visit has no cache. */
+    }
+    if (_current) await _refresh();
+  }
+
   List<Map<String, dynamic>> _threads = [], _messages = [], _selected = [];
   Map<String, dynamic>? _thread, _pending;
   bool _loading = true,
@@ -40,7 +102,21 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
     super.initState();
     _api = widget.apiClient ?? ApiClient.instance;
     WidgetsBinding.instance.addObserver(this);
-    _refresh();
+    _owner = LocalDbService().activeUserId;
+    networkOffline.addListener(_connectionChanged);
+    _account = LocalDbService().accountChanges.listen((_) {
+      if (!mounted || _owner == LocalDbService().activeUserId) return;
+      setState(() {
+        _owner = LocalDbService().activeUserId;
+        _threads = [];
+        _messages = [];
+        _thread = null;
+        _selected = [];
+        _pending = null;
+        _draft.clear();
+      });
+    });
+    unawaited(_start());
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (_active) _refresh();
     });
@@ -55,19 +131,26 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
   @override
   void dispose() {
     _timer?.cancel();
+    _account?.cancel();
+    networkOffline.removeListener(_connectionChanged);
     WidgetsBinding.instance.removeObserver(this);
     _draft.dispose();
     super.dispose();
   }
 
   Future<void> _refresh() async {
-    if (_busy) return;
+    if (_busy || _offline || !_current) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+    final owner = _owner;
     _busy = true;
     try {
       final threads = _maps(
         responseMap(await _api.get('/provider-conversations'))['data'],
       );
-      if (!mounted) return;
+      if (!_current) return;
+      if (owner != _owner) return;
       final oldId = _thread?['id'];
       final thread =
           threads.where((t) => t['id'] == oldId).firstOrNull ??
@@ -87,14 +170,18 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
         final page = responseMap(
           await _api.get(
             '$_path/messages',
-            query: {if (_messages.isNotEmpty) 'since': _messages.first['id']},
+            query: {if (_messages.isNotEmpty) 'since': _messages.last['id']},
           ),
         );
-        if (!mounted) return;
+        if (!_current) return;
+        if (owner != _owner) return;
         final incoming = _maps(page['data']);
         setState(() {
-          _messages = incoming;
-          _more = page['has_more'] == true;
+          if (_messages.isEmpty) _more = page['has_more'] == true;
+          final combined = {
+            for (final row in [..._messages, ...incoming]) row['id']: row,
+          };
+          _messages = combined.values.toList();
         });
         if (incoming.isNotEmpty) {
           await _api.post(
@@ -105,12 +192,13 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
       } else {
         _messages = [];
       }
-      if (mounted) setState(() => _error = null);
+      if (_current && owner == _owner) setState(() => _loading = false);
+      await _saveCache();
+      if (_current && owner == _owner) setState(() => _error = null);
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error = 'Unable to refresh messages. Please retry.';
-          _messages = [];
+          _error = 'Showing saved messages. Connect to refresh.';
         });
       }
     } finally {
@@ -120,6 +208,9 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
   }
 
   Future<void> _older() async {
+    if (_offline || !_current) return;
+    final owner = _owner;
+    final threadId = _thread?['id'];
     try {
       final page = responseMap(
         await _api.get(
@@ -127,11 +218,12 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
           query: {'before': _messages.first['id']},
         ),
       );
-      if (mounted) {
+      if (_current && owner == _owner && threadId == _thread?['id']) {
         setState(() {
           _messages = [..._maps(page['data']), ..._messages];
           _more = page['has_more'] == true;
         });
+        await _saveCache();
       }
     } catch (_) {
       if (mounted) setState(() => _error = 'Unable to load earlier messages.');
@@ -139,7 +231,13 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
   }
 
   Future<void> _send() async {
-    if (_sending || (_draft.text.trim().isEmpty && _selected.isEmpty)) return;
+    if (_offline ||
+        !_current ||
+        _sending ||
+        (_draft.text.trim().isEmpty && _selected.isEmpty)) {
+      return;
+    }
+    final owner = _owner;
     final payload = {
       'content': _draft.text.trim(),
       'records': _selected
@@ -157,7 +255,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
     });
     try {
       await _api.post('$_path/messages', body: _pending);
-      if (!mounted) return;
+      if (!_current || owner != _owner) return;
       setState(() {
         _pending = null;
         _draft.clear();
@@ -177,6 +275,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
   }
 
   Future<void> _recordVoice(BuildContext anchor) async {
+    if (_offline || !_current) return;
     final threadId = _thread?['id'] as int?;
     if (threadId == null) return;
     final ownerPath = '/provider-conversations/$threadId';
@@ -187,6 +286,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
       anchor,
       journal: false,
       onConfirm: (audio) async {
+        if (_offline) throw StateError('Reconnect before sending a message.');
         if (owner != LocalDbService().activeUserId) {
           throw StateError('Account changed');
         }
@@ -204,6 +304,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
         if (owner != LocalDbService().activeUserId) {
           throw StateError('Account changed');
         }
+        if (_offline) throw StateError('Reconnect before sending a message.');
         await _api.post(
           '$ownerPath/messages',
           body: {'client_id': clientId, 'audio_attachment_id': attachmentId},
@@ -214,6 +315,9 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
   }
 
   Future<void> _pick(String type) async {
+    if (_offline || !_current) return;
+    final owner = _owner;
+    final threadId = _thread?['id'];
     int page = 1;
     try {
       bool more = true;
@@ -221,7 +325,12 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
         final result = responseMap(
           await _api.get('$_path/records', query: {'type': type, 'page': page}),
         );
-        if (!mounted) return;
+        if (!mounted ||
+            !_current ||
+            owner != _owner ||
+            threadId != _thread?['id']) {
+          return;
+        }
         final rows = _maps(result['data']);
         more = (result['current_page'] as int) < (result['last_page'] as int);
         final choice = await showModalBottomSheet<Map<String, dynamic>>(
@@ -320,7 +429,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
           actions: [
             IconButton(
               tooltip: 'Connection and sharing permissions',
-              onPressed: _manage,
+              onPressed: _offline ? null : _manage,
               icon: const Icon(Icons.manage_accounts_outlined),
             ),
           ],
@@ -385,7 +494,11 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                                     _draft.clear();
                                     _more = false;
                                   });
-                                  _refresh();
+                                  if (_offline) {
+                                    _loadCache();
+                                  } else {
+                                    _refresh();
+                                  }
                                 },
                         ),
                       Padding(
@@ -395,7 +508,14 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ),
-                      if (_error != null)
+                      if (_offline)
+                        const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Text(
+                            'You are offline. Saved conversations are available to read. Reconnect to send messages.',
+                          ),
+                        ),
+                      if (_error != null && !_offline)
                         MaterialBanner(
                           content: Text(_error!),
                           actions: [
@@ -419,7 +539,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                                 itemBuilder: (context, i) {
                                   if (i == _messages.length) {
                                     return TextButton(
-                                      onPressed: _older,
+                                      onPressed: _offline ? null : _older,
                                       child: const Text(
                                         'Load earlier messages',
                                       ),
@@ -544,7 +664,10 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             PopupMenuButton<String>(
-                              enabled: !_sending && _selected.length < 10,
+                              enabled:
+                                  !_offline &&
+                                  !_sending &&
+                                  _selected.length < 10,
                               tooltip: 'Share a record',
                               icon: const Icon(Icons.add_circle_outline),
                               onSelected: _pick,
@@ -565,7 +688,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                             Expanded(
                               child: TextField(
                                 controller: _draft,
-                                enabled: !_sending,
+                                enabled: !_offline && !_sending,
                                 minLines: 1,
                                 maxLines: 4,
                                 maxLength: 5000,
@@ -579,13 +702,13 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                               builder: (anchor) => IconButton(
                                 tooltip: 'Record voice message',
                                 icon: const Icon(Icons.mic_none),
-                                onPressed: _sending
+                                onPressed: _offline || _sending
                                     ? null
                                     : () => _recordVoice(anchor),
                               ),
                             ),
                             TextButton(
-                              onPressed: _sending ? null : _send,
+                              onPressed: _offline || _sending ? null : _send,
                               child: Text(
                                 _sending
                                     ? 'Sending…'

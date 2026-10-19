@@ -11,7 +11,6 @@ import 'steps/focus_areas_step.dart';
 import 'steps/challenges_step.dart';
 
 const _blue = Color(0xFF0066FF);
-const _ink = Color(0xFF292D39);
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -22,7 +21,14 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _focus = <String>{};
   final _challenges = <String>{};
+  final _pages = PageController();
   int _step = 0;
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
   bool _skipped = false;
   bool _saving = false;
 
@@ -31,22 +37,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   });
 
   void _goTo(int step) {
-    if (!_saving) setState(() => _step = step);
+    if (_saving) return;
+    if (step < 3 && _step < 3 && _pages.hasClients) {
+      if (MediaQuery.of(context).disableAnimations) {
+        _pages.jumpToPage(step);
+      } else {
+        _pages.animateToPage(
+          step,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
+    } else {
+      setState(() => _step = step);
+      if (step < 3) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _pages.hasClients) _pages.jumpToPage(step);
+        });
+      }
+    }
   }
 
   void _skip() {
     if (_saving) return;
     if (_step < 3) {
       _goTo(3);
-    } else if (_step == 5) {
-      _finish(AppRouter.welcome);
     } else {
       setState(() {
         _skipped = true;
         if (_step == 3) _focus.clear();
         if (_step == 4) _challenges.clear();
-        _step++;
       });
+      if (_step == 4) {
+        _finish(AppRouter.welcome);
+      } else {
+        _goTo(4);
+      }
     }
   }
 
@@ -133,25 +159,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
       );
 
-  Widget _intro() {
-    final page = OnboardingData.pages[_step];
+  Widget _intro(int index) {
+    final page = OnboardingData.pages[index];
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Preserve reference spacing; short screens and larger text can scroll.
-        final height = constraints.maxHeight < 720
-            ? 720.0
-            : constraints.maxHeight;
+        final height = constraints.maxHeight;
+        final illustrationHeight = (height * .38).clamp(120.0, 312.0);
         return SingleChildScrollView(
-          key: ValueKey(_step),
+          key: ValueKey(index),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: height),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 23),
               child: Column(
                 children: [
-                  SizedBox(height: height * .13),
+                  SizedBox(height: height * .035),
                   SizedBox(
-                    height: 312,
+                    height: illustrationHeight,
                     width: 335,
                     child: Image.asset(
                       page.asset,
@@ -159,9 +183,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       excludeFromSemantics: true,
                     ),
                   ),
-                  const SizedBox(height: 59),
-                  _progress(_step, 3, 'Introduction progress'),
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 24),
+                  _progress(index, 3, 'Introduction progress'),
+                  const SizedBox(height: 24),
                   Text(
                     page.title,
                     textAlign: TextAlign.center,
@@ -176,21 +200,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 16, height: 1.5),
                   ),
-                  SizedBox(height: _step == 0 ? 50 : 26),
+                  SizedBox(height: 24),
                   _button(
-                    _step == 2 ? 'Continue' : 'Next',
-                    () => _goTo(_step + 1),
-                    arrow: _step < 2,
+                    index == 2 ? 'Continue' : 'Next',
+                    () => _goTo(index + 1),
+                    arrow: index < 2,
                   ),
-                  if (_step < 2) ...[
+                  if (index < 2) ...[
                     const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: _skip,
-                      child: const Text(
-                        'Skip',
-                        style: TextStyle(color: Color(0xFF555555)),
-                      ),
-                    ),
+                    TextButton(onPressed: _skip, child: const Text('Skip')),
                   ],
                   const SizedBox(height: 20),
                 ],
@@ -248,47 +266,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     selected: _challenges,
                     onToggle: (v) => _toggle(_challenges, v),
                   ),
-                  _ => const Column(
-                    children: [
-                      SizedBox(height: 28),
-                      Icon(Icons.person_outline, color: _blue, size: 96),
-                      SizedBox(height: 32),
-                      Text(
-                        'Make this space yours.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'Create an account to keep your check-ins and thoughts together.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, height: 1.5),
-                      ),
-                    ],
-                  ),
+                  _ => const SizedBox.shrink(),
                 },
                 const Spacer(),
                 const SizedBox(height: 20),
                 _button(
-                  _step == 5 ? 'Create account' : 'Continue',
+                  'Continue',
                   _saving
                       ? null
                       : () {
-                          if (_step == 5) {
-                            _finish(AppRouter.createAccount);
+                          if (_step == 4) {
+                            _finish(AppRouter.welcome);
                           } else {
                             _goTo(_step + 1);
                           }
                         },
                 ),
-                if (_step == 5)
-                  TextButton(
-                    onPressed: _saving ? null : () => _finish(AppRouter.login),
-                    child: const Text('I already have an account'),
-                  ),
               ],
             ),
           ),
@@ -299,35 +292,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final base = Theme.of(context);
-    final theme = base.copyWith(
-      scaffoldBackgroundColor: Colors.white,
-      iconTheme: base.iconTheme.copyWith(color: _ink),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: _blue),
-      ),
-      colorScheme:
-          ColorScheme.fromSeed(
-            seedColor: _blue,
-            brightness: Brightness.light,
-          ).copyWith(
-            primary: _blue,
-            onSurface: _ink,
-            surface: Colors.white,
-            primaryContainer: const Color(0xFFEDF4FF),
-            outlineVariant: const Color(0xFFCEDFF9),
-          ),
-      textTheme: base.textTheme.apply(bodyColor: _ink, displayColor: _ink),
-    );
-    return Theme(
-      data: theme,
-      child: PopScope(
-        canPop: _step == 0 && !_saving,
-        onPopInvokedWithResult: (didPop, result) {
-          if (!didPop && _step > 0) _goTo(_step - 1);
-        },
-        child: Scaffold(
-          body: SafeArea(child: _step < 3 ? _intro() : _preferences()),
+    return PopScope(
+      canPop: _step == 0 && !_saving,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _step > 0) _goTo(_step - 1);
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: _step < 3
+              ? PageView.builder(
+                  controller: _pages,
+                  itemCount: OnboardingData.pages.length,
+                  onPageChanged: (index) => setState(() => _step = index),
+                  itemBuilder: (context, index) => _intro(index),
+                )
+              : _preferences(),
         ),
       ),
     );

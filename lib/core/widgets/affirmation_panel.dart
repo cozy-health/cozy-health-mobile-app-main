@@ -5,11 +5,18 @@ import '../data/demo_mode.dart';
 import '../routing/app_router.dart';
 import '../services/affirmation_controller.dart';
 import '../repositories/affirmation_repository.dart';
+import '../theme/app_surface.dart';
 
 class AffirmationPanel extends StatefulWidget {
-  const AffirmationPanel({super.key, this.controller, this.compact = false});
+  const AffirmationPanel({
+    super.key,
+    this.controller,
+    this.compact = false,
+    this.showReflection = false,
+  });
   final AffirmationController? controller;
   final bool compact;
+  final bool showReflection;
   @override
   State<AffirmationPanel> createState() => _AffirmationPanelState();
 }
@@ -91,6 +98,12 @@ class _AffirmationPanelState extends State<AffirmationPanel>
           ? CrossAxisAlignment.start
           : CrossAxisAlignment.center,
       children: [
+        Icon(
+          Icons.auto_awesome_outlined,
+          size: widget.compact ? 28 : 36,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        const SizedBox(height: 12),
         Text(
           label,
           style: Theme.of(context).textTheme.labelLarge,
@@ -102,9 +115,10 @@ class _AffirmationPanelState extends State<AffirmationPanel>
           key: const Key('affirmation-body'),
           textAlign: widget.compact ? TextAlign.start : TextAlign.center,
           style: widget.compact
-              ? Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)
+              ? Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                )
               : Theme.of(context).textTheme.headlineSmall,
         ),
         if (state.status == AffirmationStatus.loading) ...[
@@ -126,11 +140,30 @@ class _AffirmationPanelState extends State<AffirmationPanel>
         if (widget.compact)
           const Padding(
             padding: EdgeInsets.only(top: 12),
-            child: Text(
-              'Read affirmation',
-              style: TextStyle(decoration: TextDecoration.underline),
-            ),
+            child: Text('Take a moment with these words  →'),
           ),
+        if (widget.showReflection) ...[
+          const SizedBox(height: 32),
+          Text(
+            'Let this meet you where you are',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 12),
+          Text(state.reflection, style: const TextStyle(height: 1.6)),
+          const SizedBox(height: 24),
+          Text(
+            'A small way to practise',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Take one comfortable breath. Read the affirmation slowly and choose '
+            'a word that feels helpful today. Ask yourself: what is one small, '
+            'kind action I can take for myself right now? It is okay if that '
+            'action is simply pausing for a moment.',
+            style: TextStyle(height: 1.6),
+          ),
+        ],
       ],
     );
     if (!widget.compact) return content;
@@ -144,7 +177,11 @@ class _AffirmationPanelState extends State<AffirmationPanel>
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
+            color: Color.alphaBlend(
+              Theme.of(context).colorScheme.primary.withValues(alpha: .10),
+              Theme.of(context).colorScheme.surface,
+            ),
+            border: AppSurface.border(context),
             borderRadius: BorderRadius.circular(20),
           ),
           child: content,

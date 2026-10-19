@@ -59,6 +59,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await settings.clear();
+    await settings.put('new_account_tour_pending', true);
   });
   tearDownAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -160,6 +161,14 @@ void main() {
     expect(find.text('Want a quick look around?'), findsOneWidget);
     expect(find.text('Show me'), findsOneWidget);
     expect(find.text('Skip'), findsOneWidget);
+  });
+
+  testWidgets('Existing account without a tour flag is never offered a tour', (
+    tester,
+  ) async {
+    await tester.runAsync(() => settings.delete('new_account_tour_pending'));
+    await mount(tester);
+    expect(find.text('Want a quick look around?'), findsNothing);
   });
 
   testWidgets('Seen tour shows no offer or coach marks', (tester) async {

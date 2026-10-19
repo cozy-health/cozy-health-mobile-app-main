@@ -18,14 +18,19 @@ class JournalingCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Journaling', style: theme.textTheme.headlineSmall),
+        Text(
+          'Journaling',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         const SizedBox(height: 8),
         Text(
-          'Make space for your thoughts. Your journal is yours.',
+          'Your thoughts deserve a safe space. Write freely, reflect on your journey.',
           style: theme.textTheme.bodyMedium,
         ),
         const SizedBox(height: 8),
-        TextButton(
+        OutlinedButton(
           onPressed: () => context.push(AppRouter.journal),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
@@ -40,8 +45,8 @@ class JournalingCard extends StatelessWidget {
     );
     final art = SvgPicture.asset(
       Assets.svg.journaling,
-      width: 80,
-      height: 80,
+      width: 132,
+      height: 132,
       excludeFromSemantics: true,
     );
     return Container(
@@ -69,9 +74,9 @@ class JournalingCard extends StatelessWidget {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: copy),
-              const SizedBox(width: 16),
               art,
+              const SizedBox(width: 16),
+              Expanded(child: copy),
             ],
           );
         },

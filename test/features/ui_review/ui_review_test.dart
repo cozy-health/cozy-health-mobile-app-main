@@ -37,6 +37,7 @@ import 'package:cozy_health/features/content/presentation/screens/article_detail
 import 'package:cozy_health/features/insights/presentation/screens/insights_home_screen.dart';
 import 'package:cozy_health/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:cozy_health/features/notifications/presentation/screens/notification_detail_screen.dart';
+import 'package:cozy_health/features/notifications/presentation/widgets/notification_permission_sheet.dart';
 import '../../support/local_fonts.dart';
 import '../../support/surface_capture.dart';
 import '../../support/mood_review_capture.dart';
@@ -303,6 +304,42 @@ void main() {
     ),
   };
   for (final dark in [false, true]) {
+    testWidgets('Reminder permission choices remain usable, dark=$dark', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        const Scaffold(body: NotificationPermissionSheet()),
+        dark: dark,
+        size: const Size(375, 812),
+        textScale: 1,
+      );
+      await captureSurface(
+        tester,
+        'reminder_permission_${dark ? 'dark' : 'light'}',
+      );
+      final choice = find.widgetWithText(CheckboxListTile, 'Affirmations');
+      await tester.ensureVisible(choice);
+      await tester.tap(choice);
+      await tester.pumpAndSettle();
+      expect(tester.widget<CheckboxListTile>(choice).value, isTrue);
+      expect(tester.takeException(), isNull);
+    });
+    testWidgets('Community groups have a separate readable view, dark=$dark', (
+      tester,
+    ) async {
+      await mount(tester, const CommunityHubScreen(), dark: dark, textScale: 1);
+      await tester.tap(find.text('Groups'));
+      await tester.pumpAndSettle();
+      expect(find.text('Discover groups'), findsOneWidget);
+      expect(find.text('General Posts'), findsNothing);
+      expect(find.text('Create new group'), findsNothing);
+      await captureSurface(
+        tester,
+        'community_groups_${dark ? 'dark' : 'light'}',
+      );
+      expect(tester.takeException(), isNull);
+    });
     testWidgets('Home cards remain defined after scrolling, dark=$dark', (
       tester,
     ) async {
@@ -470,11 +507,8 @@ void main() {
   });
   testWidgets('Community header create menu stays accessible', (tester) async {
     await mount(tester, const CommunityHubScreen(), dark: true);
-    await tester.tap(find.text('Create'));
-    await tester.pumpAndSettle();
-    expect(find.text('Create post'), findsOneWidget);
-    expect(find.text('Create new group'), findsOneWidget);
-    await tester.tap(find.text('Create post'));
+    expect(find.text('Create new group'), findsNothing);
+    await tester.tap(find.text('Post'));
     await tester.pumpAndSettle();
     expect(find.text('destination:${AppRouter.createPost}'), findsOneWidget);
   });

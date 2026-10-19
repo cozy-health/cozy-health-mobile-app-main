@@ -33,7 +33,7 @@ import 'package:cozy_health/core/services/background_restore_service.dart';
 import 'package:cozy_health/core/services/push_notification_service.dart';
 import 'package:cozy_health/features/settings/presentation/screens/notification_preferences_screen.dart';
 import 'package:cozy_health/features/notifications/presentation/widgets/push_notification_host.dart';
-import 'package:cozy_health/features/notifications/presentation/widgets/app_notification_banner.dart';
+import 'package:cozy_health/core/routing/app_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cozy_health/core/services/user_data_merge.dart';
 import 'package:cozy_health/core/storage/token_storage.dart';
@@ -464,8 +464,9 @@ void main() {
       );
       try {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: NotificationPreferencesScreen(),
+          MaterialApp(
+            navigatorKey: AppRouter.navigatorKey,
+            home: const NotificationPreferencesScreen(),
             builder: _notificationHost,
           ),
         );
@@ -492,8 +493,11 @@ void main() {
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 450));
           expect(received.last.type, category);
-          expect(find.byType(AppNotificationBanner), findsOneWidget);
-          expect(find.text('Test $category reminder'), findsOneWidget);
+          expect(find.byKey(const Key('app-top-notice')), findsOneWidget);
+          expect(
+            find.textContaining('Test $category reminder'),
+            findsOneWidget,
+          );
           expect(
             ModalRoute.of(
               tester.element(find.byType(NotificationPreferencesScreen)),
@@ -502,13 +506,13 @@ void main() {
           );
           await tester.tap(
             find.descendant(
-              of: find.byType(AppNotificationBanner),
+              of: find.byKey(const Key('app-top-notice')),
               matching: find.byIcon(Icons.close),
             ),
           );
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 450));
-          expect(find.byType(AppNotificationBanner), findsNothing);
+          expect(find.byKey(const Key('app-top-notice')), findsNothing);
         }
         expect(local.appNotificationBox, isEmpty);
       } finally {

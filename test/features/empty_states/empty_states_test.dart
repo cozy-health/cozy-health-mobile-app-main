@@ -439,7 +439,7 @@ void main() {
   });
 
   testWidgets('Community empty topic invites sharing', (tester) async {
-    await mount(tester, const CommunityHubScreen());
+    await mount(tester, const CommunityHubScreen(posts: []));
     final sleepFilter = find.descendant(
       of: find.byType(ListView).first,
       matching: find.text('Sleep'),
@@ -542,7 +542,7 @@ void main() {
 
   testWidgets('Quiz list handles an empty catalog', (tester) async {
     await mount(tester, const QuizSelectionScreen(availableQuizIds: {}));
-    expect(find.text('Assessments coming soon.'), findsOneWidget);
+    expect(find.text('No assessments are available yet'), findsOneWidget);
   });
 
   testWidgets('Quiz history invites exploring assessments', (tester) async {

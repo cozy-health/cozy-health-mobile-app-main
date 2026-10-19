@@ -51,6 +51,7 @@ void main() {
     Size size = const Size(375, 812),
     double textScale = 1,
     bool reduceMotion = false,
+    Brightness brightness = Brightness.light,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -78,6 +79,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp.router(
         theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: brightness == Brightness.dark
+            ? ThemeMode.dark
+            : ThemeMode.light,
         routerConfig: router,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
@@ -109,7 +114,6 @@ void main() {
   Future<void> toAccount(WidgetTester tester) async {
     await tap(tester, 'Skip');
     await tap(tester, 'Continue');
-    await tap(tester, 'Continue');
   }
 
   Future<void> finish(
@@ -117,6 +121,8 @@ void main() {
     String text, {
     bool fails = false,
   }) async {
+    await tester.ensureVisible(find.text(text));
+    await tester.pumpAndSettle();
     await tester.runAsync(() async {
       await tester.tap(find.text(text));
       for (var i = 0; i < 100; i++) {
@@ -168,12 +174,11 @@ void main() {
       findsOneWidget,
     );
     await capture(tester, 'preferences-challenges');
-    await tap(tester, 'Continue');
-    expect(find.text('Make this space yours.'), findsOneWidget);
-    await capture(tester, 'account');
+    await finish(tester, 'Continue');
+    expect(find.text('destination:${AppRouter.welcome}'), findsOneWidget);
     expect(find.text('How often do you want to check in?'), findsNothing);
     expect(find.text('How did you hear about us?'), findsNothing);
-    expect(await OnboardingService().hasCompletedOnboarding(), isFalse);
+    expect(await OnboardingService().hasCompletedOnboarding(), isTrue);
   });
 
   testWidgets('Intro skip opens preferences; questions are optional', (
@@ -181,7 +186,6 @@ void main() {
   ) async {
     await mount(tester);
     await toAccount(tester);
-    expect(find.text('Create account'), findsOneWidget);
     await finish(tester, 'Skip');
     expect(find.text('destination:${AppRouter.welcome}'), findsOneWidget);
     final saved = await local.getUserPreferences();
@@ -209,16 +213,18 @@ void main() {
     final sleep = tester.widget<OutlinedButton>(
       find.widgetWithText(OutlinedButton, 'Sleep'),
     );
-    expect(sleep.style!.backgroundColor!.resolve({}), const Color(0xFFEDF4FF));
+    expect(
+      sleep.style!.backgroundColor!.resolve({}),
+      AppTheme.light.colorScheme.primaryContainer,
+    );
     await tap(tester, 'Continue');
-    await tap(tester, 'Continue');
-    await finish(tester, 'Create account');
+    await finish(tester, 'Continue');
     final saved = await local.getUserPreferences();
     expect(saved!.focusAreas, ['Sleep']);
     expect(saved.currentChallenges, ['Work', 'Family']);
     expect(saved.skipped, isFalse);
     expect(saved.completedAt.isUtc, isTrue);
-    expect(find.text('destination:${AppRouter.createAccount}'), findsOneWidget);
+    expect(find.text('destination:${AppRouter.welcome}'), findsOneWidget);
     expect(
       (await local.settingsBox()).get('onboarding_preferences'),
       saved.toJson(),
@@ -239,13 +245,12 @@ void main() {
     await tap(tester, 'Stress');
     await tap(tester, 'Skip');
     await tap(tester, 'Health');
-    await tap(tester, 'Continue');
-    await finish(tester, 'I already have an account');
+    await finish(tester, 'Continue');
     final saved = await local.getUserPreferences();
     expect(saved!.focusAreas, isEmpty);
     expect(saved.currentChallenges, ['Health']);
     expect(saved.skipped, isTrue);
-    expect(find.text('destination:${AppRouter.login}'), findsOneWidget);
+    expect(find.text('destination:${AppRouter.welcome}'), findsOneWidget);
   });
 
   testWidgets('Existing fields and tour completion survive onboarding save', (
@@ -274,7 +279,7 @@ void main() {
     expect(local.syncQueueBox.length, 1);
   });
 
-  testWidgets('Failed save stays on account screen and can be retried', (
+  testWidgets('Failed save stays on preferences and can be retried', (
     tester,
   ) async {
     await mount(tester);
@@ -286,19 +291,19 @@ void main() {
         LocalDbService.syncQueueBoxName,
       );
     });
-    await finish(tester, 'Create account', fails: true);
+    await finish(tester, 'Continue', fails: true);
     expect(
       find.text("We couldn't save your choices. Please try again."),
       findsOneWidget,
     );
     expect(await OnboardingService().hasCompletedOnboarding(), isFalse);
-    expect(find.text('Create account'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
     await tester.runAsync(() async {
       await wrongBox.close();
       await EncryptedHive.openBox<String>(LocalDbService.syncQueueBoxName);
     });
-    await finish(tester, 'Create account');
-    expect(find.text('destination:${AppRouter.createAccount}'), findsOneWidget);
+    await finish(tester, 'Continue');
+    expect(find.text('destination:${AppRouter.welcome}'), findsOneWidget);
   });
 
   for (final size in [
@@ -314,12 +319,29 @@ void main() {
         await tap(tester, 'Next');
         await tap(tester, 'Continue');
         await tap(tester, 'Continue');
-        await tap(tester, 'Continue');
-        expect(find.text('Create account'), findsOneWidget);
+        expect(find.text('Continue'), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );
   }
+
+  testWidgets('Introduction swipes horizontally and inherits dark appearance', (
+    tester,
+  ) async {
+    await mount(tester, brightness: Brightness.dark);
+    expect(
+      Theme.of(tester.element(find.byType(Scaffold))).brightness,
+      Brightness.dark,
+    );
+    await tester.drag(find.byType(PageView), const Offset(-350, 0));
+    await tester.pumpAndSettle();
+    expect(find.text(OnboardingData.pages[1].title), findsOneWidget);
+    await tester.drag(find.byType(PageView), const Offset(350, 0));
+    await tester.pumpAndSettle();
+    expect(find.text(OnboardingData.pages[0].title), findsOneWidget);
+    expect(find.text('I already have an account'), findsNothing);
+    await capture(tester, 'intro-dark');
+  });
 
   test('Preference adapter persists after reopening', () async {
     final preferences = UserPreferences(

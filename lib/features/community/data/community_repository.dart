@@ -27,6 +27,7 @@ class CommunityRepository extends ChangeNotifier {
     'authorId': row['author']?['id'],
     'isAnonymous': row['is_anonymous'] == true,
     'content': row['body'] ?? '',
+    'imageUrl': row['image_url'],
     'timeAgo': row['created_at'] ?? '',
     'topic': row['mood'] ?? '',
     'comments': row['comment_count'] ?? 0,

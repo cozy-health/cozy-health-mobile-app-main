@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/routing/app_router.dart';
 import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -135,6 +136,7 @@ void main() {
     await tester.runAsync(() => queue('a'));
     await tester.pumpWidget(
       MaterialApp(
+        navigatorKey: AppRouter.navigatorKey,
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -155,6 +157,7 @@ void main() {
   testWidgets('acknowledged save uses Saved', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        navigatorKey: AppRouter.navigatorKey,
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -194,6 +197,7 @@ void main() {
       networkOffline.value = true;
       await tester.pumpWidget(
         MaterialApp(
+          navigatorKey: AppRouter.navigatorKey,
           home: Scaffold(
             body: EmptyState(
               title: 'Your moods will appear here.',
@@ -258,6 +262,7 @@ void main() {
     final changes = StreamController<List<ConnectivityResult>>.broadcast();
     await tester.pumpWidget(
       MaterialApp(
+        navigatorKey: AppRouter.navigatorKey,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(disableAnimations: true),
           child: NetworkObserver(
@@ -275,16 +280,19 @@ void main() {
       ),
     );
     await tester.pump();
+    await tester.pump();
     addTearDown(changes.close);
     return changes;
   }
 
   testWidgets(
-    'persistent banner appears on initial offline state, with reduced motion',
+    'top notice appears on initial offline state, with reduced motion',
     (tester) async {
       await mountNetwork(tester, sound: () {}, sync: () {});
       expect(
-        find.text("You're offline. Changes will sync when you reconnect."),
+        find.text(
+          "You are offline. Saved content is available; messages pause until you reconnect.",
+        ),
         findsOneWidget,
       );
       expect(find.text('Connection restored'), findsNothing);

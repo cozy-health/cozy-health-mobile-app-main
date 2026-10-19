@@ -431,6 +431,11 @@ class _HomeDesignCards extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        KeyedSubtree(
+          key: notificationFocus == 'affirmation' ? reminderKey : null,
+          child: affirmation,
+        ),
+        const SizedBox(height: 16),
         const HomeQuizCard(),
         SizedBox(height: 16),
         CozyCalendar(
@@ -447,17 +452,6 @@ class _HomeDesignCards extends StatelessWidget {
         ),
         SizedBox(height: 16),
         const JournalingCard(),
-        const SizedBox(height: 16),
-        Container(
-          key: notificationFocus == 'affirmation' ? reminderKey : null,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            border: AppSurface.border(context),
-            color: Theme.of(context).colorScheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: affirmation,
-        ),
       ],
     );
   }

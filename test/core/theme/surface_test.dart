@@ -217,7 +217,9 @@ void main() {
             await tester.ensureVisible(find.text('Open notice'));
             await tester.tap(find.text('Open notice'));
             await tester.pumpAndSettle();
-            final snack = tester.widget<SnackBar>(find.byType(SnackBar));
+            final snack = tester.widget<Material>(
+              find.byKey(const Key('app-top-notice')),
+            );
             expect(
               (snack.shape! as RoundedRectangleBorder).side.color,
               theme.colorScheme.outline,

@@ -52,6 +52,17 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
     body: FutureBuilder<List<ClinicalAssessment>>(
       future: _catalog,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return EmptyState(
+            icon: Icons.cloud_off_outlined,
+            title: 'Assessments could not be loaded',
+            subtitle:
+                'Check your connection and try again. Your saved results are still available from Results history.',
+            primaryCtaLabel: 'Retry',
+            onPrimaryCta: () =>
+                setState(() => _catalog = _repository.catalog()),
+          );
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -65,8 +76,9 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
         if (all.isEmpty) {
           return EmptyState(
             icon: Icons.assignment_outlined,
-            title: 'Assessments coming soon.',
-            subtitle: 'Connect to refresh the approved assessment catalog.',
+            title: 'No assessments are available yet',
+            subtitle:
+                'Your care team has not published any approved assessments for this account. You can check again or view your saved results.',
             primaryCtaLabel: 'Retry',
             onPrimaryCta: () =>
                 setState(() => _catalog = _repository.catalog()),

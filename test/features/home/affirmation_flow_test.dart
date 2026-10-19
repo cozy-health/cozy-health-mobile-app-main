@@ -300,10 +300,8 @@ void main() {
         tester.element(find.byType(DailyAffirmationScreen)),
       ).hideCurrentSnackBar();
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Read related articles'));
-      await tester.tap(find.text('Read related articles'));
-      await tester.pumpAndSettle();
-      expect(find.text('self-compassion'), findsOneWidget);
+      expect(find.text('Read related articles'), findsNothing);
+      expect(find.text('Let this meet you where you are'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
       router.dispose();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -343,7 +341,7 @@ void main() {
             final prefix =
                 'affirmation_dark$dark-contrast$contrast-landscape$landscape';
             await captureSurface(tester, '$prefix-body');
-            await tester.ensureVisible(find.text('Read related articles'));
+            await tester.ensureVisible(find.text('Copy affirmation'));
             await tester.pumpAndSettle();
             expect(tester.takeException(), isNull);
             await captureSurface(tester, '$prefix-actions');

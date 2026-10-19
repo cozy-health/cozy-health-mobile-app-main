@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'dart:io';
 import 'dart:ui';
 import 'package:dio/dio.dart';
@@ -273,7 +274,8 @@ class _QuizShareActionsState extends State<QuizShareActions>
                             }
                           } catch (_) {
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              AppSnackbar.show(
+                                context,
                                 const SnackBar(
                                   content: Text(
                                     'Could not revoke sharing. Try again.',

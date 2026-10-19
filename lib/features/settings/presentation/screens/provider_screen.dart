@@ -1,3 +1,4 @@
+import '../../../../core/services/network_status.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
@@ -42,6 +43,13 @@ class _ProviderScreenState extends State<ProviderScreen>
   Timer? _invitationExpiryTimer;
   bool _invitationExpired = true;
   int _resendSeconds = 0;
+  bool get _offline => networkOffline.value == true;
+  void _connectionChanged() {
+    if (!mounted) return;
+    setState(() {});
+    if (!_offline) _loadProvider();
+  }
+
   bool _loading = true;
   bool _sending = false;
   bool _verifying = false;
@@ -60,6 +68,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    networkOffline.addListener(_connectionChanged);
     _settingsService = widget.settingsService ?? SettingsService();
     _loadProvider();
   }
@@ -67,6 +76,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    networkOffline.removeListener(_connectionChanged);
     _resendTimer?.cancel();
     emailController.dispose();
     _invitationExpiryTimer?.cancel();
@@ -464,7 +474,7 @@ class _ProviderScreenState extends State<ProviderScreen>
                   )
                 : null,
             value: flags[entry.key] == true,
-            onChanged: _updatingConsent != null || _removing
+            onChanged: _offline || _updatingConsent != null || _removing
                 ? null
                 : (value) => _updateConsent(entry.key, value),
           ),
@@ -613,7 +623,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         AppButton(
           isLoading: _sending,
           text: _sending ? 'Sending...' : 'Send invitation',
-          onPressed: _sending ? null : _requestProvider,
+          onPressed: _offline || _sending ? null : _requestProvider,
         ),
       ],
     );
@@ -649,7 +659,7 @@ class _ProviderScreenState extends State<ProviderScreen>
                   )
                 : null,
             value: _invitationFlags[entry.key]!,
-            onChanged: _sending
+            onChanged: _offline || _sending
                 ? null
                 : (value) =>
                       setState(() => _invitationFlags[entry.key] = value),
@@ -912,19 +922,21 @@ class _ProviderScreenState extends State<ProviderScreen>
               ? 'Resend in ${_resendSeconds}s'
               : 'Resend invitation',
           isLoading: _sending,
-          onPressed: _sending || _removing || _resendSeconds > 0
+          onPressed: _offline || _sending || _removing || _resendSeconds > 0
               ? null
               : _requestProvider,
         ),
         const SizedBox(height: 12),
         TextButton(
-          onPressed: _sending || _removing ? null : _editProviderEmail,
+          onPressed: _offline || _sending || _removing
+              ? null
+              : _editProviderEmail,
           child: const Text('Wrong provider email?'),
         ),
         AppButton(
           text: 'Cancel request',
           isLoading: _removing,
-          onPressed: _removing || _sending ? null : _removeProvider,
+          onPressed: _offline || _removing || _sending ? null : _removeProvider,
           isOutlined: true,
         ),
       ],
@@ -988,7 +1000,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         AppButton(
           isLoading: _verifying,
           text: _verifying ? 'Verifying...' : 'Verify Provider',
-          onPressed: _verifying ? null : _verifyProvider,
+          onPressed: _offline || _verifying ? null : _verifyProvider,
         ),
 
         2.sh,
@@ -996,7 +1008,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         AppButton(
           isLoading: _removing,
           text: _removing ? 'Removing...' : 'Cancel Request',
-          onPressed: _removing ? null : _removeProvider,
+          onPressed: _offline || _removing ? null : _removeProvider,
           isOutlined: true,
         ),
       ],
@@ -1122,7 +1134,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         AppButton(
           isLoading: _removing,
           text: _removing ? 'Revoking...' : 'Revoke access',
-          onPressed: _removing || _updatingConsent != null
+          onPressed: _offline || _removing || _updatingConsent != null
               ? null
               : _confirmRevoke,
           isOutlined: true,
@@ -1150,6 +1162,7 @@ class _ProviderScreenState extends State<ProviderScreen>
     TextInputType keyboardType = TextInputType.text,
   }) {
     return TextField(
+      readOnly: _offline,
       controller: controller,
       keyboardType: keyboardType,
       style: AppTextStyles.body1.copyWith(

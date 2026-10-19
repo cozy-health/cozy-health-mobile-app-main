@@ -92,7 +92,10 @@ class UserDataMerge {
         await settings.put('account_timezone', incoming['timezone']);
       }
       if (incoming['account_created_at'] is String && active()) {
-        await settings.put('account_created_at', incoming['account_created_at']);
+        await settings.put(
+          'account_created_at',
+          incoming['account_created_at'],
+        );
       }
       final profile = _local.getUserProfile();
       final revision = (incoming['avatar_revision'] as num?)?.toInt() ?? 0;
@@ -156,6 +159,13 @@ class UserDataMerge {
     }
     final localTime = local == null ? null : timestamp(local);
     final remoteTime = timestamp(incoming);
+    final acknowledgedTime = DateTime.tryParse(
+      settings.get('sync_ack:$type:$localId')?.toString() ?? '',
+    );
+    final alreadyAcknowledged =
+        localTime != null &&
+        acknowledgedTime != null &&
+        !localTime.isAfter(acknowledgedTime);
     final keepLocal =
         local != null &&
         (local['is_draft'] == true ||
@@ -176,7 +186,9 @@ class UserDataMerge {
         if (!active()) return;
         await _write(type, value);
       }
-      if (local['is_draft'] != true && (pending.isEmpty || localId != id)) {
+      if (local['is_draft'] != true &&
+          !alreadyAcknowledged &&
+          (pending.isEmpty || localId != id)) {
         if (!active()) return;
         await _local.enqueueSync(
           type: type,

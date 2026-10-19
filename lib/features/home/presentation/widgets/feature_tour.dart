@@ -35,6 +35,7 @@ class _FeatureTourState extends State<FeatureTour> {
     try {
       final settings = await LocalDbService().settingsBox();
       if (!mounted ||
+          settings.get('new_account_tour_pending') != true ||
           settings.get('has_seen_tour', defaultValue: false) == true) {
         return;
       }
@@ -80,7 +81,11 @@ class _FeatureTourState extends State<FeatureTour> {
     if (_closing) return;
     _closing = true;
     try {
-      await (await LocalDbService().settingsBox()).put('has_seen_tour', true);
+      final settings = await LocalDbService().settingsBox();
+      await settings.putAll({
+        'has_seen_tour': true,
+        'new_account_tour_pending': false,
+      });
     } catch (_) {
       _closing = false;
     }

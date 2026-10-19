@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -35,7 +36,8 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
       );
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbar.show(
+          context,
           const SnackBar(
             content: Text('Could not share this summary. Please retry.'),
           ),
@@ -47,9 +49,10 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
   Future<void> _copySummary() async {
     await Clipboard.setData(ClipboardData(text: _summary));
     if (mounted) {
-      ScaffoldMessenger.of(
+      AppSnackbar.show(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Monthly summary copied.')));
+        const SnackBar(content: Text('Monthly summary copied.')),
+      );
     }
   }
 

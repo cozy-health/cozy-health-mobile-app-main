@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/api/api_client.dart';
 
@@ -29,7 +30,8 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
         },
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      AppSnackbar.show(
+        context,
         const SnackBar(content: Text('Your report was received. Thank you.')),
       );
       Navigator.of(context).pop();

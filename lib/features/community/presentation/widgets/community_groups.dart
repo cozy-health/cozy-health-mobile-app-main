@@ -119,7 +119,7 @@ class _CommunityGroupsState extends State<CommunityGroups> {
             TextButton(onPressed: _load, child: const Text('Retry')),
           ],
           Text(
-            'Featured Groups',
+            'Discover groups',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
@@ -127,7 +127,10 @@ class _CommunityGroupsState extends State<CommunityGroups> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                for (final topic in ['All', ...CommunityLocalState.topics])
+                for (final topic in [
+                  'All',
+                  if (DemoMode.instance.enabled) ...CommunityLocalState.topics,
+                ])
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: design.Chip(
@@ -141,7 +144,7 @@ class _CommunityGroupsState extends State<CommunityGroups> {
             ),
           ),
           const SizedBox(height: 12),
-          if (groups.isEmpty)
+          if (!_loading && _error == null && groups.isEmpty)
             const Padding(
               padding: EdgeInsets.all(16),
               child: Text('No groups in this topic yet.'),
@@ -155,7 +158,7 @@ class _CommunityGroupsState extends State<CommunityGroups> {
               ),
             ),
           const SizedBox(height: 12),
-          Text('My Group', style: Theme.of(context).textTheme.titleLarge),
+          Text('Your groups', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           if (joined.isEmpty) const Text('Join a group to see it here.'),
           for (final group in joined)
@@ -211,7 +214,7 @@ class CommunityGroupCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   Text(
-                    '${group.members + (group.joined ? 1 : 0)} members',
+                    '${group.members} members',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],

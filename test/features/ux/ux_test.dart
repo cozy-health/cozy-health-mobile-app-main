@@ -162,6 +162,10 @@ void main() {
       for (var i = 0; i < 3; i++) {
         await tester.tap(find.text('Fail'));
         await tester.pumpAndSettle();
+        if (i < 2) {
+          await tester.tap(find.byTooltip('Dismiss notification'));
+          await tester.pumpAndSettle();
+        }
       }
       expect(find.text('Help & Support'), findsOneWidget);
       await tester.tap(find.text('Try again'));

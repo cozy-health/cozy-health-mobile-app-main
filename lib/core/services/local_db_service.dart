@@ -1202,6 +1202,19 @@ class LocalDbService {
             );
           }
         }
+        // Persist the exact client version accepted by the server before
+        // removing its queue entry. SQL timestamps can lose fractional seconds;
+        // downloading that record must not manufacture another local edit.
+        final accepted = item.payload?['client_updated_at'];
+        if (item.action == 'upsert' &&
+            accepted is String &&
+            DateTime.tryParse(accepted) != null) {
+          final settings = await settingsBox();
+          await settings.put(
+            'sync_ack:${item.type}:${item.recordId}',
+            accepted,
+          );
+        }
         synced++;
         await syncQueueBox.delete(item.id);
       } else {

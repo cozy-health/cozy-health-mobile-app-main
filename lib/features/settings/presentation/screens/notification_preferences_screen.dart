@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/models/reminder_settings.dart';
@@ -27,9 +28,7 @@ class _NotificationPreferencesScreenState
     final message = await _push.phoneTests.schedule(category);
     if (!mounted) return;
     setState(() => _testingPhone = false);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    AppSnackbar.show(context, SnackBar(content: Text(message)));
   }
 
   Future<void> _change(UserProfile profile, String key, dynamic value) async {
@@ -41,7 +40,8 @@ class _NotificationPreferencesScreenState
       await _push.refresh();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbar.show(
+          context,
           const SnackBar(
             content: Text(
               'Could not save reminder settings. Please try again.',

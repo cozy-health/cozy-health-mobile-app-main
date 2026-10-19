@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:cozy_health/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -66,7 +67,8 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
       return false;
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbar.show(
+          context,
           const SnackBar(content: Text('Could not revoke session. Try again.')),
         );
       }
@@ -104,7 +106,8 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
       await _signOutLocally();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackbar.show(
+          context,
           const SnackBar(
             content: Text('Could not sign out all devices. Try again.'),
           ),

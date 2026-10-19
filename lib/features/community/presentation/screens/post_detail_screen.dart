@@ -252,6 +252,21 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       ),
                       SizedBox(height: 24),
 
+                      if (widget.post['imageUrl'] case final String url) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            url,
+                            height: 280,
+                            width: double.infinity,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, error, stack) => const Text(
+                              'Image unavailable. Reopen this post from a refreshed feed.',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       // Body
                       Text(
                         content,

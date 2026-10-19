@@ -16,6 +16,34 @@ class AffirmationState {
   final AffirmationAssignment? assignment;
   final AffirmationStatus status;
   String get text => assignment?.body ?? encouragement;
+  String get reflection {
+    final words = text.toLowerCase();
+    if (RegExp(r'\b(rest|slowing|pause|pace|breathing)\b').hasMatch(words)) {
+      return 'You can give yourself a little room to pause. Rest and a slower '
+          'pace do not make your effort less valuable. You deserve care even '
+          'when you are not getting things done.';
+    }
+    if (RegExp(r'\b(help|support|alone|carry)\b').hasMatch(words)) {
+      return 'You deserve support as well as space to be heard. You do not '
+          'have to solve everything by yourself or find perfect words before '
+          'telling someone you trust that today feels difficult.';
+    }
+    if (RegExp(r'\b(feeling|feelings|feel|okay)\b').hasMatch(words)) {
+      return 'There is room for how you feel today. You do not need to hide '
+          'a difficult feeling or turn it into a positive one to deserve '
+          'kindness. Start by noticing what you need in this moment.';
+    }
+    if (RegExp(r'\b(step|progress|learning|begin|small)\b').hasMatch(words)) {
+      return 'Small efforts are worth noticing, even when the result is not '
+          'obvious yet. You can begin with what feels manageable today and '
+          'give yourself patience while you find your way.';
+    }
+    return 'These words offer a gentler way to speak to yourself. A difficult '
+        'moment does not erase your worth, your effort or the care you '
+        'deserve. You can let this be a little encouragement, without '
+        'expecting yourself to feel different straight away.';
+  }
+
   bool get canRetry =>
       status == AffirmationStatus.error || status == AffirmationStatus.empty;
   String label(DateTime now) => assignment == null
