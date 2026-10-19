@@ -75,6 +75,7 @@ class LocalDbService {
         for (final item in pendingItems)
           {
             'operation': item.id,
+            'record': item.recordId,
             'type': item.type,
             'action': item.action,
             'retries': item.retryCount,

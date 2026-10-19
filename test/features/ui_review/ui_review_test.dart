@@ -338,6 +338,9 @@ void main() {
         tester,
         'community_groups_${dark ? 'dark' : 'light'}',
       );
+      await tester.tap(find.text('Posts'));
+      await tester.pumpAndSettle();
+      expect(find.text('General Posts'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
     testWidgets('Home cards remain defined after scrolling, dark=$dark', (

@@ -164,8 +164,10 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
                   ),
                 ],
                 selected: {_showGroups},
-                onSelectionChanged: (value) =>
-                    setState(() => _showGroups = value.single),
+                onSelectionChanged: (value) {
+                  setState(() => _showGroups = value.single);
+                  if (!_showGroups) _repository.load();
+                },
               ),
             ),
             const SizedBox(height: 12),
