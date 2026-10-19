@@ -184,6 +184,13 @@ class UserDataMerge {
           await _local.syncQueueBox.delete(item.id);
         }
         if (!active()) return;
+        if (alreadyAcknowledged) {
+          await settings.put(
+            'sync_ack:$type:$id',
+            acknowledgedTime.toIso8601String(),
+          );
+          if (!active()) return;
+        }
         await _write(type, value);
       }
       if (local['is_draft'] != true &&

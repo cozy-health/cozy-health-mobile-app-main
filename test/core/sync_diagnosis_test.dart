@@ -129,7 +129,7 @@ void main() {
   );
 
   test(
-    'acknowledged profile does not requeue after reopening and restore',
+    'acknowledged profile survives canonical ID migration and repeated restore',
     () async {
       final time = DateTime.utc(2026, 10, 18, 21, 48, 45, 277);
       final profile = UserProfile(
@@ -150,6 +150,7 @@ void main() {
       for (var i = 0; i < 3; i++) {
         await UserDataMerge().apply('user_profile', {
           ...profile.toJson(),
+          'id': 'canonical-rounded-profile',
           'client_updated_at': '2026-10-18T21:48:45Z',
         });
         expect(local.pendingItems, isEmpty);
