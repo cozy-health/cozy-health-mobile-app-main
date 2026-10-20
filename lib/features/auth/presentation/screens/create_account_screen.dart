@@ -1,3 +1,6 @@
+import '../../../../core/widgets/analytics_opt_in.dart';
+import '../../../../core/services/usage_analytics.dart';
+import '../../../../core/services/legal_documents.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -115,6 +118,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     );
 
     try {
+      await UsageAnalytics.instance.track('signup_started');
       await _authService.register(
         firstname: name,
         lastname: '',
@@ -122,6 +126,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         password: password,
         confirmPassword: _confirmController.text,
       );
+      await UsageAnalytics.instance.track('signup_completed');
       if (!mounted) return;
       showAuthToast(
         context,
@@ -240,6 +245,22 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
             ),
           ],
         ),
+        Wrap(
+          spacing: 12,
+          children: [
+            TextButton(
+              onPressed: () =>
+                  LegalDocuments.open('https://cozyhealth.org/terms'),
+              child: const Text('Terms of Use'),
+            ),
+            TextButton(
+              onPressed: () =>
+                  LegalDocuments.open('https://cozyhealth.org/privacy'),
+              child: const Text('Privacy Policy'),
+            ),
+          ],
+        ),
+        const AnalyticsOptIn(),
         if (_termsError != null) ...[
           const SizedBox(height: 8),
           InlineMessage(type: AuthMessageType.warning, text: _termsError!),

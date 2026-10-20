@@ -1,3 +1,4 @@
+import '../widgets/launch_billing_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/services/local_db_service.dart';
@@ -121,12 +122,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               'Pricing is not available for this country yet. No other region’s prices have been substituted.',
             ),
           for (final row in rows) _plan(row),
+          const LaunchBillingPanel(),
           const SizedBox(height: 20),
           const Card(
             child: Padding(
               padding: EdgeInsets.all(20),
               child: Text(
-                'Purchasing is not available yet. Selecting a plan does not charge you or activate paid access. Student and Premium have the same paid benefits; Student eligibility will be required before activation.',
+                'The store shows the applicable price and renewal details before payment. Student and Premium have the same paid benefits. Student purchases require verified current enrolment.',
               ),
             ),
           ),

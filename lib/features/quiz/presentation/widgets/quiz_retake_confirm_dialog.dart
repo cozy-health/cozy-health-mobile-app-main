@@ -19,7 +19,7 @@ class QuizRetakeConfirmDialog extends StatelessWidget {
       scrollable: true,
       backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
       shape: AppSurface.shape(context, BorderRadius.circular(16)),
-      title: Text('Retake quiz?', style: AppTextStyles.heading2),
+      title: Text('Retake assessment?', style: AppTextStyles.heading2),
       content: Text(
         'You took this 2 weeks ago.',
         style: AppTextStyles.body1.copyWith(

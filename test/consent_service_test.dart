@@ -109,7 +109,7 @@ void main() {
             ? {
                 'consent': {
                   'enforce_blocking': false,
-                  'documents': {'marketing': document(required: false)},
+                  'documents': {'marketing': document(version: '1.0', published: true, required: false)},
                 },
               }
             : {'owner_id': 1, 'data': []},

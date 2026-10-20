@@ -5,8 +5,13 @@ class ApiConstants {
     'API_CURRENT_LEAF_SHA256',
   );
   static const nextLeafPin = String.fromEnvironment('API_NEXT_LEAF_SHA256');
-  static const String baseUrl =
-      'https://cozy-health-api-production.up.railway.app/api/v1';
+  static const String environment = String.fromEnvironment(
+    'COZY_ENVIRONMENT',
+    defaultValue: 'development',
+  );
+  static const String baseUrl = environment == 'production'
+      ? 'https://api.cozyhealth.org/api/v1'
+      : 'https://api-dev.cozyhealth.org/api/v1';
 
   /*
   |--------------------------------------------------------------------------
@@ -67,7 +72,7 @@ class ApiConstants {
 
   /*
   |--------------------------------------------------------------------------
-  | Quizzes
+  | Assessments
   |--------------------------------------------------------------------------
   */
   static const String quizzes = '/quizzes';

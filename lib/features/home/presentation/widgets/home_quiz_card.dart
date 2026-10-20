@@ -27,7 +27,7 @@ class HomeQuizCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Mental Health Quiz',
+          'Mental Health Assessment',
           style: theme.textTheme.bodyLarge?.copyWith(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -62,7 +62,7 @@ class HomeQuizCard extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  'Start Quiz',
+                  'Start Assessment',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.primary,
                   ),

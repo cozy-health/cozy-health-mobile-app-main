@@ -21,7 +21,7 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Quiz History')),
+    appBar: AppBar(title: const Text('Assessment History')),
     body: StreamBuilder<List<QuizAttempt>>(
       stream: _repository.watchAttempts(),
       initialData: LocalDbService().getAllQuizAttempts(),

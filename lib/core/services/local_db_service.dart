@@ -704,7 +704,7 @@ class LocalDbService {
     await userProfileBox.clear();
   }
 
-  // --- Quizzes ---
+  // --- Assessments ---
   Box<QuizAttempt> get quizAttemptBox =>
       EncryptedHive.box<QuizAttempt>(boxName(quizAttemptBoxName));
 

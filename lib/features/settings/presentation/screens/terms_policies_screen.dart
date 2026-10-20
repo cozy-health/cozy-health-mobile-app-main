@@ -1,92 +1,75 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../utils/responsive_extensions.dart';
+import '../../../../core/services/legal_documents.dart';
+import '../../../../core/widgets/app_button.dart';
 
 class TermsPoliciesScreen extends StatelessWidget {
   const TermsPoliciesScreen({super.key, this.title = 'Terms & Policies'});
-
   final String title;
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              3.sh,
-
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => context.pop(),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.chevron_left,
-                          size: 22,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                        Text(
-                          'Back',
-                          style: AppTextStyles.body2.copyWith(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        title,
-                        style: AppTextStyles.heading1.copyWith(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 14.w),
-                ],
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(title)),
+    body: SafeArea(
+      child: FutureBuilder<List<Map<String, dynamic>>>(
+        future: LegalDocuments.load(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'Documents could not be loaded. Visit cozyhealth.org/legal or contact Team@cozyhealth.org.',
               ),
-
-              5.sh,
-
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Text(
-                    '''Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.
-
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.
-
-At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga.
-
-Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus.
-
-Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus.''',
-                    style: AppTextStyles.body1.copyWith(
-                      fontSize: 15,
-                      height: 1.45,
-                      color: Theme.of(context).colorScheme.onSurface,
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final docs = snapshot.data ?? [];
+          final visible = docs.where(
+            (doc) =>
+                doc['audience'] == 'consumer' &&
+                (title == 'Terms'
+                    ? doc['id'] == 'tos'
+                    : title == 'Privacy Policy'
+                    ? doc['id'] == 'privacy_policy'
+                    : true),
+          );
+          return ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              for (final doc in visible) ...[
+                Text(
+                  doc['title'] as String,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                Text(
+                  'Version ${doc['version']} · ${doc['published'] == true ? 'Published' : 'Review draft, not yet available for acceptance'}',
+                ),
+                const SizedBox(height: 16),
+                for (final section in doc['sections'] as List) ...[
+                  Text(
+                    section['heading'] as String,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  for (final paragraph in section['paragraphs'] as List)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(paragraph as String),
                     ),
+                ],
+                AppButton(
+                  key: ValueKey('legal-${doc['id']}'),
+                  text: 'Read current document online',
+                  isOutlined: true,
+                  onPressed: () => LegalDocuments.open(
+                    'https://cozyhealth.org${doc['route']}',
                   ),
                 ),
-              ),
+                const SizedBox(height: 32),
+              ],
             ],
-          ),
-        ),
+          );
+        },
       ),
-    );
-  }
+    ),
+  );
 }

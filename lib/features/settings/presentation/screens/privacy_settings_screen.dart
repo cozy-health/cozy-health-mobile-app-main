@@ -1,3 +1,4 @@
+import '../../../../core/services/usage_analytics.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/security_gate.dart';
@@ -230,45 +231,16 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               SizedBox(height: 32),
 
               _SettingsSection(
-                title: 'AI & Data',
-                children: [
-                  _SettingsToggleRow(
-                    label: 'Let Cozy reference my mood logs',
-                    value: _referenceMood,
-                    onChanged: (v) {
-                      setState(() => _referenceMood = v);
-                      _savePrivacy();
-                    },
-                  ),
-                  _SettingsToggleRow(
-                    label: 'Let Cozy reference my journal',
-                    value: _referenceJournal,
-                    onChanged: (v) {
-                      setState(() => _referenceJournal = v);
-                      _savePrivacy();
-                    },
-                  ),
-                  _SettingsToggleRow(
-                    label: 'Future preference: improve AI with my conversations',
-                    value: _improveAi,
-                    onChanged: (v) {
-                      setState(() => _improveAi = v);
-                      _savePrivacy();
-                    },
-                  ),
-                ],
-              ),
-              SizedBox(height: 32),
-
-              _SettingsSection(
                 title: 'Analytics',
                 children: [
                   _SettingsToggleRow(
-                    label: 'Share anonymous usage data',
+                    label: 'Share selected usage events with PostHog',
                     value: _shareAnalytics,
                     onChanged: (v) {
                       setState(() => _shareAnalytics = v);
-                      _savePrivacy();
+                      _savePrivacy().then(
+                        (_) => UsageAnalytics.instance.preferenceChanged(v),
+                      );
                     },
                   ),
                   _SettingsToggleRow(

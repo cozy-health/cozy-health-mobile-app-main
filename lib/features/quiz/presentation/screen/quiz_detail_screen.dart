@@ -13,7 +13,7 @@ class QuizDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final assessment = ClinicalAssessment.fromExtra(extra);
-    final title = assessment?.title ?? extra['title'] as String? ?? 'Quiz';
+    final title = assessment?.title ?? extra['title'] as String? ?? 'Assessment';
     return Scaffold(
       appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
       body: SafeArea(
@@ -108,7 +108,7 @@ class QuizDetailScreen extends StatelessWidget {
                         }
                       }
                     },
-              child: const Text('Start Quiz'),
+              child: const Text('Start Assessment'),
             ),
             TextButton(
               onPressed: () => context.push(AppRouter.quizHistory),

@@ -20,7 +20,7 @@ class QuizBackConfirmDialog extends StatelessWidget {
       scrollable: true,
       backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
       shape: AppSurface.shape(context, BorderRadius.circular(16)),
-      title: Text('Leave the quiz?', style: AppTextStyles.heading2),
+      title: Text('Leave the assessment?', style: AppTextStyles.heading2),
       content: Text(
         'Your progress will be lost.',
         style: AppTextStyles.body1.copyWith(

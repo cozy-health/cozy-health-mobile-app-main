@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'legal_documents.dart';
 import '../api/api_client.dart';
 import '../storage/token_storage.dart';
 
@@ -12,10 +13,11 @@ class ConsentDocument {
       version = json['version'] as String,
       published = json['published'] == true,
       required = json['required'] == true && type != 'marketing',
-      content = json['content'] as String?;
+      content = json['content'] as String?,
+      url = LegalDocuments.trustedUrl(json['url'] as String?)?.toString();
   final String type, title, version;
   final bool published, required;
-  final String? content;
+  final String? content, url;
   bool get reviewable =>
       published &&
       !version.startsWith('draft-') &&
@@ -38,10 +40,17 @@ class ConsentState {
         record['document_type'] == doc.type &&
         record['version'] == doc.version &&
         (record['status'] == 'accepted' ||
-            (doc.type != 'marketing' && !doc.published && record['status'] == 'pre_acceptance')),
+            (doc.type != 'marketing' &&
+                !doc.published &&
+                record['status'] == 'pre_acceptance')),
   );
   List<ConsentDocument> get pending => documents
-      .where((doc) => doc.type != 'marketing' && !current(doc))
+      .where(
+        (doc) =>
+            doc.type != 'marketing' &&
+            doc.type != 'ai_disclosure' &&
+            !current(doc),
+      )
       .toList();
   bool blocking(ConsentDocument doc) =>
       enforceBlocking && doc.required && doc.reviewable;
@@ -152,6 +161,9 @@ class ConsentService {
     ConsentDocument doc,
     bool accepted,
   ) async {
+    if (accepted && !doc.reviewable) {
+      throw StateError('This document is not published yet.');
+    }
     final record = await _record(state, doc, accepted: accepted);
     state.records.removeWhere(
       (row) =>

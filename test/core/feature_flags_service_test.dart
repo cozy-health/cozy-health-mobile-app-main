@@ -85,7 +85,7 @@ void main() {
     );
     await service!.initialize(poll: false);
     await service!.refresh();
-    expect(service!.isEnabled('ai_assistant'), true);
+    expect(service!.isEnabled('ai_assistant'), false);
     expect(service!.isEnabled('community'), false);
   });
 
@@ -99,7 +99,7 @@ void main() {
     );
     await service!.initialize(poll: false);
     await service!.refresh();
-    expect(service!.isEnabled('ai_assistant'), true);
+    expect(service!.isEnabled('ai_assistant'), false);
   });
 
   test('cannot switch off any crisis feature', () {
@@ -157,7 +157,7 @@ void main() {
   );
 
   testWidgets(
-    'disabled assistant does not construct chat and reappears when enabled',
+    'launch excludes assistant even when the remote flag enables it',
     (tester) async {
       var assistant = false;
       var built = 0;
@@ -183,8 +183,8 @@ void main() {
       assistant = true;
       await tester.runAsync(() => service!.refresh());
       await tester.pump();
-      expect(find.text('Chat content'), findsOneWidget);
-      expect(built, 1);
+      expect(find.text('Chat content'), findsNothing);
+      expect(built, 0);
     },
   );
 

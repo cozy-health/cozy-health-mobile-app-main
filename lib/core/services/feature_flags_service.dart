@@ -19,7 +19,7 @@ class AppConfiguration {
   });
 
   static const defaults = <String, bool>{
-    'ai_assistant': true,
+    'ai_assistant': false,
     'push_notifications': true,
     'community': false,
     'content_feed': false,
@@ -54,7 +54,9 @@ class AppConfiguration {
     return AppConfiguration(
       flags: Map.unmodifiable({
         for (final entry in defaults.entries)
-          entry.key: rawFlags[entry.key] as bool? ?? entry.value,
+          entry.key: entry.key == 'ai_assistant'
+              ? false
+              : rawFlags[entry.key] as bool? ?? entry.value,
       }),
       minAppVersion: version('min_app_version'),
       latestAppVersion: version('latest_app_version'),
@@ -75,6 +77,7 @@ class AppConfiguration {
     }.contains(key)) {
       return true;
     }
+    if (key == 'ai_assistant') return false;
     return flags[key] ?? false;
   }
 }

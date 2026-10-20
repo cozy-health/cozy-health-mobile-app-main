@@ -6,7 +6,9 @@ class SubscriptionStatus extends HiveObject {
   final String id;
 
   @HiveField(1)
-  final bool isActive;
+  final bool _isActive;
+  bool get isActive =>
+      _isActive && (expiresAt == null || expiresAt!.isAfter(DateTime.now()));
 
   @HiveField(2)
   final String tier;
@@ -19,11 +21,11 @@ class SubscriptionStatus extends HiveObject {
 
   SubscriptionStatus({
     required this.id,
-    required this.isActive,
+    required bool isActive,
     required this.tier,
     this.expiresAt,
     required this.cancelAtPeriodEnd,
-  });
+  }) : _isActive = isActive;
 
   SubscriptionStatus copyWith({
     String? id,

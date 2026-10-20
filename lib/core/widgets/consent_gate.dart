@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../routing/app_router.dart';
+import '../services/legal_documents.dart';
 import '../services/consent_service.dart';
 import '../storage/token_storage.dart';
 
@@ -24,6 +25,7 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
   bool _loading = false, _busy = false;
   String? _error;
   final Set<String> _dismissed = {};
+  final Set<String> _healthChoices = {};
   @override
   void initState() {
     super.initState();
@@ -36,7 +38,17 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
   }
 
   Future<void> _routeChanged() async {
+    if (mounted) {
+      setState(() {}); // Rebuild to expose crisis routes immediately.
+    }
     final token = await TokenStorage().getToken();
+    if (token != _session && mounted) {
+      setState(() {
+        _state = null;
+        _healthChoices.clear();
+        _dismissed.clear();
+      });
+    }
     if (token == null && mounted) {
       setState(() {
         _state = null;
@@ -88,6 +100,11 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
           ),
         ),
         actions: [
+          if (doc.url != null)
+            TextButton(
+              onPressed: () => LegalDocuments.open(doc.url),
+              child: const Text('Read online'),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
@@ -134,6 +151,15 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final path = widget.observeRoutes
+        ? AppRouter.router.routeInformationProvider.value.uri.path
+        : '';
+    if (path.startsWith('/crisis') ||
+        path.contains('breathing') ||
+        path.contains('grounding') ||
+        path.contains('safety-plan')) {
+      return widget.child;
+    }
     final pending = _state?.pending ?? [];
     final required = pending.where((doc) => _state!.blocking(doc)).toList();
     if (required.isNotEmpty) {
@@ -152,8 +178,38 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
                   child: SingleChildScrollView(child: Text(doc.content!)),
                 ),
                 if (_error != null) Text(_error!),
+                if (doc.url != null)
+                  TextButton(
+                    onPressed: () => LegalDocuments.open(doc.url),
+                    child: const Text('Read online'),
+                  ),
+                TextButton(
+                  onPressed: () => AppRouter.router.go(AppRouter.crisisHub),
+                  child: const Text('Get urgent support'),
+                ),
+                if (doc.type == 'health_data')
+                  CheckboxListTile(
+                    value: _healthChoices.contains(doc.version),
+                    title: const Text(
+                      'I explicitly consent to the health-data processing described above.',
+                    ),
+                    onChanged: _busy
+                        ? null
+                        : (value) => setState(() {
+                            if (value == true) {
+                              _healthChoices.add(doc.version);
+                            } else {
+                              _healthChoices.remove(doc.version);
+                            }
+                          }),
+                  ),
                 FilledButton(
-                  onPressed: _busy ? null : () => _accept(doc),
+                  onPressed:
+                      _busy ||
+                          (doc.type == 'health_data' &&
+                              !_healthChoices.contains(doc.version))
+                      ? null
+                      : () => _accept(doc),
                   child: Text(_busy ? 'Saving…' : 'Accept'),
                 ),
               ],

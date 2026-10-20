@@ -82,7 +82,7 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
               SizedBox(height: 8),
               const _BulletPoint('Your entries will be deleted'),
               SizedBox(height: 8),
-              const _BulletPoint('Your subscription will end'),
+              const _BulletPoint('Cancel your store subscription separately to stop renewal'),
               SizedBox(height: 24),
               Text(
                 'Consider exporting your data first.',

@@ -19,7 +19,7 @@ class ProviderShareConfirmDialog extends StatelessWidget {
     title: const Text('Share this assessment result?'),
     content: SingleChildScrollView(
       child: Text(
-        'Allow $providerName to view this selected result’s total, interpretation, date and recommendations? This enables quiz consent, but future results remain private until you share them. Individual answers are not shared. You can revoke access.',
+        'Allow $providerName to view this selected result’s total, interpretation, date and recommendations? This enables assessment consent, but future results remain private until you share them. Individual answers are not shared. You can revoke access.',
       ),
     ),
     actions: [

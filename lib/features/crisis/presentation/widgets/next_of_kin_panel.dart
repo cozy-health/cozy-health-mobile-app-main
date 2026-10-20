@@ -1,3 +1,5 @@
+import 'emergency_email_panel.dart';
+import '../../../../core/widgets/app_button.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,6 +40,7 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
   String? _error;
   bool? _failedSms;
   bool _loadFailed = false;
+  bool _showEmail = false;
   bool get _active =>
       mounted &&
       _scope == LocalDbService().boxName(LocalDbService.userSettingsBoxName);
@@ -426,6 +429,14 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
                           ),
                       ],
                     ],
+                    const SizedBox(height: 24),
+                    AppButton(
+                      key: const ValueKey('emergency-email-options'),
+                      text: 'Email contact options',
+                      isOutlined: true,
+                      onPressed: () => setState(() => _showEmail = !_showEmail),
+                    ),
+                    if (_showEmail) const EmergencyEmailPanel(),
                   ],
                 ),
               ),

@@ -64,7 +64,7 @@ class _ProviderAccessLogScreenState extends State<ProviderAccessLogScreen> {
       'client' => 'your profile',
       'mood' => 'your mood entries',
       'journal' => 'your journal summaries',
-      'quiz' => 'your quiz results',
+      'quiz' => 'your assessment results',
       'note' => 'provider notes',
       'consent' => 'your sharing choices',
       'assignment' => 'your resource assignments',

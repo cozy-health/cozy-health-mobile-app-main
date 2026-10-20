@@ -55,7 +55,14 @@ class _MarketingConsentToggleState extends State<MarketingConsentToggle> {
           'Optional news and offers from Cozy. Off unless you opt in.',
         ),
         value: _state?.marketingAllowed ?? false,
-        onChanged: _state == null || _busy ? null : _toggle,
+        onChanged:
+            _state == null ||
+                _busy ||
+                !_state!.documents.any(
+                  (doc) => doc.type == 'marketing' && doc.reviewable,
+                )
+            ? null
+            : _toggle,
       ),
       if (_error != null)
         Row(

@@ -89,7 +89,7 @@ class RestoreController extends ChangeNotifier {
     'Emergency contacts',
     'Mood entries',
     'Journal entries',
-    'Quiz attempts',
+    'Assessment attempts',
     'Saved articles',
     'Notifications',
     'Conversations',
@@ -212,7 +212,7 @@ class RestoreController extends ChangeNotifier {
         await _list('/mood-entries', 'mood_entry', recent: true);
       case 'Journal entries':
         await _list('/journal-entries', 'journal_entry', recent: true);
-      case 'Quiz attempts':
+      case 'Assessment attempts':
         await _list('/quiz-attempts', 'quiz_attempt', includeDeleted: true);
       case 'Saved articles':
         await _list('/content/saved', 'saved_article');

@@ -1,0 +1,471 @@
+{
+  "schema_version": 1,
+  "base_url": "https://cozyhealth.org",
+  "release": "launch-no-ai",
+  "review_issues": [
+    "Confirm registered operator address and launch jurisdictions.",
+    "Approve retention periods, backups and provider-held-record exceptions.",
+    "Verify production mail/hosting vendors and transfer arrangements.",
+    "Confirm guardian/age eligibility and consent workflow for the 13+ audience.",
+    "Validate moderation staffing, escalation ownership and instrument/content permissions."
+  ],
+  "release_gates": ["Create Apple/Google developer accounts and approve store products before billing activation."],
+  "documents": [
+    {
+      "id": "privacy_policy",
+      "title": "Privacy Policy",
+      "route": "/privacy",
+      "audience": "consumer",
+      "version": "1.0",
+      "updated": "2026-10-20",
+      "published": false,
+      "required": true,
+      "sections": [
+        {
+          "heading": "Who we are",
+          "paragraphs": [
+            "Cozy Health Limited, Nigeria, operates Cozy Health and its provider dashboard. Contact Team@cozyhealth.org for privacy questions, access, correction, export, deletion, or complaints."
+          ]
+        },
+        {
+          "heading": "Information we process",
+          "paragraphs": [
+            "We process account details and credentials; mood and wellbeing entries; journals and associated recordings where used; assessment responses and scores; provider connections, sharing choices and messages; community contributions; and security and access records. Student applicants may submit institution and enrolment evidence. Emergency-contact setup collects the contact details needed for the chosen contact method.",
+            "Some information is stored in an account-specific local cache for offline use and synchronized with our service. Removing the app is not the same as deleting your account."
+          ]
+        },
+        {
+          "heading": "Why we process information",
+          "paragraphs": [
+            "We use information to provide requested features, maintain accounts, score assessments, enable chosen provider sharing, protect the service, and respond to support requests. Optional health-data processing and sharing are explained at the point of choice. Applicable legal grounds and any special-category condition must be documented for the countries in which the service is offered."
+          ]
+        },
+        {
+          "heading": "Provider sharing is your choice",
+          "paragraphs": [
+            "A linked provider can see your first name, identifier, sharing choices and assigned-resource status. Optional categories start off: mood entries; journal summaries; assessment results; and provider notes. Journal summaries may include titles, type, word count and dates, but do not include journal bodies, transcripts or recordings. Specific assessment-result sharing requires the applicable result permission.",
+            "Providers may view or export authorized information. You can turn categories off or disconnect in My Provider. New requests respect changes; already viewed, copied or downloaded information cannot be recalled. Reconnecting starts with optional categories off."
+          ]
+        },
+        {
+          "heading": "Optional analytics and diagnostics",
+          "paragraphs": [
+            "PostHog is the selected usage-analytics provider. When enabled and you opt in, selected events measure app activity, signup/onboarding progress, general feature use, return visits, app version and platform. Analytics excludes journal text, chat messages, mood values, assessment responses/results and crisis activity. Session recording is off. Analytics is optional and can be disabled in Privacy settings.",
+            "Sentry is integrated for technical diagnostics, subject to release configuration and your separate crash-reporting preference. Diagnostic safeguards exclude user-authored health content. Firebase Cloud Messaging supports push notifications; it is not our usage-analytics provider."
+          ]
+        },
+        {
+          "heading": "Vendors and transfers",
+          "paragraphs": [
+            "Formspree processes website waitlist submissions. Transactional email and cloud infrastructure support requested service operations. Apple and Google process purchases when store billing is activated. PostHog and Sentry serve the purposes described above when configured and enabled. We do not send emergency-contact or student-evidence data to usage analytics.",
+            "Before release, we will identify the production infrastructure and mail providers, hosting regions and applicable transfer arrangements. These details must reflect actual deployment; this notice does not itself establish regulatory compliance."
+          ]
+        },
+        {
+          "heading": "Retention and deletion",
+          "paragraphs": [
+            "Request deletion in Settings → Delete Account, or follow the web-request instructions at cozyhealth.org/support. In-app deletion removes the account from the active database and related records covered by its deletion process. File cleanup, backups, retained security/billing records and provider-held copies follow the approved retention schedule and applicable obligations.",
+            "We do not promise that all copies disappear immediately or within a fixed period without a verified schedule. Account deletion does not automatically cancel Apple or Google subscriptions."
+          ]
+        },
+        {
+          "heading": "Young people",
+          "paragraphs": [
+            "Cozy Health is intended for people aged 13 and older. Users under 18 need parental or guardian authorization where applicable. Availability and consent requirements depend on local rules; under-13 accounts are not permitted."
+          ]
+        },
+        {
+          "heading": "Your choices and complaints",
+          "paragraphs": [
+            "You can change optional analytics, diagnostics, marketing and provider-sharing choices independently. Contact Team@cozyhealth.org to exercise applicable rights or raise a concern. We may verify identity using proportionate methods; do not send a password, full journal, or government ID with an initial request. You may also complain to the relevant data-protection authority."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tos",
+      "title": "Terms of Use",
+      "route": "/terms",
+      "audience": "consumer",
+      "version": "1.0",
+      "updated": "2026-10-20",
+      "published": false,
+      "required": true,
+      "sections": [
+        {
+          "heading": "Operator and eligibility",
+          "paragraphs": [
+            "Cozy Health is operated by Cozy Health Limited. The service is intended for ages 13 and older, with guardian involvement where applicable. Use accurate account information and protect your credentials."
+          ]
+        },
+        {
+          "heading": "Wellbeing support and assessments",
+          "paragraphs": [
+            "Cozy Health supports personal wellbeing, self-reflection, assessment tracking and selected provider connections. It is not an emergency service or a substitute for professional care. Assessments do not diagnose conditions or prescribe treatment. Read the Health and Assessment Disclosures."
+          ]
+        },
+        {
+          "heading": "Acceptable use",
+          "paragraphs": [
+            "Do not harass, exploit or impersonate others; post unlawful or sexually exploitative content; circumvent access restrictions; scrape private data; or misuse provider credentials. Community participation is subject to the Community Guidelines and Child Safety Standards."
+          ]
+        },
+        {
+          "heading": "Your content and sharing",
+          "paragraphs": [
+            "You retain ownership of your contributions and grant the permissions necessary to store, process and display them for the features you choose. Private journals do not become public community posts. Provider sharing depends on separate permissions and can be revoked for future access."
+          ]
+        },
+        {
+          "heading": "Subscriptions",
+          "paragraphs": [
+            "Free, Premium and Student plans are planned for launch subject to store activation. Paid mobile purchases use Apple In-App Purchase or Google Play Billing. The purchase screen shows the applicable localized price, term and renewal information before confirmation. Until activated, selecting a plan does not charge you or grant paid access.",
+            "Auto-renewal, cancellation and refunds follow the applicable store terms and information shown at purchase. Manage renewal through the store account. Deleting Cozy Health or your Cozy Health account does not itself cancel a store subscription.",
+            "Student purchases require current verified eligibility. We explain eligibility expiry and renewal requirements before purchase; we do not silently convert Student users to a higher-priced plan."
+          ]
+        },
+        {
+          "heading": "Safety, availability and account action",
+          "paragraphs": [
+            "We may restrict or suspend misuse and investigate reports. Submit appeals to Team@cozyhealth.org. Availability and message delivery cannot be guaranteed. Nothing here excludes rights or liabilities that applicable law does not permit us to exclude."
+          ]
+        },
+        {
+          "heading": "Changes and contact",
+          "paragraphs": [
+            "We identify published versions and notify you of changes where appropriate. Contact Team@cozyhealth.org for support or legal notices. Applicable legal terms, operator address and launch-country requirements must be finalized before publication."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "health_data",
+      "title": "Health Data Consent",
+      "route": "/health-data-consent",
+      "audience": "consumer",
+      "version": "1.0",
+      "updated": "2026-10-20",
+      "published": false,
+      "required": true,
+      "sections": [
+        {
+          "heading": "Your explicit choice",
+          "paragraphs": [
+            "I consent to Cozy Health Limited processing the health and wellbeing information I choose to provide, including moods, journals and assessment responses/results, to provide the features explained in the Privacy Policy. This consent is separate from optional analytics and marketing."
+          ]
+        },
+        {
+          "heading": "Sharing stays separate",
+          "paragraphs": [
+            "This choice does not enable every provider-sharing category. I choose provider sharing independently and can change those choices in My Provider."
+          ]
+        },
+        {
+          "heading": "Changing your choice",
+          "paragraphs": [
+            "Contact Team@cozyhealth.org to withdraw this consent or request deletion. Withdrawal affects future consent-based processing and may make related features unavailable. It does not undo previous lawful processing or recall information already downloaded by a provider. Emergency resources remain accessible."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "health_disclosures",
+      "title": "Health and Assessment Disclosures",
+      "route": "/health-disclosures",
+      "audience": "consumer",
+      "version": "1.0",
+      "updated": "2026-10-20",
+      "published": false,
+      "required": false,
+      "sections": [
+        {
+          "heading": "Not a medical or emergency service",
+          "paragraphs": [
+            "Cozy Health is a wellbeing and self-care platform. It is not a clinical diagnostic tool, emergency hotline or continuously monitored service. For immediate danger, contact local emergency services or visit the nearest emergency department."
+          ]
+        },
+        {
+          "heading": "Assessments",
+          "paragraphs": [
+            "Self-reflection questionnaires and screening instruments, including PHQ-9 and GAD-7 where available, support personal tracking. Scores do not constitute a diagnosis or treatment plan. Consult a qualified professional for medical decisions."
+          ]
+        },
+        {
+          "heading": "Emergency contacts",
+          "paragraphs": [
+            "The current phone-contact option opens your messaging or calling app. You must send the message yourself; Cozy Health cannot confirm delivery.",
+            "An automatic email option is being prepared. When enabled, it requires a confirmed contact, connectivity and available sending capacity. It may fail or be limited; the app must show its status and offer message/call alternatives. It does not notify emergency services and is not a guaranteed rescue mechanism."
+          ]
+        },
+        {
+          "heading": "Provider messages",
+          "paragraphs": [
+            "Provider messages are not an emergency channel. Do not assume a provider will read or respond immediately."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ugc_guidelines",
+      "title": "Community Guidelines and Child Safety Standards",
+      "route": "/community-standards",
+      "audience": "consumer",
+      "version": "1.0",
+      "updated": "2026-10-20",
+      "published": false,
+      "required": false,
+      "sections": [
+        {
+          "heading": "Respect and safety",
+          "paragraphs": [
+            "Do not post harassment, hate, threats, explicit sexual content, grooming, child exploitation, scams, or encouragement of self-harm or violence. Do not publish another person’s private health or identifying information."
+          ]
+        },
+        {
+          "heading": "Reporting and blocking",
+          "paragraphs": [
+            "Use the report and block controls available in the relevant feature, or contact Team@cozyhealth.org. Include enough context to locate a concern without sending unnecessary sensitive information. Do not assume every community control also exists in private provider messaging."
+          ]
+        },
+        {
+          "heading": "Review, action and appeals",
+          "paragraphs": [
+            "Moderators may remove content, issue warnings, restrict features or suspend accounts depending on severity. Serious abuse can lead to immediate action; a fixed three-strike rule is not promised. Appeal through Team@cozyhealth.org. A response-time commitment will be published only when staffing supports it."
+          ]
+        },
+        {
+          "heading": "Child safety",
+          "paragraphs": [
+            "Child sexual abuse material and exploitation are prohibited. Report concerns to Team@cozyhealth.org, the designated child-safety contact. We assess reports, preserve evidence where appropriate and escalate to relevant authorities in accordance with applicable requirements. Do not redistribute illegal material."
+          ]
+        },
+        {
+          "heading": "Crisis concerns",
+          "paragraphs": [
+            "The community is not continuously monitored for emergencies. If someone is in immediate danger, contact appropriate emergency services."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "support",
+      "title": "Support, Complaints and Account Deletion",
+      "route": "/support",
+      "audience": "consumer",
+      "version": "1.0",
+      "updated": "2026-10-20",
+      "published": false,
+      "required": false,
+      "sections": [
+        {
+          "heading": "Contact support",
+          "paragraphs": [
+            "Email Team@cozyhealth.org for help, privacy requests, complaints or moderation appeals. Do not include passwords, payment-card information, full journals or unnecessary health information. Support is not an emergency service."
+          ]
+        },
+        {
+          "heading": "Delete your account in the app",
+          "paragraphs": [
+            "Open Settings → Delete Account and confirm. This removes your account through the active account-deletion process. Review any warning and export information you wish to retain first."
+          ]
+        },
+        {
+          "heading": "Request deletion without the app",
+          "paragraphs": [
+            "Email Team@cozyhealth.org with subject “Cozy Health account deletion” from your registered address. If you cannot access that address, explain that in your request. We will use proportionate identity checks before acting; sending an email alone does not immediately delete an account."
+          ]
+        },
+        {
+          "heading": "Data and subscriptions",
+          "paragraphs": [
+            "Account deletion covers your account and associated data handled by the deletion process. Retained records, backups and provider-held copies are subject to the published retention rules and applicable requirements. Store subscriptions must be cancelled separately through Apple or Google; deletion does not stop renewal automatically."
+          ]
+        },
+        {
+          "heading": "Appeals and privacy",
+          "paragraphs": [
+            "For a moderation appeal, state the affected account and decision you are appealing. For data access, correction or deletion questions, use the same address and identify the request type."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cookies",
+      "title": "Cookie Notice",
+      "route": "/cookies",
+      "audience": "consumer",
+      "version": "1.0",
+      "updated": "2026-10-20",
+      "published": false,
+      "required": false,
+      "sections": [
+        {
+          "heading": "Necessary browser storage",
+          "paragraphs": [
+            "Website preferences may use browser storage. Authenticated provider sessions use security/session cookies on the provider dashboard; those are distinct from the public landing page."
+          ]
+        },
+        {
+          "heading": "Optional measurement",
+          "paragraphs": [
+            "PostHog is the selected optional analytics provider. Where enabled, analytics starts only after your choice and uses selected events. Session replay and automatic interaction capture remain off. The public site does not need analytics to display policies or support/deletion instructions."
+          ]
+        },
+        {
+          "heading": "Forms and choices",
+          "paragraphs": [
+            "Formspree processes waitlist submissions when you submit the form. You can decline optional analytics and change that choice later. Your browser can also clear cookies and local storage. We verify actual cookies and vendors before publishing an inventory."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "marketing",
+      "title": "Marketing Consent Notice",
+      "route": "/marketing",
+      "audience": "consumer",
+      "version": "1.0",
+      "updated": "2026-10-20",
+      "published": false,
+      "required": false,
+      "sections": [
+        {
+          "heading": "Optional updates",
+          "paragraphs": [
+            "I would like to receive optional Cozy Health product news and offers. This is not required to use the app or receive essential account/security messages."
+          ]
+        },
+        {
+          "heading": "Withdraw any time",
+          "paragraphs": [
+            "Turn Marketing emails off in Privacy settings or use an unsubscribe option supplied with promotional mail. Withdrawal does not stop necessary service and security communications. Waitlist requests are handled according to the purpose stated on the waitlist form."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tos",
+      "title": "Provider Terms of Use",
+      "route": "/providers/terms",
+      "audience": "provider",
+      "version": "1.0",
+      "updated": "2026-10-20",
+      "published": false,
+      "required": true,
+      "sections": [
+        {
+          "heading": "Professional use",
+          "paragraphs": [
+            "These terms govern individual providers using Cozy Health Limited’s provider dashboard. Provide accurate identity, practice and professional-licence information, maintain authorization to practise where applicable, and use only your own account. A dashboard verification indicator is not a clinical endorsement."
+          ]
+        },
+        {
+          "heading": "Authorized patient relationships",
+          "paragraphs": [
+            "Access only patients with whom you have an authorized active connection, for the disclosed care-support purpose. Patient links do not enable every category: respect separate permissions, selected assessment-result grants and revocation. Do not bypass restrictions or access another provider’s patients."
+          ]
+        },
+        {
+          "heading": "Clinical responsibility and service boundaries",
+          "paragraphs": [
+            "The dashboard supports selected wellbeing records, provider messages, notes, assigned resources and authorized reports. It is not an emergency service, diagnostic engine or replacement for clinical judgment. You remain responsible for professional duties and explaining your availability and response arrangements to patients."
+          ]
+        },
+        {
+          "heading": "Data you may access",
+          "paragraphs": [
+            "Patient identity/link status and assignment progress may remain visible while connected. Optional sharing covers mood entries, journal summaries, assessment results and provider notes as authorized. Journal bodies, recordings and transcripts are excluded from journal-sharing endpoints. Titles and summaries can still be sensitive."
+          ]
+        },
+        {
+          "heading": "Security and downloaded copies",
+          "paragraphs": [
+            "Protect credentials, devices and exported files. Do not share accounts, scrape data, repurpose it for advertising or redistribute it without authorization. Apply minimum necessary access and report suspected compromise to Team@cozyhealth.org.",
+            "Revocation stops subsequent authorized access; it cannot recall data you already viewed, copied or downloaded. You are responsible for lawful handling of those copies, retention obligations and secure disposal. Do not rely on this portal as your only legally required clinical record."
+          ]
+        },
+        {
+          "heading": "Patient rights and practice responsibilities",
+          "paragraphs": [
+            "Maintain your practice’s own privacy notices and permissions. Coordinate rights requests with Team@cozyhealth.org. Where patients are minors, verify the authority and permissions applicable to the service you provide. Platform policy acceptance does not replace professional consent requirements."
+          ]
+        },
+        {
+          "heading": "Agreements, fees and termination",
+          "paragraphs": [
+            "Execute any separately required processing or regulated-data agreement before the applicable processing begins. These terms alone do not establish HIPAA, GDPR or NDPA compliance. Consumer subscriptions do not establish provider billing terms; any provider fees require separate disclosed terms.",
+            "We may restrict unsafe or unauthorized access and investigate reports. On termination, stop using the portal and handle retained copies under applicable agreements and obligations. Submit complaints or appeals to Team@cozyhealth.org."
+          ]
+        },
+        {
+          "heading": "Acceptance and changes",
+          "paragraphs": [
+            "Acceptance is recorded against the displayed document version and individual provider account. Material required updates require fresh review. Outstanding operator address, governing-law, retention and commercial details must be resolved before publication. Mandatory legal rights remain unaffected."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "privacy_policy",
+      "title": "Provider Privacy Notice",
+      "route": "/providers/privacy",
+      "audience": "provider",
+      "version": "1.0",
+      "updated": "2026-10-20",
+      "published": false,
+      "required": true,
+      "sections": [
+        {
+          "heading": "Operator and audience",
+          "paragraphs": [
+            "Cozy Health Limited processes information to operate its provider dashboard. This notice addresses providers and explains patient-data handling within that service. It supplements the consumer Privacy Policy and does not replace your practice’s own patient notice. Contact Team@cozyhealth.org."
+          ]
+        },
+        {
+          "heading": "Provider and practice information",
+          "paragraphs": [
+            "We process your name, email, practice/professional details, licence and verification information where supplied, timezone, credentials, session information and support communications. Passwords are hashed rather than stored as readable passwords."
+          ]
+        },
+        {
+          "heading": "Patient workflows",
+          "paragraphs": [
+            "We process patient links and sharing choices, assigned-resource status, provider notes, direct provider messages, authorized assessment results and generated reports. Access is scoped to the active relationship and relevant permissions. Journal-sharing endpoints exclude full journal text, recordings and transcripts."
+          ]
+        },
+        {
+          "heading": "Access records and purposes",
+          "paragraphs": [
+            "Access records may include actor and resource identifiers, actions, timestamps, request IP and user-agent information. Infrastructure proxies can affect the recorded IP. These records support security, authorization, accountability and investigation; they are not a promise of continuous clinical monitoring."
+          ]
+        },
+        {
+          "heading": "Recipients and responsibilities",
+          "paragraphs": [
+            "Patient information is made available to authorized linked providers and appropriately authorized operations staff, with vendors processing information needed to run the service. A provider’s own records, exported copies and onward disclosures remain subject to that provider’s obligations.",
+            "The production vendor inventory, hosting locations, legal grounds, role allocation and transfer arrangements must be verified before publication. Separate processing agreements are required where applicable; accepting this notice is not a substitute."
+          ]
+        },
+        {
+          "heading": "Analytics and diagnostics",
+          "paragraphs": [
+            "This launch does not instrument patient-data screens with PostHog. Optional consumer usage analytics does not receive patient content, assessment results, crisis activity or provider messages. Any technical diagnostics must exclude patient content and credentials."
+          ]
+        },
+        {
+          "heading": "Patient controls and retention",
+          "paragraphs": [
+            "Patients may change optional sharing or revoke a connection. Subsequent access respects the change; already downloaded files cannot be recalled. Reconnection starts with optional categories off. Account deletion and unlinking are different actions.",
+            "Provider records, access logs, backups, retained reports and provider-held copies need an approved retention schedule. We do not promise that unlinking or deleting a patient account automatically deletes every copy."
+          ]
+        },
+        {
+          "heading": "Rights, requests and security",
+          "paragraphs": [
+            "Contact Team@cozyhealth.org for access, correction, deletion or privacy complaints. We verify identity and authority proportionately and coordinate requests involving practice records. Applicable rights and exceptions depend on the role and relevant law. Report suspected misuse promptly and avoid including patient health content in an initial support email."
+          ]
+        }
+      ]
+    }
+  ]
+}

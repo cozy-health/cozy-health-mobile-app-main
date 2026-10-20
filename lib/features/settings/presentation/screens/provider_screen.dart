@@ -451,7 +451,7 @@ class _ProviderScreenState extends State<ProviderScreen>
     const labels = {
       'moods': 'Share mood entries',
       'journals': 'Share journal summaries',
-      'quizzes': 'Share quiz results',
+      'quizzes': 'Share assessment results',
       'notes': 'Allow provider notes',
     };
     return Column(
@@ -633,7 +633,7 @@ class _ProviderScreenState extends State<ProviderScreen>
     const labels = {
       'moods': 'Share mood entries, triggers and coping choices',
       'journals': 'Share journal summaries',
-      'quizzes': 'Share quiz results',
+      'quizzes': 'Share assessment results',
       'notes': 'Allow provider notes',
     };
     return Column(

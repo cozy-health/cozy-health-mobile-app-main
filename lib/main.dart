@@ -1,3 +1,4 @@
+import 'core/services/usage_analytics.dart';
 import 'core/widgets/network_observer.dart';
 import 'features/quiz/data/quiz_invitation_service.dart';
 import 'features/quiz/presentation/widgets/quiz_share_actions.dart';
@@ -57,7 +58,9 @@ Future<void> _startApp() async {
     return;
   }
   await InstallMarkerService().clearLingeringSessionOnFreshInstall();
+  UsageAnalytics.instance.initialize();
   AppRouter.router.routeInformationProvider.addListener(() {
+    UsageAnalytics.instance.routeChanged(AppRouter.router.routeInformationProvider.value.uri.path);
     CrashReporting.tagRoute(
       AppRouter.router.routeInformationProvider.value.uri.path,
     );
