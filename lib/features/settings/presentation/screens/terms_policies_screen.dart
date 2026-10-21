@@ -42,7 +42,7 @@ class TermsPoliciesScreen extends StatelessWidget {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 Text(
-                  'Version ${doc['version']} · ${doc['published'] == true ? 'Published' : 'Review draft, not yet available for acceptance'}',
+                  'Version ${doc['version']} · ${doc['published'] == true ? 'Published' : 'Prepared for launch, not yet effective or available for acceptance'}',
                 ),
                 const SizedBox(height: 16),
                 for (final section in doc['sections'] as List) ...[
