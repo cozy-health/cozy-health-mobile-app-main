@@ -55,7 +55,7 @@ class RecordingAction extends StatelessWidget {
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: outlined
-                        ? s.primary
+                        ? t.controlColor(s.primary, s.surface, s.onSurface)
                         : onPressed == null
                         ? s.onSurfaceVariant
                         : s.onPrimary,
@@ -172,9 +172,20 @@ class RecordingChoice extends StatelessWidget {
     final t = context.cozyColors.recording;
     final s = Theme.of(context).colorScheme;
     final contrast = MediaQuery.highContrastOf(context);
-    final accent = contrast || category == 2
-        ? s.primary
-        : t.categoryInks[category];
+    final artworkInk = t.categoryInks[category];
+    final fill = contrast
+        ? s.surface
+        : t.choiceSurface(
+            context.cozyColors.recordingCategoryFills[category],
+            artworkInk,
+            s.surface,
+          );
+    final selectionInk = t.controlColor(
+      artworkInk,
+      fill,
+      s.onSurface,
+      minimumContrast: 3,
+    );
     return AppPressable(
       key: ValueKey('recording-hit-$collection-$slug'),
       checked: selected,
@@ -183,13 +194,11 @@ class RecordingChoice extends StatelessWidget {
         key: ValueKey('recording-$collection-$slug'),
         padding: EdgeInsets.all(t.small),
         decoration: BoxDecoration(
-          color: contrast
-              ? s.surface
-              : context.cozyColors.recordingCategoryFills[category],
+          color: fill,
           borderRadius: BorderRadius.circular(t.controlRadius),
           border: Border.all(
             color: selected
-                ? accent
+                ? selectionInk
                 : contrast
                 ? s.outline
                 : Colors.transparent,
@@ -202,14 +211,14 @@ class RecordingChoice extends StatelessWidget {
               'assets/png/recording_mask_${collection}_$slug.png',
               width: t.iconSize,
               height: t.iconSize,
-              color: accent,
+              color: artworkInk,
               excludeFromSemantics: true,
               errorBuilder: (_, _, _) => Icon(
                 collection == 'coping'
                     ? Icons.favorite_border
                     : Icons.work_outline,
                 size: t.iconSize,
-                color: accent,
+                color: artworkInk,
               ),
             ),
             SizedBox(width: t.small),
@@ -218,7 +227,14 @@ class RecordingChoice extends StatelessWidget {
             ),
             if (selected) ...[
               SizedBox(width: t.tiny),
-              Icon(Icons.check_circle, color: accent, size: t.iconSize),
+              // Bold labels need a little more room inside two-column cards.
+              // The illustration retains its original size; only this redundant
+              // selection marker is compacted.
+              Icon(
+                Icons.check_circle,
+                color: selectionInk,
+                size: MediaQuery.boldTextOf(context) ? t.large : t.iconSize,
+              ),
             ],
           ],
         ),
@@ -306,6 +322,7 @@ class _CopingResponseSheetState extends State<CopingResponseSheet> {
   Widget build(BuildContext context) {
     final t = context.cozyColors.recording;
     final query = _search.text.trim().toLowerCase();
+    final scheme = Theme.of(context).colorScheme;
     final options = [
       for (final row in widget.options)
         if ((row['name'] as String).toLowerCase().contains(query)) row,
@@ -389,9 +406,12 @@ class _CopingResponseSheetState extends State<CopingResponseSheet> {
                                         t.controlRadius,
                                       ),
                                       border: Border.all(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
+                                        color: t.controlColor(
+                                          scheme.primary,
+                                          scheme.surface,
+                                          scheme.onSurface,
+                                          minimumContrast: 3,
+                                        ),
                                       ),
                                     ),
                                     child: Row(

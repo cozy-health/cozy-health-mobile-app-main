@@ -109,8 +109,8 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
         final themeMode = _themeModeFromString(profile?.theme ?? 'system');
         final textScaleFactor = profile?.textSize ?? 1.0;
         final accent = _accentColorFromString(profile?.accentColor);
-        final lightTheme = _themeWithAccent(AppTheme.light, accent);
-        final darkTheme = _themeWithAccent(AppTheme.dark, accent);
+        final lightTheme = AppTheme.withAccent(AppTheme.light, accent);
+        final darkTheme = AppTheme.withAccent(AppTheme.dark, accent);
         final lightHighContrast = AppTheme.highContrast(lightTheme);
         final darkHighContrast = AppTheme.highContrast(darkTheme);
         final highContrast = profile?.highContrast ?? false;
@@ -215,107 +215,6 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
       default:
         return ThemeMode.system;
     }
-  }
-
-  ThemeData _themeWithAccent(ThemeData theme, Color accent) {
-    final onAccent = accent.computeLuminance() > .179
-        ? Colors.black
-        : Colors.white;
-    return theme.copyWith(
-      primaryColor: accent,
-      colorScheme: theme.colorScheme.copyWith(
-        primary: accent,
-        onPrimary: onAccent,
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style:
-            theme.elevatedButtonTheme.style?.copyWith(
-              backgroundColor: WidgetStateProperty.all(accent),
-              foregroundColor: WidgetStateProperty.all(onAccent),
-            ) ??
-            ElevatedButton.styleFrom(
-              backgroundColor: accent,
-              foregroundColor: onAccent,
-            ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style:
-            theme.textButtonTheme.style?.copyWith(
-              foregroundColor: WidgetStateProperty.all(accent),
-            ) ??
-            TextButton.styleFrom(foregroundColor: accent),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style:
-            theme.outlinedButtonTheme.style?.copyWith(
-              foregroundColor: WidgetStateProperty.all(accent),
-              side: WidgetStateProperty.all(BorderSide(color: accent)),
-            ) ??
-            OutlinedButton.styleFrom(
-              foregroundColor: accent,
-              side: BorderSide(color: accent),
-            ),
-      ),
-      switchTheme: theme.switchTheme.copyWith(
-        trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return accent;
-          return null;
-        }),
-        thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return onAccent;
-          return null;
-        }),
-      ),
-      checkboxTheme: theme.checkboxTheme.copyWith(
-        fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return accent;
-          return null;
-        }),
-        checkColor: WidgetStateProperty.all(onAccent),
-      ),
-      radioTheme: theme.radioTheme.copyWith(
-        fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return accent;
-          return null;
-        }),
-      ),
-      sliderTheme: theme.sliderTheme.copyWith(
-        activeTrackColor: accent,
-        thumbColor: accent,
-      ),
-      chipTheme: theme.chipTheme.copyWith(
-        selectedColor: accent.withValues(alpha: 0.15),
-        side: BorderSide(color: accent),
-      ),
-      bottomNavigationBarTheme: theme.bottomNavigationBarTheme.copyWith(
-        selectedItemColor: accent,
-      ),
-      inputDecorationTheme: theme.inputDecorationTheme.copyWith(
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: accent, width: 2),
-        ),
-        floatingLabelStyle: TextStyle(color: accent),
-      ),
-      textSelectionTheme: theme.textSelectionTheme.copyWith(
-        cursorColor: accent,
-      ),
-      snackBarTheme: theme.snackBarTheme.copyWith(actionTextColor: accent),
-      tabBarTheme: theme.tabBarTheme.copyWith(
-        indicatorColor: accent,
-        labelColor: accent,
-      ),
-      listTileTheme: theme.listTileTheme.copyWith(
-        selectedTileColor: accent.withValues(alpha: 0.12),
-      ),
-      floatingActionButtonTheme: theme.floatingActionButtonTheme.copyWith(
-        backgroundColor: accent,
-        foregroundColor: onAccent,
-      ),
-      progressIndicatorTheme: theme.progressIndicatorTheme.copyWith(
-        color: accent,
-      ),
-    );
   }
 
   Color _accentColorFromString(String? value) => AppColors.resolveAccent(value);

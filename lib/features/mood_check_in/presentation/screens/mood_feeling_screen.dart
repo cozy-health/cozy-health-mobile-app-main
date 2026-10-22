@@ -425,9 +425,17 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                                                     child: Text(
                                                       'See all (${_allResponses().length})',
                                                       style: TextStyle(
-                                                        color: theme
-                                                            .colorScheme
-                                                            .primary,
+                                                        color: t.controlColor(
+                                                          theme
+                                                              .colorScheme
+                                                              .primary,
+                                                          theme
+                                                              .colorScheme
+                                                              .surface,
+                                                          theme
+                                                              .colorScheme
+                                                              .onSurface,
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
@@ -533,7 +541,11 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                 child: Text(
                   'Skip for now',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: t.controlColor(
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.surface,
+                      Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ),
@@ -733,7 +745,11 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                     child: Text(
                       'Edit',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
+                        color: t.controlColor(
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.surface,
+                          Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                     ),
                   ),
@@ -1182,7 +1198,11 @@ class MoodCheckInSuccessScreen extends StatelessWidget {
                           child: Text(
                             'See past entries',
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
+                              color: t.controlColor(
+                                Theme.of(context).colorScheme.primary,
+                                Theme.of(context).colorScheme.surface,
+                                Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                           ),
                         ),

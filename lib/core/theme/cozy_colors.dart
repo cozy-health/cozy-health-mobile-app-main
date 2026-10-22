@@ -109,6 +109,33 @@ class CozyColors extends ThemeExtension<CozyColors> {
 @immutable
 class MoodRecordingTokens {
   const MoodRecordingTokens();
+
+  /// Control text and state indicators may adapt; illustration inks never do.
+  Color controlColor(
+    Color preferred,
+    Color background,
+    Color fallback, {
+    double minimumContrast = 4.5,
+  }) => contrastRatio(preferred, background) >= minimumContrast
+      ? preferred
+      : fallback;
+
+  double contrastRatio(Color a, Color b) {
+    final first = a.computeLuminance();
+    final second = b.computeLuminance();
+    return first > second
+        ? (first + .05) / (second + .05)
+        : (second + .05) / (first + .05);
+  }
+
+  /// Prefer the category surface, using the existing neutral surface only when
+  /// it improves a faint illustration without changing its colour or geometry.
+  Color choiceSurface(Color categoryFill, Color ink, Color surface) =>
+      contrastRatio(ink, categoryFill) < 3 &&
+          contrastRatio(ink, surface) > contrastRatio(ink, categoryFill)
+      ? surface
+      : categoryFill;
+
   double get tiny => 4;
   double get small => 8;
   double get medium => 12;
