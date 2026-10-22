@@ -1,6 +1,7 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/utils/motion.dart';
 import 'dart:async';
 import '../../../../core/models/mood_entry.dart';
 import '../../../../core/repositories/mood_repository.dart';
@@ -24,6 +25,7 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
     with SingleTickerProviderStateMixin {
   // We'll use a staggered animation for the elements
   late AnimationController _controller;
+  bool _entranceStarted = false;
   final _feed = InsightsFeed();
   StreamSubscription<List<MoodEntry>>? _moodSubscription;
   void _refresh() {
@@ -81,7 +83,18 @@ class _InsightsHomeScreenState extends State<InsightsHomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    _controller.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (shouldReduceMotion(context)) {
+      _controller.stop();
+      _controller.value = 1;
+    } else if (!_entranceStarted) {
+      _controller.forward();
+    }
+    _entranceStarted = true;
   }
 
   @override

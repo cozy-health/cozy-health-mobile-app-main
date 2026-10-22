@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/motion.dart';
+import '../../../../core/theme/app_text_styles.dart';
 
 class QuizProgressIndicator extends StatelessWidget {
   final int currentIndex;
@@ -31,7 +32,7 @@ class QuizProgressIndicator extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         TweenAnimationBuilder<double>(
-          duration: const Duration(milliseconds: 300),
+          duration: motionDuration(context, const Duration(milliseconds: 300)),
           curve: Curves.easeOut,
           tween: Tween<double>(begin: 0, end: progress),
           builder: (context, value, _) => LayoutBuilder(

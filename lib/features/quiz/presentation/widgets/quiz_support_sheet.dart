@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/motion.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 
@@ -6,6 +7,9 @@ class QuizSupportSheet extends StatelessWidget {
   const QuizSupportSheet({super.key});
   static Future<void> show(BuildContext context) => showModalBottomSheet<void>(
     context: context,
+    sheetAnimationStyle: shouldReduceMotion(context)
+        ? AnimationStyle.noAnimation
+        : null,
     isScrollControlled: true,
     isDismissible: true,
     enableDrag: true,

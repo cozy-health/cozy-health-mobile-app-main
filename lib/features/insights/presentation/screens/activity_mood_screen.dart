@@ -1,5 +1,6 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/utils/motion.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -17,6 +18,7 @@ class ActivityMoodScreen extends StatefulWidget {
 class _ActivityMoodScreenState extends State<ActivityMoodScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  bool _entranceStarted = false;
   List<Map<String, dynamic>> get _daily => LocalInsights.daily();
   late Animation<double> _chartAnimation;
 
@@ -31,7 +33,18 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
       parent: _controller,
       curve: Curves.easeOutCubic,
     );
-    _controller.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (shouldReduceMotion(context)) {
+      _controller.stop();
+      _controller.value = 1;
+    } else if (!_entranceStarted) {
+      _controller.forward();
+    }
+    _entranceStarted = true;
   }
 
   @override

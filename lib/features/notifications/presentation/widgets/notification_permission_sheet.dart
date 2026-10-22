@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/motion.dart';
 import '../../../../core/services/push_notification_service.dart';
 
 class NotificationPermissionSheet extends StatefulWidget {
   const NotificationPermissionSheet({super.key});
   static Future<void> show(BuildContext context) => showModalBottomSheet<void>(
     context: context,
+    sheetAnimationStyle: shouldReduceMotion(context)
+        ? AnimationStyle.noAnimation
+        : null,
     isScrollControlled: true,
     useSafeArea: true,
     builder: (_) => const NotificationPermissionSheet(),

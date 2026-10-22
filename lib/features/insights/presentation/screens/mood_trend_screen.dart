@@ -1,5 +1,6 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/utils/motion.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -30,6 +31,7 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
   }
 
   late AnimationController _controller;
+  bool _entranceStarted = false;
   late Animation<double> _chartAnimation;
 
   @override
@@ -43,7 +45,18 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
       parent: _controller,
       curve: Curves.easeOutCubic,
     );
-    _controller.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (shouldReduceMotion(context)) {
+      _controller.stop();
+      _controller.value = 1;
+    } else if (!_entranceStarted) {
+      _controller.forward();
+    }
+    _entranceStarted = true;
   }
 
   @override
@@ -57,8 +70,11 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
     setState(() {
       _selectedRange = range;
     });
-    _controller.reset();
-    _controller.forward();
+    if (shouldReduceMotion(context)) {
+      _controller.value = 1;
+    } else {
+      _controller.forward(from: 0);
+    }
   }
 
   @override
@@ -244,6 +260,8 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
                   .map((row) => (row['avg_intensity'] as num).toDouble())
                   .toList(),
               animationValue: _chartAnimation.value,
+              colors: Theme.of(context).colorScheme,
+              highContrast: MediaQuery.highContrastOf(context),
             ),
           ),
         ),
@@ -273,8 +291,15 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
 class _MoodAreaChartPainter extends CustomPainter {
   final List<double> data;
   final double animationValue;
+  final ColorScheme colors;
+  final bool highContrast;
 
-  _MoodAreaChartPainter({required this.data, required this.animationValue});
+  _MoodAreaChartPainter({
+    required this.data,
+    required this.animationValue,
+    required this.colors,
+    required this.highContrast,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -326,8 +351,8 @@ class _MoodAreaChartPainter extends CustomPainter {
 
       // Draw horizontal grid lines
       final gridPaint = Paint()
-        ..color = AppColors.border.withValues(alpha: 0.5)
-        ..strokeWidth = 1
+        ..color = colors.outline
+        ..strokeWidth = highContrast ? 2 : 1
         ..style = PaintingStyle.stroke;
 
       for (int i = 1; i < 5; i++) {
@@ -341,26 +366,17 @@ class _MoodAreaChartPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.primary.withValues(alpha: 0.2),
-            AppColors.primary.withValues(alpha: 0.0),
+            colors.primary.withValues(alpha: 0.2),
+            colors.primary.withValues(alpha: 0.0),
           ],
         ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
         ..style = PaintingStyle.fill;
       canvas.drawPath(areaPath, paint);
 
-      // Gradient line based on mood intensity
+      // Intensity is a numeric scale; the table provides exact values without
+      // assigning an emotional category solely from a line's color.
       final linePaint = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [
-            AppColors.warmOrange, // Very low
-            AppColors.warmOrange, // Low
-            AppColors.warmYellow, // Medium
-            AppColors.success, // Good
-            AppColors.success, // Very good
-          ],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+        ..color = colors.primary
         ..strokeWidth = 3
         ..style = PaintingStyle.stroke
         ..strokeJoin = StrokeJoin.round;
@@ -369,10 +385,10 @@ class _MoodAreaChartPainter extends CustomPainter {
       // Draw points
       if (animationValue == 1.0) {
         final pointPaint = Paint()
-          ..color = AppColors.surface
+          ..color = colors.surface
           ..style = PaintingStyle.fill;
         final pointStroke = Paint()
-          ..color = AppColors.primary
+          ..color = colors.primary
           ..strokeWidth = 2
           ..style = PaintingStyle.stroke;
 
@@ -390,6 +406,7 @@ class _MoodAreaChartPainter extends CustomPainter {
   bool shouldRepaint(covariant _MoodAreaChartPainter oldDelegate) {
     return oldDelegate.animationValue != animationValue ||
         oldDelegate.data != data ||
-        oldDelegate.data != data;
+        oldDelegate.colors != colors ||
+        oldDelegate.highContrast != highContrast;
   }
 }
