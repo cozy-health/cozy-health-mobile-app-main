@@ -11,6 +11,7 @@ class CozyColors extends ThemeExtension<CozyColors> {
     required this.triggerLow,
     required this.triggerMed,
     required this.triggerHigh,
+    this.recording = const MoodRecordingTokens(),
     this.recordingCategoryFills = const [
       Color(0xFFF3F9F5),
       Color(0xFFFEF6F1),
@@ -28,6 +29,7 @@ class CozyColors extends ThemeExtension<CozyColors> {
       triggerMed,
       triggerHigh;
   final List<Color> recordingCategoryFills;
+  final MoodRecordingTokens recording;
 
   static const light = CozyColors(
     crisis: AppColors.crisisPrimary,
@@ -66,6 +68,7 @@ class CozyColors extends ThemeExtension<CozyColors> {
     Color? triggerMed,
     Color? triggerHigh,
     List<Color>? recordingCategoryFills,
+    MoodRecordingTokens? recording,
   }) => CozyColors(
     crisis: crisis ?? this.crisis,
     calendarBg: calendarBg ?? this.calendarBg,
@@ -74,6 +77,7 @@ class CozyColors extends ThemeExtension<CozyColors> {
     triggerLow: triggerLow ?? this.triggerLow,
     triggerMed: triggerMed ?? this.triggerMed,
     triggerHigh: triggerHigh ?? this.triggerHigh,
+    recording: recording ?? this.recording,
     recordingCategoryFills:
         recordingCategoryFills ?? this.recordingCategoryFills,
   );
@@ -82,6 +86,7 @@ class CozyColors extends ThemeExtension<CozyColors> {
   CozyColors lerp(covariant CozyColors? other, double t) => other == null
       ? this
       : CozyColors(
+          recording: recording,
           crisis: Color.lerp(crisis, other.crisis, t)!,
           calendarBg: Color.lerp(calendarBg, other.calendarBg, t)!,
           journalingBg: Color.lerp(journalingBg, other.journalingBg, t)!,
@@ -98,6 +103,44 @@ class CozyColors extends ThemeExtension<CozyColors> {
               )!,
           ],
         );
+}
+
+/// Layout and interaction values shared by the scoped recording redesign.
+@immutable
+class MoodRecordingTokens {
+  const MoodRecordingTokens();
+  double get tiny => 4;
+  double get small => 8;
+  double get medium => 12;
+  double get large => 16;
+  double get page => 20;
+  double get section => 24;
+  double get touch => 48;
+  double get buttonHeight => 52;
+  double get controlRadius => 14;
+  double get panelRadius => 16;
+  double get border => 1;
+  double get selectedBorder => 2;
+  double get contentWidth => 560;
+  double get headingSize => 26;
+  double get bodySize => 14;
+  double get twoColumnWidth => 300;
+  double get singleColumnTextSize => 22;
+  double get previewSize => 144;
+  double get faceSize => 36;
+  double get iconSize => 22;
+  double get dotSize => 10;
+  double get pressScale => .98;
+  Duration get pressDuration => const Duration(milliseconds: 90);
+  Duration get transitionDuration => const Duration(milliseconds: 200);
+  List<Color> get categoryInks => const [
+    Color(0xFF00A642),
+    Color(0xFFF25C05),
+    Color(0xFF0460D8),
+    Color(0xFFF97066),
+    Color(0xFFF04D6E),
+    Color(0xFF00A0A6),
+  ];
 }
 
 extension CozyColorContext on BuildContext {

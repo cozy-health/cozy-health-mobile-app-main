@@ -1,4 +1,5 @@
 import '../../../../core/widgets/profile_avatar.dart';
+import '../../../../core/widgets/mood_artwork.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import '../../../../core/data/demo_mode.dart';
 import '../widgets/mood_chips_row.dart';
@@ -835,7 +836,8 @@ class InsightsScreen extends StatelessWidget {
               Expanded(
                 child: _BreakdownCard(
                   title: 'Most common',
-                  value: "${MoodEntry.moodEmojis['good']} Good",
+                  value: 'Good',
+                  mood: 'good',
                 ),
               ),
               SizedBox(width: 12),
@@ -968,10 +970,11 @@ class _MilestoneCard extends StatelessWidget {
 }
 
 class _BreakdownCard extends StatelessWidget {
-  const _BreakdownCard({required this.title, required this.value});
+  const _BreakdownCard({required this.title, required this.value, this.mood});
 
   final String title;
   final String value;
+  final String? mood;
 
   @override
   Widget build(BuildContext context) {
@@ -989,11 +992,21 @@ class _BreakdownCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 10),
-          Text(
-            value,
-            style: AppTextStyles.heading2.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+          Row(
+            children: [
+              if (mood != null && MoodArtwork.assetFor(mood!) != null) ...[
+                MoodArtwork(mood: mood!, size: 24),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Text(
+                  value,
+                  style: AppTextStyles.heading2.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

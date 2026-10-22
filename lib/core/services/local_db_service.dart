@@ -472,7 +472,10 @@ class LocalDbService {
       EncryptedHive.box<MoodEntry>(boxName(moodBoxName));
 
   Future<void> saveMoodEntry(MoodEntry entry) async {
-    await moodBox.put(entry.id, entry);
+    final owner = activeUserId;
+    final box = moodBox;
+    await box.put(entry.id, entry);
+    if (owner != activeUserId) throw StateError('Mood recording account changed');
     await _retainEarnedMilestones();
   }
 
@@ -865,6 +868,7 @@ class LocalDbService {
     required String recordId,
     required dynamic payload,
   }) async {
+    final queue = syncQueueBox;
     final predecessors = pendingItems;
     final item = SyncItem(
       id: const Uuid().v4(),
@@ -875,7 +879,7 @@ class LocalDbService {
       retryCount: 0,
       createdAt: DateTime.now().toUtc(),
     );
-    await syncQueueBox.put(item.id, item.toJson());
+    await queue.put(item.id, item.toJson());
     // Keep the newest intent for a record, including an in-flight predecessor.
     // Write first so a crash cannot erase the only durable queued change.
     if (action == 'upsert' || action == 'delete') {
@@ -884,7 +888,7 @@ class LocalDbService {
             old.type == type &&
             old.recordId == recordId &&
             (old.action == 'upsert' || old.action == 'delete')) {
-          await syncQueueBox.delete(old.id);
+          await queue.delete(old.id);
         }
       }
     }

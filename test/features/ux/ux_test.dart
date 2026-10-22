@@ -13,7 +13,9 @@ import 'package:cozy_health/core/widgets/friendly_error.dart';
 import 'package:cozy_health/features/auth/presentation/widgets/auth_ui.dart';
 import 'package:cozy_health/features/auth/presentation/screens/login_screen.dart';
 import 'package:cozy_health/features/mood_check_in/presentation/screens/mood_feeling_screen.dart';
+import 'package:cozy_health/features/mood_check_in/presentation/mood_recording_controller.dart';
 import '../../support/local_fonts.dart';
+import '../../support/mood_recording_fakes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -98,6 +100,20 @@ void main() {
       ),
     ),
   );
+
+  Future<MoodRecordingController> resumedFlow(WidgetTester tester) async {
+    // Real storage restart/expiry is covered above. Keep the widget test's
+    // asynchronous draft writes out of Flutter's fake-time I/O zone.
+    final stored = await tester.runAsync(drafts.loadToday);
+    final flow = MoodRecordingController(
+      drafts: MemoryMoodDrafts()..data = stored,
+      wellness: MemoryMoodCatalog(),
+      repository: MemoryMoodRepository(),
+    );
+    addTearDown(flow.dispose);
+    return flow;
+  }
+
   testWidgets('loading submit prevents duplicate taps and shows inline label', (
     tester,
   ) async {
@@ -200,7 +216,8 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await mount(tester, const MoodFeelingScreen());
+      final flow = await resumedFlow(tester);
+      await mount(tester, MoodFeelingScreen(controller: flow));
       await tester.pumpAndSettle();
       expect(
         find.text('You have an unsaved check-in. Resume?'),
@@ -218,7 +235,7 @@ void main() {
               find.byType(LinearProgressIndicator),
             )
             .value,
-        .25,
+        .2,
       );
       expect(find.text('You have an unsaved check-in. Resume?'), findsNothing);
       final feeling = find.byKey(
@@ -242,14 +259,11 @@ void main() {
             .selected,
         isTrue,
       );
-      await tester.tap(find.text('Resentful'));
+      await tester.tap(find.byKey(const ValueKey('recording-continue')));
       await tester.pumpAndSettle();
       expect(tester.widget<Slider>(find.byType(Slider)).value, 4);
-      Navigator.of(
-        tester.element(
-          find.byKey(const ValueKey('recording-intensity-dialog')),
-        ),
-      ).pop();
+      expect(find.byType(Dialog), findsNothing);
+      await tester.tap(find.bySemanticsLabel('Back'));
       await tester.pumpAndSettle();
     },
   );
@@ -267,7 +281,8 @@ void main() {
           'triggers': ['Deadlines'],
         }),
       );
-      await mount(tester, const MoodFeelingScreen());
+      final flow = await resumedFlow(tester);
+      await mount(tester, MoodFeelingScreen(controller: flow));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Resume'));
       await tester.pumpAndSettle();
@@ -278,7 +293,7 @@ void main() {
               find.byType(LinearProgressIndicator),
             )
             .value,
-        .5,
+        .6,
       );
       expect(find.text('You have an unsaved check-in. Resume?'), findsNothing);
       final cause = find.byKey(
@@ -293,13 +308,13 @@ void main() {
                     matching: find.byWidgetPredicate(
                       (widget) =>
                           widget is Semantics &&
-                          widget.properties.selected != null,
+                          widget.properties.checked != null,
                     ),
                   )
                   .first,
             )
             .properties
-            .selected,
+            .checked,
         isTrue,
       );
     },

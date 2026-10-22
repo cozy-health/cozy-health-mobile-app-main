@@ -2,6 +2,7 @@ import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/mood_artwork.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -1124,9 +1125,19 @@ class JournalEntryDetailScreen extends StatelessWidget {
           Text(_detailDate(entry.createdAt), style: _captionStyle(context)),
           if (mood != null) ...[
             const SizedBox(height: 12),
-            Text(
-              '${mood.emoji} ${mood.displayFeeling} | Intensity ${mood.intensity}/10',
-              style: _captionStyle(context),
+            Row(
+              children: [
+                if (MoodArtwork.assetFor(mood.mood) != null) ...[
+                  MoodArtwork(mood: mood.mood, size: 24),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: Text(
+                    '${mood.displayFeeling} | Intensity ${mood.intensity}/10',
+                    style: _captionStyle(context),
+                  ),
+                ),
+              ],
             ),
           ],
           SizedBox(height: 34),

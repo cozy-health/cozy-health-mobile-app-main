@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +10,7 @@ import 'package:cozy_health/core/data/demo_mode.dart';
 import 'package:cozy_health/core/data/placeholder_data.dart';
 import 'package:cozy_health/core/models/user_profile.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
+import 'package:cozy_health/core/widgets/mood_artwork.dart';
 import 'package:cozy_health/core/models/journal_entry.dart';
 import 'package:cozy_health/core/models/app_notification.dart';
 import 'package:cozy_health/core/models/saved_article.dart';
@@ -20,6 +22,7 @@ import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'package:cozy_health/core/theme/app_theme.dart';
 import 'package:cozy_health/core/routing/app_router.dart';
 import 'package:cozy_health/features/home/presentation/screens/home_screen.dart';
+import 'package:cozy_health/features/home/presentation/widgets/cozy_calendar.dart';
 import 'package:cozy_health/features/home/presentation/screens/main_screen.dart';
 import 'package:cozy_health/core/widgets/bottom_navigation_bar.dart';
 import 'package:cozy_health/features/crisis/presentation/widgets/crisis_fab.dart';
@@ -54,6 +57,17 @@ void main() {
       visualFontPath: 'test/golden_assets/Outfit.ttf',
       useRealFonts: true,
     );
+    // The journal intentionally uses Georgia for its body. Load the installed
+    // face for Windows review captures rather than rendering test-font blocks.
+    if (Platform.isWindows) {
+      final font = File('${Platform.environment['WINDIR']}/Fonts/georgia.ttf');
+      if (font.existsSync()) {
+        await (FontLoader('Georgia')..addFont(
+              Future.value(ByteData.sublistView(font.readAsBytesSync())),
+            ))
+            .load();
+      }
+    }
     directory = await Directory.systemTemp.createTemp('cozy_ui_review_');
     Hive.init(directory.path);
     Hive.registerAdapter(UserProfileAdapter());
@@ -148,6 +162,128 @@ void main() {
       tester,
       '${screen.runtimeType}_${dark ? 'dark' : 'light'}_${size.width.toInt()}x${size.height.toInt()}',
     );
+  }
+
+  for (final dark in [false, true]) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets(
+        'mood artwork across saved surfaces dark=$dark scale=$scale',
+        (tester) async {
+          final originalMoods = List<MoodEntry>.of(DemoMode.instance.moods);
+          addTearDown(() {
+            DemoMode.instance.moods
+              ..clear()
+              ..addAll(originalMoods);
+          });
+          final date = DateTime(2026, 10, 22, 12);
+          final entries = [
+            MoodEntry(
+              id: 'artwork-current',
+              mood: 'angry',
+              expressionSlug: 'angry-resentful',
+              intensity: 7,
+              triggers: ['Deadlines'],
+              createdAt: date,
+              updatedAt: date,
+            ),
+            MoodEntry(
+              id: 'artwork-legacy',
+              mood: 'calm',
+              intensity: 5,
+              createdAt: date,
+              updatedAt: date,
+            ),
+          ];
+          DemoMode.instance.moods
+            ..clear()
+            ..addAll(entries);
+          final journal = JournalEntry(
+            id: 'artwork-journal',
+            type: 'free',
+            body: 'I took a quiet moment after a busy day.',
+            linkedMoodEntryId: entries.first.id,
+            wordCount: 10,
+            createdAt: date,
+            updatedAt: date,
+          );
+          final surfaces = <String, Widget>{
+            'history': const MoodHistoryScreen(),
+            'detail': MoodDetailViewScreen(entry: entries.first),
+            'legacy-detail': MoodDetailViewScreen(entry: entries.last),
+            'calendar': Scaffold(
+              body: SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: CozyCalendar(
+                    entries: entries,
+                    recentEntries: entries,
+                    streak: 1,
+                    weeklyCount: 2,
+                    weeklyIntensityTotal: 12,
+                    hasMoodToday: true,
+                    onStreak: () {},
+                    now: date,
+                  ),
+                ),
+              ),
+            ),
+            'journal': JournalEntryDetailScreen(entry: journal),
+            'home-insights': const InsightsScreen(),
+          };
+          for (final surface in surfaces.entries) {
+            await mount(
+              tester,
+              surface.value,
+              dark: dark,
+              size: Size(scale == 1 ? 375 : 320, 812),
+              textScale: scale,
+            );
+            if (surface.key == 'home-insights') {
+              await tester.ensureVisible(find.text('Most common'));
+            }
+            await settleMoodReviewImages(tester, captureKey: surfaceCaptureKey);
+            final artwork = tester
+                .widgetList<MoodArtwork>(find.byType(MoodArtwork))
+                .toList();
+            final paths = tester
+                .widgetList<Image>(find.byType(Image))
+                .map((image) => (image.image as AssetImage).assetName)
+                .toList();
+            if (surface.key == 'legacy-detail') {
+              expect(paths, isEmpty);
+              expect(find.text('Calm'), findsOneWidget);
+            } else {
+              expect(artwork, isNotEmpty);
+              expect(
+                paths,
+                contains(
+                  MoodArtwork.assetFor(
+                    surface.key == 'home-insights' ? 'good' : 'angry',
+                  ),
+                ),
+              );
+            }
+            if (surface.key == 'history' || surface.key == 'calendar') {
+              expect(paths, hasLength(1));
+              expect(find.text('Calm'), findsOneWidget);
+              expect(find.text('Resentful'), findsOneWidget);
+            }
+            if (surface.key == 'journal') {
+              expect(find.text('Resentful | Intensity 7/10'), findsOneWidget);
+            }
+            if (scale == 1) {
+              await captureMoodReview(
+                tester,
+                'artwork-${dark ? 'dark' : 'light'}-${surface.key}',
+                captureKey: surfaceCaptureKey,
+              );
+            }
+            expect(tester.takeException(), isNull, reason: surface.key);
+            await tester.pumpWidget(const SizedBox.shrink());
+          }
+        },
+      );
+    }
   }
 
   for (final size in [
@@ -429,7 +565,7 @@ void main() {
       );
       await mount(tester, const QuizHistoryScreen(), dark: dark);
       final theme = dark ? AppTheme.dark : AppTheme.light;
-      for (final title in ['Quiz History', 'Past attempts']) {
+      for (final title in ['Assessment History', 'Past attempts']) {
         final text = tester.widget<Text>(find.text(title));
         final style = DefaultTextStyle.of(
           tester.element(find.text(title)),

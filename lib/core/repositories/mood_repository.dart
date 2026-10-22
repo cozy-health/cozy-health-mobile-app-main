@@ -80,13 +80,20 @@ class MoodRepository {
       DemoMode.instance.upsertMood(entry);
       return entry;
     }
+    final owner = _local.boxName(LocalDbService.userSettingsBoxName);
     await _local.saveMoodEntry(entry);
+    if (owner != _local.boxName(LocalDbService.userSettingsBoxName)) {
+      throw StateError('Mood recording account changed');
+    }
     await _local.enqueueSync(
       type: 'mood_entry',
       action: 'upsert',
       recordId: entry.id,
       payload: entry.toJson(),
     );
+    if (owner != _local.boxName(LocalDbService.userSettingsBoxName)) {
+      throw StateError('Mood recording account changed');
+    }
     _local.processSyncQueue();
     return entry;
   }

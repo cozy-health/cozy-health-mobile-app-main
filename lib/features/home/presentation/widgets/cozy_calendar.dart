@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/models/mood_entry.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/widgets/weekday_row.dart';
+import '../../../../core/widgets/mood_artwork.dart';
 
 /// Content determines the height, including at larger accessibility text sizes.
 class CozyCalendar extends StatelessWidget {
@@ -128,10 +129,9 @@ class CozyCalendar extends StatelessWidget {
                   dense: true,
                   visualDensity: VisualDensity.compact,
                   contentPadding: EdgeInsets.zero,
-                  leading: Text(
-                    entry.emoji,
-                    style: const TextStyle(fontSize: 24),
-                  ),
+                  leading: MoodArtwork.assetFor(entry.mood) == null
+                      ? null
+                      : MoodArtwork(mood: entry.mood, size: 24),
                   title: Text(entry.displayFeeling),
                   subtitle: Text(
                     '${entry.createdAt.toLocal().month}/${entry.createdAt.toLocal().day}, ${TimeOfDay.fromDateTime(entry.createdAt.toLocal()).format(context)}',

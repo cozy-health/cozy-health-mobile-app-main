@@ -1,33 +1,40 @@
-import 'mood_intensity_control.dart';
-import '../../../../core/theme/cozy_colors.dart';
-import 'mood_recording_layout.dart';
-import '../../../../core/widgets/app_scroll_body.dart';
-import '../../../../core/widgets/skeleton_loader.dart';
-import '../../../../core/widgets/empty_state.dart';
-import '../../../../core/services/local_db_service.dart';
-import '../../../../core/theme/app_surface.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:uuid/uuid.dart';
 import '../../../../core/data/mood_recording_catalog.dart';
 import '../../../../core/models/mood_entry.dart';
 import '../../../../core/repositories/mood_repository.dart';
-import '../../../../core/repositories/wellness_repository.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/services/mood_draft_service.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surface.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/utils/motion.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/widgets/app_scroll_body.dart';
 import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../core/widgets/mood_artwork.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/security_blur.dart';
+import '../../../../core/widgets/skeleton_loader.dart';
 import '../../../crisis/presentation/screens/crisis_screens.dart';
 import '../../../crisis/services/crisis_detector.dart';
+import '../mood_recording_controller.dart';
+import 'mood_intensity_control.dart';
+import 'mood_recording_layout.dart';
+import 'mood_recording_widgets.dart';
 
 class MoodFeelingScreen extends StatefulWidget {
-  const MoodFeelingScreen({super.key, this.entry, this.initialMood});
+  const MoodFeelingScreen({
+    super.key,
+    this.entry,
+    this.initialMood,
+    this.controller,
+  });
   final MoodEntry? entry;
   final String? initialMood;
-
+  final MoodRecordingController? controller;
   @override
   State<MoodFeelingScreen> createState() => _MoodFeelingScreenState();
 }
@@ -50,156 +57,77 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
     'Life changes',
   ];
   static const _icons = [
-    Icons.hourglass_empty,
+    Icons.work_outline,
     Icons.school_outlined,
     Icons.people_outline,
     Icons.bedtime_outlined,
     Icons.favorite_border,
     Icons.home_outlined,
   ];
-  final _drafts = MoodDraftService();
   final _scroll = ScrollController();
   final _feelingKeys = {
     for (final group in _groups) group.toLowerCase(): GlobalKey(),
   };
-  String _id = const Uuid().v4();
-  final Set<String> _causes = {}, _coping = {};
-  Map<String, dynamic> _catalog = moodRecordingCatalog;
-  Map<String, dynamic>? _resume;
-  Map<String, dynamic> _legacy = {};
-  Future<void> _writes = Future.value();
-  String? _mood, _expression;
-  int _step = 0, _storedIntensity = 6;
-  bool _saving = false, _loadingDraft = true, _closing = false;
-
-  List<Map<String, dynamic>> _rows(String key) => (_catalog[key] as List)
-      .map((r) => Map<String, dynamic>.from(r as Map))
-      .toList();
-
+  final Set<String> _expanded = {'Work', 'Previously selected'};
+  late final MoodRecordingController _flow;
+  MoodRecordingStep? _lastStep;
+  String? _lastError;
+  bool _closing = false;
+  int get _step => _flow.state.step.index;
+  String? get _expression => _flow.state.expression;
+  List<Map<String, dynamic>> _rows(String key) => _flow.rows(key);
   @override
   void initState() {
     super.initState();
-    final entry = widget.entry;
-    _mood = entry?.mood ?? widget.initialMood;
-    if (entry != null) {
-      _expression = entry.expressionSlug;
-      _storedIntensity = entry.intensity;
-      _causes.addAll(entry.triggers ?? []);
-      _coping.addAll(entry.copingStrategies ?? []);
-      _legacy = {
-        'body': entry.bodySensations,
-        'custom_trigger': entry.customTrigger,
-        'sleep': entry.sleepQuality,
-        'energy': entry.energyLevel,
-        'note': entry.note,
-        'coping_helped': entry.copingHelped,
-      };
-      _loadingDraft = false;
-    } else {
-      _loadDraft();
-    }
-    _loadCatalog();
-  }
-
-  Future<void> _loadCatalog() async {
-    final catalog = await WellnessRepository().catalog();
-    if (!mounted || catalog == null || catalog['mood_recording_version'] != 2) {
-      return;
-    }
-    if ([
-      'moods',
-      'expressions',
-      'triggers',
-      'coping',
-    ].every((key) => catalog[key] is List)) {
-      setState(() => _catalog = catalog);
-    }
-  }
-
-  Future<void> _loadDraft() async {
-    Map<String, dynamic>? draft;
-    try {
-      draft = await _drafts.loadToday();
-    } catch (_) {
-      /* Fresh recording remains available. */
-    }
-    if (mounted) {
-      setState(() {
-        _resume = draft;
-        _loadingDraft = false;
-      });
-      if (draft == null) _revealInitialMood();
-    }
-  }
-
-  void _revealInitialMood() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _step != 0 || _resume != null) return;
-      final target = _feelingKeys[widget.initialMood]?.currentContext;
-      if (target != null) {
-        Scrollable.ensureVisible(target, alignment: 0);
-      }
-    });
-  }
-
-  Map<String, dynamic> _draft() => {
-    ..._legacy,
-    'version': 2,
-    'id': _id,
-    'step': _step,
-    'mood': _mood,
-    'expression_slug': _expression,
-    'intensity': _storedIntensity,
-    'triggers': _causes.toList(),
-    'coping': _coping.toList(),
-  };
-
-  void _queueDraft() {
-    if (widget.entry != null || _resume != null || _loadingDraft) return;
-    final draft = _draft();
-    _writes = _writes.then((_) => _drafts.save(draft)).catchError((Object _) {
-      if (mounted) {
-        AppSnackbar.show(
-          context,
-          AppSnackbar.error(
-            "We couldn't save this draft. Please keep this screen open and try again.",
-          ),
+    _flow =
+        widget.controller ??
+        MoodRecordingController(
+          entry: widget.entry,
+          initialMood: widget.initialMood,
         );
-      }
-    });
+    _flow.addListener(_onFlow);
+    _openSelectedGroups();
+    unawaited(_flow.initialize());
   }
 
-  void _resumeDraft() {
-    final draft = migrateMoodRecordingDraft(_resume!);
-    setState(() {
-      _legacy = Map.of(draft);
-      final id = draft['id'] as String?;
-      if (id != null && Uuid.isValidUUID(fromString: id)) {
-        _id = id;
+  void _openSelectedGroups() {
+    for (final row in _rows('triggers')) {
+      if (_flow.state.causes.contains(row['name'])) {
+        _expanded.add(row['group_name'] as String? ?? 'Other');
       }
-      _mood = draft['mood'] as String?;
-      _expression = draft['expression_slug'] as String?;
-      _storedIntensity = draft['intensity'] as int? ?? 6;
-      _causes.addAll(List<String>.from(draft['triggers'] as List? ?? []));
-      _coping.addAll(List<String>.from(draft['coping'] as List? ?? []));
-      _step = draft['step'] as int;
-      _resume = null;
-    });
-  }
-
-  Future<void> _clearDraft() async {
-    await _writes;
-    await _drafts.clear();
-    if (mounted) {
-      setState(() => _resume = null);
-      _revealInitialMood();
     }
   }
 
-  void _go(int step) {
-    setState(() => _step = step);
-    if (_scroll.hasClients) _scroll.jumpTo(0);
-    _queueDraft();
+  void _onFlow() {
+    if (!mounted) return;
+    if (_flow.error == null) _lastError = null;
+    final stage = _flow.state.step;
+    final changed = _lastStep != stage;
+    _lastStep = stage;
+    setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (changed && _scroll.hasClients) _scroll.jumpTo(0);
+      if (!_flow.loading &&
+          _flow.resumeDraft == null &&
+          stage == MoodRecordingStep.feeling &&
+          changed) {
+        final target = _feelingKeys[widget.initialMood]?.currentContext;
+        if (target != null) Scrollable.ensureVisible(target, alignment: 0);
+      }
+      if (_flow.error != null && _flow.error != _lastError) {
+        _lastError = _flow.error;
+        AppSnackbar.show(context, AppSnackbar.error(_flow.error!));
+      }
+    });
+  }
+
+  void _selectFeeling(
+    Map<String, dynamic> mood,
+    Map<String, dynamic> feeling,
+  ) => _flow.selectFeeling(mood['slug'] as String, feeling['slug'] as String);
+  void _toggle(Set<String> values, String value) {
+    if (!values.add(value)) values.remove(value);
   }
 
   void _exit() {
@@ -211,7 +139,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
   }
 
   Future<void> _close() async {
-    if (_saving || _closing) return;
+    if (_flow.saving || _closing) return;
     _closing = true;
     final discard = await showDialog<bool>(
       context: context,
@@ -233,7 +161,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
     _closing = false;
     if (discard != true || !mounted) return;
     try {
-      if (widget.entry == null) await _clearDraft();
+      await _flow.discard();
     } catch (_) {
       if (mounted) {
         AppSnackbar.show(
@@ -247,170 +175,27 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
   }
 
   void _back() {
-    if (_saving || _closing) return;
-    if (_step > 0) {
-      _go(_step - 1);
-    } else {
-      _close();
-    }
-  }
-
-  Future<void> _selectFeeling(
-    Map<String, dynamic> mood,
-    Map<String, dynamic> feeling,
-  ) async {
-    var value = _expression == feeling['slug']
-        ? moodIntensityToDisplay(_storedIntensity)
-        : 3;
-    final result = await showDialog<int>(
-      context: context,
-      builder: (dialogContext) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-        child: StatefulBuilder(
-          builder: (context, update) {
-            final theme = Theme.of(context);
-            final scheme = theme.colorScheme;
-            return Dialog(
-              key: const ValueKey('recording-intensity-dialog'),
-              constraints: const BoxConstraints(maxWidth: 360),
-              backgroundColor:
-                  theme.dialogTheme.backgroundColor ?? scheme.surface,
-              surfaceTintColor: Colors.transparent,
-              shape: AppSurface.shape(context, BorderRadius.circular(24)),
-              insetPadding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 24,
-              ),
-              child: SizedBox(
-                key: const ValueKey('recording-intensity-body'),
-                width: 360,
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'How intense is this feeling?',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          feeling['name'] as String,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                        MoodIntensityControl(
-                          value: value,
-                          feeling: feeling['name'] as String,
-                          onChanged: (next) => update(() => value = next),
-                        ),
-                        const SizedBox(height: 4),
-                        OverflowBar(
-                          alignment: MainAxisAlignment.end,
-                          spacing: 8,
-                          overflowSpacing: 8,
-                          children: [
-                            TextButton(
-                              style: TextButton.styleFrom(
-                                foregroundColor: scheme.onSurfaceVariant,
-                              ),
-                              onPressed: () => Navigator.pop(dialogContext),
-                              child: const Text('Cancel'),
-                            ),
-                            FilledButton(
-                              onPressed: () =>
-                                  Navigator.pop(dialogContext, value),
-                              child: const Text('Done'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-    if (result == null || !mounted) return;
-    setState(() {
-      _mood = mood['slug'] as String;
-      _expression = feeling['slug'] as String;
-      _storedIntensity = moodIntensityToStorage(result);
-    });
-    _queueDraft();
+    if (_flow.back()) unawaited(_close());
   }
 
   Future<void> _save() async {
-    if (_saving || _mood == null) return;
-    setState(() => _saving = true);
-    final old = widget.entry;
-    final note = _legacy['note'] as String?;
+    final saved = await _flow.save();
+    if (!mounted || saved == null || !_flow.active) return;
     const detector = CrisisDetector();
-    final signal = detector.analyze(note ?? '');
-    final crisis = detector.canTrigger('mood', signal);
-    final draftId = _legacy['id'] as String?;
-    final entry = MoodEntry(
-      id:
-          old?.id ??
-          (draftId != null && Uuid.isValidUUID(fromString: draftId)
-              ? draftId
-              : _id),
-      mood: _mood!,
-      expressionSlug: _expression,
-      intensity: _storedIntensity,
-      triggers: _causes.toList(),
-      copingStrategies: _coping.toList(),
-      bodySensations: (_legacy['body'] as List?)?.cast<String>(),
-      customTrigger: _legacy['custom_trigger'] as String?,
-      sleepQuality: _legacy['sleep'] as int?,
-      energyLevel: _legacy['energy'] as int?,
-      note: note,
-      copingHelped: _legacy['coping_helped'] as String?,
-      isCrisisFlagged: crisis || (old?.isCrisisFlagged ?? false),
-      createdAt: old?.createdAt ?? DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    try {
-      await MoodRepository().save(entry);
-    } catch (_) {
-      if (mounted) {
-        setState(() => _saving = false);
-        AppSnackbar.show(
-          context,
-          AppSnackbar.error(
-            "We couldn't save your check-in. Your draft is still here.",
-            onRetry: _save,
-          ),
-        );
-      }
-      return;
-    }
-    if (old == null) {
-      try {
-        await _clearDraft();
-      } catch (_) {
-        /* The entry is already saved. */
-      }
-    }
-    if (!mounted) return;
-    if (crisis) {
+    final signal = detector.analyze(saved.note ?? '');
+    if (detector.canTrigger('mood', signal)) {
       detector.markTriggered('mood');
       await showCrisisSupportOverlay(context, signal: signal);
-      if (!mounted) return;
     }
-    context.go(AppRouter.moodSuccess);
+    if (mounted && _flow.active) {
+      context.go(AppRouter.moodSuccess, extra: saved);
+    }
   }
 
   @override
   void dispose() {
+    _flow.removeListener(_onFlow);
+    if (widget.controller == null) _flow.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -418,181 +203,270 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final enabled =
-        !_loadingDraft &&
-        _resume == null &&
-        !_saving &&
-        (_step != 0 || _expression != null || widget.entry != null);
+    final t = context.cozyColors.recording;
+    final stage = _flow.state.step;
+    final feelingStage = stage == MoodRecordingStep.feeling;
+    final heading = switch (stage) {
+      MoodRecordingStep.feeling =>
+        'How would you describe how you are feeling?',
+      MoodRecordingStep.intensity => 'How strong is this feeling?',
+      MoodRecordingStep.causes => 'What made you feel this way?',
+      MoodRecordingStep.coping => 'How have you expressed these feelings?',
+      MoodRecordingStep.review => 'Review your check-in',
+    };
     return PopScope<Object?>(
-      canPop: false,
+      canPop: !_flow.active,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _back();
       },
       child: Scaffold(
+        // Search lives in its own inset-aware sheet. Keep the check-in behind it
+        // stable while the keyboard is open.
+        resizeToAvoidBottomInset: false,
         backgroundColor: theme.scaffoldBackgroundColor,
         body: SecurityBlur(
           child: SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 5, 8, 1),
-                  child: Row(
-                    children: [
-                      TextButton(
-                        onPressed: _saving ? null : _back,
-                        style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.chevron_left, size: 18),
-                            Text('Back'),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(3),
-                          child: LinearProgressIndicator(
-                            value: (_step + 1) / 4,
-                            semanticsLabel: 'Check-in, step ${_step + 1} of 4',
-                            minHeight: 4,
-                            color: theme.colorScheme.primary,
-                            backgroundColor: theme.colorScheme.outlineVariant
-                                .withValues(alpha: .35),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      IconButton(
-                        onPressed: _saving ? null : _close,
-                        tooltip: 'Close check-in',
-                        icon: const Icon(Icons.close),
-                      ),
-                    ],
-                  ),
-                ),
-                if (_resume != null)
-                  MaterialBanner(
-                    content: const Text(
-                      'You have an unsaved check-in. Resume?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: _resumeDraft,
-                        child: const Text('Resume'),
-                      ),
-                      TextButton(
-                        onPressed: () async {
-                          try {
-                            await _clearDraft();
-                          } catch (_) {
-                            if (context.mounted) {
-                              AppSnackbar.show(
-                                context,
-                                AppSnackbar.error(
-                                  "We couldn't discard your draft.",
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        child: const Text('Discard'),
-                      ),
-                    ],
-                  ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scroll,
-                    padding: const EdgeInsets.fromLTRB(15, 0, 15, 24),
-                    child: IgnorePointer(
-                      ignoring: _saving || _resume != null || _loadingDraft,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: t.contentWidth),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: t.small),
+                      child: Row(
                         children: [
-                          Semantics(
-                            header: true,
-                            child: Text(
-                              [
-                                'How would you describe how you are feeling?',
-                                'What made you feel this way?',
-                                'How have you expressed these feelings?',
-                                'Review your check-in',
-                              ][_step],
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
+                          AppPressable(
+                            label: 'Back',
+                            onPressed: _flow.saving ? null : _back,
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.chevron_left),
+                                Text('Back'),
+                              ],
                             ),
                           ),
-                          if (_step == 1 || _step == 2) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'Choose any that apply, or continue without selecting.',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
+                          SizedBox(width: t.medium),
+                          Expanded(
+                            child: LinearProgressIndicator(
+                              value:
+                                  (_step + 1) / MoodRecordingStep.values.length,
+                              minHeight: t.tiny,
+                              semanticsLabel:
+                                  'Check-in, step ${_step + 1} of 5',
                             ),
-                          ],
-                          const SizedBox(height: 24),
-                          if (_step == 0) ..._feelingCards(),
-                          if (_step == 1) ..._causeCards(),
-                          if (_step == 2)
-                            _panel(
-                              'Coping Mechanisms',
-                              _chips('coping', _rows('coping'), 2, _coping),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: t.small),
+                            child: Text(
+                              '${_step + 1} of 5',
+                              style: theme.textTheme.bodySmall,
                             ),
-                          if (_step == 3) ..._review(),
+                          ),
+                          AppPressable(
+                            label: 'Close check-in',
+                            onPressed: _flow.saving ? null : _close,
+                            child: const Icon(Icons.close),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: _scroll,
+                        padding: EdgeInsets.fromLTRB(
+                          feelingStage ? 15 : t.page,
+                          t.small,
+                          feelingStage ? 15 : t.page,
+                          t.section,
                         ),
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      onPressed: enabled
-                          ? () {
-                              if (_step == 3) {
-                                _save();
-                              } else {
-                                _go(_step + 1);
-                              }
-                            }
-                          : null,
-                      child: _saving
-                          ? Semantics(
-                              label: 'Saving check-in',
-                              liveRegion: true,
-                              child: SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: theme.colorScheme.onPrimary,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (!_flow.active) ...[
+                              const Text(
+                                'Your account changed. Return home to start a new check-in.',
+                              ),
+                              RecordingAction(
+                                label: 'Back to Home',
+                                onPressed: () => context.go(AppRouter.home),
+                              ),
+                            ] else ...[
+                              if (_flow.resumeDraft != null) ...[
+                                Text(
+                                  _flow.supportedDraft
+                                      ? 'You have an unsaved check-in. Resume?'
+                                      : 'This draft was made by a newer app version. Keep it, or discard it to start again.',
+                                ),
+                                Row(
+                                  children: [
+                                    if (_flow.supportedDraft)
+                                      TextButton(
+                                        onPressed: () {
+                                          _flow.resume();
+                                          _openSelectedGroups();
+                                        },
+                                        child: const Text('Resume'),
+                                      ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        try {
+                                          await _flow.discard();
+                                        } catch (_) {
+                                          if (context.mounted) {
+                                            AppSnackbar.show(
+                                              context,
+                                              AppSnackbar.error(
+                                                "We couldn't discard your draft.",
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      },
+                                      child: const Text('Discard'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              IgnorePointer(
+                                ignoring:
+                                    _flow.loading ||
+                                    _flow.saving ||
+                                    _flow.resumeDraft != null,
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Semantics(
+                                      header: true,
+                                      child: Text(
+                                        heading,
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                              fontSize: feelingStage
+                                                  ? 15
+                                                  : t.headingSize,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ),
+                                    if (stage == MoodRecordingStep.causes ||
+                                        stage == MoodRecordingStep.coping) ...[
+                                      SizedBox(height: t.small),
+                                      Text(
+                                        'Optional · Choose any that apply.',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ],
+                                    SizedBox(height: t.section),
+                                    if (feelingStage) ..._feelingCards(),
+                                    if (stage ==
+                                        MoodRecordingStep.intensity) ...[
+                                      _summary(),
+                                      SizedBox(height: t.section),
+                                      Text(
+                                        'Move the slider to match how strongly you feel it.',
+                                        style: theme.textTheme.bodyMedium,
+                                      ),
+                                      SizedBox(height: t.large),
+                                      MoodIntensityControl(
+                                        value: moodIntensityToDisplay(
+                                          _flow.state.intensity,
+                                        ),
+                                        feeling: _flow.feeling,
+                                        onChanged: _flow.setIntensity,
+                                      ),
+                                    ],
+                                    if (stage == MoodRecordingStep.causes) ...[
+                                      _summary(),
+                                      SizedBox(height: t.large),
+                                      ..._causes(),
+                                    ],
+                                    if (stage == MoodRecordingStep.coping) ...[
+                                      _summary(),
+                                      SizedBox(height: t.large),
+                                      RecordingPanel(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    'Coping mechanisms',
+                                                    style: theme
+                                                        .textTheme
+                                                        .titleMedium
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                  ),
+                                                ),
+                                                SizedBox(width: t.small),
+                                                AppPressable(
+                                                  key: const ValueKey(
+                                                    'coping-see-all',
+                                                  ),
+                                                  label:
+                                                      'See all responses (${_allResponses().length})',
+                                                  onPressed: _showResponses,
+                                                  child: Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal: t.small,
+                                                        ),
+                                                    child: Text(
+                                                      'See all (${_allResponses().length})',
+                                                      style: TextStyle(
+                                                        color: theme
+                                                            .colorScheme
+                                                            .primary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(height: t.medium),
+                                            RecordingChoices(
+                                              options: _previewResponses(),
+                                              selected: _flow.state.coping,
+                                              collection: 'coping',
+                                              onToggle: (name) {
+                                                final values = Set.of(
+                                                  _flow.state.coping,
+                                                );
+                                                if (!values.add(name)) {
+                                                  values.remove(name);
+                                                }
+                                                _flow.setCoping(values);
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                    if (stage == MoodRecordingStep.review)
+                                      ..._review(),
+                                  ],
                                 ),
                               ),
-                            )
-                          : Text(_step == 3 ? 'Save entry' : 'Continue'),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    if (_flow.active) _footer(),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -600,11 +474,277 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
     );
   }
 
-  void _toggle(Set<String> values, String value) {
-    setState(() {
-      if (!values.add(value)) values.remove(value);
-    });
-    _queueDraft();
+  Widget _summary() => RecordingSummary(
+    mood: _flow.state.mood ?? 'good',
+    feeling: _flow.feeling,
+    intensity: _flow.state.intensity,
+  );
+  Widget _footer() {
+    final t = context.cozyColors.recording;
+    final stage = _flow.state.step;
+    final values = stage == MoodRecordingStep.causes
+        ? _flow.state.causes
+        : stage == MoodRecordingStep.coping
+        ? _flow.state.coping
+        : const <String>{};
+    final optional =
+        stage == MoodRecordingStep.causes || stage == MoodRecordingStep.coping;
+    final noun = stage == MoodRecordingStep.causes ? 'cause' : 'response';
+    return Padding(
+      padding: EdgeInsets.fromLTRB(t.page, t.small, t.page, t.small),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (optional && values.isNotEmpty) ...[
+            Text(
+              '${values.length} $noun${values.length == 1 ? '' : 's'} selected',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Text(
+              values.join(' · '),
+              style: Theme.of(context).textTheme.bodyMedium,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: t.small),
+          ],
+          RecordingAction(
+            key: const ValueKey('recording-continue'),
+            label: stage == MoodRecordingStep.review
+                ? 'Save entry'
+                : 'Continue',
+            busy: _flow.saving,
+            onPressed: _flow.canContinue
+                ? () {
+                    if (stage == MoodRecordingStep.review) {
+                      unawaited(_save());
+                    } else {
+                      _flow.next();
+                    }
+                  }
+                : null,
+          ),
+          if (optional && values.isEmpty && _flow.canContinue)
+            AppPressable(
+              key: const ValueKey('recording-skip'),
+              label: 'Skip for now',
+              onPressed: _flow.next,
+              child: Center(
+                child: Text(
+                  'Skip for now',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _causes() {
+    final t = context.cozyColors.recording;
+    final catalogRows = _rows('triggers');
+    final rows = [
+      ...catalogRows,
+      for (final name in _flow.state.causes)
+        if (!catalogRows.any((row) => row['name'] == name))
+          {
+            'name': name,
+            'slug': 'historical-$name',
+            'group_name': 'Previously selected',
+          },
+    ];
+    final groups = {
+      ..._causeGroups,
+      for (final row in rows) row['group_name'] as String? ?? 'Other',
+    };
+    return [
+      for (final (index, group) in groups.indexed)
+        Padding(
+          padding: EdgeInsets.only(bottom: t.small),
+          child: RecordingPanel(
+            tinted: _expanded.contains(group),
+            category: index % 6,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AppPressable(
+                  key: ValueKey('cause-group-$group'),
+                  expanded: _expanded.contains(group),
+                  onPressed: () => setState(() {
+                    if (!_expanded.add(group)) _expanded.remove(group);
+                  }),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _icons[index % 6],
+                        color: context
+                            .cozyColors
+                            .recording
+                            .categoryInks[index % 6],
+                      ),
+                      SizedBox(width: t.small),
+                      Expanded(
+                        child: Text(
+                          group,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      Icon(
+                        _expanded.contains(group)
+                            ? Icons.expand_less
+                            : Icons.expand_more,
+                      ),
+                    ],
+                  ),
+                ),
+                if (_expanded.contains(group)) ...[
+                  SizedBox(height: t.small),
+                  RecordingChoices(
+                    options: rows
+                        .where((row) => (row['group_name'] ?? 'Other') == group)
+                        .toList(),
+                    selected: _flow.state.causes,
+                    collection: 'triggers',
+                    category: index % 6,
+                    onToggle: _flow.toggleCause,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+    ];
+  }
+
+  List<Map<String, dynamic>> _allResponses() {
+    final rows = _rows('coping');
+    return [
+      ...rows,
+      for (final name in _flow.state.coping)
+        if (!rows.any((row) => row['name'] == name))
+          {'name': name, 'slug': 'historical-$name'},
+    ];
+  }
+
+  List<Map<String, dynamic>> _previewResponses() {
+    const names = {
+      'Deep breathing',
+      'Meditation',
+      'Journaling',
+      'Talking to a friend',
+      'Exercise',
+      'Listening to music',
+      'Resting',
+      'Taking a walk',
+    };
+    return _allResponses()
+        .where(
+          (row) =>
+              names.contains(row['name']) ||
+              _flow.state.coping.contains(row['name']),
+        )
+        .toList();
+  }
+
+  Future<void> _showResponses() async {
+    final selected = await showModalBottomSheet<Set<String>>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      sheetAnimationStyle: shouldReduceMotion(context)
+          ? AnimationStyle.noAnimation
+          : null,
+      builder: (context) => FractionallySizedBox(
+        heightFactor: .95,
+        child: CopingResponseSheet(
+          options: _allResponses(),
+          selected: _flow.state.coping,
+        ),
+      ),
+    );
+    if (mounted && selected != null && _flow.active) _flow.setCoping(selected);
+  }
+
+  List<Widget> _review() {
+    final t = context.cozyColors.recording;
+    return [
+      RecordingSummary(
+        mood: _flow.state.mood ?? 'good',
+        feeling: _flow.feeling,
+        intensity: _flow.state.intensity,
+        large: true,
+      ),
+      SizedBox(height: t.large),
+      _reviewRow(
+        'Feeling',
+        '${_flow.feeling} · ${_flow.state.mood ?? ''}',
+        MoodRecordingStep.feeling,
+      ),
+      _reviewRow(
+        'Intensity',
+        '${_flow.intensityLabel} · ${moodIntensityToDisplay(_flow.state.intensity)}/5',
+        MoodRecordingStep.intensity,
+      ),
+      _reviewRow(
+        'Causes',
+        _flow.state.causes.isEmpty
+            ? 'None selected'
+            : _flow.state.causes.join(' · '),
+        MoodRecordingStep.causes,
+      ),
+      _reviewRow(
+        'Coping mechanisms',
+        _flow.state.coping.isEmpty
+            ? 'None selected'
+            : _flow.state.coping.join(' · '),
+        MoodRecordingStep.coping,
+      ),
+    ];
+  }
+
+  Widget _reviewRow(String title, String value, MoodRecordingStep section) {
+    final t = context.cozyColors.recording;
+    return Padding(
+      padding: EdgeInsets.only(bottom: t.small),
+      child: RecordingPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                AppPressable(
+                  key: ValueKey('recording-edit-${section.name}'),
+                  label: 'Edit $title',
+                  onPressed: () => _flow.edit(section),
+                  child: Center(
+                    child: Text(
+                      'Edit',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Text(value, style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        ),
+      ),
+    );
   }
 
   List<Widget> _feelingCards() {
@@ -625,32 +765,6 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
               mood: mood,
             ),
             key: _feelingKeys[_groups[i].toLowerCase()],
-          ),
-    ];
-  }
-
-  List<Widget> _causeCards() {
-    final rows = _rows('triggers');
-    final groups = [
-      ..._causeGroups,
-      ...rows
-          .map((r) => r['group_name'] as String? ?? 'Other')
-          .where((g) => !_causeGroups.contains(g))
-          .toSet(),
-    ];
-    return [
-      for (var i = 0; i < groups.length; i++)
-        if (rows.any((r) => (r['group_name'] ?? 'Other') == groups[i]))
-          _panel(
-            groups[i],
-            _chips(
-              'triggers',
-              rows
-                  .where((r) => (r['group_name'] ?? 'Other') == groups[i])
-                  .toList(),
-              i % 6,
-              _causes,
-            ),
           ),
     ];
   }
@@ -976,137 +1090,107 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
           : fallback,
     );
   }
-
-  List<Widget> _review() => [
-    _reviewRow(
-      'Feeling',
-      '${_expression == null ? _mood ?? "Not selected" : moodExpressionLabel(_expression!)} (${_mood ?? ""})\nIntensity: ${moodIntensityToDisplay(_storedIntensity)}/5',
-      0,
-    ),
-    _reviewRow(
-      'Causes',
-      _causes.isEmpty ? 'None selected' : _causes.join(', '),
-      1,
-    ),
-    _reviewRow(
-      'Coping mechanisms',
-      _coping.isEmpty ? 'None selected' : _coping.join(', '),
-      2,
-    ),
-  ];
-
-  Widget _reviewRow(String title, String value, int step) => _panel(
-    title,
-    Row(
-      children: [
-        Expanded(child: Text(value)),
-        IconButton(
-          tooltip: 'Edit $title',
-          onPressed: _saving ? null : () => _go(step),
-          icon: const Icon(Icons.edit_outlined),
-        ),
-      ],
-    ),
-  );
 }
 
-class MoodCheckInSuccessScreen extends StatefulWidget {
-  const MoodCheckInSuccessScreen({super.key});
-
-  @override
-  State<MoodCheckInSuccessScreen> createState() =>
-      _MoodCheckInSuccessScreenState();
-}
-
-class _MoodCheckInSuccessScreenState extends State<MoodCheckInSuccessScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Future<void>.delayed(const Duration(seconds: 5), () {
-      if (!mounted) return;
-      AppSnackbar.show(
-        context,
-        AppSnackbar.fromLegacy(content: Text('Entry saved.')),
-      );
-    });
-  }
-
+class MoodCheckInSuccessScreen extends StatelessWidget {
+  const MoodCheckInSuccessScreen({super.key, this.entry});
+  final MoodEntry? entry;
   @override
   Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final t = context.cozyColors.recording;
+    final saved = entry;
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: AppScrollBody(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    if (!reduceMotion) ...[
-                      const Positioned(top: 4, left: 80, child: _Sparkle()),
-                      const Positioned(
-                        bottom: 10,
-                        right: 70,
-                        child: _Sparkle(size: 5),
+      body: SecurityBlur(
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: t.contentWidth),
+              child: AppScrollBody(
+                child: Padding(
+                  padding: EdgeInsets.all(t.page),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(t.section),
+                        decoration: BoxDecoration(
+                          color: context.cozyColors.recordingCategoryFills[0],
+                          borderRadius: BorderRadius.circular(t.panelRadius),
+                        ),
+                        child: Icon(
+                          Icons.check_rounded,
+                          size: t.touch,
+                          color: context.cozyColors.triggerLow,
+                        ),
                       ),
-                      const Positioned(
-                        top: 28,
-                        right: 102,
-                        child: _Sparkle(size: 4),
+                      SizedBox(height: t.section),
+                      Text(
+                        'Entry saved.',
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      SizedBox(height: t.medium),
+                      Text(
+                        'Thanks for checking in with yourself.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      SizedBox(height: t.section),
+                      if (saved != null) ...[
+                        RecordingPanel(
+                          tinted: true,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              RecordingSummary(
+                                mood: saved.mood,
+                                feeling: saved.displayFeeling,
+                                intensity: saved.intensity,
+                              ),
+                              SizedBox(height: t.medium),
+                              Text(
+                                (saved.triggers ?? []).isEmpty
+                                    ? 'No causes selected'
+                                    : saved.triggers!.join(' · '),
+                              ),
+                              SizedBox(height: t.medium),
+                              Text(
+                                (saved.copingStrategies ?? []).isEmpty
+                                    ? 'No responses selected'
+                                    : saved.copingStrategies!.join(' · '),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: t.section),
+                      ],
+                      RecordingAction(
+                        label: 'Back to Home',
+                        onPressed: () => context.go(AppRouter.home),
+                      ),
+                      SizedBox(height: t.medium),
+                      RecordingAction(
+                        label: 'Log another',
+                        outlined: true,
+                        onPressed: () => context.go(AppRouter.moodFeeling),
+                      ),
+                      SizedBox(height: t.small),
+                      AppPressable(
+                        label: 'See past entries',
+                        onPressed: () => context.push(AppRouter.moodHistory),
+                        child: Center(
+                          child: Text(
+                            'See past entries',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
-                    Container(
-                      width: 88,
-                      height: 88,
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: .12),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Icon(
-                        Icons.check_rounded,
-                        color: AppColors.success,
-                        size: 52,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 34),
-                Text(
-                  'Entry saved.',
-                  style: AppTextStyles.heading1.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 14),
-                Text(
-                  'Thanks for checking\nin with yourself.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.body1.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 42),
-                _PrimaryButton(
-                  label: 'Back to Home',
-                  onPressed: () => context.go(AppRouter.home),
-                ),
-                const SizedBox(height: 12),
-                _SecondaryButton(
-                  label: 'Log another',
-                  onPressed: () => context.go(AppRouter.moodFeeling),
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => context.push(AppRouter.moodHistory),
-                  child: const Text('See past entries'),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -1219,22 +1303,19 @@ class _MoodHistoryCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  border: AppSurface.border(context),
-                  color: AppSurface.tint(context, AppColors.primarySoft),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Center(
-                  child: Text(
-                    entry.emoji,
-                    style: const TextStyle(fontSize: 28),
+              if (MoodArtwork.assetFor(entry.mood) != null) ...[
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    border: AppSurface.border(context),
+                    color: AppSurface.tint(context, AppColors.primarySoft),
+                    borderRadius: BorderRadius.circular(16),
                   ),
+                  child: Center(child: MoodArtwork(mood: entry.mood, size: 28)),
                 ),
-              ),
-              const SizedBox(width: 14),
+                const SizedBox(width: 14),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1330,7 +1411,7 @@ class MoodDetailViewScreen extends StatelessWidget {
                   ),
                 )
               else ...[
-                Text(moodEntry.emoji, style: const TextStyle(fontSize: 64)),
+                MoodArtwork(mood: moodEntry.mood, size: 64),
                 Text(
                   moodEntry.displayFeeling,
                   style: AppTextStyles.heading1.copyWith(
@@ -1389,53 +1470,6 @@ String _formatMoodDate(DateTime date) {
   return '$dayLabel, $hour:$minute $period';
 }
 
-class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton({required this.label, required this.onPressed});
-  final String label;
-  final VoidCallback onPressed;
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: double.infinity,
-    height: 48,
-    child: ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      child: Text(label),
-    ),
-  );
-}
-
-class _SecondaryButton extends StatelessWidget {
-  const _SecondaryButton({required this.label, required this.onPressed});
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-          side: BorderSide(color: Theme.of(context).colorScheme.outline),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Text(label),
-      ),
-    );
-  }
-}
-
 class _WarmPanel extends StatelessWidget {
   const _WarmPanel({
     required this.child,
@@ -1457,24 +1491,6 @@ class _WarmPanel extends StatelessWidget {
         ),
       ),
       child: child,
-    );
-  }
-}
-
-class _Sparkle extends StatelessWidget {
-  const _Sparkle({this.size = 7});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        color: AppColors.warmYellow,
-        shape: BoxShape.circle,
-      ),
     );
   }
 }

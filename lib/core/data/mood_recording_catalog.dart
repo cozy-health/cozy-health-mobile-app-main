@@ -11,19 +11,31 @@ int moodIntensityToStorage(int value) => value.clamp(1, 5) * 2;
 int moodIntensityToDisplay(int value) => (value / 2).round().clamp(1, 5);
 
 Map<String, dynamic> migrateMoodRecordingDraft(Map<String, dynamic> draft) {
-  final step = draft['step'] as int? ?? (draft['version'] == 2 ? 0 : 1);
+  final version = draft['version'];
+  if (version is int && version > 3) {
+    throw const FormatException('Unsupported mood draft version');
+  }
+  final rawStep = draft['step'];
+  final step = rawStep is int
+      ? rawStep
+      : (version == 2 || version == 3 ? 0 : 1);
+  final previous = version == 2
+      ? step.clamp(0, 3)
+      : step <= 3
+      ? 0
+      : step <= 7
+      ? 1
+      : step == 8
+      ? 2
+      : 3;
   return {
     ...draft,
-    'version': 2,
-    'step': draft['version'] == 2
-        ? step.clamp(0, 3)
-        : step <= 3
+    'version': 3,
+    'step': version == 3
+        ? step.clamp(0, 4)
+        : previous == 0
         ? 0
-        : step <= 7
-        ? 1
-        : step == 8
-        ? 2
-        : 3,
+        : previous + 1,
   };
 }
 

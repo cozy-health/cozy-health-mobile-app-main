@@ -1,5 +1,9 @@
 # Mood recording redesign
 
+> The [five-step implementation](mood-recording-five-step-implementation.md)
+> supersedes the four-step/dialog behavior below. The remaining notes document
+> the earlier catalog and artwork implementation.
+
 The recording flow is Feelings (with an intensity dialog), Causes, Coping,
 and Review/save. References are the five PNG/SVG pairs in
 `../cozyhealth mobilescreen figma/scren1 refix`.
@@ -35,7 +39,7 @@ icon coordinates. The repeated Talking to a friend option appears once.
 
 - Flutter: `flutter test --dart-define=SURFACE_REAL_FONTS=true test/mood_recording_flow_test.dart test/mood_expression_storage_test.dart test/mood_emoji_test.dart test/core/repositories/wellness_repository_test.dart test/core/repositories/mood_repository_test.dart`
 - API: `php artisan test --filter="AdminManagementTest|MoodRecordingCatalogTest"`
-- Visual captures: `build/mood-recording-review/`. The mood tests use the checked-in
+- Visual captures: `build/mood-selection-review/`. The mood tests use the checked-in
   `test/golden_assets/Outfit.ttf` fixture with the font flag set. Production app
   themes are used for light, dark, and green-accent captures, with 44/34-pixel
   safe areas matching the reference device. System status/navigation indicators
@@ -45,14 +49,35 @@ icon coordinates. The repeated Talking to a friend option appears once.
   run `flutter test --dart-define=SURFACE_REAL_FONTS=true --update-goldens test/mood_recording_flow_test.dart`
   and visually review every changed image before accepting it.
 
-The recording screen uses `ColorScheme` for surfaces, text, controls, progress,
-slider, and selected accents; `CozyColors.recordingCategoryFills` supplies paired
-light/dark category fills. High contrast uses opaque theme colors and stronger
-borders. Supplied emojis retain their appearance with transparent dark-mode
-crops; line artwork uses alpha masks tinted from the live theme, with a readable
-foreground fallback for low-contrast accents. Reference chip rows may wrap for
-narrow viewports and accessibility text sizes. Appearance changes preserve state
-and update an already-open intensity dialog through `LiveAppearanceTheme`.
+The recording screen uses `ColorScheme` for surfaces, controls, progress, and
+slider. Reference category colors identify chip selections and illustrations;
+`CozyColors.recordingCategoryFills` supplies paired light/dark fills. Default
+light-mode labels and faint card borders follow the supplied artwork. High
+contrast uses opaque theme colors and stronger borders. Supplied emojis retain
+their appearance with transparent dark-mode crops; light-mode line artwork uses
+the original category-colored assets, and dark-mode masks use lighter category
+inks. Reference chip rows fit at 375px with adaptive gaps of 4-10px and may wrap
+for narrow viewports and accessibility text sizes. Chips have a 28px visible
+height inside separate 48px interaction areas; enlarged text expands both.
+Appearance changes preserve state and update an already-open intensity dialog
+through `LiveAppearanceTheme`.
+
+Home uses the same six groups as the recording catalog: Angry, Sad, Good, Upset,
+Spectacular, and Happy. Its transparent face assets were extracted at 3x from
+the supplied `Frame 1000004108 (1).svg`. Home chips have a minimum 48px height
+for reliable touch interaction.
+Historical mood keys remain readable; no saved entries are rewritten.
+
+The review folder includes an `index.html` gallery, three-column reference /
+previous / updated comparison images, complete content overviews, per-category
+captures, the production Home screen, intensity, review, and save success.
+Content overviews crop unused space from tall Flutter test viewports and omit
+the bottom navigation action. Ordinary viewport captures retain the action.
+The duplicate Talking to a friend remains intentionally deduplicated.
+
+Run visual regression checks with real fonts enabled; ordinary test runs alone
+do not compare golden files. The mood layout test separately verifies every
+reference row fits at 375px and checks the compact visual and interaction sizes.
 
 Do not interpret the absence of a legacy note-entry screen as removal of saved
 notes: they remain readable in entry details and retain the existing crisis check

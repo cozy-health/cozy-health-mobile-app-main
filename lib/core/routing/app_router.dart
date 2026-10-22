@@ -323,7 +323,9 @@ class AppRouter {
       GoRoute(
         path: moodSuccess,
         name: 'moodSuccess',
-        builder: (_, __) => const MoodCheckInSuccessScreen(),
+        builder: (_, state) => MoodCheckInSuccessScreen(
+          entry: state.extra is MoodEntry ? state.extra as MoodEntry : null,
+        ),
       ),
       GoRoute(
         path: moodHistory,
