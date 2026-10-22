@@ -103,6 +103,13 @@ void main() {
   }
 
   Future<void> choose(WidgetTester tester) async {
+    if (find
+        .byKey(const ValueKey('recording-hit-expressions-angry-resentful'))
+        .evaluate()
+        .isEmpty) {
+      await tester.tap(find.byKey(const ValueKey('mood-category-angry')));
+      await tester.pumpAndSettle();
+    }
     await tester.tap(
       find.byKey(const ValueKey('recording-hit-expressions-angry-resentful')),
     );
@@ -121,8 +128,9 @@ void main() {
       'Home $mood reveals the existing feeling group without enabling Continue',
       (tester) async {
         await open(tester, initialMood: mood);
-        final title = '${mood[0].toUpperCase()}${mood.substring(1)}';
-        final rect = tester.getRect(find.text(title));
+        final rect = tester.getRect(
+          find.byKey(ValueKey('mood-category-$mood')),
+        );
         final viewport = tester.getRect(find.byType(SingleChildScrollView));
         expect(rect.top, greaterThanOrEqualTo(viewport.top));
         expect(rect.bottom, lessThanOrEqualTo(viewport.bottom));
@@ -134,49 +142,54 @@ void main() {
               .onPressed,
           isNull,
         );
-        expect(
-          find.text('How would you describe how you are feeling?'),
-          findsOneWidget,
-        );
+        expect(find.text('How are you feeling?'), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );
   }
 
   testWidgets(
-    'feeling choices retain compact artwork and separate 48px hit areas',
+    'Feeling opens one category and keeps all 72 choices accessible',
     (tester) async {
       await open(tester);
       expect(
-        tester
-            .getSize(
-              find.byKey(
-                const ValueKey('recording-expressions-angry-resentful'),
-              ),
-            )
-            .height,
-        28,
+        find.text('Choose a category to see its feelings.'),
+        findsOneWidget,
       );
-      expect(
-        tester
-            .getSize(
-              find.byKey(
-                const ValueKey('recording-hit-expressions-angry-resentful'),
-              ),
-            )
-            .height,
-        48,
-      );
-      for (final name in [
-        'Resentful',
-        'Displaced',
-        'Irritated',
-        'Annoyed',
-        'Hostile',
-        'Bitter',
-      ]) {
-        expect(find.text(name), findsOneWidget);
+      final expressions = <String>{};
+      for (final mood in moodRecordingCatalog['moods'] as List) {
+        await tester.ensureVisible(
+          find.byKey(ValueKey('mood-category-${mood['slug']}')),
+        );
+        await tester.tap(find.byKey(ValueKey('mood-category-${mood['slug']}')));
+        await tester.pumpAndSettle();
+        final rows = (moodRecordingCatalog['expressions'] as List).where(
+          (row) => row['feeling_id'] == mood['id'],
+        );
+        for (final row in rows) {
+          final target = find.byKey(
+            ValueKey('recording-hit-expressions-${row['slug']}'),
+          );
+          expect(target, findsOneWidget);
+          expect(tester.getSize(target).height, greaterThanOrEqualTo(48));
+          expressions.add(row['slug'] as String);
+        }
+        expect(find.text('12 feelings'), findsOneWidget);
       }
+      expect(expressions, hasLength(72));
+      expect(flow.state.expression, isNull);
+      await choose(tester);
+      expect(flow.state.expression, 'angry-resentful');
+      await tester.tap(find.byKey(const ValueKey('mood-category-sad')));
+      await tester.pumpAndSettle();
+      expect(flow.state.expression, 'angry-resentful');
+      expect(
+        find.byKey(const ValueKey('feeling-selection-summary')),
+        findsOneWidget,
+      );
+      await next(tester);
+      expect(flow.state.step, MoodRecordingStep.intensity);
+      expect(tester.takeException(), isNull);
     },
   );
 

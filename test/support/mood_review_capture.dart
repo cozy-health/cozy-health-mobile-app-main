@@ -34,15 +34,30 @@ Future<void> captureMoodReview(
   final boundary = tester.renderObject<RenderRepaintBoundary>(
     find.byKey(captureKey),
   );
-  await tester.runAsync(() async {
-    final image = await boundary.toImage();
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    if (bytes == null) throw StateError('Could not capture $name');
-    final directory = Directory('build/mood-selection-review');
-    await directory.create(recursive: true);
-    await File(
-      '${directory.path}/$name.png',
-    ).writeAsBytes(bytes.buffer.asUint8List());
-    image.dispose();
-  });
+  final previousShadows = debugDisableShadows;
+  void repaint(RenderObject node) {
+    node.markNeedsPaint();
+    node.visitChildren(repaint);
+  }
+
+  try {
+    debugDisableShadows = false;
+    repaint(boundary);
+    await tester.pump();
+    await tester.runAsync(() async {
+      final image = await boundary.toImage();
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (bytes == null) throw StateError('Could not capture $name');
+      final directory = Directory('build/mood-selection-review');
+      await directory.create(recursive: true);
+      await File(
+        '${directory.path}/$name.png',
+      ).writeAsBytes(bytes.buffer.asUint8List());
+      image.dispose();
+    });
+  } finally {
+    debugDisableShadows = previousShadows;
+    repaint(boundary);
+    await tester.pump();
+  }
 }

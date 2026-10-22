@@ -3,7 +3,11 @@ import '../../../../core/widgets/mood_artwork.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import '../../../../core/data/demo_mode.dart';
 import '../widgets/mood_chips_row.dart';
+import '../widgets/home_design_widgets.dart';
+import '../../../../core/widgets/app_pressable.dart';
 import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/theme/wellness_tokens.dart';
+import '../../../../core/utils/motion.dart';
 import '../../../../core/widgets/sync_queue_badge.dart';
 import '../../../../core/widgets/background_restore_badge.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
@@ -12,9 +16,7 @@ import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../widgets/feature_tour.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../widgets/home_quiz_card.dart';
-import '../widgets/cozy_calendar.dart';
-import '../widgets/journaling_card.dart';
+
 import '../widgets/preference_suggestions.dart';
 import '../../../../core/widgets/affirmation_panel.dart';
 import '../../../../core/services/affirmation_controller.dart';
@@ -94,10 +96,10 @@ class _HomeScreenState extends State<HomeScreen>
     _loadDashboard();
     _entranceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const WellnessTokens().transition,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!MediaQuery.of(context).disableAnimations) {
+      if (!shouldReduceMotion(context)) {
         _entranceController.forward();
       } else {
         _entranceController.value = 1;
@@ -178,131 +180,179 @@ class _HomeScreenState extends State<HomeScreen>
       return _HomeErrorView(onRetry: () {});
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: StreamBuilder<List<MoodEntry>>(
-          stream: _moodStream,
-          initialData: _moodRepo.currentEntries(),
-          builder: (context, snapshot) {
-            if ((_loadingDashboard &&
-                    _dashboard == null &&
-                    (snapshot.data?.isEmpty ?? true)) ||
-                snapshot.connectionState == ConnectionState.waiting &&
-                    !snapshot.hasData) {
-              return const _HomeSkeleton();
-            }
+    return Theme(
+      data: Theme.of(context).copyWith(
+        textTheme: Theme.of(context).textTheme.apply(
+          bodyColor: Theme.of(context).colorScheme.onSurface,
+          displayColor: Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: context.cozyColors.wellness.canvas(
+          Theme.of(context).brightness,
+          MediaQuery.highContrastOf(context),
+        ),
+        body: SafeArea(
+          child: StreamBuilder<List<MoodEntry>>(
+            stream: _moodStream,
+            initialData: _moodRepo.currentEntries(),
+            builder: (context, snapshot) {
+              if ((_loadingDashboard &&
+                      _dashboard == null &&
+                      (snapshot.data?.isEmpty ?? true)) ||
+                  snapshot.connectionState == ConnectionState.waiting &&
+                      !snapshot.hasData) {
+                return const _HomeSkeleton();
+              }
 
-            final entries = snapshot.data ?? [];
-            final isEmpty = _dashboard == null
-                ? entries.isEmpty
-                : _dashboard!.recentEntries.isEmpty &&
-                      _dashboard!.todayMood == null;
-            final allMoods = entries;
-            final weekAgo = DateTime.now().subtract(const Duration(days: 7));
-            final moodsThisWeek = allMoods.where((entry) {
-              return entry.createdAt.toLocal().isAfter(weekAgo);
-            }).toList();
+              final entries = snapshot.data ?? [];
+              final isEmpty = _dashboard == null
+                  ? entries.isEmpty
+                  : _dashboard!.recentEntries.isEmpty &&
+                        _dashboard!.todayMood == null;
+              // Compute streak
+              final now = DateTime.now();
+              final streak = _dashboard?.streakDays ?? _localStreak(entries);
 
-            // Compute streak
-            final now = DateTime.now();
-            final streak = _dashboard?.streakDays ?? _localStreak(entries);
+              // Up to three recent entries
+              final recentEntries =
+                  _dashboard?.recentEntries.take(3).map((row) {
+                    final local = entries
+                        .where((entry) => entry.id == row['id'])
+                        .firstOrNull;
+                    return local ??
+                        MoodEntry.fromJson({
+                          ...row,
+                          'client_created_at':
+                              row['client_created_at'] ?? row['created_at'],
+                          'client_updated_at':
+                              row['client_created_at'] ?? row['created_at'],
+                        });
+                  }).toList() ??
+                  entries.take(3).toList();
+              final hasMoodToday = _dashboard != null
+                  ? _dashboard!.todayMood != null
+                  : entries.isNotEmpty &&
+                        entries.first.createdAt.day == now.day &&
+                        entries.first.createdAt.month == now.month &&
+                        entries.first.createdAt.year == now.year;
 
-            // Up to three recent entries
-            final recentEntries =
-                _dashboard?.recentEntries.take(3).map((row) {
-                  final local = entries
-                      .where((entry) => entry.id == row['id'])
-                      .firstOrNull;
-                  return local ??
-                      MoodEntry.fromJson({
-                        ...row,
-                        'client_created_at':
-                            row['client_created_at'] ?? row['created_at'],
-                        'client_updated_at':
-                            row['client_created_at'] ?? row['created_at'],
-                      });
-                }).toList() ??
-                entries.take(3).toList();
-            final hasMoodToday = _dashboard != null
-                ? _dashboard!.todayMood != null
-                : entries.isNotEmpty &&
-                      entries.first.createdAt.day == now.day &&
-                      entries.first.createdAt.month == now.month &&
-                      entries.first.createdAt.year == now.year;
-
-            return FeatureTour(
-              targets: widget.tourTargets,
-              child: _DashboardScope(
-                data: _dashboard,
-                child: Semantics(
-                  label:
-                      'Home dashboard loaded. $streak day streak. ${recentEntries.length} recent entries.',
-                  child: RefreshIndicator(
-                    onRefresh: () async {
-                      if (!DemoMode.instance.enabled) {
-                        await UserDataFetcher().fetchAll();
-                      }
-                      await _loadDashboard();
-                    },
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(16, 16, 16, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const _GuestBanner(),
-                          const SyncQueueBadge(),
-                          const BackgroundRestoreBadge(),
-                          _AnimatedIn(
-                            controller: _entranceController,
-                            interval: const Interval(
-                              0,
-                              .35,
-                              curve: Curves.easeOutCubic,
+              return FeatureTour(
+                targets: widget.tourTargets,
+                child: _DashboardScope(
+                  data: _dashboard,
+                  child: Semantics(
+                    label:
+                        'Home dashboard loaded. $streak day streak. ${recentEntries.length} recent entries.',
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        if (!DemoMode.instance.enabled) {
+                          await UserDataFetcher().fetchAll();
+                        }
+                        await _loadDashboard();
+                      },
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          context.cozyColors.wellness.page,
+                          context.cozyColors.wellness.page,
+                          context.cozyColors.wellness.page,
+                          context.cozyColors.wellness.floatingClearance,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _GuestBanner(),
+                            const SyncQueueBadge(),
+                            const BackgroundRestoreBadge(),
+                            _AnimatedIn(
+                              controller: _entranceController,
+                              interval: const Interval(
+                                0,
+                                .35,
+                                curve: Curves.easeOutCubic,
+                              ),
+                              child: const _Header(),
                             ),
-                            child: const _Header(),
-                          ),
-                          InkWell(
-                            onTap: () => context.push(AppRouter.crisisContact),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Text(
-                                'Need help now?',
-                                style: AppTextStyles.body2.copyWith(
-                                  fontSize: 13,
-                                  color: context.cozyColors.crisis,
-                                  decoration: TextDecoration.none,
+                            SizedBox(height: context.cozyColors.wellness.gap),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: AppPressable(
+                                label: 'Need help now?',
+                                onPressed: () =>
+                                    context.push(AppRouter.crisisContact),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: context.cozyColors.wellness.gap,
+                                    vertical: context.cozyColors.wellness.small,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                      context.cozyColors.wellness.tileRadius,
+                                    ),
+                                    border: Border.all(
+                                      color: context.cozyColors.crisis,
+                                      width: MediaQuery.highContrastOf(context)
+                                          ? 2
+                                          : 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.favorite_border,
+                                        color: context.cozyColors.crisis,
+                                      ),
+                                      SizedBox(
+                                        width:
+                                            context.cozyColors.wellness.small,
+                                      ),
+                                      Text(
+                                        'Need help now?',
+                                        style: TextStyle(
+                                          color: context.cozyColors.recording
+                                              .controlColor(
+                                                context.cozyColors.crisis,
+                                                Theme.of(
+                                                  context,
+                                                ).scaffoldBackgroundColor,
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                              ),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          SizedBox(height: 24),
-                          _HomeEmotionStrip(key: widget.tourTargets?.hero),
-                          SizedBox(height: 16),
-                          const PreferenceSuggestions(),
-                          _HomeDesignCards(
-                            reminderKey: _reminderTarget,
-                            notificationFocus: widget.notificationFocus,
-                            entries: entries,
-                            recentEntries: recentEntries,
-                            moodsThisWeek: moodsThisWeek,
-                            streak: streak,
-                            isEmpty: isEmpty,
-                            hasMoodToday: hasMoodToday,
-                            affirmation: AffirmationPanel(
-                              compact: true,
-                              controller: widget.affirmationController,
+                            SizedBox(height: context.cozyColors.wellness.gap),
+                            _HomeEmotionStrip(key: widget.tourTargets?.hero),
+                            SizedBox(height: context.cozyColors.wellness.gap),
+                            _HomeDesignCards(
+                              reminderKey: _reminderTarget,
+                              notificationFocus: widget.notificationFocus,
+                              entries: entries,
+                              streak: streak,
+                              isEmpty: isEmpty,
+                              hasMoodToday: hasMoodToday,
+                              affirmation: AffirmationPanel(
+                                compact: true,
+                                controller: widget.affirmationController,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 24),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -374,20 +424,35 @@ class _GuestBanner extends StatelessWidget {
 class _HomeEmotionStrip extends StatelessWidget {
   const _HomeEmotionStrip({super.key});
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        'Tell cozy how you are feeling today?',
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-        ),
+  Widget build(BuildContext context) {
+    final t = context.cozyColors.wellness;
+    return HomeDesignCard(
+      color: t.accentPanel(Theme.of(context).colorScheme),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'A MOMENT TO CHECK IN',
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+          SizedBox(height: t.contentGap),
+          Text(
+            'How are you feeling today?',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontSize: t.heading,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: t.small),
+          const Text('Every feeling has a place here.'),
+          SizedBox(height: t.gap),
+          const MoodChipsRow(),
+          SizedBox(height: t.gap),
+          const Text('One small check-in. A little more clarity.'),
+        ],
       ),
-      SizedBox(height: 16),
-      const MoodChipsRow(),
-    ],
-  );
+    );
+  }
 }
 
 class _HomeDesignCards extends StatelessWidget {
@@ -395,40 +460,29 @@ class _HomeDesignCards extends StatelessWidget {
     this.reminderKey,
     this.notificationFocus,
     required this.entries,
-    required this.recentEntries,
-    required this.moodsThisWeek,
     required this.streak,
     required this.isEmpty,
     required this.hasMoodToday,
     required this.affirmation,
   });
   final List<MoodEntry> entries;
-  final List<MoodEntry> recentEntries;
-  final List<MoodEntry> moodsThisWeek;
   final int streak;
-  final bool isEmpty;
-  final bool hasMoodToday;
+  final bool isEmpty, hasMoodToday;
   final Widget affirmation;
   final GlobalKey? reminderKey;
   final String? notificationFocus;
-
   @override
   Widget build(BuildContext context) {
-    final weekly = _DashboardScope.of(context)?.weeklyMoods;
-    final count =
-        weekly?.fold<int>(
-          0,
-          (sum, row) => sum + (row['count'] as num).toInt(),
-        ) ??
-        moodsThisWeek.length;
-    final total =
-        weekly?.fold<double>(
-          0,
-          (sum, row) =>
-              sum +
-              (row['avg_intensity'] as num).toDouble() * (row['count'] as num),
-        ) ??
-        moodsThisWeek.fold<double>(0, (sum, entry) => sum + entry.intensity);
+    final t = context.cozyColors.wellness;
+    Widget title(String label) => Padding(
+      padding: EdgeInsets.only(bottom: t.small),
+      child: Text(
+        label,
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -436,23 +490,30 @@ class _HomeDesignCards extends StatelessWidget {
           key: notificationFocus == 'affirmation' ? reminderKey : null,
           child: affirmation,
         ),
-        const SizedBox(height: 16),
-        const HomeQuizCard(),
-        SizedBox(height: 16),
-        CozyCalendar(
+        SizedBox(height: t.sectionSpacing),
+        title('Your check-in rhythm'),
+        HomeRhythmCard(
           key: notificationFocus == 'streak' ? reminderKey : null,
           entries: entries,
-          recentEntries: recentEntries,
           streak: streak,
-          weeklyCount: count,
-          weeklyIntensityTotal: total,
           hasMoodToday: hasMoodToday,
           onStreak: isEmpty
               ? () => context.push(AppRouter.moodFeeling)
               : () => _pushPage(context, StreakDetailScreen(streak: streak)),
         ),
-        SizedBox(height: 16),
-        const JournalingCard(),
+        SizedBox(height: t.sectionSpacing),
+        const PreferenceSuggestions(),
+        SizedBox(height: t.sectionSpacing),
+        title('A little more you-time'),
+        const HomeFeatureCards(),
+        SizedBox(height: t.gap),
+        Text(
+          'Small steps. Your pace. Your cozy space.',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }
@@ -476,15 +537,12 @@ class _Header extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Semantics(
-              button: true,
+            AppPressable(
               label: 'Open profile',
-              child: GestureDetector(
-                onTap: () => context.push(AppRouter.editProfile),
-                child: ProfileAvatar(profile: profile, size: 40),
-              ),
+              onPressed: () => context.push(AppRouter.editProfile),
+              child: Center(child: ProfileAvatar(profile: profile, size: 40)),
             ),
-            SizedBox(width: 12),
+            SizedBox(width: context.cozyColors.wellness.small),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,8 +558,8 @@ class _Header extends StatelessWidget {
                   if (name.isNotEmpty) SizedBox(height: 4),
                   if (name.isNotEmpty)
                     Text(
-                      name.split(RegExp(r'\s+')).first,
-                      style: AppTextStyles.heading1.copyWith(
+                      name,
+                      style: AppTextStyles.heading2.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1092,7 +1150,7 @@ class _AnimatedIn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (MediaQuery.of(context).disableAnimations) return child;
+    if (shouldReduceMotion(context)) return child;
 
     final animation = CurvedAnimation(parent: controller, curve: interval);
     return AnimatedBuilder(

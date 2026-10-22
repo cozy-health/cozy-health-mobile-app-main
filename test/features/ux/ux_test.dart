@@ -225,10 +225,7 @@ void main() {
       );
       await tester.tap(find.text('Resume'));
       await tester.pumpAndSettle();
-      expect(
-        find.text('How would you describe how you are feeling?'),
-        findsOneWidget,
-      );
+      expect(find.text('How are you feeling?'), findsOneWidget);
       expect(
         tester
             .widget<LinearProgressIndicator>(

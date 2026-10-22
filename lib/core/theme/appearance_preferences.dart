@@ -40,7 +40,14 @@ MediaQueryData appearanceMediaQuery(
   bool reduceMotion = false,
 }) {
   final reduce =
-      reduceMotion || device.disableAnimations || device.accessibleNavigation;
+      reduceMotion ||
+      device.disableAnimations ||
+      device.accessibleNavigation ||
+      WidgetsBinding
+          .instance
+          .platformDispatcher
+          .accessibilityFeatures
+          .reduceMotion;
   return device.copyWith(
     textScaler: AppearanceTextScaler(device.textScaler, textMultiplier),
     highContrast: device.highContrast || highContrast,

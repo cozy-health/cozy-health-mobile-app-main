@@ -1,0 +1,2858 @@
+{
+  "version": 1,
+  "width": 375,
+  "typography": {
+    "family": "Outfit",
+    "source": "Production fallback: exported SVG text is outlined; font identity is not encoded.",
+    "chipSize": 13,
+    "homeSize": 12,
+    "headingSize": 16
+  },
+  "sources": {
+    "home": {
+      "file": "Frame 1000004108 (1).svg",
+      "sha256": "bd82480b8401448ae1aafb34bccd64be8c471f458ecae655dd6b2542ca1f15f4",
+      "width": "696",
+      "height": "45",
+      "viewBox": "0 0 696 45",
+      "fill": "none",
+      "xmlns": "http://www.w3.org/2000/svg",
+      "xmlns:xlink": "http://www.w3.org/1999/xlink"
+    },
+    "expressions": {
+      "file": "Group 427319317.svg",
+      "sha256": "d79fad0dc9818751199f6a5a3bd3164cc990ed7825a22a75ea253eaf2b9e09e0",
+      "width": "375",
+      "height": "1784",
+      "viewBox": "0 0 375 1784",
+      "fill": "none",
+      "xmlns": "http://www.w3.org/2000/svg",
+      "xmlns:xlink": "http://www.w3.org/1999/xlink"
+    },
+    "triggers": {
+      "file": "what made you feel this way.svg",
+      "sha256": "075d0d69646eac3fcba31ea64fc37648302b3d4a4c5da73c74395a341942a53b",
+      "width": "375",
+      "height": "1549",
+      "viewBox": "0 0 375 1549",
+      "fill": "none",
+      "xmlns": "http://www.w3.org/2000/svg",
+      "xmlns:xlink": "http://www.w3.org/1999/xlink"
+    },
+    "coping": {
+      "file": "Group 427319318.svg",
+      "sha256": "89af207f4a8194af5bfb3203a239547a91a8729fec2b6a1f1e83b9210d30e101",
+      "width": "375",
+      "height": "1052",
+      "viewBox": "0 0 375 1052",
+      "fill": "none",
+      "xmlns": "http://www.w3.org/2000/svg",
+      "ignoredOverlappingBackground": {
+        "x": 25,
+        "y": 306,
+        "width": 155,
+        "height": 28,
+        "reason": "Extra background underneath the Watching a movie chip at y=308; not another choice."
+      }
+    }
+  },
+  "collections": {
+    "expressions": [
+      {
+        "x": 15,
+        "y": 144,
+        "width": 346,
+        "height": 214,
+        "radius": 8,
+        "name": "Angry",
+        "heading": {
+          "x": 25,
+          "y": 156,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 193,
+            "width": 102,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-resentful",
+            "label": "Resentful",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 197,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 137,
+            "y": 193,
+            "width": 106,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-displaced",
+            "label": "Displaced",
+            "duplicate": false,
+            "art": {
+              "x": 145,
+              "y": 197,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 253,
+            "y": 193,
+            "width": 96,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-irritated",
+            "label": "Irritated",
+            "duplicate": false,
+            "art": {
+              "x": 261,
+              "y": 197,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 233,
+            "width": 100,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-annoyed",
+            "label": "Annoyed",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 237,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 135,
+            "y": 233,
+            "width": 87,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-hostile",
+            "label": "Hostile",
+            "duplicate": false,
+            "art": {
+              "x": 143,
+              "y": 237,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 232,
+            "y": 233,
+            "width": 79,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-bitter",
+            "label": "Bitter",
+            "duplicate": false,
+            "art": {
+              "x": 240,
+              "y": 237,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 24,
+            "y": 273,
+            "width": 111,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-frustrated",
+            "label": "Frustrated",
+            "duplicate": false,
+            "art": {
+              "x": 32,
+              "y": 277,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 145,
+            "y": 273,
+            "width": 103,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-provoked",
+            "label": "Provoked",
+            "duplicate": false,
+            "art": {
+              "x": 153,
+              "y": 277,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 258,
+            "y": 273,
+            "width": 74,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-livid",
+            "label": "Livid",
+            "duplicate": false,
+            "art": {
+              "x": 266,
+              "y": 277,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 313,
+            "width": 90,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-furious",
+            "label": "Furious",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 317,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 125,
+            "y": 313,
+            "width": 99,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-agitated",
+            "label": "Agitated",
+            "duplicate": false,
+            "art": {
+              "x": 133,
+              "y": 317,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 234,
+            "y": 313,
+            "width": 112,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "angry-aggressive",
+            "label": "Aggressive",
+            "duplicate": false,
+            "art": {
+              "x": 242,
+              "y": 317,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      },
+      {
+        "x": 15,
+        "y": 374,
+        "width": 346,
+        "height": 215,
+        "radius": 8,
+        "name": "Sad",
+        "heading": {
+          "x": 25,
+          "y": 386,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 425,
+            "width": 93,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-gloomy",
+            "label": "Gloomy",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 429,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 128,
+            "y": 425,
+            "width": 124,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-heartbroken",
+            "label": "Heartbroken",
+            "duplicate": false,
+            "art": {
+              "x": 136,
+              "y": 429,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 262,
+            "y": 425,
+            "width": 71,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-lost",
+            "label": "Lost",
+            "duplicate": false,
+            "art": {
+              "x": 270,
+              "y": 429,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 465,
+            "width": 101,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-hopeless",
+            "label": "Hopeless",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 469,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 136,
+            "y": 465,
+            "width": 105,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-miserable",
+            "label": "Miserable",
+            "duplicate": false,
+            "art": {
+              "x": 144,
+              "y": 469,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 251,
+            "y": 466,
+            "width": 85,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-empty",
+            "label": "Empty",
+            "duplicate": false,
+            "art": {
+              "x": 259,
+              "y": 470,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 505,
+            "width": 111,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-frustrated",
+            "label": "Frustrated",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 509,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 146,
+            "y": 505,
+            "width": 95,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-drained",
+            "label": "Drained",
+            "duplicate": false,
+            "art": {
+              "x": 154,
+              "y": 509,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 251,
+            "y": 505,
+            "width": 86,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-weary",
+            "label": "Weary",
+            "duplicate": false,
+            "art": {
+              "x": 259,
+              "y": 509,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 545,
+            "width": 128,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-disappointed",
+            "label": "Disappointed",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 549,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 156,
+            "y": 545,
+            "width": 104,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-defeated",
+            "label": "Defeated",
+            "duplicate": false,
+            "art": {
+              "x": 164,
+              "y": 549,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 261,
+            "y": 545,
+            "width": 85,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "sad-lonely",
+            "label": "Lonely",
+            "duplicate": false,
+            "art": {
+              "x": 269,
+              "y": 549,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      },
+      {
+        "x": 15,
+        "y": 605,
+        "width": 346,
+        "height": 249,
+        "radius": 8,
+        "name": "Good",
+        "heading": {
+          "x": 25,
+          "y": 617,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 655,
+            "width": 95,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-content",
+            "label": "Content",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 659,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 130,
+            "y": 655,
+            "width": 98,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-satisfied",
+            "label": "Satisfied",
+            "duplicate": false,
+            "art": {
+              "x": 138,
+              "y": 659,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 238,
+            "y": 655,
+            "width": 97,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-grateful",
+            "label": "Grateful",
+            "duplicate": false,
+            "art": {
+              "x": 246,
+              "y": 659,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 695,
+            "width": 91,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-neutral",
+            "label": "Neutral",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 699,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 126,
+            "y": 695,
+            "width": 125,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-mildly-happy",
+            "label": "Mildly Happy",
+            "duplicate": false,
+            "art": {
+              "x": 134,
+              "y": 699,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 261,
+            "y": 695,
+            "width": 78,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-okay",
+            "label": "Okay",
+            "duplicate": false,
+            "art": {
+              "x": 269,
+              "y": 699,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 735,
+            "width": 131,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-light-hearted",
+            "label": "Light Hearted",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 739,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 166,
+            "y": 735,
+            "width": 94,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-hopeful",
+            "label": "Hopeful",
+            "duplicate": false,
+            "art": {
+              "x": 174,
+              "y": 739,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 773,
+            "width": 94,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-relaxed",
+            "label": "Relaxed",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 777,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 129,
+            "y": 773,
+            "width": 124,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-comfortable",
+            "label": "Comfortable",
+            "duplicate": false,
+            "art": {
+              "x": 137,
+              "y": 777,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 813,
+            "width": 98,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-peaceful",
+            "label": "Peaceful",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 817,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 133,
+            "y": 813,
+            "width": 87,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "good-secure",
+            "label": "Secure",
+            "duplicate": false,
+            "art": {
+              "x": 141,
+              "y": 817,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      },
+      {
+        "x": 15,
+        "y": 870,
+        "width": 346,
+        "height": 252,
+        "radius": 8,
+        "name": "Upset",
+        "heading": {
+          "x": 25,
+          "y": 882,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 920,
+            "width": 91,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-uneasy",
+            "label": "Uneasy",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 924,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 126,
+            "y": 920,
+            "width": 72,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-hurt",
+            "label": "Hurt",
+            "duplicate": false,
+            "art": {
+              "x": 134,
+              "y": 924,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 208,
+            "y": 920,
+            "width": 95,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-worried",
+            "label": "Worried",
+            "duplicate": false,
+            "art": {
+              "x": 216,
+              "y": 924,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 960,
+            "width": 111,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-distraught",
+            "label": "Distraught",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 964,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 146,
+            "y": 960,
+            "width": 132,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-overwhelmed",
+            "label": "Overwhelmed",
+            "duplicate": false,
+            "art": {
+              "x": 154,
+              "y": 964,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1000,
+            "width": 96,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-insecure",
+            "label": "Insecure",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1004,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 131,
+            "y": 1000,
+            "width": 98,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-stressed",
+            "label": "Stressed",
+            "duplicate": false,
+            "art": {
+              "x": 139,
+              "y": 1004,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 239,
+            "y": 1000,
+            "width": 99,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-doubtful",
+            "label": "Doubtful",
+            "duplicate": false,
+            "art": {
+              "x": 247,
+              "y": 1004,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1040,
+            "width": 93,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-anxious",
+            "label": "Anxious",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1044,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 128,
+            "y": 1040,
+            "width": 103,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-unsettled",
+            "label": "Unsettled",
+            "duplicate": false,
+            "art": {
+              "x": 136,
+              "y": 1044,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1080,
+            "width": 116,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-disoriented",
+            "label": "Disoriented",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1084,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 151,
+            "y": 1080,
+            "width": 99,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "upset-troubled",
+            "label": "Troubled",
+            "duplicate": false,
+            "art": {
+              "x": 159,
+              "y": 1084,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      },
+      {
+        "x": 15,
+        "y": 1138,
+        "width": 346,
+        "height": 255,
+        "radius": 8,
+        "name": "Spectacular",
+        "heading": {
+          "x": 25,
+          "y": 1150,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 1188,
+            "width": 106,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-energized",
+            "label": "Energized",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1192,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 141,
+            "y": 1188,
+            "width": 85,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-elated",
+            "label": "Elated",
+            "duplicate": false,
+            "art": {
+              "x": 149,
+              "y": 1192,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 236,
+            "y": 1188,
+            "width": 87,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-blissful",
+            "label": "Blissful",
+            "duplicate": false,
+            "art": {
+              "x": 244,
+              "y": 1192,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1228,
+            "width": 92,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-thrilled",
+            "label": "Thrilled",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1232,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 127,
+            "y": 1228,
+            "width": 99,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-jubilant",
+            "label": "Jubilant",
+            "duplicate": false,
+            "art": {
+              "x": 135,
+              "y": 1232,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 236,
+            "y": 1228,
+            "width": 85,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-hyped",
+            "label": "Hyped",
+            "duplicate": false,
+            "art": {
+              "x": 244,
+              "y": 1232,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1268,
+            "width": 138,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-over-the-moon",
+            "label": "Over the moon",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1272,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 173,
+            "y": 1268,
+            "width": 109,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-overjoyed",
+            "label": "Overjoyed",
+            "duplicate": false,
+            "art": {
+              "x": 181,
+              "y": 1272,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1308,
+            "width": 82,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-proud",
+            "label": "Proud",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1312,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 117,
+            "y": 1308,
+            "width": 93,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-radiant",
+            "label": "Radiant",
+            "duplicate": false,
+            "art": {
+              "x": 125,
+              "y": 1312,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 220,
+            "y": 1308,
+            "width": 94,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-inspired",
+            "label": "Inspired",
+            "duplicate": false,
+            "art": {
+              "x": 228,
+              "y": 1312,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1348,
+            "width": 107,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "spectacular-victorious",
+            "label": "Victorious",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1352,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      },
+      {
+        "x": 14,
+        "y": 1409,
+        "width": 346,
+        "height": 215,
+        "radius": 8,
+        "name": "Happy",
+        "heading": {
+          "x": 24,
+          "y": 1421,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 24,
+            "y": 1459,
+            "width": 98,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-cheerful",
+            "label": "Cheerful",
+            "duplicate": false,
+            "art": {
+              "x": 32,
+              "y": 1463,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 132,
+            "y": 1459,
+            "width": 87,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-playful",
+            "label": "Playful",
+            "duplicate": false,
+            "art": {
+              "x": 140,
+              "y": 1463,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 229,
+            "y": 1459,
+            "width": 75,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-glad",
+            "label": "Glad",
+            "duplicate": false,
+            "art": {
+              "x": 237,
+              "y": 1463,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 24,
+            "y": 1499,
+            "width": 94,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-uplifted",
+            "label": "Uplifted",
+            "duplicate": false,
+            "art": {
+              "x": 32,
+              "y": 1503,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 128,
+            "y": 1499,
+            "width": 80,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-lively",
+            "label": "Lively",
+            "duplicate": false,
+            "art": {
+              "x": 136,
+              "y": 1503,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 218,
+            "y": 1499,
+            "width": 98,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-satisfied",
+            "label": "Satisfied",
+            "duplicate": false,
+            "art": {
+              "x": 226,
+              "y": 1503,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 24,
+            "y": 1539,
+            "width": 83,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-warm",
+            "label": "Warm",
+            "duplicate": false,
+            "art": {
+              "x": 32,
+              "y": 1543,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 117,
+            "y": 1539,
+            "width": 108,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-optimistic",
+            "label": "Optimistic",
+            "duplicate": false,
+            "art": {
+              "x": 125,
+              "y": 1543,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 235,
+            "y": 1539,
+            "width": 105,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-delighted",
+            "label": "Delighted",
+            "duplicate": false,
+            "art": {
+              "x": 243,
+              "y": 1543,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 24,
+            "y": 1579,
+            "width": 82,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-joyful",
+            "label": "Joyful",
+            "duplicate": false,
+            "art": {
+              "x": 32,
+              "y": 1583,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 116,
+            "y": 1579,
+            "width": 90,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-excited",
+            "label": "Excited",
+            "duplicate": false,
+            "art": {
+              "x": 124,
+              "y": 1583,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 216,
+            "y": 1579,
+            "width": 110,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "happy-contented",
+            "label": "Contented",
+            "duplicate": false,
+            "art": {
+              "x": 224,
+              "y": 1583,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      }
+    ],
+    "triggers": [
+      {
+        "x": 15,
+        "y": 144,
+        "width": 346,
+        "height": 132,
+        "radius": 8,
+        "name": "Work",
+        "heading": {
+          "x": 25,
+          "y": 156,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 194,
+            "width": 106,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "work-deadlines",
+            "label": "Deadlines",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 198,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 142,
+            "y": 194,
+            "width": 93,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "work-conflict",
+            "label": "Conflict",
+            "duplicate": false,
+            "art": {
+              "x": 150,
+              "y": 198,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 246,
+            "y": 194,
+            "width": 105,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "work-workload",
+            "label": "Workload",
+            "duplicate": false,
+            "art": {
+              "x": 254,
+              "y": 198,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 234,
+            "width": 130,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "work-job-insecurity",
+            "label": "Job Insecurity",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 238,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 164,
+            "y": 234,
+            "width": 94,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "work-burnout",
+            "label": "Burnout",
+            "duplicate": false,
+            "art": {
+              "x": 172,
+              "y": 238,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 267,
+            "y": 234,
+            "width": 84,
+            "height": 28,
+            "fill": "#F3F9F5",
+            "slug": "work-salary",
+            "label": "Salary",
+            "duplicate": false,
+            "art": {
+              "x": 275,
+              "y": 238,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      },
+      {
+        "x": 15,
+        "y": 300,
+        "width": 346,
+        "height": 172,
+        "radius": 8,
+        "name": "School",
+        "heading": {
+          "x": 25,
+          "y": 312,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 350,
+            "width": 119,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "school-exam-stress",
+            "label": "Exam stress",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 354,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 154,
+            "y": 350,
+            "width": 93,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "school-bullying",
+            "label": "Bullying",
+            "duplicate": false,
+            "art": {
+              "x": 162,
+              "y": 354,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 257,
+            "y": 350,
+            "width": 95,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "school-teacher",
+            "label": "Teacher",
+            "duplicate": false,
+            "art": {
+              "x": 265,
+              "y": 354,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 390,
+            "width": 160,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "school-lack-of-motivation",
+            "label": "Lack of motivation",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 394,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 195,
+            "y": 390,
+            "width": 133,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "school-fear-of-failure",
+            "label": "Fear of failure",
+            "duplicate": false,
+            "art": {
+              "x": 203,
+              "y": 394,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 430,
+            "width": 162,
+            "height": 28,
+            "fill": "#FEF6F1",
+            "slug": "school-time-management",
+            "label": "Time Management",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 434,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      },
+      {
+        "x": 15,
+        "y": 496,
+        "width": 346,
+        "height": 212,
+        "radius": 8,
+        "name": "Relationship",
+        "heading": {
+          "x": 25,
+          "y": 508,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 546,
+            "width": 173,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "relationship-conflict-with-partner",
+            "label": "Conflict with partner",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 550,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 208,
+            "y": 546,
+            "width": 115,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "relationship-trust-issues",
+            "label": "Trust Issues",
+            "duplicate": false,
+            "art": {
+              "x": 216,
+              "y": 550,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 586,
+            "width": 133,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "relationship-long-distance",
+            "label": "Long Distance",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 590,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 168,
+            "y": 586,
+            "width": 188,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "relationship-lack-of-communication",
+            "label": "Lack of communication",
+            "duplicate": false,
+            "art": {
+              "x": 176,
+              "y": 590,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 626,
+            "width": 133,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "relationship-family-tension",
+            "label": "Family tension",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 630,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 168,
+            "y": 626,
+            "width": 97,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "relationship-betrayal",
+            "label": "Betrayal",
+            "duplicate": false,
+            "art": {
+              "x": 176,
+              "y": 630,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 666,
+            "width": 101,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "relationship-ghosting",
+            "label": "Ghosting",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 670,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 145,
+            "y": 666,
+            "width": 99,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "relationship-jealousy",
+            "label": "Jealousy",
+            "duplicate": false,
+            "art": {
+              "x": 153,
+              "y": 670,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      },
+      {
+        "x": 15,
+        "y": 732,
+        "width": 346,
+        "height": 172,
+        "radius": 8,
+        "name": "Sleep",
+        "heading": {
+          "x": 25,
+          "y": 744,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 782,
+            "width": 101,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "sleep-insomnia",
+            "label": "Insomnia",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 786,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 136,
+            "y": 782,
+            "width": 117,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "sleep-nightmares",
+            "label": "Nightmares",
+            "duplicate": false,
+            "art": {
+              "x": 144,
+              "y": 786,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 263,
+            "y": 782,
+            "width": 79,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "sleep-noise",
+            "label": "Noise",
+            "duplicate": false,
+            "art": {
+              "x": 271,
+              "y": 786,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 822,
+            "width": 82,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "sleep-stress",
+            "label": "Stress",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 826,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 117,
+            "y": 822,
+            "width": 121,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "sleep-restlessness",
+            "label": "Restlessness",
+            "duplicate": false,
+            "art": {
+              "x": 125,
+              "y": 826,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 862,
+            "width": 136,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "sleep-sleep-paralysis",
+            "label": "Sleep Paralysis",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 866,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 171,
+            "y": 862,
+            "width": 179,
+            "height": 28,
+            "fill": "#FCF7F6",
+            "slug": "sleep-late-night-work-study",
+            "label": "Late night work/study",
+            "duplicate": false,
+            "art": {
+              "x": 179,
+              "y": 866,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      },
+      {
+        "x": 15,
+        "y": 928,
+        "width": 346,
+        "height": 292,
+        "radius": 8,
+        "name": "Health",
+        "heading": {
+          "x": 25,
+          "y": 940,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 978,
+            "width": 85,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-period",
+            "label": "Period",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 982,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 120,
+            "y": 978,
+            "width": 92,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-anxiety",
+            "label": "Anxiety",
+            "duplicate": false,
+            "art": {
+              "x": 128,
+              "y": 982,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 222,
+            "y": 978,
+            "width": 101,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-poor-diet",
+            "label": "Poor diet",
+            "duplicate": false,
+            "art": {
+              "x": 230,
+              "y": 982,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1018,
+            "width": 125,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-physical-pain",
+            "label": "Physical pain",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1022,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 160,
+            "y": 1018,
+            "width": 99,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-allergies",
+            "label": "Allergies",
+            "duplicate": false,
+            "art": {
+              "x": 168,
+              "y": 1022,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1058,
+            "width": 144,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-lack-of-exercise",
+            "label": "Lack of exercise",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1062,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 179,
+            "y": 1058,
+            "width": 132,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-chronic-illness",
+            "label": "Chronic illness",
+            "duplicate": false,
+            "art": {
+              "x": 187,
+              "y": 1062,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1098,
+            "width": 114,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-medication",
+            "label": "Medication",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1102,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 149,
+            "y": 1098,
+            "width": 141,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-digestive-issues",
+            "label": "Digestive issues",
+            "duplicate": false,
+            "art": {
+              "x": 157,
+              "y": 1102,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1138,
+            "width": 174,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-hormonal-imbalance",
+            "label": "Hormonal imbalance",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1142,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 209,
+            "y": 1138,
+            "width": 91,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-fatigue",
+            "label": "Fatigue",
+            "duplicate": false,
+            "art": {
+              "x": 217,
+              "y": 1142,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1178,
+            "width": 181,
+            "height": 28,
+            "fill": "#F6E3E7",
+            "slug": "health-substance-withdrawal",
+            "label": "Substance withdrawal",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1182,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      },
+      {
+        "x": 15,
+        "y": 1244,
+        "width": 346,
+        "height": 266,
+        "radius": 8,
+        "name": "Life changes",
+        "heading": {
+          "x": 25,
+          "y": 1256,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 1294,
+            "width": 129,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "life-changes-anniversaries",
+            "label": "Anniversaries",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1298,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 164,
+            "y": 1294,
+            "width": 98,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "life-changes-birthday",
+            "label": "Birthday",
+            "duplicate": false,
+            "art": {
+              "x": 172,
+              "y": 1298,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1334,
+            "width": 161,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "life-changes-loss-of-a-loved-one",
+            "label": "Loss of a loved one",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1338,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 196,
+            "y": 1334,
+            "width": 123,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "life-changes-loss-of-a-pet",
+            "label": "Loss of a pet",
+            "duplicate": false,
+            "art": {
+              "x": 204,
+              "y": 1338,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1374,
+            "width": 134,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "life-changes-moving-homes",
+            "label": "Moving homes",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1378,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 169,
+            "y": 1374,
+            "width": 118,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "life-changes-parenthood",
+            "label": "Parenthood",
+            "duplicate": false,
+            "art": {
+              "x": 177,
+              "y": 1378,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1414,
+            "width": 142,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "life-changes-new-beginnings",
+            "label": "New beginnings",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1418,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 177,
+            "y": 1414,
+            "width": 135,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "life-changes-family-reunion",
+            "label": "Family reunion",
+            "duplicate": false,
+            "art": {
+              "x": 185,
+              "y": 1418,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 1454,
+            "width": 160,
+            "height": 28,
+            "fill": "#EDF7F8",
+            "slug": "life-changes-financial-struggles",
+            "label": "Financial struggles",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 1458,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      }
+    ],
+    "coping": [
+      {
+        "x": 15,
+        "y": 136,
+        "width": 346,
+        "height": 855,
+        "radius": 8,
+        "name": "Coping Mechanisms",
+        "heading": {
+          "x": 25,
+          "y": 148,
+          "height": 20
+        },
+        "chips": [
+          {
+            "x": 25,
+            "y": 186,
+            "width": 142,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "deep-breathing",
+            "label": "Deep breathing",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 190,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 177,
+            "y": 186,
+            "width": 112,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "meditation",
+            "label": "Meditation",
+            "duplicate": false,
+            "art": {
+              "x": 185,
+              "y": 190,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 226,
+            "width": 112,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "journaling",
+            "label": "Journaling",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 230,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 147,
+            "y": 228,
+            "width": 155,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "talking-to-a-friend",
+            "label": "Talking to a friend",
+            "duplicate": false,
+            "art": {
+              "x": 155,
+              "y": 232,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 266,
+            "width": 96,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "exercise",
+            "label": "Exercise",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 270,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 131,
+            "y": 268,
+            "width": 154,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "listening-to-music",
+            "label": "Listening to music",
+            "duplicate": false,
+            "art": {
+              "x": 139,
+              "y": 272,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 308,
+            "width": 155,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "watching-a-movie",
+            "label": "Watching a movie",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 312,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 190,
+            "y": 308,
+            "width": 90,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "writing",
+            "label": "Writing",
+            "duplicate": false,
+            "art": {
+              "x": 198,
+              "y": 312,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 348,
+            "width": 96,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "painting",
+            "label": "Painting",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 352,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 131,
+            "y": 348,
+            "width": 87,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "baking",
+            "label": "Baking",
+            "duplicate": false,
+            "art": {
+              "x": 139,
+              "y": 352,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 228,
+            "y": 348,
+            "width": 90,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "resting",
+            "label": "Resting",
+            "duplicate": false,
+            "art": {
+              "x": 236,
+              "y": 352,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 388,
+            "width": 95,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "cooking",
+            "label": "Cooking",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 392,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 130,
+            "y": 388,
+            "width": 155,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "talking-to-a-friend",
+            "label": "Talking to a friend",
+            "duplicate": true,
+            "art": {
+              "x": 138,
+              "y": 392,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 428,
+            "width": 129,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "taking-a-walk",
+            "label": "Taking a walk",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 432,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 164,
+            "y": 428,
+            "width": 96,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "reading",
+            "label": "Reading",
+            "duplicate": false,
+            "art": {
+              "x": 172,
+              "y": 432,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 468,
+            "width": 168,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "practicing-gratitude",
+            "label": "Practicing gratitude",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 472,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 203,
+            "y": 468,
+            "width": 145,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "seeking-therapy",
+            "label": "Seeking therapy",
+            "duplicate": false,
+            "art": {
+              "x": 211,
+              "y": 472,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 508,
+            "width": 158,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "using-affirmations",
+            "label": "Using affirmations",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 512,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 193,
+            "y": 508,
+            "width": 137,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "drinking-water",
+            "label": "Drinking water",
+            "duplicate": false,
+            "art": {
+              "x": 201,
+              "y": 512,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 548,
+            "width": 101,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "snacking",
+            "label": "Snacking",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 552,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 136,
+            "y": 548,
+            "width": 169,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "limiting-screen-time",
+            "label": "Limiting screen time",
+            "duplicate": false,
+            "art": {
+              "x": 144,
+              "y": 552,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 588,
+            "width": 162,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "setting-boundaries",
+            "label": "Setting boundaries",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 592,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 197,
+            "y": 588,
+            "width": 147,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "problem-solving",
+            "label": "Problem-solving",
+            "duplicate": false,
+            "art": {
+              "x": 205,
+              "y": 592,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 628,
+            "width": 86,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "crying",
+            "label": "Crying",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 632,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 121,
+            "y": 628,
+            "width": 192,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "avoiding-responsibilities",
+            "label": "Avoiding responsibilities",
+            "duplicate": false,
+            "art": {
+              "x": 129,
+              "y": 632,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 668,
+            "width": 98,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "smoking",
+            "label": "Smoking",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 672,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 133,
+            "y": 668,
+            "width": 97,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "drinking",
+            "label": "Drinking",
+            "duplicate": false,
+            "art": {
+              "x": 141,
+              "y": 672,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 240,
+            "y": 668,
+            "width": 97,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "sleeping",
+            "label": "Sleeping",
+            "duplicate": false,
+            "art": {
+              "x": 248,
+              "y": 672,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 708,
+            "width": 123,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "taking-drugs",
+            "label": "Taking drugs",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 712,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 155,
+            "y": 708,
+            "width": 178,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "excessive-screen-time",
+            "label": "Excessive screen time",
+            "duplicate": false,
+            "art": {
+              "x": 163,
+              "y": 712,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 748,
+            "width": 163,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "excessive-shopping",
+            "label": "Excessive shopping",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 752,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 198,
+            "y": 748,
+            "width": 157,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "ignoring-problems",
+            "label": "Ignoring problems",
+            "duplicate": false,
+            "art": {
+              "x": 206,
+              "y": 752,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 788,
+            "width": 141,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "procrastination",
+            "label": "Procrastination",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 792,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 180,
+            "y": 788,
+            "width": 169,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "emotional-outbursts",
+            "label": "Emotional outbursts",
+            "duplicate": false,
+            "art": {
+              "x": 188,
+              "y": 792,
+              "width": 22,
+              "height": 20
+            }
+          },
+          {
+            "x": 25,
+            "y": 828,
+            "width": 246,
+            "height": 28,
+            "fill": "#F6F8FB",
+            "slug": "isolation-from-friends-and-family",
+            "label": "Isolation from friends and family",
+            "duplicate": false,
+            "art": {
+              "x": 33,
+              "y": 832,
+              "width": 22,
+              "height": 20
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "home": [
+    {
+      "slug": "angry",
+      "x": 0,
+      "y": 0,
+      "width": 103,
+      "height": 45,
+      "radius": 16,
+      "fill": "#FEF4BE",
+      "art": {
+        "x": 12,
+        "y": 5,
+        "width": 32,
+        "height": 35
+      },
+      "label": {
+        "x": 54,
+        "y": 14.5
+      }
+    },
+    {
+      "slug": "sad",
+      "x": 113,
+      "y": 0,
+      "width": 103,
+      "height": 45,
+      "radius": 16,
+      "fill": "#FEF4BE",
+      "art": {
+        "x": 12,
+        "y": 5,
+        "width": 32,
+        "height": 35
+      },
+      "label": {
+        "x": 54,
+        "y": 14.5
+      }
+    },
+    {
+      "slug": "good",
+      "x": 226,
+      "y": 0,
+      "width": 103,
+      "height": 45,
+      "radius": 16,
+      "fill": "#FEF4BE",
+      "art": {
+        "x": 12,
+        "y": 5,
+        "width": 32,
+        "height": 35
+      },
+      "label": {
+        "x": 54,
+        "y": 14.5
+      }
+    },
+    {
+      "slug": "upset",
+      "x": 339,
+      "y": 0,
+      "width": 103,
+      "height": 45,
+      "radius": 16,
+      "fill": "#FEF4BE",
+      "art": {
+        "x": 12,
+        "y": 5,
+        "width": 32,
+        "height": 35
+      },
+      "label": {
+        "x": 54,
+        "y": 14.5
+      }
+    },
+    {
+      "slug": "spectacular",
+      "x": 452,
+      "y": 0,
+      "width": 131,
+      "height": 45,
+      "radius": 16,
+      "fill": "#FEF4BE",
+      "art": {
+        "x": 12,
+        "y": 5,
+        "width": 32,
+        "height": 35
+      },
+      "label": {
+        "x": 54,
+        "y": 14.5
+      }
+    },
+    {
+      "slug": "happy",
+      "x": 593,
+      "y": 0,
+      "width": 103,
+      "height": 45,
+      "radius": 16,
+      "fill": "#FEF4BE",
+      "art": {
+        "x": 12,
+        "y": 5,
+        "width": 32,
+        "height": 35
+      },
+      "label": {
+        "x": 54,
+        "y": 14.5
+      }
+    }
+  ]
+}

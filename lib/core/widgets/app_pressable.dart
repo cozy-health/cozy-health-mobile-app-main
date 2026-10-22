@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/cozy_colors.dart';
+import '../utils/motion.dart';
 
 /// Branded touch and keyboard activation without Material ink overlays.
 class AppPressable extends StatefulWidget {
@@ -28,14 +29,7 @@ class _AppPressableState extends State<AppPressable> {
   Widget build(BuildContext context) {
     final tokens = context.cozyColors.recording;
     final enabled = widget.onPressed != null;
-    final reduced =
-        MediaQuery.disableAnimationsOf(context) ||
-        MediaQuery.accessibleNavigationOf(context) ||
-        WidgetsBinding
-            .instance
-            .platformDispatcher
-            .accessibilityFeatures
-            .reduceMotion;
+    final reduced = shouldReduceMotion(context);
     return Semantics(
       excludeSemantics: widget.label != null,
       button: true,
@@ -71,11 +65,17 @@ class _AppPressableState extends State<AppPressable> {
             scale: _pressed && enabled && !reduced ? tokens.pressScale : 1,
             duration: reduced ? Duration.zero : tokens.pressDuration,
             child: DecoratedBox(
+              position: DecorationPosition.foreground,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(tokens.controlRadius),
                 border: _focused
                     ? Border.all(
-                        color: Theme.of(context).colorScheme.primary,
+                        color: tokens.controlColor(
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.surface,
+                          Theme.of(context).colorScheme.onSurface,
+                          minimumContrast: 3,
+                        ),
                         width: tokens.selectedBorder,
                       )
                     : null,

@@ -4,6 +4,7 @@ import 'package:cozy_health/features/settings/presentation/screens/provider_hub_
 import 'package:cozy_health/features/community/presentation/screens/community_hub_screen.dart';
 import 'package:cozy_health/features/settings/presentation/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/cozy_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/quick_actions_sheet.dart';
 import '../../../../core/routing/app_router.dart';
@@ -52,13 +53,16 @@ class _MainScreenState extends State<MainScreen> {
               if (_currentIndex != 2 &&
                   MediaQuery.viewInsetsOf(context).bottom == 0) ...[
                 Positioned(
-                  right: 16,
-                  bottom: 88,
+                  right: context.cozyColors.wellness.floatingInset,
+                  bottom:
+                      context.cozyColors.wellness.floatingInset +
+                      context.cozyColors.wellness.floatingSize +
+                      context.cozyColors.wellness.floatingGap,
                   child: CrisisFab(key: _tourTargets.crisis),
                 ),
                 Positioned(
                   right: 16,
-                  bottom: 16,
+                  bottom: context.cozyColors.wellness.floatingInset,
                   child: Semantics(
                     button: true,
                     label: 'Open quick actions',
@@ -67,6 +71,10 @@ class _MainScreenState extends State<MainScreen> {
                       child: FloatingActionButton(
                         key: _tourTargets.journal,
                         heroTag: 'quick-actions',
+                        shape: const CircleBorder(),
+                        elevation: 2,
+                        highlightElevation: 4,
+                        tooltip: 'Open quick actions',
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Theme.of(
                           context,

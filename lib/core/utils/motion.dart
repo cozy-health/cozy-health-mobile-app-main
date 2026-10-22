@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 /// Root MediaQuery combines the saved app preference with device preferences.
 bool shouldReduceMotion(BuildContext context) =>
     MediaQuery.disableAnimationsOf(context) ||
-    MediaQuery.accessibleNavigationOf(context);
+    MediaQuery.accessibleNavigationOf(context) ||
+    WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .reduceMotion;
 
 Duration motionDuration(BuildContext context, Duration duration) =>
     shouldReduceMotion(context) ? Duration.zero : duration;

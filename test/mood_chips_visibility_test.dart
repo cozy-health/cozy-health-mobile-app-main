@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'support/local_fonts.dart';
+import 'package:cozy_health/core/widgets/app_pressable.dart';
 import 'support/mood_review_capture.dart';
 
 void main() {
@@ -55,10 +56,10 @@ void main() {
       await tester.pumpAndSettle();
       final control = find.ancestor(
         of: find.text('Angry'),
-        matching: find.byType(InkWell),
+        matching: find.byType(AppPressable),
       );
       expect(tester.getSize(control).height, greaterThanOrEqualTo(48));
-      expect(tester.widget<Text>(find.text('Angry')).style!.fontSize, 12);
+      expect(tester.widget<Text>(find.text('Angry')).style!.fontSize, 14);
       expect(find.text('Calm'), findsNothing);
       expect(find.text('Anxious'), findsNothing);
       expect(find.text('Spectacular'), findsOneWidget);
@@ -82,7 +83,7 @@ void main() {
     testWidgets('reference Home option $slug opens the matching group', (
       tester,
     ) async {
-      tester.view.physicalSize = const Size(375, 240);
+      tester.view.physicalSize = const Size(375, 360);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -126,7 +127,10 @@ void main() {
       await tester.pumpAndSettle();
       final label = '${slug[0].toUpperCase()}${slug.substring(1)}';
       await tester.ensureVisible(
-        find.ancestor(of: find.text(label), matching: find.byType(InkWell)),
+        find.ancestor(
+          of: find.text(label),
+          matching: find.byType(AppPressable),
+        ),
       );
       await tester.pumpAndSettle();
       await captureMoodReview(tester, 'home-$slug');
@@ -138,20 +142,19 @@ void main() {
       final semantics = tester.ensureSemantics();
       final option = find.ancestor(
         of: find.text(label),
-        matching: find.byType(InkWell),
+        matching: find.byType(AppPressable),
       );
       expect(tester.getSize(option).height, greaterThanOrEqualTo(48));
       expect(
         tester.getSemantics(option),
         matchesSemantics(
           label: label,
-          hint: 'Open mood check-in',
           isButton: true,
           hasSelectedState: true,
+          hasEnabledState: true,
+          isEnabled: true,
           isSelected: false,
           hasTapAction: true,
-          isFocusable: true,
-          hasFocusAction: true,
         ),
       );
       semantics.dispose();
@@ -160,7 +163,7 @@ void main() {
   }
 
   testWidgets('capture the complete reference Home mood strip', (tester) async {
-    tester.view.physicalSize = const Size(760, 120);
+    tester.view.physicalSize = const Size(375, 300);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);

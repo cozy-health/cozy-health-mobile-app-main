@@ -20,6 +20,12 @@ import 'package:cozy_health/core/models/chat_conversation.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'package:cozy_health/core/theme/app_theme.dart';
+import 'package:cozy_health/core/theme/app_colors.dart';
+import 'package:cozy_health/core/widgets/mood_category_grid.dart';
+import 'package:cozy_health/core/theme/cozy_colors.dart';
+import 'package:cozy_health/features/home/presentation/widgets/home_design_widgets.dart';
+import 'package:cozy_health/features/mood_check_in/presentation/mood_recording_controller.dart';
+import '../../support/mood_recording_fakes.dart';
 import 'package:cozy_health/core/routing/app_router.dart';
 import 'package:cozy_health/features/home/presentation/screens/home_screen.dart';
 import 'package:cozy_health/features/home/presentation/widgets/cozy_calendar.dart';
@@ -93,6 +99,7 @@ void main() {
     );
     await EncryptedHive.openBox<QuizAttempt>(LocalDbService.quizAttemptBoxName);
     await LocalDbService().settingsBox();
+    await LocalDbService().preferencesBox();
   });
   setUp(() => DemoMode.instance.enabled = true);
   tearDown(() => DemoMode.instance.enabled = false);
@@ -109,6 +116,8 @@ void main() {
     required bool dark,
     Size size = const Size(375, 667),
     double textScale = 1.6,
+    bool contrast = false,
+    int accent = 0,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -143,13 +152,21 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
+    var theme = AppTheme.withAccent(
+      dark ? AppTheme.dark : AppTheme.light,
+      AppColors.brandPalette[accent],
+    );
+    if (contrast) theme = AppTheme.highContrast(theme);
     await tester.pumpWidget(
       MaterialApp.router(
-        theme: dark ? AppTheme.dark : AppTheme.light,
+        theme: theme,
         builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+            highContrast: contrast,
+            boldText: contrast,
+            disableAnimations: true,
+          ),
           child: RepaintBoundary(key: surfaceCaptureKey, child: child!),
         ),
         routerConfig: router,
@@ -600,6 +617,260 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+  }
+
+  for (final dark in [false, true]) {
+    for (var accent = 0; accent < 4; accent++) {
+      for (final contrast in [false, true]) {
+        final name =
+            '${dark ? 'dark' : 'light'}-${['blue', 'green', 'orange', 'yellow'][accent]}-${contrast ? 'contrast' : 'standard'}';
+        testWidgets('approved Home and Feeling design $name', (tester) async {
+          final now = DateTime.now();
+          final original = List<MoodEntry>.of(DemoMode.instance.moods);
+          addTearDown(() {
+            DemoMode.instance.moods
+              ..clear()
+              ..addAll(original);
+          });
+          DemoMode.instance.moods
+            ..clear()
+            ..addAll([
+              for (var i = 0; i < 7; i++)
+                if (i != 3)
+                  MoodEntry(
+                    id: 'design-$i',
+                    mood: MoodCategoryGrid.moods[i % 6],
+                    intensity: 6,
+                    createdAt: DateTime(now.year, now.month, now.day - i, 12),
+                    updatedAt: now,
+                  ),
+            ]);
+          await tester.runAsync(() async {
+            await LocalDbService().userProfileBox.put(
+              'design-review',
+              UserProfile(
+                id: 'design-review',
+                name: 'Amara Okafor',
+                email: 'preview@example.invalid',
+                updatedAt: now,
+              ),
+            );
+          });
+          addTearDown(() async {
+            await LocalDbService().userProfileBox.delete('design-review');
+          });
+          for (final height in [812.0, 1900.0]) {
+            await mount(
+              tester,
+              const MainScreen(),
+              dark: dark,
+              accent: accent,
+              contrast: contrast,
+              size: Size(375, height),
+              textScale: 1,
+            );
+            expect(find.byType(MoodCategoryGrid), findsOneWidget);
+            expect(find.text('How are you feeling today?'), findsOneWidget);
+            expect(find.text('Your check-in rhythm'), findsOneWidget);
+            expect(find.text('A little more you-time'), findsOneWidget);
+            final homeContext = tester.element(find.byType(MoodCategoryGrid));
+            final expectedFill = homeContext.cozyColors.wellness.accentPanel(
+              Theme.of(homeContext).colorScheme,
+            );
+            for (final heading in [
+              'How are you feeling today?',
+              'Take a breathing break',
+            ]) {
+              final card = tester.widget<HomeDesignCard>(
+                find
+                    .ancestor(
+                      of: find.text(heading),
+                      matching: find.byType(HomeDesignCard),
+                    )
+                    .first,
+              );
+              expect(card.color, expectedFill);
+            }
+            expect(tester.takeException(), isNull);
+            await captureMoodReview(
+              tester,
+              'home-balance-review-home-$name-${height == 812 ? 'viewport' : 'full'}',
+              captureKey: surfaceCaptureKey,
+            );
+            await tester.pumpWidget(const SizedBox.shrink());
+          }
+          final flow = MoodRecordingController(
+            initialMood: 'angry',
+            drafts: MemoryMoodDrafts(),
+            repository: MemoryMoodRepository(),
+            wellness: MemoryMoodCatalog(),
+            accountScope: () => 'design',
+            accountChanges: const Stream.empty(),
+          );
+          addTearDown(flow.dispose);
+          await mount(
+            tester,
+            MoodFeelingScreen(controller: flow, initialMood: 'angry'),
+            dark: dark,
+            accent: accent,
+            contrast: contrast,
+            size: const Size(375, 812),
+            textScale: 1,
+          );
+          await tester.tap(
+            find.byKey(
+              const ValueKey('recording-hit-expressions-angry-resentful'),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(flow.state.expression, 'angry-resentful');
+          expect(find.text('12 feelings'), findsOneWidget);
+          expect(
+            tester
+                .widgetList<Image>(find.byType(Image))
+                .every((i) => i.color == null),
+            isTrue,
+          );
+          await captureMoodReview(
+            tester,
+            'home-balance-review-feeling-$name',
+            captureKey: surfaceCaptureKey,
+          );
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+    testWidgets('approved Home and Feeling large text dark=$dark', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => LocalDbService().userProfileBox.put(
+          'long-design-name',
+          UserProfile(
+            id: 'long-design-name',
+            name: 'Oluwafunmilayomorenikeji Okafor',
+            email: 'preview@example.invalid',
+            updatedAt: DateTime.now(),
+          ),
+        ),
+      );
+      addTearDown(
+        () => LocalDbService().userProfileBox.delete('long-design-name'),
+      );
+      await mount(
+        tester,
+        const MainScreen(),
+        dark: dark,
+        contrast: true,
+        accent: 3,
+        size: const Size(320, 812),
+        textScale: 2,
+      );
+      await captureMoodReview(
+        tester,
+        'home-balance-review-home-large-${dark ? 'dark' : 'light'}-top',
+        captureKey: surfaceCaptureKey,
+      );
+      var captureIndex = 0;
+      for (final label in [
+        'Happy',
+        'Your check-in rhythm',
+        'Take a quiz →',
+        'Small steps. Your pace. Your cozy space.',
+      ]) {
+        await tester.ensureVisible(find.text(label));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await captureMoodReview(
+          tester,
+          'home-balance-review-home-large-${dark ? 'dark' : 'light'}-${['moods', 'middle', 'features', 'bottom'][captureIndex++]}',
+          captureKey: surfaceCaptureKey,
+        );
+      }
+      await captureMoodReview(
+        tester,
+        'home-balance-review-home-large-${dark ? 'dark' : 'light'}',
+        captureKey: surfaceCaptureKey,
+      );
+      final homeScroll = tester.state<ScrollableState>(
+        find
+            .descendant(
+              of: find.byType(HomeScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      homeScroll.position.jumpTo(homeScroll.position.maxScrollExtent);
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .getRect(find.text('Small steps. Your pace. Your cozy space.'))
+            .bottom,
+        lessThanOrEqualTo(tester.getRect(find.byType(CrisisFab)).top),
+      );
+      await captureMoodReview(
+        tester,
+        [
+          'home-balance-review-footer-clearance',
+          dark ? 'dark' : 'light',
+        ].join('-'),
+        captureKey: surfaceCaptureKey,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      final flow = MoodRecordingController(
+        initialMood: 'angry',
+        drafts: MemoryMoodDrafts(),
+        repository: MemoryMoodRepository(),
+        wellness: MemoryMoodCatalog(),
+        accountScope: () => 'design',
+        accountChanges: const Stream.empty(),
+      );
+      addTearDown(flow.dispose);
+      await mount(
+        tester,
+        MoodFeelingScreen(controller: flow),
+        dark: dark,
+        contrast: true,
+        accent: 3,
+        size: const Size(320, 812),
+        textScale: 2,
+      );
+      await captureMoodReview(
+        tester,
+        'home-balance-review-feeling-large-${dark ? 'dark' : 'light'}-top',
+        captureKey: surfaceCaptureKey,
+      );
+      await tester.ensureVisible(
+        find.byKey(
+          const ValueKey('recording-hit-expressions-angry-aggressive'),
+        ),
+      );
+      await tester.tap(
+        find.byKey(
+          const ValueKey('recording-hit-expressions-angry-aggressive'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(flow.state.expression, 'angry-aggressive');
+      final selectedRect = tester.getRect(
+        find.byKey(
+          const ValueKey('recording-hit-expressions-angry-aggressive'),
+        ),
+      );
+      final footerRect = tester.getRect(
+        find.byKey(const ValueKey('feeling-selection-summary')),
+      );
+      expect(selectedRect.bottom, lessThanOrEqualTo(footerRect.top));
+      await captureMoodReview(
+        tester,
+        'home-balance-review-feeling-large-${dark ? 'dark' : 'light'}',
+        captureKey: surfaceCaptureKey,
+      );
+      expect(tester.takeException(), isNull);
+      // Detach live profile/preferences consumers before closing the fixture DB.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
   }
 
   testWidgets('capture production Home with the reference mood selector', (

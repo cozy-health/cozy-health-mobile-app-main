@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
+import 'wellness_tokens.dart';
 
 @immutable
 class CozyColors extends ThemeExtension<CozyColors> {
@@ -30,6 +31,7 @@ class CozyColors extends ThemeExtension<CozyColors> {
       triggerHigh;
   final List<Color> recordingCategoryFills;
   final MoodRecordingTokens recording;
+  WellnessTokens get wellness => const WellnessTokens();
 
   static const light = CozyColors(
     crisis: AppColors.crisisPrimary,

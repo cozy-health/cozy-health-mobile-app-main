@@ -5,7 +5,8 @@ import '../data/demo_mode.dart';
 import '../routing/app_router.dart';
 import '../services/affirmation_controller.dart';
 import '../repositories/affirmation_repository.dart';
-import '../theme/app_surface.dart';
+import '../theme/cozy_colors.dart';
+import 'app_pressable.dart';
 
 class AffirmationPanel extends StatefulWidget {
   const AffirmationPanel({
@@ -98,15 +99,18 @@ class _AffirmationPanelState extends State<AffirmationPanel>
           ? CrossAxisAlignment.start
           : CrossAxisAlignment.center,
       children: [
-        Icon(
-          Icons.auto_awesome_outlined,
-          size: widget.compact ? 28 : 36,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        const SizedBox(height: 12),
+        if (!widget.compact)
+          Icon(
+            Icons.auto_awesome_outlined,
+            size: widget.compact ? 28 : 36,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        if (!widget.compact) const SizedBox(height: 12),
         Text(
-          label,
-          style: Theme.of(context).textTheme.labelLarge,
+          widget.compact ? 'A REMINDER FOR TODAY' : label,
+          style: widget.compact
+              ? Theme.of(context).textTheme.labelMedium
+              : Theme.of(context).textTheme.labelLarge,
           textAlign: widget.compact ? TextAlign.start : TextAlign.center,
         ),
         const SizedBox(height: 12),
@@ -117,10 +121,15 @@ class _AffirmationPanelState extends State<AffirmationPanel>
           style: widget.compact
               ? Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
+                  fontSize: 18,
                   height: 1.4,
                 )
               : Theme.of(context).textTheme.headlineSmall,
         ),
+        if (widget.compact) ...[
+          const SizedBox(height: 8),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+        ],
         if (state.status == AffirmationStatus.loading) ...[
           const SizedBox(height: 8),
           const Text('Refreshing affirmation…'),
@@ -167,25 +176,25 @@ class _AffirmationPanelState extends State<AffirmationPanel>
       ],
     );
     if (!widget.compact) return content;
-    return Semantics(
-      button: true,
+    final t = context.cozyColors.wellness;
+    return AppPressable(
+      key: const Key('home-affirmation-card'),
       label: 'Open daily affirmation',
-      child: InkWell(
-        key: const Key('home-affirmation-card'),
-        onTap: () => context.push(AppRouter.dailyAffirmation),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(
-              Theme.of(context).colorScheme.primary.withValues(alpha: .10),
-              Theme.of(context).colorScheme.surface,
-            ),
-            border: AppSurface.border(context),
-            borderRadius: BorderRadius.circular(20),
+      onPressed: () => context.push(AppRouter.dailyAffirmation),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(t.gap),
+        decoration: BoxDecoration(
+          color: t.reminder(Theme.of(context).brightness),
+          border: Border.all(
+            color: MediaQuery.highContrastOf(context)
+                ? Theme.of(context).colorScheme.onSurface
+                : Theme.of(context).colorScheme.outlineVariant,
+            width: MediaQuery.highContrastOf(context) ? 2 : 1,
           ),
-          child: content,
+          borderRadius: BorderRadius.circular(t.radius),
         ),
+        child: content,
       ),
     );
   }

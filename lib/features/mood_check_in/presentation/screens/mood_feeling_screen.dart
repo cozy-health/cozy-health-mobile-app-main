@@ -22,7 +22,7 @@ import '../../../crisis/presentation/screens/crisis_screens.dart';
 import '../../../crisis/services/crisis_detector.dart';
 import '../mood_recording_controller.dart';
 import 'mood_intensity_control.dart';
-import 'mood_recording_layout.dart';
+import '../../../../core/widgets/mood_category_grid.dart';
 import 'mood_recording_widgets.dart';
 
 class MoodFeelingScreen extends StatefulWidget {
@@ -40,14 +40,6 @@ class MoodFeelingScreen extends StatefulWidget {
 }
 
 class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
-  static const _groups = [
-    'Angry',
-    'Sad',
-    'Good',
-    'Upset',
-    'Spectacular',
-    'Happy',
-  ];
   static const _causeGroups = [
     'Work',
     'School',
@@ -65,16 +57,14 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
     Icons.home_outlined,
   ];
   final _scroll = ScrollController();
-  final _feelingKeys = {
-    for (final group in _groups) group.toLowerCase(): GlobalKey(),
-  };
+  String? _visibleCategory;
+  String? _lastAnswerMood, _lastAnswerExpression;
   final Set<String> _expanded = {'Work', 'Previously selected'};
   late final MoodRecordingController _flow;
   MoodRecordingStep? _lastStep;
   String? _lastError;
   bool _closing = false;
   int get _step => _flow.state.step.index;
-  String? get _expression => _flow.state.expression;
   List<Map<String, dynamic>> _rows(String key) => _flow.rows(key);
   @override
   void initState() {
@@ -85,6 +75,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
           entry: widget.entry,
           initialMood: widget.initialMood,
         );
+    _visibleCategory = _flow.state.mood;
     _flow.addListener(_onFlow);
     _openSelectedGroups();
     unawaited(_flow.initialize());
@@ -104,17 +95,19 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
     final stage = _flow.state.step;
     final changed = _lastStep != stage;
     _lastStep = stage;
+    if (stage == MoodRecordingStep.feeling &&
+        (changed ||
+            _visibleCategory == null ||
+            _lastAnswerMood != _flow.state.mood ||
+            _lastAnswerExpression != _flow.state.expression)) {
+      _visibleCategory = _flow.state.mood;
+    }
+    _lastAnswerMood = _flow.state.mood;
+    _lastAnswerExpression = _flow.state.expression;
     setState(() {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (changed && _scroll.hasClients) _scroll.jumpTo(0);
-      if (!_flow.loading &&
-          _flow.resumeDraft == null &&
-          stage == MoodRecordingStep.feeling &&
-          changed) {
-        final target = _feelingKeys[widget.initialMood]?.currentContext;
-        if (target != null) Scrollable.ensureVisible(target, alignment: 0);
-      }
       if (_flow.error != null && _flow.error != _lastError) {
         _lastError = _flow.error;
         AppSnackbar.show(context, AppSnackbar.error(_flow.error!));
@@ -125,9 +118,20 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
   void _selectFeeling(
     Map<String, dynamic> mood,
     Map<String, dynamic> feeling,
-  ) => _flow.selectFeeling(mood['slug'] as String, feeling['slug'] as String);
-  void _toggle(Set<String> values, String value) {
-    if (!values.add(value)) values.remove(value);
+    BuildContext choiceContext,
+  ) {
+    _flow.selectFeeling(mood['slug'] as String, feeling['slug'] as String);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !choiceContext.mounted) return;
+      Scrollable.ensureVisible(
+        choiceContext,
+        duration: motionDuration(
+          context,
+          context.cozyColors.wellness.transition,
+        ),
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    });
   }
 
   void _exit() {
@@ -207,8 +211,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
     final stage = _flow.state.step;
     final feelingStage = stage == MoodRecordingStep.feeling;
     final heading = switch (stage) {
-      MoodRecordingStep.feeling =>
-        'How would you describe how you are feeling?',
+      MoodRecordingStep.feeling => 'How are you feeling?',
       MoodRecordingStep.intensity => 'How strong is this feeling?',
       MoodRecordingStep.causes => 'What made you feel this way?',
       MoodRecordingStep.coping => 'How have you expressed these feelings?',
@@ -223,7 +226,12 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
         // Search lives in its own inset-aware sheet. Keep the check-in behind it
         // stable while the keyboard is open.
         resizeToAvoidBottomInset: false,
-        backgroundColor: theme.scaffoldBackgroundColor,
+        backgroundColor: feelingStage
+            ? context.cozyColors.wellness.canvas(
+                theme.brightness,
+                MediaQuery.highContrastOf(context),
+              )
+            : theme.scaffoldBackgroundColor,
         body: SecurityBlur(
           child: SafeArea(
             child: Center(
@@ -249,6 +257,12 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                           SizedBox(width: t.medium),
                           Expanded(
                             child: LinearProgressIndicator(
+                              color: context.cozyColors.recording.controlColor(
+                                theme.colorScheme.primary,
+                                theme.colorScheme.surface,
+                                theme.colorScheme.onSurface,
+                                minimumContrast: 3,
+                              ),
                               value:
                                   (_step + 1) / MoodRecordingStep.values.length,
                               minHeight: t.tiny,
@@ -275,7 +289,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                       child: SingleChildScrollView(
                         controller: _scroll,
                         padding: EdgeInsets.fromLTRB(
-                          feelingStage ? 15 : t.page,
+                          t.page,
                           t.small,
                           feelingStage ? 15 : t.page,
                           t.section,
@@ -344,7 +358,10 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                                         style: theme.textTheme.bodyLarge
                                             ?.copyWith(
                                               fontSize: feelingStage
-                                                  ? 15
+                                                  ? context
+                                                        .cozyColors
+                                                        .wellness
+                                                        .heading
                                                   : t.headingSize,
                                               fontWeight: FontWeight.w700,
                                             ),
@@ -363,8 +380,21 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                                             ),
                                       ),
                                     ],
-                                    SizedBox(height: t.section),
-                                    if (feelingStage) ..._feelingCards(),
+                                    SizedBox(
+                                      height: feelingStage
+                                          ? t.small
+                                          : t.section,
+                                    ),
+                                    if (feelingStage) ...[
+                                      Text(
+                                        'Choose a group, then the feeling that fits.',
+                                        style: TextStyle(
+                                          color: theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      SizedBox(height: t.large),
+                                      ..._feelingCards(),
+                                    ],
                                     if (stage ==
                                         MoodRecordingStep.intensity) ...[
                                       _summary(),
@@ -490,6 +520,10 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
   Widget _footer() {
     final t = context.cozyColors.recording;
     final stage = _flow.state.step;
+    final mood = _flow.state.mood;
+    final moodLabel = mood == null || mood.isEmpty
+        ? ''
+        : '${mood[0].toUpperCase()}${mood.substring(1)}';
     final values = stage == MoodRecordingStep.causes
         ? _flow.state.causes
         : stage == MoodRecordingStep.coping
@@ -503,6 +537,16 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (stage == MoodRecordingStep.feeling) ...[
+            Text(
+              _flow.canContinue
+                  ? 'Selected: ${_flow.feeling} · $moodLabel'
+                  : 'Choose a feeling to continue.',
+              key: const ValueKey('feeling-selection-summary'),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            SizedBox(height: t.small),
+          ],
           if (optional && values.isNotEmpty) ...[
             Text(
               '${values.length} $noun${values.length == 1 ? '' : 's'} selected',
@@ -764,347 +808,154 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
   }
 
   List<Widget> _feelingCards() {
+    final t = context.cozyColors.recording;
+    final scheme = Theme.of(context).colorScheme;
+    final category = _visibleCategory;
     final moods = _rows('moods');
-    final expressions = _rows('expressions');
-    return [
-      for (var i = 0; i < _groups.length; i++)
-        for (final mood in moods.where(
-          (m) => m['slug'] == _groups[i].toLowerCase(),
-        ))
-          _panel(
-            mood['name'] as String,
-            _chips(
-              'expressions',
-              expressions.where((e) => e['feeling_id'] == mood['id']).toList(),
-              i,
-              null,
-              mood: mood,
-            ),
-            key: _feelingKeys[_groups[i].toLowerCase()],
-          ),
-    ];
-  }
-
-  Widget _chips(
-    String collection,
-    List<Map<String, dynamic>> options,
-    int category,
-    Set<String>? selection, {
-    Map<String, dynamic>? mood,
-  }) {
-    final pending = {for (final row in options) row['slug'] as String: row};
-    final rows = <List<Map<String, dynamic>>>[];
-    for (final reference in moodRecordingReferenceRows[collection]!) {
-      final row = [
-        for (final slug in reference)
-          if (pending.containsKey(slug)) pending.remove(slug)!,
-      ];
-      if (row.isNotEmpty) rows.add(row);
-    }
-    if (pending.isNotEmpty) rows.add(pending.values.toList());
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (var i = 0; i < rows.length; i++) ...[
-          // Each 48px interaction row centers a 28px visual chip.
-          // Adjacent rows share no hit area; large text expands naturally.
-          LayoutBuilder(
-            builder: (context, constraints) => Wrap(
-              key: ValueKey('recording-row-${rows[i].first['slug']}'),
-              spacing: _rowSpacing(rows[i], constraints.maxWidth),
-              runSpacing: 0,
-              children: [
-                for (final row in rows[i])
-                  _chip(
-                    collection,
-                    row,
-                    category,
-                    selection == null
-                        ? _expression == row['slug']
-                        : selection.contains(row['name']),
-                    () {
-                      if (mood != null) {
-                        _selectFeeling(mood, row);
-                      } else {
-                        _toggle(selection!, row['name'] as String);
-                      }
-                    },
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ],
+    final mood = moods.where((row) => row['slug'] == category).firstOrNull;
+    final choices = mood == null
+        ? <Map<String, dynamic>>[]
+        : _rows(
+            'expressions',
+          ).where((row) => row['feeling_id'] == mood['id']).toList();
+    final selection = t.controlColor(
+      scheme.primary,
+      scheme.surface,
+      scheme.onSurface,
+      minimumContrast: 3,
     );
-  }
-
-  double _rowSpacing(List<Map<String, dynamic>> rows, double available) {
-    if (rows.length < 2) return 0;
-    var contentWidth = 0.0;
-    for (final row in rows) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: row['name'] as String,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontSize: 13,
-            height: 20 / 13,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-        textDirection: Directionality.of(context),
-        textScaler: MediaQuery.textScalerOf(context),
-      )..layout();
-      contentWidth += painter.width.ceilToDouble() + 44;
-      painter.dispose();
-    }
-    // Some supplied rows have intentionally tighter gaps (not smaller text).
-    // When the labels cannot fit, Wrap retains readable text on another line.
-    return ((available - contentWidth) / (rows.length - 1)).clamp(4, 10);
-  }
-
-  Widget _panel(String title, Widget child, {Key? key}) => Container(
-    key: key,
-    width: double.infinity,
-    margin: EdgeInsets.only(bottom: _step == 1 ? 24 : 16),
-    padding: const EdgeInsets.fromLTRB(9, 12, 9, 11),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surface,
-      border:
-          MediaQuery.highContrastOf(context) ||
-              Theme.of(context).brightness == Brightness.dark
-          ? AppSurface.border(context)
-          : Border.all(color: const Color(0xFFF0F0F0)),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            fontSize: 16,
-            color:
-                Theme.of(context).brightness == Brightness.light &&
-                    !MediaQuery.highContrastOf(context)
-                ? const Color(0xFF535862)
-                : null,
-            height: 1.25,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 11),
-        child,
-      ],
-    ),
-  );
-
-  Widget _chip(
-    String collection,
-    Map<String, dynamic> row,
-    int category,
-    bool selected,
-    VoidCallback onTap,
-  ) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final contrast = MediaQuery.highContrastOf(context);
-    final fill = contrast
-        ? (selected ? scheme.primary : scheme.surface)
-        : context.cozyColors.recordingCategoryFills[category];
-    final preferredForeground = contrast && selected
-        ? scheme.onPrimary
-        : theme.brightness == Brightness.light
-        ? const Color(0xFF535862)
-        : scheme.onSurface;
-    double contrastRatio(Color ink) {
-      final a = ink.computeLuminance();
-      final b = fill.computeLuminance();
-      return (a > b ? a + .05 : b + .05) / (a > b ? b + .05 : a + .05);
-    }
-
-    final foreground = contrastRatio(preferredForeground) >= 4.5
-        ? preferredForeground
-        : contrastRatio(Colors.black) > contrastRatio(Colors.white)
-        ? Colors.black
-        : Colors.white;
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: row['name'] as String,
-      excludeSemantics: true,
-      onTap: onTap,
-      child: InkWell(
-        key: ValueKey('recording-hit-$collection-${row['slug']}'),
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Material(
-            key: ValueKey('recording-$collection-${row['slug']}'),
-            color: fill,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: selected
-                    ? (contrast ? scheme.onSurface : _categoryInk(category))
-                    : (contrast ? scheme.outline : Colors.transparent),
-                width: selected || contrast ? 2 : 1,
+    return [
+      MoodCategoryGrid(
+        compact: true,
+        selected: category,
+        onSelected: (value) => setState(() => _visibleCategory = value),
+      ),
+      SizedBox(height: t.section),
+      if (mood == null)
+        const Text('Choose a category to see its feelings.')
+      else ...[
+        Semantics(
+          liveRegion: true,
+          header: true,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  mood['name'] as String,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
               ),
-            ),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  constraints: BoxConstraints(
-                    minHeight: MediaQuery.textScalerOf(context).scale(13) > 20
-                        ? 48
-                        : 28,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _art(
-                        collection,
-                        row,
-                        category,
-                        foreground,
-                        selected: contrast && selected,
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          row['name'] as String,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontSize: 13,
-                            height: 20 / 13,
-                            fontWeight: FontWeight.w400,
-                            color: foreground,
+              Text(
+                '${choices.length} feelings',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: t.medium),
+        AnimatedSwitcher(
+          duration: motionDuration(
+            context,
+            context.cozyColors.wellness.transition,
+          ),
+          layoutBuilder: (current, previous) => Stack(
+            alignment: Alignment.topCenter,
+            children: [
+              for (final child in previous)
+                IgnorePointer(child: ExcludeSemantics(child: child)),
+              if (current != null) current,
+            ],
+          ),
+          child: KeyedSubtree(
+            key: ValueKey(category),
+            child: LayoutBuilder(
+              builder: (context, box) {
+                final columns =
+                    box.maxWidth >= t.twoColumnWidth &&
+                        MediaQuery.textScalerOf(context).scale(t.bodySize) <
+                            t.singleColumnTextSize
+                    ? 2
+                    : 1;
+                return Wrap(
+                  spacing: t.small,
+                  runSpacing: t.small,
+                  children: [
+                    for (final feeling in choices)
+                      SizedBox(
+                        width:
+                            (box.maxWidth - t.small * (columns - 1)) / columns,
+                        child: Builder(
+                          builder: (choiceContext) => AppPressable(
+                            key: ValueKey(
+                              'recording-hit-expressions-${feeling['slug']}',
+                            ),
+                            selected: _flow.state.expression == feeling['slug'],
+                            label: feeling['name'] as String,
+                            onPressed: () =>
+                                _selectFeeling(mood, feeling, choiceContext),
+                            child: Container(
+                              key: ValueKey(
+                                'recording-expressions-${feeling['slug']}',
+                              ),
+                              padding: EdgeInsets.all(t.medium),
+                              decoration: BoxDecoration(
+                                color: scheme.surface,
+                                borderRadius: BorderRadius.circular(
+                                  t.controlRadius,
+                                ),
+                                border: Border.all(
+                                  color:
+                                      _flow.state.expression == feeling['slug']
+                                      ? selection
+                                      : scheme.outline,
+                                  width: t.selectedBorder,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      feeling['name'] as String,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: scheme.onSurface,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                    ),
+                                  ),
+                                  ...[
+                                    SizedBox(width: t.small),
+                                    Opacity(
+                                      opacity:
+                                          _flow.state.expression ==
+                                              feeling['slug']
+                                          ? 1
+                                          : 0,
+                                      child: Icon(
+                                        Icons.check_circle,
+                                        size: t.iconSize,
+                                        color: selection,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                if (selected)
-                  PositionedDirectional(
-                    top: -3,
-                    end: -3,
-                    child: ExcludeSemantics(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: scheme.primary,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: scheme.surface, width: 1),
-                        ),
-                        child: Icon(
-                          Icons.check,
-                          size: 12,
-                          color: scheme.onPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+                  ],
+                );
+              },
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Color _categoryInk(int category) {
-    const inks = [
-      Color(0xFF00C853),
-      Color(0xFFF25C05),
-      Color(0xFF0460D8),
-      Color(0xFFF97066),
-      Color(0xFFF04D6E),
-      Color(0xFF00A0A6),
+      ],
     ];
-    final ink = inks[category];
-    return Theme.of(context).brightness == Brightness.dark
-        ? Color.lerp(ink, Colors.white, .35)!
-        : ink;
-  }
-
-  Widget _art(
-    String collection,
-    Map<String, dynamic> row,
-    int category,
-    Color foreground, {
-    bool selected = false,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    final bundled = (moodRecordingCatalog[collection] as List).any(
-      (item) => item['slug'] == row['slug'],
-    );
-    if (collection == 'expressions') {
-      if (!bundled) {
-        return Text(
-          row['emoji'] as String? ?? '',
-          style: const TextStyle(fontSize: 24),
-        );
-      }
-      return Image.asset(
-        Theme.of(context).brightness == Brightness.dark ||
-                MediaQuery.highContrastOf(context)
-            ? 'assets/png/recording_emoji_${row['slug']}.png'
-            : 'assets/png/recording_${collection}_${row['slug']}.png',
-        width: 22,
-        height: 20,
-        fit: BoxFit.contain,
-        excludeFromSemantics: true,
-      );
-    }
-    final categoryInk = _categoryInk(category);
-    final ink = categoryInk.computeLuminance();
-    final background = scheme.surface.computeLuminance();
-    final ratio = ink > background
-        ? (ink + .05) / (background + .05)
-        : (background + .05) / (ink + .05);
-    final readableAccent =
-        selected || (MediaQuery.highContrastOf(context) && ratio < 3)
-        ? foreground
-        : categoryInk;
-    final fallback = Icon(
-      collection == 'coping' ? Icons.favorite_border : _icons[category],
-      size: 18,
-      color: readableAccent,
-    );
-    return Container(
-      width: 22,
-      height: 20,
-      decoration: BoxDecoration(
-        color: MediaQuery.highContrastOf(context)
-            ? Colors.transparent
-            : _categoryInk(category).withValues(alpha: .16),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child:
-          bundled &&
-              Theme.of(context).brightness == Brightness.light &&
-              !MediaQuery.highContrastOf(context)
-          ? Image.asset(
-              'assets/png/recording_${collection}_${row['slug']}.png',
-              fit: BoxFit.contain,
-              excludeFromSemantics: true,
-              errorBuilder: (_, _, _) => fallback,
-            )
-          : bundled
-          ? Image.asset(
-              'assets/png/recording_mask_${collection}_${row['slug']}.png',
-              fit: BoxFit.contain,
-              color: readableAccent,
-              colorBlendMode: BlendMode.srcIn,
-              excludeFromSemantics: true,
-              errorBuilder: (_, _, _) => fallback,
-            )
-          : fallback,
-    );
   }
 }
 

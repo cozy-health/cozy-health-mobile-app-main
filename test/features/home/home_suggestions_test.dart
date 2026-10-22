@@ -173,7 +173,7 @@ void main() {
     });
     await tester.pumpAndSettle();
     expect(find.text('Based on your focus on stress'), findsOneWidget);
-    await tester.tap(find.text('Try breathing'));
+    await tester.tap(find.text('Take a breathing break'));
     await tester.pumpAndSettle();
     expect(find.text('breathing destination'), findsOneWidget);
   });
@@ -186,7 +186,7 @@ void main() {
       );
     });
     await mount(tester);
-    await tester.tap(find.text('Write about this'));
+    await tester.tap(find.text('Make space for your thoughts'));
     await tester.pumpAndSettle();
     expect(
       find.text(
@@ -207,7 +207,7 @@ void main() {
         await SecurityService.instance.setPin('1234');
       });
       await mount(tester, realJournal: true);
-      await tester.tap(find.text('Write about this'));
+      await tester.tap(find.text('Make space for your thoughts'));
       await tester.pumpAndSettle();
       expect(find.byType(SecurityGate), findsOneWidget);
       expect(find.byType(JournalEditorScreen), findsNothing);
