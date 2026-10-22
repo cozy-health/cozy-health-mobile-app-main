@@ -8,7 +8,7 @@ import '../../../core/storage/token_storage.dart';
 class NativeBillingService extends ChangeNotifier {
   NativeBillingService._();
   static final instance = NativeBillingService._();
-  final _store = InAppPurchase.instance;
+  late final _store = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   StreamSubscription<void>? _accountChanges;
   String? _owner, _token, _accountToken;
@@ -36,13 +36,6 @@ class NativeBillingService extends ChangeNotifier {
         }.contains(defaultTargetPlatform)) {
       return;
     }
-    _subscription ??= _store.purchaseStream.listen(
-      _purchases,
-      onError: (_) {
-        message = 'The store is unavailable. Please retry.';
-        notifyListeners();
-      },
-    );
     final owner = LocalDbService().activeUserId;
     final token = await TokenStorage().getToken();
     if (owner != _owner || token != _token) {
@@ -75,6 +68,14 @@ class NativeBillingService extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    // Start the native connection only after account and billing gates pass.
+    _subscription ??= _store.purchaseStream.listen(
+      _purchases,
+      onError: (_) {
+        message = 'The store is unavailable. Please retry.';
+        notifyListeners();
+      },
+    );
     final platform = defaultTargetPlatform == TargetPlatform.iOS
         ? 'apple'
         : 'google';

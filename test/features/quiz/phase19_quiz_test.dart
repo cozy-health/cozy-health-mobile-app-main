@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cozy_health/core/constants/api_constants.dart';
 import 'package:cozy_health/core/models/quiz_attempt.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/core/services/user_data_merge.dart';
@@ -173,18 +174,17 @@ void main() {
     'invitation routing only accepts the configured HTTPS host and token path',
     () {
       final token = List.filled(64, 'a').join();
+      final host = Uri.parse(ApiConstants.baseUrl).host;
       expect(
         QuizInvitationService.invitationToken(
-          Uri.parse(
-            'https://cozy-health-api-production.up.railway.app/quiz-invite/$token',
-          ),
+          Uri.parse('https://$host/quiz-invite/$token'),
         ),
         token,
       );
       for (final link in [
-        'http://cozy-health-api-production.up.railway.app/quiz-invite/$token',
+        'http://$host/quiz-invite/$token',
         'https://attacker.example/quiz-invite/$token',
-        'https://cozy-health-api-production.up.railway.app/quiz-invite/$token?next=evil',
+        'https://$host/quiz-invite/$token?next=evil',
       ]) {
         expect(QuizInvitationService.invitationToken(Uri.parse(link)), isNull);
       }

@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('API base URL appears exactly once in lib/', () {
     final dir = Directory('lib');
-    final pattern = RegExp('cozy-health-api-production');
+    final pattern = RegExp(r'api\.cozyhealth\.org');
     var count = 0;
 
     for (final entity in dir.listSync(recursive: true)) {

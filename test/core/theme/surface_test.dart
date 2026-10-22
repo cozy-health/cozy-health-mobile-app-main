@@ -193,6 +193,7 @@ void main() {
 
             for (final kind in ['dialog', 'sheet', 'menu', 'time', 'date']) {
               await tester.ensureVisible(find.text('Open $kind'));
+              await tester.pumpAndSettle();
               await tester.tap(find.text('Open $kind'));
               await tester.pumpAndSettle();
               expect(tester.takeException(), isNull);
