@@ -5,6 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late List<Map<String, dynamic>> bundledDocuments;
+  setUpAll(() async {
+    bundledDocuments = await LegalDocuments.load();
+  });
   test(
     'legal online routes use the build environment and reject foreign hosts',
     () {
@@ -45,7 +50,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const MaterialApp(home: LegalHubScreen()));
     await tester.pumpAndSettle();
-    final documents = await LegalDocuments.load();
+    final documents = bundledDocuments;
     final consumer = documents.where((doc) => doc['audience'] == 'consumer');
     expect(consumer.length, 9);
     for (final doc in consumer) {
@@ -79,7 +84,7 @@ void main() {
           title: 'Terms',
           loadDocuments: () async {
             if (++attempts == 1) throw StateError('fixture failure');
-            return LegalDocuments.load();
+            return bundledDocuments;
           },
         ),
       ),
@@ -102,6 +107,7 @@ void main() {
         MaterialApp(
           home: TermsPoliciesScreen(
             title: 'Terms',
+            loadDocuments: () async => bundledDocuments,
             openLink: (url) async {
               openedUrl = url;
               return false;

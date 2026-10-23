@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/services/legal_documents.dart';
 import '../../../../core/theme/app_surface.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_pressable.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../gen/assets.gen.dart';
 
@@ -152,13 +153,9 @@ class _TermsPoliciesScreenState extends State<TermsPoliciesScreen> {
                               border: AppSurface.border(context),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: ListTile(
+                            child: AppPressable(
                               key: ValueKey('legal-document-${doc['id']}'),
-                              contentPadding: const EdgeInsets.all(16),
-                              title: Text(doc['title'] as String),
-                              subtitle: _status(doc),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () => Navigator.of(context).push(
+                              onPressed: () => Navigator.of(context).push(
                                 MaterialPageRoute<void>(
                                   builder: (_) => TermsPoliciesScreen(
                                     title: doc['title'] as String,
@@ -166,6 +163,31 @@ class _TermsPoliciesScreenState extends State<TermsPoliciesScreen> {
                                     loadDocuments: widget.loadDocuments,
                                     openLink: widget.openLink,
                                   ),
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            doc['title'] as String,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleMedium,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          _status(doc),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Icon(Icons.chevron_right),
+                                  ],
                                 ),
                               ),
                             ),
