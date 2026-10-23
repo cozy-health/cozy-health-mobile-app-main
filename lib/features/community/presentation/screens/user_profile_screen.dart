@@ -1,3 +1,6 @@
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/wellness_panel.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:go_router/go_router.dart';
@@ -10,8 +13,9 @@ import '../widgets/post_card.dart';
 import '../widgets/post_actions.dart';
 
 class UserProfileScreen extends StatefulWidget {
-  const UserProfileScreen({super.key, required this.extra});
+  const UserProfileScreen({super.key, required this.extra, this.loadPosts});
   final Map<String, dynamic> extra;
+  final Future<List<Map<String, dynamic>>> Function(String path)? loadPosts;
   @override
   State<UserProfileScreen> createState() => _UserProfileScreenState();
 }
@@ -50,13 +54,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     try {
       final id = widget.extra['authorId'];
       if (id == null) throw StateError('Author unavailable');
-      final rows = await CommunityRepository.pages(
+      final rows = await (widget.loadPosts ?? CommunityRepository.pages)(
         '/community/users/$id/posts',
       );
       if (!mounted || _owner != LocalDbService().activeUserId) return;
-      setState(() => _posts = rows.map(CommunityRepository.post).toList());
+      setState(
+        () => _posts = rows
+            .map(CommunityRepository.post)
+            .where((p) => p['isAnonymous'] != true)
+            .toList(),
+      );
     } catch (_) {
-      if (mounted) {
+      if (mounted && _owner == LocalDbService().activeUserId) {
         setState(
           () => _error = 'This person’s public posts could not be loaded.',
         );
@@ -67,26 +76,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _block() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Block this person?'),
-        content: const Text(
-          'Their posts will be hidden. You can unblock them in settings.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Block'),
-          ),
-        ],
-      ),
+    final confirmed = await confirmWellnessAction(
+      context,
+      title: 'Block this member?',
+      message: 'Their posts will be hidden. You can unblock them in Settings.',
+      action: 'Block member',
+      cancel: 'Keep member unblocked',
     );
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true ||
+        !mounted ||
+        _owner != LocalDbService().activeUserId ||
+        widget.extra['authorId']?.toString() == _owner) {
+      return;
+    }
     setState(() => _blocking = true);
     try {
       await ApiClient().post(
@@ -96,7 +98,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       AppSnackbar.show(context, AppSnackbar.info('User blocked'));
       context.pop();
     } catch (_) {
-      if (mounted) {
+      if (mounted && _owner == LocalDbService().activeUserId) {
         AppSnackbar.show(
           context,
           AppSnackbar.error('Could not block this person. Please retry.'),
@@ -110,21 +112,48 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final username = widget.extra['username'] as String? ?? 'Community member';
+    final t = Theme.of(context), w = context.cozyColors.wellness;
     return Scaffold(
-      appBar: AppBar(title: Text(username)),
+      backgroundColor: w.canvas(
+        t.brightness,
+        MediaQuery.highContrastOf(context),
+      ),
+      appBar: AppBar(title: const Text('Member profile')),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(w.page),
         children: [
-          const Text('Public, non-anonymous posts'),
-          const SizedBox(height: 12),
-          const Text(
-            'Following, private messages and profile links are not available yet. You can report individual posts from their action menu.',
-          ),
-          if (widget.extra['authorId'] != null)
-            OutlinedButton(
-              onPressed: _blocking ? null : _block,
-              child: Text(_blocking ? 'Blocking…' : 'Block user'),
+          WellnessPanel(
+            tinted: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.person_outline_rounded,
+                  size: 48,
+                  color: wellnessAccentInk(
+                    context,
+                    background: w.accentPanel(t.colorScheme),
+                  ),
+                ),
+                SizedBox(height: w.contentGap),
+                Text(username, style: t.textTheme.headlineSmall),
+                SizedBox(height: w.small),
+                const Text('Community member'),
+              ],
             ),
+          ),
+          SizedBox(height: w.sectionSpacing),
+          Text('Public posts', style: t.textTheme.titleLarge),
+          SizedBox(height: w.small),
+          const Text('Only public, non-anonymous posts appear here.'),
+          SizedBox(height: w.gap),
+          if (widget.extra['authorId'] != null &&
+              widget.extra['authorId'].toString() != _owner)
+            WellnessAction(
+              label: _blocking ? 'Blocking…' : 'Block member',
+              onPressed: _blocking ? null : _block,
+            ),
+          SizedBox(height: w.contentGap),
           if (_loading)
             const Center(child: CircularProgressIndicator())
           else if (_error != null) ...[

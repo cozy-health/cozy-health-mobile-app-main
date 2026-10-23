@@ -1,16 +1,11 @@
-import 'package:cozy_health/core/theme/app_surface.dart';
-// TODO: wire to backend when endpoint exists
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/widgets/wellness_panel.dart';
 import '../community_local_state.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../community_theme.dart';
 
 class PostCard extends StatelessWidget {
-  final Map<String, dynamic> post;
-  final VoidCallback onTap;
-  final VoidCallback onAvatarTap;
-  final VoidCallback onLongPress;
-
   const PostCard({
     super.key,
     required this.post,
@@ -18,226 +13,157 @@ class PostCard extends StatelessWidget {
     required this.onAvatarTap,
     required this.onLongPress,
   });
-
+  final Map<String, dynamic> post;
+  final VoidCallback onTap, onAvatarTap, onLongPress;
   @override
   Widget build(BuildContext context) {
-    final isAnonymous = post['isAnonymous'] as bool? ?? false;
-    final username = isAnonymous
-        ? 'Anonymous'
-        : (post['username'] as String? ?? 'user');
-    final timeAgo = post['timeAgo'] as String? ?? 'Just now';
-    final content = post['content'] as String? ?? '';
-    final likes = post['likes'] as int? ?? 0;
-    final comments = post['comments'] as int? ?? 0;
-    final isLiked = post['isLiked'] as bool? ?? false;
-
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.communitySurface,
-          borderRadius: BorderRadius.circular(8),
-          border: AppSurface.border(context),
+    final t = Theme.of(context),
+        c = t.colorScheme,
+        w = context.cozyColors.wellness;
+    final anonymous = post['isAnonymous'] == true,
+        name = post['isAnonymous'] == true
+            ? 'Anonymous'
+            : (post['username'] as String? ?? 'Community member');
+    final raw = post['timeAgo'] as String? ?? '', date = DateTime.tryParse(raw);
+    final time = date == null
+        ? raw
+        : DateFormat.MMMd().add_jm().format(date.toLocal());
+    final author = Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: w.accentPanel(c),
+          ),
+          child: anonymous
+              ? const Icon(Icons.person_outline_rounded)
+              : Text(
+                  name.isEmpty ? '?' : name.characters.first.toUpperCase(),
+                  style: t.textTheme.titleMedium,
+                ),
         ),
+        SizedBox(width: w.contentGap),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: t.textTheme.titleSmall),
+              if (time.isNotEmpty)
+                Text(
+                  time,
+                  style: t.textTheme.bodySmall?.copyWith(
+                    color: c.onSurfaceVariant,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: WellnessPanel(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Author Row
-            GestureDetector(
-              onTap: onAvatarTap,
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: isAnonymous
-                          ? context.communityBorder
-                          : Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.14),
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      isAnonymous
-                          ? '?'
-                          : (username.isEmpty
-                                ? '?'
-                                : username.characters.first.toUpperCase()),
-                      style: context.communityBody1.copyWith(
-                        color: isAnonymous
-                            ? context.communityMuted
-                            : Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: anonymous
+                      ? author
+                      : AppPressable(
+                          onPressed: onAvatarTap,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(minHeight: w.touch),
+                            child: author,
+                          ),
+                        ),
+                ),
+                AppPressable(
+                  label: 'Post options',
+                  onPressed: onLongPress,
+                  child: SizedBox(
+                    width: w.touch,
+                    height: w.touch,
+                    child: const Icon(Icons.more_horiz_rounded),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isAnonymous ? 'Anonymous' : '@$username',
-                          style: context.communityBody1.copyWith(
-                            color: context.communityText,
-                            fontWeight: FontWeight.w500,
-                            fontStyle: isAnonymous
-                                ? FontStyle.italic
-                                : FontStyle.normal,
-                          ),
-                        ),
-                        Text(
-                          timeAgo,
-                          style: context.communityBody2.copyWith(
-                            color: context.communityMuted,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if ((post['topic'] as String? ?? '').isNotEmpty)
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          border: AppSurface.border(context),
-                          color: AppSurface.tint(
-                            context,
-                            Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: .08),
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          post['topic'] as String,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.communityBody2.copyWith(fontSize: 12),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-
+            if ((post['topic'] as String? ?? '').isNotEmpty) ...[
+              SizedBox(height: w.contentGap),
+              Text(
+                post['topic'] as String,
+                style: t.textTheme.labelLarge?.copyWith(
+                  color: wellnessAccentInk(context),
+                ),
+              ),
+            ],
+            SizedBox(height: w.contentGap),
             if (post['imageUrl'] case final String url)
               Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: EdgeInsets.only(bottom: w.contentGap),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(w.tileRadius),
                   child: Image.network(
                     url,
                     height: 240,
                     width: double.infinity,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, error, stack) => const Text(
-                      'Image unavailable. Refresh the feed to try again.',
-                    ),
+                    errorBuilder: (_, e, s) =>
+                        const Text('Image unavailable. Refresh to try again.'),
                   ),
                 ),
               ),
-            // Content
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final style = context.communityBody1.copyWith(height: 1.5);
-                final layout = TextPainter(
-                  text: TextSpan(text: content, style: style),
-                  maxLines: 6,
-                  textDirection: Directionality.of(context),
-                  textScaler: MediaQuery.textScalerOf(context),
-                )..layout(maxWidth: constraints.maxWidth);
-                final truncated = layout.didExceedMaxLines;
-                layout.dispose();
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      content,
-                      style: style,
-                      maxLines: 6,
-                      overflow: TextOverflow.ellipsis,
+            AppPressable(
+              onPressed: onTap,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    post['content'] as String? ?? '',
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.textTheme.bodyLarge?.copyWith(height: 1.5),
+                  ),
+                  SizedBox(height: w.small),
+                  Text(
+                    'Read post',
+                    style: t.textTheme.labelLarge?.copyWith(
+                      color: wellnessAccentInk(context),
                     ),
-                    if (truncated)
-                      TextButton(
-                        onPressed: onTap,
-                        child: const Text('Read more'),
-                      ),
-                  ],
-                );
-              },
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-
-            // Reactions
-            Row(
+            SizedBox(height: w.gap),
+            Wrap(
+              spacing: w.contentGap,
+              runSpacing: w.small,
               children: [
-                InkWell(
-                  onTap: () => CommunityLocalState.instance.toggleLike(post),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 4,
-                    ),
-                    child: _buildReaction(
-                      icon: isLiked ? Icons.favorite : Icons.favorite_border,
-                      count: likes,
-                      color: isLiked
-                          ? AppColors.danger
-                          : context.communityMuted,
-                    ),
-                  ),
+                WellnessAction(
+                  label: '${post['likes'] ?? 0} likes',
+                  selected: post['isLiked'] == true,
+                  icon: post['isLiked'] == true
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  onPressed: () =>
+                      CommunityLocalState.instance.toggleLike(post),
                 ),
-                const SizedBox(width: 24),
-                InkWell(
-                  onTap: onTap,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 4,
-                    ),
-                    child: _buildReaction(
-                      icon: Icons.chat_bubble_outline,
-                      count: comments,
-                      color: context.communityMuted,
-                    ),
-                  ),
+                WellnessAction(
+                  label: '${post['comments'] ?? 0} comments',
+                  icon: Icons.chat_bubble_outline_rounded,
+                  onPressed: onTap,
                 ),
               ],
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildReaction({
-    required IconData icon,
-    required int count,
-    required Color color,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: color),
-        const SizedBox(width: 6),
-        Text(
-          count.toString(),
-          style: TextStyle(
-            fontSize: 14,
-            color: color,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 }

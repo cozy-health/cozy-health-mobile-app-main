@@ -140,6 +140,7 @@ void main() {
         expect(find.text('Preview recording'), findsOneWidget);
         await capture('preview');
         expect(tester.takeException(), isNull);
+        await tester.ensureVisible(find.byTooltip('Discard recording'));
         await tester.tap(find.byTooltip('Discard recording'));
         await tester.pumpAndSettle();
       },

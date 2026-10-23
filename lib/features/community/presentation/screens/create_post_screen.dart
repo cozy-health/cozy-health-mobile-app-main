@@ -1,3 +1,6 @@
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import '../../../../core/theme/cozy_colors.dart';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
@@ -82,6 +85,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   void _handlePost() async {
     if (!_canPost) return;
+    final owner = LocalDbService().activeUserId;
     if (!DemoMode.instance.enabled && _visibility == PostVisibility.followers) {
       AppSnackbar.show(
         context,
@@ -108,26 +112,30 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             '${document['content'] ?? ''}'.trim().isEmpty) {
           throw StateError('Guidelines are not available');
         }
-        if (!mounted) return;
-        final yes = await showDialog<bool>(
+        if (!mounted || owner != LocalDbService().activeUserId) return;
+        final yes = await showWellnessSheet<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            title: Text('${document['title']}'),
-            scrollable: true,
-            content: Text('${document['content']}'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
+          builder: (context) => WellnessSheet(
+            title: '${document['title']}',
+            children: [
+              Text('${document['content']}'),
+              SizedBox(height: context.cozyColors.wellness.gap),
+              WellnessAction(
+                label: 'Agree and post',
+                filled: true,
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Agree and post'),
+              ),
+              SizedBox(height: context.cozyColors.wellness.small),
+              WellnessAction(
+                label: 'Cancel',
+                onPressed: () => Navigator.pop(context, false),
               ),
             ],
           ),
         );
-        if (yes != true) return;
+        if (yes != true || !mounted || owner != LocalDbService().activeUserId) {
+          return;
+        }
         final payload = <String, dynamic>{
           'body': _textController.text.trim(),
           'is_anonymous': _visibility == PostVisibility.anonymous,
@@ -149,6 +157,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           '/community/posts',
           data: _image == null ? payload : FormData.fromMap(payload),
         );
+        if (!mounted || owner != LocalDbService().activeUserId) return;
         CommunityLocalState.instance.ingestPost(
           CommunityRepository.post(saved.data['data'] as Map),
         );

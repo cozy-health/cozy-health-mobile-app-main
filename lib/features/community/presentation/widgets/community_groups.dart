@@ -1,9 +1,9 @@
-import 'package:cozy_health/core/theme/app_surface.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/wellness_panel.dart';
 import 'dart:async';
 // TODO: wire to backend when endpoint exists
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/app_dropdown.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/chip.dart' as design;
 import '../community_local_state.dart';
 import '../../data/community_repository.dart';
@@ -31,6 +31,8 @@ class _CommunityGroupsState extends State<CommunityGroups> {
       if (mounted) {
         setState(() {
           _liveGroups = [];
+          _busy.clear();
+          _loading = false;
           _error = 'Account changed. Reopen groups.';
         });
       }
@@ -59,7 +61,7 @@ class _CommunityGroupsState extends State<CommunityGroups> {
               (row) => CommunityGroup(
                 id: row['id'].toString(),
                 name: row['name'] as String,
-                topic: '',
+                topic: row['topic'] as String? ?? '',
                 description: row['description'] as String? ?? '',
                 members: (row['member_count'] as num?)?.toInt() ?? 0,
                 joined: row['joined'] == true,
@@ -68,11 +70,13 @@ class _CommunityGroupsState extends State<CommunityGroups> {
             .toList(),
       );
     } catch (_) {
-      if (mounted) {
+      if (mounted && owner == LocalDbService().activeUserId) {
         setState(() => _error = 'Groups could not be loaded. Please retry.');
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && owner == LocalDbService().activeUserId) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -93,11 +97,13 @@ class _CommunityGroupsState extends State<CommunityGroups> {
       if (!mounted || owner != LocalDbService().activeUserId) return;
       await _load();
     } catch (_) {
-      if (mounted) {
+      if (mounted && owner == LocalDbService().activeUserId) {
         setState(() => _error = 'Membership could not be saved. Please retry.');
       }
     } finally {
-      _busy.remove(group.id);
+      if (mounted && owner == LocalDbService().activeUserId) {
+        setState(() => _busy.remove(group.id));
+      }
     }
   }
 
@@ -154,7 +160,7 @@ class _CommunityGroupsState extends State<CommunityGroups> {
               padding: const EdgeInsets.only(bottom: 10),
               child: CommunityGroupCard(
                 group: group,
-                onJoin: () => _toggle(group),
+                onJoin: _busy.contains(group.id) ? null : () => _toggle(group),
               ),
             ),
           const SizedBox(height: 12),
@@ -166,7 +172,7 @@ class _CommunityGroupsState extends State<CommunityGroups> {
               padding: const EdgeInsets.only(bottom: 8),
               child: CommunityGroupRow(
                 group: group,
-                onLeave: () => _toggle(group),
+                onLeave: _busy.contains(group.id) ? null : () => _toggle(group),
               ),
             ),
         ],
@@ -182,64 +188,40 @@ class CommunityGroupCard extends StatelessWidget {
     required this.onJoin,
   });
   final CommunityGroup group;
-  final VoidCallback onJoin;
+  final VoidCallback? onJoin;
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surface,
-      border: Border.all(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? AppColors.borderDefaultDark
-            : AppColors.borderDefault,
+  Widget build(BuildContext context) {
+    final t = Theme.of(context), w = context.cozyColors.wellness;
+    return WellnessPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.groups_outlined,
+            color: wellnessAccentInk(context),
+            size: 32,
+          ),
+          SizedBox(height: w.contentGap),
+          Text(group.name, style: t.textTheme.titleLarge),
+          SizedBox(height: w.tight),
+          Text('${group.members} members', style: t.textTheme.bodySmall),
+          SizedBox(height: w.contentGap),
+          Text(group.description),
+          SizedBox(height: w.gap),
+          WellnessAction(
+            label: onJoin == null
+                ? 'Saving membership…'
+                : group.joined
+                ? 'Joined · Leave group'
+                : 'Join group',
+            icon: group.joined ? Icons.check_rounded : Icons.add_rounded,
+            filled: !group.joined,
+            onPressed: onJoin,
+          ),
+        ],
       ),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const CircleAvatar(
-              radius: 15,
-              child: Icon(Icons.favorite, size: 16),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    group.name,
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  Text(
-                    '${group.members} members',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(group.description),
-        const SizedBox(height: 10),
-        SizedBox(
-          width: double.infinity,
-          child: group.joined
-              ? OutlinedButton(
-                  onPressed: onJoin,
-                  child: const Text('Joined · Leave'),
-                )
-              : FilledButton(
-                  onPressed: onJoin,
-                  child: const Text('Join group'),
-                ),
-        ),
-      ],
-    ),
-  );
+    );
+  }
 }
 
 class CommunityGroupRow extends StatelessWidget {
@@ -249,24 +231,10 @@ class CommunityGroupRow extends StatelessWidget {
     required this.onLeave,
   });
   final CommunityGroup group;
-  final VoidCallback onLeave;
+  final VoidCallback? onLeave;
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(border: AppSurface.border(context)),
-    child: ListTile(
-      leading: const CircleAvatar(
-        radius: 15,
-        child: Icon(Icons.favorite, size: 16),
-      ),
-      title: Text(group.name),
-      subtitle: Text('${group.members + 1} members'),
-      trailing: IconButton(
-        tooltip: 'Leave group',
-        onPressed: onLeave,
-        icon: const Icon(Icons.logout),
-      ),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      CommunityGroupCard(group: group, onJoin: onLeave);
 }
 
 class CreateCommunityGroupScreen extends StatefulWidget {

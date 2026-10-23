@@ -1,31 +1,24 @@
-import 'package:cozy_health/core/theme/app_surface.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import '../community_theme.dart';
-import '../../../../core/widgets/app_button.dart';
 import '../../../../core/data/demo_mode.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/wellness_panel.dart';
 
 class ReportSheet extends StatefulWidget {
+  const ReportSheet({super.key, required this.onSubmit, this.onReport});
   final VoidCallback onSubmit;
   final Future<void> Function(String reason, String details)? onReport;
-
-  const ReportSheet({super.key, required this.onSubmit, this.onReport});
-
   static void show(
     BuildContext context, {
     required VoidCallback onSubmit,
     Future<void> Function(String, String)? onReport,
   }) {
-    showModalBottomSheet(
+    showWellnessSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: ReportSheet(onSubmit: onSubmit, onReport: onReport),
-      ),
+      dismissible: false,
+      builder: (_) => ReportSheet(onSubmit: onSubmit, onReport: onReport),
     );
   }
 
@@ -34,11 +27,44 @@ class ReportSheet extends StatefulWidget {
 }
 
 class _ReportSheetState extends State<ReportSheet> {
-  String? _selectedReason;
-  bool _sending = false;
-  String? _error;
+  final _notesController = TextEditingController();
+  final _owner = LocalDbService().activeUserId;
+  StreamSubscription<void>? _account;
+  String? _selectedReason, _error;
+  bool _sending = false, _validScope = true;
+  static const _reasons = [
+    'Harassment or hate speech',
+    'Encourages harm',
+    'Spam or scam',
+    'Shares private info',
+    'Something else',
+  ];
+  bool get _current => _validScope && _owner == LocalDbService().activeUserId;
+  @override
+  void initState() {
+    super.initState();
+    _account = LocalDbService().accountChanges.listen((_) {
+      if (mounted && !_current) {
+        _notesController.clear();
+        setState(() {
+          _validScope = false;
+          _sending = false;
+          _selectedReason = null;
+          _error = 'The account changed. Close this report and reopen it.';
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _account?.cancel();
+    _notesController.dispose();
+    super.dispose();
+  }
+
   Future<void> _send() async {
-    if (_sending || _selectedReason == null) return;
+    if (_sending || _selectedReason == null || !_current) return;
     setState(() {
       _sending = true;
       _error = null;
@@ -49,11 +75,11 @@ class _ReportSheetState extends State<ReportSheet> {
       } else if (!DemoMode.instance.enabled) {
         throw UnsupportedError('Reporting is not available here yet.');
       }
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       Navigator.pop(context);
       widget.onSubmit();
     } catch (_) {
-      if (mounted) {
+      if (mounted && _current) {
         setState(() => _error = 'Could not submit this report. Please retry.');
       }
     } finally {
@@ -61,115 +87,56 @@ class _ReportSheetState extends State<ReportSheet> {
     }
   }
 
-  final TextEditingController _notesController = TextEditingController();
-
-  final List<String> _reasons = [
-    'Harassment or hate speech',
-    'Encourages harm',
-    'Spam or scam',
-    'Shares private info',
-    'Something else',
-  ];
-
-  @override
-  void dispose() {
-    _notesController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Container(
-        decoration: BoxDecoration(
-          border: AppSurface.border(context),
-          color: Theme.of(context).bottomSheetTheme.backgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+    final w = context.cozyColors.wellness;
+    return WellnessSheet(
+      title: 'Report a post',
+      busy: _sending,
+      children: [
+        const Text(
+          'Choose a reason. Your report is sent privately to moderators.',
         ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('What\'s wrong?', style: context.communityHeading3),
-            const SizedBox(height: 16),
-            ..._reasons.map((reason) => _buildRadio(reason)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _notesController,
-              decoration: InputDecoration(
-                hintText: 'Additional notes (optional)',
-                hintStyle: context.communityBody1.copyWith(
-                  color: context.communityMuted,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: context.communityBorder.withValues(alpha: 0.7),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: context.communityBorder.withValues(alpha: 0.7),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                filled: true,
-                fillColor: context.communityBackground,
-              ),
-              maxLines: 3,
-              style: context.communityBody1,
-            ),
-            const SizedBox(height: 24),
-            AppButton(
-              text: 'Submit report',
-              isLoading: _sending,
-              onPressed: _selectedReason == null || _sending ? null : _send,
-            ),
-            if (_error != null) Text(_error!),
-            const SizedBox(height: 12),
-            AppButton(
-              text: 'Cancel',
-              isOutlined: true,
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
+        SizedBox(height: w.gap),
+        for (final reason in _reasons)
+          WellnessSheetOption(
+            key: ValueKey('report-reason-${_reasons.indexOf(reason)}'),
+            label: reason,
+            icon: Icons.radio_button_unchecked,
+            selected: _selectedReason == reason,
+            onPressed: _sending || !_current
+                ? null
+                : () => setState(() => _selectedReason = reason),
+          ),
+        SizedBox(height: w.contentGap),
+        TextField(
+          key: const ValueKey('report-details'),
+          controller: _notesController,
+          enabled: !_sending && _current,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            labelText: 'Additional details (optional)',
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildRadio(String reason) {
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedReason = reason;
-        });
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Icon(
-              _selectedReason == reason
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_unchecked,
-              color: _selectedReason == reason
-                  ? Theme.of(context).colorScheme.primary
-                  : context.communityMuted,
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Text(reason, style: context.communityBody1)),
-          ],
+        SizedBox(height: w.gap),
+        if (_error != null) ...[
+          Semantics(liveRegion: true, child: Text(_error!)),
+          SizedBox(height: w.small),
+        ],
+        WellnessAction(
+          key: const ValueKey('report-submit'),
+          label: _sending ? 'Submitting report…' : 'Submit report',
+          filled: true,
+          onPressed: _selectedReason == null || _sending || !_current
+              ? null
+              : _send,
         ),
-      ),
+        SizedBox(height: w.small),
+        WellnessAction(
+          label: 'Cancel',
+          onPressed: _sending ? null : () => Navigator.pop(context),
+        ),
+      ],
     );
   }
 }

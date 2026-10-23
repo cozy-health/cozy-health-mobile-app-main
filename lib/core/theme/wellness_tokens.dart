@@ -27,6 +27,9 @@ class WellnessTokens {
   double get floatingClearance =>
       floatingInset + floatingSize * 2 + floatingGap + small;
   double get breakpoint => 280;
+  // Original article lettering/clock hands require a light illustration plate.
+  // Artwork colours stay unchanged across user themes.
+  Color get artworkSurface => Colors.white;
   Duration get transition => const Duration(milliseconds: 180);
   Color canvas(Brightness brightness, bool contrast) => contrast
       ? brightness == Brightness.dark

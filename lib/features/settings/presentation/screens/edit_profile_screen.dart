@@ -1,3 +1,4 @@
+import '../../../../core/widgets/wellness_sheet.dart';
 import 'dart:async';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../data/avatar_repository.dart';
@@ -85,11 +86,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     FocusManager.instance.primaryFocus?.unfocus();
     final scope = LocalDbService().boxName(LocalDbService.userSettingsBoxName);
     try {
-      final createAccount = await showModalBottomSheet<bool>(
+      final createAccount = await showWellnessSheet<bool>(
         context: context,
-        isScrollControlled: true,
-        isDismissible: false,
-        enableDrag: false,
+        dismissible: false,
         builder: (sheetContext) => AvatarPickerSheet(
           repository: widget.avatarRepository,
           picker: widget.photoPicker,

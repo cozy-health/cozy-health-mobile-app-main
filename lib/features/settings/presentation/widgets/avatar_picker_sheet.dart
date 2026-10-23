@@ -1,3 +1,5 @@
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/wellness_panel.dart';
 import 'dart:async';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../../../core/models/user_profile.dart';
@@ -214,26 +216,12 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
   }
 
   Future<void> _remove() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        _confirmationRoute = ModalRoute.of(context);
-        return AlertDialog(
-          scrollable: true,
-          title: const Text('Remove profile picture?'),
-          content: const Text('Your profile will use the default picture.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Remove'),
-            ),
-          ],
-        );
-      },
+    final confirmed = await confirmWellnessAction(
+      context,
+      title: 'Remove profile picture?',
+      message: 'Your profile will use the default picture.',
+      action: 'Remove',
+      onRoute: (route) => _confirmationRoute = route,
     );
     _confirmationRoute = null;
     if (confirmed == true && _active) await _save(remove: true);
@@ -242,216 +230,174 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final preview = _preset != null || _photo != null;
-    return PopScope(
-      canPop: !_busy,
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(context).bottom,
+    return WellnessSheet(
+      title: 'Profile photo',
+      busy: _busy,
+      controller: _scrollController,
+      children: [
+        if (_checkingSession) const Text('Checking your account…'),
+        if (_sessionFailed) ...[
+          const Text(
+            'Could not check your account. You can browse avatars and retry before saving.',
           ),
-          child: SizedBox(
-            height: MediaQuery.sizeOf(context).height * .85,
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Change profile picture',
-                          style: Theme.of(context).textTheme.titleLarge,
+          WellnessAction(
+            onPressed: _checkSession,
+            label: 'Retry account check',
+          ),
+        ],
+        if (_guest == true) ...[
+          const Text(
+            'Create an account to save a profile picture. You can browse our built-in avatars here.',
+          ),
+          WellnessAction(
+            onPressed: widget.onCreateAccount,
+            label: 'Create account',
+          ),
+        ],
+        if (_busy)
+          const LinearProgressIndicator(
+            semanticsLabel: 'Updating profile picture',
+          ),
+        if (preview) ...[
+          const SizedBox(height: 20),
+          Center(
+            child: _photo != null
+                ? ClipOval(
+                    child: Image.memory(
+                      _photo!,
+                      width: 144,
+                      height: 144,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, error, stack) =>
+                          const Icon(Icons.broken_image_outlined, size: 64),
+                    ),
+                  )
+                : ProfileAvatar(
+                    url: 'asset:$_preset',
+                    size: 144,
+                    label: 'Selected avatar',
+                  ),
+          ),
+          const SizedBox(height: 20),
+          WellnessAction(
+            filled: true,
+            onPressed: _busy || !_canSave ? null : () => _save(),
+            label: 'Save picture',
+          ),
+          WellnessAction(
+            onPressed: _busy
+                ? null
+                : () => _changeView(() {
+                    _preset = null;
+                    _photo = null;
+                    _error = null;
+                  }),
+            label: 'Cancel selection',
+          ),
+        ],
+        if (!preview && !_grid) ...[
+          WellnessSheetOption(
+            icon: Icons.face_outlined,
+            label: 'Choose a built-in avatar',
+            subtitle: '24 Open Peeps avatars · available offline',
+            onPressed: _busy ? null : () => _changeView(() => _grid = true),
+          ),
+          WellnessSheetOption(
+            icon: Icons.photo_library_outlined,
+            label: 'Choose from gallery',
+            onPressed: _busy ? null : () => _pick(false),
+          ),
+          WellnessSheetOption(
+            icon: Icons.photo_camera_outlined,
+            label: 'Take a photo',
+            onPressed: _busy ? null : () => _pick(true),
+          ),
+          if (_profile?.avatarUrl?.isNotEmpty == true && _canSave)
+            WellnessSheetOption(
+              icon: Icons.delete_outline,
+              destructive: true,
+              label: 'Remove photo',
+              onPressed: _busy ? null : _remove,
+            ),
+          if (_recovered != null)
+            WellnessAction(
+              onPressed: _busy
+                  ? null
+                  : () => _pick(false, recovered: _recovered),
+              label: 'Recover selected photo',
+            ),
+        ],
+        if (_grid) ...[
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) => Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: AvatarRepository.presetIds.asMap().entries.map((entry) {
+                final selected =
+                    _preset == entry.value ||
+                    (_preset == null &&
+                        _profile?.avatarUrl == 'asset:${entry.value}');
+                final size = ((constraints.maxWidth - 24) / 3).clamp(
+                  48.0,
+                  100.0,
+                );
+                return Semantics(
+                  button: true,
+                  selected: selected,
+                  label: 'Open Peeps avatar ${entry.key + 1}',
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(size),
+                    onTap: _busy
+                        ? null
+                        : () => _changeView(() {
+                            _preset = entry.value;
+                            _grid = false;
+                            _photo = null;
+                            _error = null;
+                          }),
+                    child: Container(
+                      width: size,
+                      height: size,
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: selected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outline,
+                          width: selected ? 3 : 1,
                         ),
                       ),
-                      IconButton(
-                        tooltip: 'Close',
-                        onPressed: _busy ? null : () => Navigator.pop(context),
-                        icon: const Icon(Icons.close),
+                      child: ExcludeSemantics(
+                        child: ProfileAvatar(
+                          url: 'asset:${entry.value}',
+                          size: size - 8,
+                        ),
                       ),
-                    ],
+                    ),
                   ),
-                  if (_checkingSession) const Text('Checking your account…'),
-                  if (_sessionFailed) ...[
-                    const Text(
-                      'Could not check your account. You can browse avatars and retry before saving.',
-                    ),
-                    TextButton(
-                      onPressed: _checkSession,
-                      child: const Text('Retry account check'),
-                    ),
-                  ],
-                  if (_guest == true) ...[
-                    const Text(
-                      'Create an account to save a profile picture. You can browse our built-in avatars here.',
-                    ),
-                    TextButton(
-                      onPressed: widget.onCreateAccount,
-                      child: const Text('Create account'),
-                    ),
-                  ],
-                  if (_busy)
-                    const LinearProgressIndicator(
-                      semanticsLabel: 'Updating profile picture',
-                    ),
-                  if (preview) ...[
-                    const SizedBox(height: 20),
-                    Center(
-                      child: _photo != null
-                          ? ClipOval(
-                              child: Image.memory(
-                                _photo!,
-                                width: 144,
-                                height: 144,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, error, stack) => const Icon(
-                                  Icons.broken_image_outlined,
-                                  size: 64,
-                                ),
-                              ),
-                            )
-                          : ProfileAvatar(
-                              url: 'asset:$_preset',
-                              size: 144,
-                              label: 'Selected avatar',
-                            ),
-                    ),
-                    const SizedBox(height: 20),
-                    FilledButton(
-                      onPressed: _busy || !_canSave ? null : () => _save(),
-                      child: const Text('Save picture'),
-                    ),
-                    TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () => _changeView(() {
-                              _preset = null;
-                              _photo = null;
-                              _error = null;
-                            }),
-                      child: const Text('Cancel selection'),
-                    ),
-                  ],
-                  if (!preview && !_grid) ...[
-                    ListTile(
-                      leading: const Icon(Icons.face_outlined),
-                      title: const Text('Choose a built-in avatar'),
-                      subtitle: const Text(
-                        '24 Open Peeps avatars · available offline',
-                      ),
-                      onTap: _busy
-                          ? null
-                          : () => _changeView(() => _grid = true),
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.photo_library_outlined),
-                      title: const Text('Choose from gallery'),
-                      onTap: _busy ? null : () => _pick(false),
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.photo_camera_outlined),
-                      title: const Text('Take a photo'),
-                      onTap: _busy ? null : () => _pick(true),
-                    ),
-                    if (_profile?.avatarUrl?.isNotEmpty == true && _canSave)
-                      ListTile(
-                        leading: const Icon(Icons.delete_outline),
-                        title: const Text('Remove photo'),
-                        onTap: _busy ? null : _remove,
-                      ),
-                    if (_recovered != null)
-                      TextButton(
-                        onPressed: _busy
-                            ? null
-                            : () => _pick(false, recovered: _recovered),
-                        child: const Text('Recover selected photo'),
-                      ),
-                  ],
-                  if (_grid) ...[
-                    const SizedBox(height: 12),
-                    LayoutBuilder(
-                      builder: (context, constraints) => Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: AvatarRepository.presetIds
-                            .asMap()
-                            .entries
-                            .map((entry) {
-                              final selected =
-                                  _preset == entry.value ||
-                                  (_preset == null &&
-                                      _profile?.avatarUrl ==
-                                          'asset:${entry.value}');
-                              final size = ((constraints.maxWidth - 24) / 3)
-                                  .clamp(48.0, 100.0);
-                              return Semantics(
-                                button: true,
-                                selected: selected,
-                                label: 'Open Peeps avatar ${entry.key + 1}',
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(size),
-                                  onTap: _busy
-                                      ? null
-                                      : () => _changeView(() {
-                                          _preset = entry.value;
-                                          _grid = false;
-                                          _photo = null;
-                                          _error = null;
-                                        }),
-                                  child: Container(
-                                    width: size,
-                                    height: size,
-                                    padding: const EdgeInsets.all(3),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: selected
-                                            ? Theme.of(
-                                                context,
-                                              ).colorScheme.primary
-                                            : Theme.of(
-                                                context,
-                                              ).colorScheme.outline,
-                                        width: selected ? 3 : 1,
-                                      ),
-                                    ),
-                                    child: ExcludeSemantics(
-                                      child: ProfileAvatar(
-                                        url: 'asset:${entry.value}',
-                                        size: size - 8,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            })
-                            .toList(),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () => _changeView(() {
-                              _grid = false;
-                              _preset = null;
-                            }),
-                      child: const Text('Back to photo options'),
-                    ),
-                  ],
-                  if (_error != null)
-                    Semantics(liveRegion: true, child: Text(_error!)),
-                  if (_permissionError)
-                    TextButton(
-                      onPressed: () => openAppSettings(),
-                      child: const Text('Open device settings'),
-                    ),
-                ],
-              ),
+                );
+              }).toList(),
             ),
           ),
-        ),
-      ),
+          WellnessAction(
+            onPressed: _busy
+                ? null
+                : () => _changeView(() {
+                    _grid = false;
+                    _preset = null;
+                  }),
+            label: 'Back to photo options',
+          ),
+        ],
+        if (_error != null) Semantics(liveRegion: true, child: Text(_error!)),
+        if (_permissionError)
+          WellnessAction(
+            onPressed: () => openAppSettings(),
+            label: 'Open device settings',
+          ),
+      ],
     );
   }
 }

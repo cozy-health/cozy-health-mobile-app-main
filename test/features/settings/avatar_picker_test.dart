@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/wellness_panel.dart';
 import 'package:cozy_health/core/models/user_profile.dart';
 import 'package:cozy_health/core/theme/app_theme.dart';
 import 'package:cozy_health/core/widgets/profile_avatar.dart';
@@ -171,8 +172,10 @@ void main() {
     await tap(tester, find.bySemanticsLabel('Open Peeps avatar 4'));
     expect(
       tester
-          .widget<FilledButton>(
-            find.widgetWithText(FilledButton, 'Save picture'),
+          .widget<WellnessAction>(
+            find.byWidgetPredicate(
+              (w) => w is WellnessAction && w.label == 'Save picture',
+            ),
           )
           .onPressed,
       isNull,

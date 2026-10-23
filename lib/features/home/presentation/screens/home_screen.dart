@@ -1,3 +1,5 @@
+import '../../../settings/data/wellness_progress.dart';
+import '../../../settings/presentation/screens/achievements_screen.dart';
 import '../../../../core/widgets/profile_avatar.dart';
 import '../../../../core/widgets/mood_artwork.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
@@ -157,21 +159,12 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  int _localStreak(List<MoodEntry> entries) {
-    final dates = entries.map((entry) {
-      final day = entry.createdAt.toLocal();
-      return DateTime(day.year, day.month, day.day);
-    }).toSet();
-    final now = DateTime.now();
-    var day = DateTime(now.year, now.month, now.day);
-    if (!dates.contains(day)) day = DateTime(day.year, day.month, day.day - 1);
-    var streak = 0;
-    while (dates.contains(day)) {
-      streak++;
-      day = DateTime(day.year, day.month, day.day - 1);
-    }
-    return streak;
-  }
+  int _localStreak(List<MoodEntry> entries) => WellnessProgress(
+    moods: entries,
+    journals: const [],
+    now: DateTime.now(),
+    calendarTime: LocalDbService().accountTime,
+  ).current;
 
   @override
   Widget build(BuildContext context) {
@@ -741,99 +734,8 @@ class _HomeErrorView extends StatelessWidget {
 class StreakDetailScreen extends StatelessWidget {
   const StreakDetailScreen({super.key, required this.streak});
   final int streak;
-
-  String _milestone(BuildContext context, int goal) {
-    return streak >= goal ? 'Achieved!' : '${goal - streak} to go';
-  }
-
   @override
-  Widget build(BuildContext context) {
-    return _DetailScaffold(
-      title: 'Streak',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Column(
-              children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySoft,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text('🔥', style: TextStyle(fontSize: 44)),
-                  ),
-                ),
-                SizedBox(height: 18),
-                Text(
-                  '$streak',
-                  style: AppTextStyles.heading1.copyWith(
-                    fontSize: 48,
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  'day streak',
-                  style: AppTextStyles.heading2.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                SizedBox(height: 18),
-                Text(
-                  "You've logged your\nmood $streak days in a row.",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.body1.copyWith(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 32),
-          _WarmCard(
-            color: Theme.of(context).colorScheme.surfaceContainer,
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: List.generate(
-                30,
-                (index) => Icon(
-                  index < (streak) ? Icons.circle : Icons.circle_outlined,
-                  size: 16,
-                  color: index < (streak)
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.outline,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: 28),
-          Text(
-            'Milestones',
-            style: AppTextStyles.heading2.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          SizedBox(height: 12),
-          _MilestoneCard(text: '7-day streak', value: _milestone(context, 7)),
-          SizedBox(height: 8),
-          _MilestoneCard(text: '30-day streak', value: _milestone(context, 30)),
-          SizedBox(height: 8),
-          _MilestoneCard(
-            text: '100-day streak',
-            value: _milestone(context, 100),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const AchievementsScreen();
 }
 
 class InsightsScreen extends StatelessWidget {
@@ -989,44 +891,6 @@ class _DetailScaffold extends StatelessWidget {
   }
 }
 
-class _MilestoneCard extends StatelessWidget {
-  const _MilestoneCard({required this.text, required this.value});
-
-  final String text;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WarmCard(
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Text('🏆', style: TextStyle(fontSize: 22)),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: AppTextStyles.body1.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: AppTextStyles.body2.copyWith(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _BreakdownCard extends StatelessWidget {
   const _BreakdownCard({required this.title, required this.value, this.mood});
 
@@ -1104,15 +968,10 @@ class _SimpleAreaChart extends StatelessWidget {
 }
 
 class _WarmCard extends StatelessWidget {
-  const _WarmCard({
-    required this.child,
-    this.color,
-    this.padding = const EdgeInsets.all(20),
-  });
+  const _WarmCard({required this.child, this.color});
 
   final Widget child;
   final Color? color;
-  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
@@ -1126,7 +985,7 @@ class _WarmCard extends StatelessWidget {
     return Container(
       width: double.infinity,
 
-      padding: padding,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: effectiveColor,
         borderRadius: BorderRadius.circular(16),

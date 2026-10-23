@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/settings_service.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/widgets/wellness_panel.dart';
 
 class ProviderResourcesScreen extends StatefulWidget {
   const ProviderResourcesScreen({
@@ -46,6 +49,7 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
   }
 
   Future<void> _load({bool more = false}) async {
+    final owner = LocalDbService().activeUserId;
     setState(() {
       _loading = true;
       _error = null;
@@ -53,7 +57,7 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
     try {
       final page = more ? _page + 1 : 1;
       final response = await _service.getProviderResources(page: page);
-      if (!mounted) return;
+      if (!mounted || owner != LocalDbService().activeUserId) return;
       setState(() {
         if (!more) _items.clear();
         _items.addAll(
@@ -65,16 +69,19 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
         _lastPage = (response['last_page'] as num?)?.toInt() ?? page;
       });
     } catch (_) {
-      if (mounted) {
+      if (mounted && owner == LocalDbService().activeUserId) {
         setState(() => _error = 'Unable to load provider resources.');
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && owner == LocalDbService().activeUserId) {
+        setState(() => _loading = false);
+      }
     }
   }
 
   Future<void> _update(Map<String, dynamic> item, String status) async {
     if (_offline) return;
+    final owner = LocalDbService().activeUserId;
     final id = item['id'].toString();
     setState(() {
       _updating = id;
@@ -85,7 +92,7 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
         assignmentId: id,
         status: status,
       );
-      if (!mounted) return;
+      if (!mounted || owner != LocalDbService().activeUserId) return;
       final updated = response['assignment'] as Map<String, dynamic>;
       setState(() {
         final index = _items.indexWhere(
@@ -94,14 +101,16 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
         if (index >= 0) _items[index] = updated;
       });
     } catch (_) {
-      if (mounted) {
+      if (mounted && owner == LocalDbService().activeUserId) {
         setState(
           () => _error =
               'Unable to update this resource. Its status has not changed.',
         );
       }
     } finally {
-      if (mounted) setState(() => _updating = null);
+      if (mounted && owner == LocalDbService().activeUserId) {
+        setState(() => _updating = null);
+      }
     }
   }
 
@@ -123,9 +132,11 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
     final provider = item['provider'] as Map? ?? {};
     final status = item['status']?.toString() ?? 'assigned';
     final url = resource['url']?.toString();
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    final w = context.cozyColors.wellness;
+    return Padding(
+      padding: EdgeInsets.only(bottom: w.gap),
+      child: WellnessPanel(
+        tinted: status == 'assigned',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -156,25 +167,26 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
                   status,
             ),
             if (url != null && url.isNotEmpty)
-              TextButton(
+              WellnessAction(
+                label: 'Open resource',
                 onPressed: _offline ? null : () => _open(url),
-                child: const Text('Open resource'),
               ),
             if (status == 'assigned')
               Wrap(
                 spacing: 8,
                 children: [
-                  FilledButton(
+                  WellnessAction(
+                    label: 'Mark complete',
+                    filled: true,
                     onPressed: _offline || _updating != null
                         ? null
                         : () => _update(item, 'completed'),
-                    child: const Text('Mark complete'),
                   ),
-                  TextButton(
-                    onPressed: _updating != null
+                  WellnessAction(
+                    label: 'Decline',
+                    onPressed: _offline || _updating != null
                         ? null
                         : () => _update(item, 'declined'),
-                    child: const Text('Decline'),
                   ),
                 ],
               ),

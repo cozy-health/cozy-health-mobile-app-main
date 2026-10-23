@@ -1,33 +1,27 @@
-import 'package:cozy_health/core/theme/app_surface.dart';
-import '../../data/community_repository.dart';
-// TODO: wire to backend when endpoint exists
-import '../../../../core/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/widgets/app_scaffold_padding.dart';
-import '../community_theme.dart';
-import '../widgets/post_card.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import '../../data/community_repository.dart';
 import '../community_local_state.dart';
 import '../widgets/community_groups.dart';
 import '../widgets/post_actions.dart';
+import '../widgets/post_card.dart';
 
 class CommunityHubScreen extends StatefulWidget {
   const CommunityHubScreen({super.key, this.posts});
-
   final List<Map<String, dynamic>>? posts;
-
   @override
   State<CommunityHubScreen> createState() => _CommunityHubScreenState();
 }
 
-class _CommunityHubScreenState extends State<CommunityHubScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  String _selectedFilter = 'All';
-  bool _showGroups = false;
-
-  final List<String> _filters = [
+class _CommunityHubScreenState extends State<CommunityHubScreen> {
+  late final CommunityRepository _repository;
+  String _filter = 'All';
+  bool _groups = false;
+  static const _topics = [
     'All',
     'Anxiety',
     'Depression',
@@ -40,339 +34,210 @@ class _CommunityHubScreenState extends State<CommunityHubScreen>
     'Work & Life',
     'Grief & Loss',
   ];
-
-  late final CommunityRepository _repository;
-  List<Map<String, dynamic>> get _posts => widget.posts ?? _repository.posts;
-
   @override
   void initState() {
     super.initState();
     _repository = CommunityRepository(
       usePlaceholderData: widget.posts != null ? true : null,
-    );
-    _repository.addListener(_refreshLocal);
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _controller.forward();
+    )..addListener(_refresh);
+  }
+
+  void _refresh() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _repository.removeListener(_refresh);
     _repository.dispose();
-    _repository.removeListener(_refreshLocal);
     super.dispose();
   }
 
-  Animation<double> _createAnimation(double begin, double end) {
-    return CurvedAnimation(
-      parent: _controller,
-      curve: Interval(begin, end, curve: Curves.easeOutCubic),
-    );
-  }
-
-  void _refreshLocal() {
-    if (mounted) setState(() {});
-  }
-
-  void _showCreateMenu() => context.push(AppRouter.createPost);
-
   @override
   Widget build(BuildContext context) {
-    final bool reduceMotion = MediaQuery.of(context).accessibleNavigation;
-
-    return Scaffold(
-      backgroundColor: context.communityBackground,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 16, 0),
-              child: _animatedWidget(
-                reduceMotion: reduceMotion,
-                animation: _createAnimation(0.0, 0.4),
-                offset: const Offset(0, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => context.push(AppRouter.communitySearch),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          constraints: const BoxConstraints(minHeight: 33),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            border: AppSurface.border(context),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'Search',
-                                  style: context.communityBody2,
-                                ),
-                              ),
-                              const Icon(Icons.search, size: 16),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    FilledButton.tonalIcon(
-                      onPressed: _showCreateMenu,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(48, 48),
-                      ),
-                      icon: const Icon(Icons.add),
-                      label: Text('Post'),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.notifications_outlined,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      onPressed: () => context.push(AppRouter.notifications),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 20),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(
-                    value: false,
-                    icon: Icon(Icons.forum_outlined),
-                    label: Text('Posts'),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    icon: Icon(Icons.groups_outlined),
-                    label: Text('Groups'),
-                  ),
-                ],
-                selected: {_showGroups},
-                onSelectionChanged: (value) {
-                  setState(() => _showGroups = value.single);
-                  if (!_showGroups) _repository.load();
-                },
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (!_showGroups)
-              SizedBox(
-                height: 48 * MediaQuery.textScalerOf(context).scale(1),
-                child: _animatedWidget(
-                  reduceMotion: reduceMotion,
-                  animation: _createAnimation(0.1, 0.5),
-                  offset: const Offset(0, 8),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _filters.length,
-                    separatorBuilder: (_, __) => SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final filter = _filters[index];
-                      final isSelected = _selectedFilter == filter;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedFilter = filter;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : context.communitySurface,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : context.communityBorder.withValues(
-                                      alpha: 0.7,
-                                    ),
-                            ),
-                          ),
-                          child: Text(
-                            filter,
-                            style: context.communityBody2.copyWith(
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.onPrimary
-                                  : context.communityText,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            SizedBox(height: 20),
-
-            // Main Content (Feed)
-            Expanded(
-              child: _showGroups
-                  ? ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: const [CommunityGroups()],
-                    )
-                  : _buildFeed(reduceMotion),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(bool reduceMotion) => EmptyState(
-    icon: Icons.waving_hand_outlined,
-    title: 'No posts yet. Be the first to share.',
-    primaryCtaLabel: 'Create Post',
-    onPrimaryCta: () => context.push(AppRouter.createPost),
-  );
-  Widget _buildFeed(bool reduceMotion) {
-    final filteredPosts = _posts
+    final t = Theme.of(context),
+        c = t.colorScheme,
+        w = context.cozyColors.wellness;
+    final posts = (widget.posts ?? _repository.posts)
         .where(
-          (post) =>
-              CommunityLocalState.instance.isVisible(post) &&
-              (_selectedFilter == 'All' || post['topic'] == _selectedFilter),
+          (p) =>
+              CommunityLocalState.instance.isVisible(p) &&
+              (_filter == 'All' || p['topic'] == _filter),
         )
         .toList();
-
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        0,
-        16,
-        AppScaffoldPadding.tabScrollBottom(context).bottom,
+    return Scaffold(
+      backgroundColor: w.canvas(
+        t.brightness,
+        MediaQuery.highContrastOf(context),
       ),
-      children: [
-        Text('General Posts', style: context.communityHeading3),
-        if (_repository.loading) const LinearProgressIndicator(),
-        if (_repository.error != null) ...[
-          Text(_repository.error!),
-          TextButton(
-            onPressed: _repository.load,
-            child: const Text('Retry community'),
-          ),
-        ],
-        SizedBox(height: 12),
-        if (!_repository.loading &&
-            _repository.error == null &&
-            filteredPosts.isEmpty)
-          _buildEmptyState(reduceMotion),
-        // Compose Bar
-        _animatedWidget(
-          reduceMotion: reduceMotion,
-          animation: _createAnimation(0.2, 0.7),
-          offset: const Offset(0, 12),
-          child: GestureDetector(
-            onTap: () => context.push(AppRouter.createPost),
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 56),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(28),
-                border: AppSurface.border(context),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _repository.load,
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(
+              w.page,
+              w.page,
+              w.page,
+              w.floatingClearance,
+            ),
+            children: [
+              Row(
                 children: [
                   Expanded(
                     child: Text(
-                      'Share something...',
-                      style: context.communityBody1.copyWith(
-                        color: context.communityMuted,
+                      'Community',
+                      style: t.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  Icon(Icons.edit, size: 20, color: context.communityMuted),
+                  AppPressable(
+                    label: 'Notifications',
+                    onPressed: () => context.push(AppRouter.notifications),
+                    child: SizedBox(
+                      width: w.touch,
+                      height: w.touch,
+                      child: const Icon(Icons.notifications_outlined),
+                    ),
+                  ),
                 ],
               ),
-            ),
+              SizedBox(height: w.small),
+              const Text('Share at your own pace.'),
+              SizedBox(height: w.gap),
+              AppPressable(
+                label: 'Search community',
+                onPressed: () => context.push(AppRouter.communitySearch),
+                child: WellnessPanel(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search_rounded),
+                      SizedBox(width: w.contentGap),
+                      const Expanded(child: Text('Search posts and groups')),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: w.gap),
+              WellnessSegments(
+                labels: const ['Posts', 'Groups'],
+                selected: _groups ? 1 : 0,
+                keyPrefix: 'community-tab',
+                onSelected: (i) => setState(() => _groups = i == 1),
+              ),
+              SizedBox(height: w.gap),
+              if (_groups)
+                const CommunityGroups()
+              else ...[
+                WellnessAction(
+                  label: 'Create a post',
+                  icon: Icons.add_rounded,
+                  filled: true,
+                  onPressed: () => context.push(AppRouter.createPost),
+                ),
+                SizedBox(height: w.gap),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final topic in _topics)
+                        Padding(
+                          padding: EdgeInsets.only(right: w.small),
+                          child: AppPressable(
+                            selected: _filter == topic,
+                            onPressed: () => setState(() => _filter = topic),
+                            child: Container(
+                              constraints: BoxConstraints(minHeight: w.touch),
+                              alignment: Alignment.center,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: w.contentGap,
+                                vertical: w.small,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _filter == topic ? c.primary : c.surface,
+                                border: Border.all(color: c.outlineVariant),
+                                borderRadius: BorderRadius.circular(
+                                  w.tileRadius,
+                                ),
+                              ),
+                              child: Text(
+                                topic,
+                                style: t.textTheme.labelLarge?.copyWith(
+                                  color: _filter == topic
+                                      ? c.onPrimary
+                                      : c.onSurface,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: w.sectionSpacing),
+                Text('Latest posts', style: t.textTheme.titleLarge),
+                SizedBox(height: w.contentGap),
+                if (_repository.loading && widget.posts == null)
+                  const LinearProgressIndicator(),
+                if (_repository.error != null && widget.posts == null) ...[
+                  Text(_repository.error!),
+                  WellnessAction(
+                    label: 'Retry community',
+                    onPressed: _repository.load,
+                  ),
+                ],
+                if (posts.isEmpty &&
+                    !_repository.loading &&
+                    _repository.error == null)
+                  const WellnessPanel(
+                    child: Text(
+                      'No posts here yet. Share something when you’re ready.',
+                    ),
+                  ),
+                for (final post in posts)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: w.gap),
+                    child: PostCard(
+                      post: post,
+                      onTap: () => context.push(
+                        AppRouter.postDetail,
+                        extra: {'post': post},
+                      ),
+                      onAvatarTap: () {
+                        if (post['isAnonymous'] != true) {
+                          context.push(
+                            AppRouter.userProfile,
+                            extra: {
+                              'username': post['username'],
+                              'authorId': post['authorId'],
+                            },
+                          );
+                        }
+                      },
+                      onLongPress: () => PostActions.show(context, post),
+                    ),
+                  ),
+                SizedBox(height: w.contentGap),
+                WellnessPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'A little care goes a long way',
+                        style: t.textTheme.titleMedium,
+                      ),
+                      SizedBox(height: w.small),
+                      const Text(
+                        'Share only what feels comfortable. Respect each other’s privacy. Use a post’s options to report a concern.',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-        SizedBox(height: 20),
-
-        ...List.generate(filteredPosts.length, (index) {
-          final post = filteredPosts[index];
-          // staggered animation for posts
-          final start = 0.4 + (index * 0.1);
-          final end = start + 0.5;
-          final postAnim = _createAnimation(
-            start.clamp(0.0, 1.0),
-            end.clamp(0.0, 1.0),
-          );
-
-          return _animatedWidget(
-            reduceMotion: reduceMotion,
-            animation: postAnim,
-            offset: const Offset(0, 12),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: PostCard(
-                post: post,
-                onTap: () =>
-                    context.push(AppRouter.postDetail, extra: {'post': post}),
-                onAvatarTap: () {
-                  if (!(post['isAnonymous'] as bool? ?? false)) {
-                    context.push(
-                      AppRouter.userProfile,
-                      extra: {
-                        'username': post['username'],
-                        'authorId': post['authorId'],
-                      },
-                    );
-                  }
-                },
-                onLongPress: () => PostActions.show(context, post),
-              ),
-            ),
-          );
-        }),
-        SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _animatedWidget({
-    required bool reduceMotion,
-    required Animation<double> animation,
-    required Widget child,
-    Offset offset = Offset.zero,
-  }) {
-    if (reduceMotion) return child;
-
-    return FadeTransition(
-      opacity: animation,
-      child: offset != Offset.zero
-          ? SlideTransition(
-              position: Tween<Offset>(
-                begin: Offset(offset.dx, offset.dy / 100),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
-            )
-          : child,
+      ),
     );
   }
 }

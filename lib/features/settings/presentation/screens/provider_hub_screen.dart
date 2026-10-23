@@ -1,3 +1,4 @@
+import '../../../../core/widgets/wellness_sheet.dart';
 import '../../../../core/services/network_status.dart';
 import 'dart:async';
 import '../../../../core/audio/voice_audio.dart';
@@ -12,10 +13,16 @@ import 'provider_screen.dart';
 import '../widgets/shared_record_card.dart';
 import '../../data/settings_service.dart';
 import 'provider_resources_screen.dart';
+import 'package:intl/intl.dart' show DateFormat;
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import '../widgets/provider_record_picker.dart';
 
 class ProviderHubScreen extends StatefulWidget {
-  const ProviderHubScreen({super.key, this.apiClient});
+  const ProviderHubScreen({super.key, this.apiClient, this.settingsService});
   final ApiClient? apiClient;
+  final SettingsService? settingsService;
   @override
   State<ProviderHubScreen> createState() => _ProviderHubScreenState();
 }
@@ -23,7 +30,9 @@ class ProviderHubScreen extends StatefulWidget {
 class _ProviderHubScreenState extends State<ProviderHubScreen>
     with WidgetsBindingObserver {
   late final ApiClient _api;
+  late final SettingsService _settings;
   final _draft = TextEditingController();
+  final _scopeChanges = ValueNotifier<int>(0);
   Timer? _timer;
   StreamSubscription<void>? _account;
   String? _owner;
@@ -93,7 +102,9 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
       _sending = false,
       _more = false,
       _active = true;
-  String? _error;
+  String? _error, _sendError, _recordError;
+  Map<String, dynamic>? _connection;
+  int _tab = 0, _requestSerial = 0;
   String get _path => '/provider-conversations/${_thread!['id']}';
   List<Map<String, dynamic>> _maps(dynamic data) =>
       (data as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
@@ -101,8 +112,10 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
   void initState() {
     super.initState();
     _api = widget.apiClient ?? ApiClient.instance;
+    _settings = widget.settingsService ?? SettingsService(apiClient: _api);
     WidgetsBinding.instance.addObserver(this);
     _owner = LocalDbService().activeUserId;
+    _draft.addListener(_draftChanged);
     networkOffline.addListener(_connectionChanged);
     _account = LocalDbService().accountChanges.listen((_) {
       if (!mounted || _owner == LocalDbService().activeUserId) return;
@@ -114,7 +127,16 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
         _selected = [];
         _pending = null;
         _draft.clear();
+        _requestSerial++;
+        _busy = false;
+        _loading = true;
+        _sending = false;
+        _more = false;
+        _error = _sendError = _recordError = null;
+        _connection = null;
       });
+      _scopeChanges.value++;
+      unawaited(_start());
     });
     unawaited(_start());
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
@@ -135,15 +157,22 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
     networkOffline.removeListener(_connectionChanged);
     WidgetsBinding.instance.removeObserver(this);
     _draft.dispose();
+    _scopeChanges.dispose();
     super.dispose();
   }
 
+  void _draftChanged() {
+    if (mounted) setState(() {});
+  }
+
   Future<void> _refresh() async {
-    if (_busy || _offline || !_current) {
+    if (_busy || !_current) return;
+    if (_offline) {
       if (mounted) setState(() => _loading = false);
       return;
     }
     final owner = _owner;
+    final request = ++_requestSerial;
     _busy = true;
     try {
       final threads = _maps(
@@ -159,8 +188,10 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
         _messages = [];
         _selected = [];
         _pending = null;
+        _sendError = _recordError = null;
         _more = false;
         _draft.clear();
+        _scopeChanges.value++;
       }
       setState(() {
         _threads = threads;
@@ -192,18 +223,29 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
       } else {
         _messages = [];
       }
-      if (_current && owner == _owner) setState(() => _loading = false);
       await _saveCache();
       if (_current && owner == _owner) setState(() => _error = null);
+      if (_current && owner == _owner && thread == null) {
+        final connection = await _settings.getProvider();
+        if (_current && owner == _owner) {
+          setState(() => _connection = connection);
+        }
+      }
     } catch (_) {
-      if (mounted) {
+      if (_current && owner == _owner && request == _requestSerial) {
         setState(() {
-          _error = 'Showing saved messages. Connect to refresh.';
+          _error = _messages.isEmpty
+              ? 'Unable to load your provider. Please try again.'
+              : 'Messages may be out of date. Please refresh.';
         });
       }
     } finally {
-      _busy = false;
-      if (mounted) setState(() => _loading = false);
+      if (mounted && owner == _owner && request == _requestSerial) {
+        setState(() {
+          _busy = false;
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -226,7 +268,9 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
         await _saveCache();
       }
     } catch (_) {
-      if (mounted) setState(() => _error = 'Unable to load earlier messages.');
+      if (_current && owner == _owner && threadId == _thread?['id']) {
+        setState(() => _error = 'Unable to load earlier messages.');
+      }
     }
   }
 
@@ -238,6 +282,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
       return;
     }
     final owner = _owner;
+    final threadId = _thread?['id'];
     final payload = {
       'content': _draft.text.trim(),
       'records': _selected
@@ -251,11 +296,11 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
     }
     setState(() {
       _sending = true;
-      _error = null;
+      _sendError = null;
     });
     try {
       await _api.post('$_path/messages', body: _pending);
-      if (!_current || owner != _owner) return;
+      if (!_current || owner != _owner || threadId != _thread?['id']) return;
       setState(() {
         _pending = null;
         _draft.clear();
@@ -263,14 +308,16 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
       });
       await _refresh();
     } catch (_) {
-      if (mounted) {
+      if (_current && owner == _owner && threadId == _thread?['id']) {
         setState(
-          () => _error =
+          () => _sendError =
               'Message was not confirmed. Tap Retry send to try again.',
         );
       }
     } finally {
-      if (mounted) setState(() => _sending = false);
+      if (_current && owner == _owner && threadId == _thread?['id']) {
+        setState(() => _sending = false);
+      }
     }
   }
 
@@ -287,7 +334,8 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
       journal: false,
       onConfirm: (audio) async {
         if (_offline) throw StateError('Reconnect before sending a message.');
-        if (owner != LocalDbService().activeUserId) {
+        if (owner != LocalDbService().activeUserId ||
+            threadId != _thread?['id']) {
           throw StateError('Account changed');
         }
         if (recordedPath != audio.path) {
@@ -301,7 +349,8 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
           conversationId: threadId,
           api: _api,
         );
-        if (owner != LocalDbService().activeUserId) {
+        if (owner != LocalDbService().activeUserId ||
+            threadId != _thread?['id']) {
           throw StateError('Account changed');
         }
         if (_offline) throw StateError('Reconnect before sending a message.');
@@ -315,88 +364,31 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
   }
 
   Future<void> _pick(String type) async {
-    if (_offline || !_current) return;
-    final owner = _owner;
-    final threadId = _thread?['id'];
-    int page = 1;
-    try {
-      bool more = true;
-      while (more && mounted) {
-        final result = responseMap(
-          await _api.get('$_path/records', query: {'type': type, 'page': page}),
-        );
-        if (!mounted ||
-            !_current ||
-            owner != _owner ||
-            threadId != _thread?['id']) {
-          return;
-        }
-        final rows = _maps(result['data']);
-        more = (result['current_page'] as int) < (result['last_page'] as int);
-        final choice = await showModalBottomSheet<Map<String, dynamic>>(
-          context: context,
-          isScrollControlled: true,
-          builder: (context) => SafeArea(
-            child: SizedBox(
-              height: MediaQuery.sizeOf(context).height * .65,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Select ${_recordCategory(type).toLowerCase()}',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      children: [
-                        if (rows.isEmpty)
-                          const ListTile(title: Text('No records available.')),
-                        ...rows.map(
-                          (r) => ListTile(
-                            title: SharedRecordCard(record: r, preview: true),
-                            onTap: () => Navigator.pop(context, r),
-                          ),
-                        ),
-                        if (more)
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(context, {'next': true}),
-                            child: const Text('Next page'),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-        if (choice == null) return;
-        if (choice['next'] == true) {
-          page++;
-          continue;
-        }
-        if (mounted) {
-          setState(() {
-            if (_selected.length < 10 &&
-                !_selected.any(
-                  (r) => r['id'] == choice['id'] && r['type'] == choice['type'],
-                )) {
-              _selected.add(choice);
-            }
-          });
-        }
-        return;
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(
-          () => _error =
-              'Unable to load records. Check sharing permissions and retry.',
-        );
-      }
+    if (_offline || !_current || _selected.length >= 10) return;
+    final owner = _owner, id = _thread?['id'];
+    final choice = await showWellnessSheet<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => ProviderRecordPicker(
+        api: _api,
+        path: _path,
+        type: type,
+        title: _recordCategory(type).toLowerCase(),
+        isCurrent: () => _current && owner == _owner && id == _thread?['id'],
+        selected: List.of(_selected),
+        scopeChanges: _scopeChanges,
+      ),
+    );
+    if (!_current ||
+        owner != _owner ||
+        id != _thread?['id'] ||
+        choice == null) {
+      return;
+    }
+    if (_selected.length < 10 &&
+        !_selected.any(
+          (r) => r['id'] == choice['id'] && r['type'] == choice['type'],
+        )) {
+      setState(() => _selected.add(choice));
     }
   }
 
@@ -411,349 +403,674 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
   Future<void> _manage() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) =>
-            ProviderScreen(settingsService: SettingsService(apiClient: _api)),
+        builder: (_) => ProviderScreen(settingsService: _settings),
       ),
     );
     if (mounted) _refresh();
   }
 
+  Widget _identityPanel({
+    required String label,
+    required Widget child,
+    VoidCallback? onPressed,
+  }) {
+    return _threads.length > 1
+        ? AppPressable(label: label, onPressed: onPressed, child: child)
+        : child;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Provider'),
-          actions: [
-            IconButton(
-              tooltip: 'Connection and sharing permissions',
-              onPressed: _offline ? null : _manage,
-              icon: const Icon(Icons.manage_accounts_outlined),
+    final w = context.cozyColors.wellness,
+        t = Theme.of(context),
+        c = t.colorScheme;
+    return Scaffold(
+      backgroundColor: w.canvas(
+        t.brightness,
+        MediaQuery.highContrastOf(context),
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final compact = box.maxHeight < 400;
+            final name = _thread?['name']?.toString() ?? 'Your provider';
+            final large = MediaQuery.textScalerOf(context).scale(w.label) > 21;
+            return Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    w.page,
+                    compact ? 0 : w.small,
+                    w.page,
+                    compact ? 0 : w.contentGap,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          compact
+                              ? name
+                              : large
+                              ? 'Provider'
+                              : 'Your provider',
+                          style: compact
+                              ? t.textTheme.titleMedium
+                              : t.textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Connection and sharing permissions',
+                        onPressed: _offline ? null : _manage,
+                        icon: const Icon(Icons.tune_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_thread != null && !compact)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: w.page),
+                    child: _identityPanel(
+                      label: _threads.length > 1
+                          ? 'Choose provider, $name'
+                          : name,
+                      onPressed: _threads.length > 1 && !_sending && !_busy
+                          ? _chooseProvider
+                          : null,
+                      child: WellnessPanel(
+                        child: Row(
+                          children: [
+                            Container(
+                              width: w.touch,
+                              height: w.touch,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: w.accentPanel(c),
+                                shape: BoxShape.circle,
+                              ),
+                              padding: EdgeInsets.all(w.small),
+                              child: ExcludeSemantics(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    _initials(name),
+                                    style: t.textTheme.titleMedium,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: w.contentGap),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(name, style: t.textTheme.titleMedium),
+                                  Text(
+                                    large ? 'Connected' : 'Connected provider',
+                                    style: t.textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_threads.length > 1)
+                              const Icon(Icons.unfold_more_rounded, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_thread != null && !compact)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      w.page,
+                      w.contentGap,
+                      w.page,
+                      w.contentGap,
+                    ),
+                    child: WellnessSegments(
+                      labels: const ['Messages', 'Shared', 'Resources'],
+                      selected: _tab,
+                      onSelected: (i) => setState(() => _tab = i),
+                      keyPrefix: 'provider-tab',
+                    ),
+                  ),
+                Expanded(
+                  child: _loading && _threads.isEmpty
+                      ? const Center(child: CircularProgressIndicator())
+                      : _thread == null
+                      ? _connectionState()
+                      : _tab == 1
+                      ? _history()
+                      : _tab == 2
+                      ? ListView(
+                          padding: EdgeInsets.all(w.page),
+                          children: [
+                            ProviderResourcesScreen(
+                              key: ValueKey('$_owner-${_thread!['id']}'),
+                              embedded: true,
+                              settingsService: _settings,
+                            ),
+                          ],
+                        )
+                      : _conversation(),
+                ),
+                if (_thread != null && _tab == 0) _composer(compact),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _initials(String name) => name
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((s) => s.isNotEmpty)
+      .take(2)
+      .map((s) => s.characters.first.toUpperCase())
+      .join();
+
+  Widget _connectionState() {
+    final w = context.cozyColors.wellness, t = Theme.of(context);
+    final pending = (_connection?['provider'] as Map?)?['status'] == 'pending';
+    final linked = _connection?['has_provider'] == true;
+    final title = _error != null
+        ? 'Connection unavailable'
+        : pending
+        ? 'Invitation pending'
+        : linked
+        ? 'Your provider is connected'
+        : 'Care, connected.';
+    return ListView(
+      padding: EdgeInsets.all(w.page),
+      children: [
+        WellnessPanel(
+          tinted: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.handshake_outlined, size: 40),
+              SizedBox(height: w.gap),
+              Text(title, style: t.textTheme.headlineSmall),
+              SizedBox(height: w.small),
+              Text(
+                _error ??
+                    (pending
+                        ? 'Review your invitation to check its status or request a new code.'
+                        : linked
+                        ? 'Your connection is active. Refresh to load your conversation.'
+                        : 'Connect with your provider to send messages and share the records you choose.'),
+              ),
+              SizedBox(height: w.sectionSpacing),
+              WellnessAction(
+                label: _error != null || linked
+                    ? 'Refresh'
+                    : pending
+                    ? 'Review invitation'
+                    : 'Connect provider',
+                filled: true,
+                onPressed: _offline
+                    ? null
+                    : _error != null || linked
+                    ? _refresh
+                    : _manage,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: w.sectionSpacing),
+        const Text('You choose what to share'),
+        SizedBox(height: w.small),
+        const Text(
+          'Connecting a provider does not automatically share your mood records or journal entries.',
+        ),
+        if (_offline) ...[
+          SizedBox(height: w.gap),
+          const Text('You are offline. Reconnect to manage your connection.'),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _chooseProvider() async {
+    final owner = _owner;
+    final id = await showWellnessSheet<int>(
+      context: context,
+      builder: (context) => ListenableBuilder(
+        listenable: _scopeChanges,
+        builder: (context, _) => WellnessSheet(
+          title: 'Choose a provider',
+          children: [
+            const Text(
+              'Messages and shared records belong to the selected conversation.',
+            ),
+            SizedBox(height: context.cozyColors.wellness.gap),
+            if (!_current || owner != _owner)
+              const Text(
+                'The account changed. Close this chooser and reopen it.',
+              )
+            else
+              for (final thread in _threads)
+                WellnessSheetOption(
+                  label: thread['name'].toString(),
+                  icon: Icons.person_outline_rounded,
+                  selected: thread['id'] == _thread?['id'],
+                  onPressed: () => Navigator.pop(context, thread['id']),
+                ),
+            WellnessAction(
+              label: 'Cancel',
+              onPressed: () => Navigator.pop(context),
             ),
           ],
-          bottom: _thread == null
-              ? null
-              : const TabBar(
-                  isScrollable: true,
-                  tabs: [
-                    Tab(text: 'Messages'),
-                    Tab(text: 'Shared history'),
-                    Tab(text: 'Resources'),
+        ),
+      ),
+    );
+    if (!_current || owner != _owner || id == null || _sending || _busy) return;
+    final chosen = _threads.where((t) => t['id'] == id).firstOrNull;
+    if (chosen == null || chosen['id'] == _thread?['id']) return;
+    setState(() {
+      _thread = chosen;
+      _messages = [];
+      _selected = [];
+      _pending = null;
+      _sendError = _recordError = _error = null;
+      _draft.clear();
+      _more = false;
+      _scopeChanges.value++;
+    });
+    if (_offline) {
+      await _loadCache();
+    } else {
+      await _refresh();
+    }
+  }
+
+  Widget _notice(String text, {VoidCallback? retry, String label = 'Retry'}) =>
+      Padding(
+        padding: EdgeInsets.only(
+          bottom: context.cozyColors.wellness.contentGap,
+        ),
+        child: WellnessPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Semantics(liveRegion: true, child: Text(text)),
+              if (retry != null) WellnessAction(label: label, onPressed: retry),
+            ],
+          ),
+        ),
+      );
+
+  Widget _conversation() {
+    final w = context.cozyColors.wellness, t = Theme.of(context);
+    final children = <Widget>[
+      if (_more)
+        WellnessAction(
+          label: 'Load earlier messages',
+          onPressed: _offline || _busy ? null : _older,
+        ),
+      if (_offline)
+        _notice(
+          'You are offline. Saved conversations are available to read. Reconnect to send messages.',
+        ),
+      if (_error != null && !_offline)
+        _notice(_error!, retry: _busy ? null : _refresh),
+      if (_messages.isEmpty)
+        WellnessPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Start a conversation', style: t.textTheme.titleMedium),
+              SizedBox(height: w.small),
+              const Text(
+                'Send a message or share a check-in with your connected provider.',
+              ),
+            ],
+          ),
+        ),
+    ];
+    DateTime? last;
+    for (final m in _messages) {
+      final records = _maps(m['records'] ?? []);
+      final date = DateTime.tryParse('${m['created_at']}')?.toLocal();
+      // Shared record content intentionally exposes no timestamps or IDs.
+      if (records.isEmpty &&
+          date != null &&
+          (last == null ||
+              date.year != last.year ||
+              date.month != last.month ||
+              date.day != last.day)) {
+        children.add(
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: w.contentGap),
+            child: Center(
+              child: Text(
+                DateFormat.yMMMd().format(date),
+                style: t.textTheme.bodySmall,
+              ),
+            ),
+          ),
+        );
+        last = date;
+      }
+      children.add(_message(m));
+    }
+    if (_recordError != null) {
+      children.add(
+        _notice(
+          _recordError!,
+          retry: () => setState(() => _recordError = null),
+          label: 'Dismiss',
+        ),
+      );
+    }
+    if (_sendError != null) {
+      children.add(
+        _notice(
+          _sendError!,
+          retry: _offline || _sending ? null : _send,
+          label: 'Retry send',
+        ),
+      );
+    }
+    if (_selected.isNotEmpty) children.add(_selectedRecords());
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ListView(
+        shrinkWrap: true,
+        reverse: true,
+        padding: EdgeInsets.symmetric(horizontal: w.page, vertical: w.small),
+        children: children.reversed.toList(),
+      ),
+    );
+  }
+
+  Widget _message(Map<String, dynamic> m) {
+    final w = context.cozyColors.wellness, c = Theme.of(context).colorScheme;
+    final mine = m['sender'] == 'patient', records = _maps(m['records'] ?? []);
+    final date = DateTime.tryParse('${m['created_at']}')?.toLocal();
+    return Padding(
+      padding: EdgeInsets.only(bottom: w.contentGap),
+      child: Align(
+        alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+        child: FractionallySizedBox(
+          widthFactor: records.isEmpty ? 0.88 : 1,
+          child: Column(
+            crossAxisAlignment: mine
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(records.isEmpty ? w.contentGap : 0),
+                decoration: BoxDecoration(
+                  color: records.isEmpty
+                      ? (mine ? w.accentPanel(c) : c.surface)
+                      : Colors.transparent,
+                  border: records.isEmpty
+                      ? Border.all(color: c.outlineVariant)
+                      : null,
+                  borderRadius: BorderRadius.circular(w.tileRadius),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...records.map((r) => SharedRecordCard(record: r)),
+                    if (m['audio'] is Map)
+                      VoicePlayer(
+                        key: ValueKey(m['id']),
+                        source:
+                            '/audio-attachments/${(m['audio'] as Map)['id']}',
+                        duration: (m['audio'] as Map)['duration'] as int? ?? 0,
+                        api: _api,
+                      ),
+                    if ((m['content'] ?? '').toString().isNotEmpty)
+                      Text(
+                        m['content'].toString(),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: c.onSurface,
+                          height: 1.35,
+                        ),
+                      ),
                   ],
+                ),
+              ),
+              if (records.isEmpty && date != null) ...[
+                SizedBox(height: w.tight),
+                Text(
+                  '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(date))}${mine ? ' · Sent' : ''}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _history() {
+    final w = context.cozyColors.wellness,
+        records = _messages.expand((m) => _maps(m['records'] ?? [])).toList();
+    return ListView(
+      padding: EdgeInsets.all(w.page),
+      children: [
+        Text('Shared history', style: Theme.of(context).textTheme.titleLarge),
+        SizedBox(height: w.tight),
+        const Text(
+          'Only records you choose appear here. Sharing permissions control provider access.',
+        ),
+        SizedBox(height: w.contentGap),
+        WellnessAction(
+          label: 'Manage sharing',
+          onPressed: _offline ? null : _manage,
+        ),
+        SizedBox(height: w.contentGap),
+        if (records.isEmpty)
+          const WellnessPanel(
+            child: Text(
+              'No records shared in this conversation yet. Choose Share records in Messages to get started.',
+            ),
+          ),
+        ...records.map((r) => SharedRecordCard(record: r)),
+        if (_more)
+          WellnessAction(
+            label: 'Load earlier shared records',
+            onPressed: _offline || _busy ? null : _older,
+          ),
+      ],
+    );
+  }
+
+  String _recordTitle(Map<String, dynamic> r) {
+    final data = r['data'] as Map? ?? {};
+    return '${_recordCategory(r['type'].toString())}${data['title'] != null
+        ? ' · ${data['title']}'
+        : data['mood'] != null
+        ? ' · ${data['mood']}'
+        : ''}';
+  }
+
+  Widget _selectedRecords() {
+    final w = context.cozyColors.wellness;
+    return WellnessPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('${_selected.length} of 10 records selected'),
+          for (final r in _selected)
+            Row(
+              children: [
+                Expanded(
+                  child: AppPressable(
+                    label: 'Preview ${_recordTitle(r)}',
+                    onPressed: () {
+                      final owner = _owner, threadId = _thread?['id'];
+                      showWellnessSheet<void>(
+                        context: context,
+                        builder: (context) => ListenableBuilder(
+                          listenable: _scopeChanges,
+                          builder: (context, _) => WellnessSheet(
+                            title: 'Record preview',
+                            children: [
+                              if (_current &&
+                                  owner == _owner &&
+                                  threadId == _thread?['id']) ...[
+                                const Text(
+                                  'Check what your provider will receive before sending.',
+                                ),
+                                SizedBox(height: w.gap),
+                                SharedRecordCard(record: r, preview: true),
+                              ] else
+                                const Text(
+                                  'The account or conversation changed. Close this preview and reopen it.',
+                                ),
+                              SizedBox(height: w.gap),
+                              WellnessAction(
+                                label: 'Done',
+                                filled: true,
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: w.contentGap),
+                      child: Text(_recordTitle(r)),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Remove ${_recordTitle(r)}',
+                  onPressed: _sending
+                      ? null
+                      : () => setState(() => _selected.remove(r)),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _composer(bool compact) {
+    final w = context.cozyColors.wellness, c = Theme.of(context).colorScheme;
+    final enabled = !_offline && !_sending && _current;
+    final canSend =
+        enabled && (_draft.text.trim().isNotEmpty || _selected.isNotEmpty);
+    final label = _sending
+        ? 'Sending…'
+        : _pending != null
+        ? 'Retry send'
+        : 'Send';
+    final input = TextField(
+      key: const ValueKey('provider-message-input'),
+      controller: _draft,
+      enabled: enabled,
+      minLines: 1,
+      maxLines: compact ? 1 : 4,
+      maxLength: 5000,
+      style: Theme.of(context).textTheme.bodyMedium,
+      decoration: InputDecoration(
+        hintText: 'Write a message…',
+        counterText: '',
+        contentPadding: EdgeInsets.all(compact ? w.small : w.contentGap),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(w.tileRadius),
+          borderSide: BorderSide(color: c.outlineVariant),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(w.tileRadius),
+          borderSide: BorderSide(color: c.outlineVariant),
+        ),
+      ),
+    );
+    final share = PopupMenuButton<String>(
+      enabled: enabled && _selected.length < 10,
+      tooltip: 'Share a record',
+      icon: const Icon(Icons.add_rounded),
+      onSelected: _pick,
+      itemBuilder: (_) => ['moods', 'journals', 'quizzes', 'notes']
+          .map(
+            (type) => PopupMenuItem(
+              value: type,
+              enabled: (_thread!['consent_flags'] as Map? ?? {})[type] == true,
+              child: Text(_recordCategory(type)),
+            ),
+          )
+          .toList(),
+    );
+    final voice = Builder(
+      builder: (anchor) => IconButton(
+        tooltip: 'Record voice message',
+        icon: const Icon(Icons.mic_none_rounded),
+        onPressed: enabled ? () => _recordVoice(anchor) : null,
+      ),
+    );
+    final send = Tooltip(
+      message: label,
+      child: AppPressable(
+        key: const ValueKey('provider-send'),
+        label: label,
+        onPressed: canSend ? _send : null,
+        child: Container(
+          width: w.touch,
+          height: w.touch,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: canSend ? c.primary : c.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(w.tileRadius),
+          ),
+          child: _sending
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(
+                  Icons.arrow_upward_rounded,
+                  color: canSend ? c.onPrimary : c.onSurfaceVariant,
                 ),
         ),
-        body: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _thread == null
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+      ),
+    );
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: w.page, vertical: w.small),
+      decoration: BoxDecoration(
+        color: c.surface,
+        border: Border(top: BorderSide(color: c.outlineVariant)),
+      ),
+      child: compact
+          ? Row(
+              children: [
+                Expanded(child: input),
+                SizedBox(width: w.small),
+                share,
+                voice,
+                send,
+              ],
+            )
+          : Column(
+              children: [
+                input,
+                SizedBox(height: w.small),
+                Row(
                   children: [
-                    Text(
-                      _error ??
-                          'Connect your provider to start a conversation.',
-                    ),
-                    TextButton(
-                      onPressed: _manage,
-                      child: const Text('Connect provider'),
-                    ),
-                    TextButton(
-                      onPressed: _refresh,
-                      child: const Text('Refresh'),
-                    ),
+                    share,
+                    if (_selected.isNotEmpty) Text('${_selected.length}/10'),
+                    const Spacer(),
+                    voice,
+                    SizedBox(width: w.small),
+                    send,
                   ],
                 ),
-              )
-            : TabBarView(
-                children: [
-                  Column(
-                    children: [
-                      if (_threads.length > 1)
-                        DropdownButton<int>(
-                          value: _thread!['id'] as int,
-                          items: _threads
-                              .map(
-                                (t) => DropdownMenuItem(
-                                  value: t['id'] as int,
-                                  child: Text(t['name'].toString()),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: _sending || _busy
-                              ? null
-                              : (id) {
-                                  setState(() {
-                                    _thread = _threads.firstWhere(
-                                      (t) => t['id'] == id,
-                                    );
-                                    _messages = [];
-                                    _selected = [];
-                                    _pending = null;
-                                    _draft.clear();
-                                    _more = false;
-                                  });
-                                  if (_offline) {
-                                    _loadCache();
-                                  } else {
-                                    _refresh();
-                                  }
-                                },
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Text(
-                          _thread!['name'].toString(),
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                      if (_offline)
-                        const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: Text(
-                            'You are offline. Saved conversations are available to read. Reconnect to send messages.',
-                          ),
-                        ),
-                      if (_error != null && !_offline)
-                        MaterialBanner(
-                          content: Text(_error!),
-                          actions: [
-                            TextButton(
-                              onPressed: _refresh,
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      Expanded(
-                        child: _messages.isEmpty
-                            ? const Center(
-                                child: Text(
-                                  'Start a conversation with your provider.',
-                                ),
-                              )
-                            : ListView.builder(
-                                reverse: true,
-                                padding: const EdgeInsets.all(16),
-                                itemCount: _messages.length + (_more ? 1 : 0),
-                                itemBuilder: (context, i) {
-                                  if (i == _messages.length) {
-                                    return TextButton(
-                                      onPressed: _offline ? null : _older,
-                                      child: const Text(
-                                        'Load earlier messages',
-                                      ),
-                                    );
-                                  }
-                                  final m = _messages[_messages.length - 1 - i];
-                                  final mine = m['sender'] == 'patient';
-                                  final records = _maps(m['records'] ?? []);
-                                  return Align(
-                                    alignment: mine
-                                        ? Alignment.centerRight
-                                        : Alignment.centerLeft,
-                                    child: Container(
-                                      constraints: BoxConstraints(
-                                        maxWidth:
-                                            MediaQuery.sizeOf(context).width *
-                                            (records.isEmpty ? .8 : .94),
-                                      ),
-                                      margin: const EdgeInsets.only(bottom: 10),
-                                      padding: EdgeInsets.all(
-                                        records.isEmpty ? 12 : 0,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: records.isNotEmpty
-                                            ? Colors.transparent
-                                            : mine
-                                            ? colors.primaryContainer
-                                            : colors.surfaceContainerHighest,
-                                        borderRadius: BorderRadius.circular(18),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          ...records.map(
-                                            (r) => SharedRecordCard(record: r),
-                                          ),
-                                          if (m['audio'] is Map)
-                                            VoicePlayer(
-                                              key: ValueKey(m['id']),
-                                              source:
-                                                  '/audio-attachments/${(m['audio'] as Map)['id']}',
-                                              duration:
-                                                  (m['audio']
-                                                          as Map)['duration']
-                                                      as int? ??
-                                                  0,
-                                              api: _api,
-                                            ),
-                                          if ((m['content'] ?? '')
-                                              .toString()
-                                              .isNotEmpty)
-                                            Text(m['content'].toString()),
-                                          const SizedBox(height: 4),
-                                          if (records.isEmpty)
-                                            Text(
-                                              DateTime.tryParse(
-                                                        m['created_at']
-                                                            .toString(),
-                                                      )
-                                                      ?.toLocal()
-                                                      .toString()
-                                                      .substring(0, 16) ??
-                                                  '',
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.labelSmall,
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                      if (_selected.isNotEmpty)
-                        SizedBox(
-                          height: 72,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: _selected
-                                .map(
-                                  (r) => Padding(
-                                    padding: const EdgeInsets.all(4),
-                                    child: InputChip(
-                                      label: Text(
-                                        _recordCategory(r['type'].toString()),
-                                      ),
-                                      onPressed: () => showDialog<void>(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Text('Record to share'),
-                                          content: SingleChildScrollView(
-                                            child: SharedRecordCard(
-                                              record: r,
-                                              preview: true,
-                                            ),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context),
-                                              child: const Text('Close'),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      onDeleted: _sending
-                                          ? null
-                                          : () => setState(
-                                              () => _selected.remove(r),
-                                            ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            PopupMenuButton<String>(
-                              enabled:
-                                  !_offline &&
-                                  !_sending &&
-                                  _selected.length < 10,
-                              tooltip: 'Share a record',
-                              icon: const Icon(Icons.add_circle_outline),
-                              onSelected: _pick,
-                              itemBuilder: (_) =>
-                                  ['moods', 'journals', 'quizzes', 'notes']
-                                      .map(
-                                        (type) => PopupMenuItem(
-                                          value: type,
-                                          enabled:
-                                              (_thread!['consent_flags']
-                                                  as Map)[type] ==
-                                              true,
-                                          child: Text(_recordCategory(type)),
-                                        ),
-                                      )
-                                      .toList(),
-                            ),
-                            Expanded(
-                              child: TextField(
-                                controller: _draft,
-                                enabled: !_offline && !_sending,
-                                minLines: 1,
-                                maxLines: 4,
-                                maxLength: 5000,
-                                decoration: const InputDecoration(
-                                  hintText: 'Write a message…',
-                                  counterText: '',
-                                ),
-                              ),
-                            ),
-                            Builder(
-                              builder: (anchor) => IconButton(
-                                tooltip: 'Record voice message',
-                                icon: const Icon(Icons.mic_none),
-                                onPressed: _offline || _sending
-                                    ? null
-                                    : () => _recordVoice(anchor),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _offline || _sending ? null : _send,
-                              child: Text(
-                                _sending
-                                    ? 'Sending…'
-                                    : _pending != null
-                                    ? 'Retry send'
-                                    : 'Send',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      const Text(
-                        'Selected records shared in this conversation. Sharing permissions control provider access.',
-                      ),
-                      TextButton(
-                        onPressed: _manage,
-                        child: const Text('Manage sharing'),
-                      ),
-                      ..._messages
-                          .expand((m) => _maps(m['records'] ?? []))
-                          .map((r) => SharedRecordCard(record: r)),
-                      if (_more)
-                        TextButton(
-                          onPressed: _older,
-                          child: const Text('Load earlier shared records'),
-                        ),
-                    ],
-                  ),
-                  ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      ProviderResourcesScreen(
-                        embedded: true,
-                        settingsService: SettingsService(apiClient: _api),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-      ),
+              ],
+            ),
     );
   }
 }

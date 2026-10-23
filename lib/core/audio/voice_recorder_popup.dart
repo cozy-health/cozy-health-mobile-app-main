@@ -1,3 +1,6 @@
+import '../widgets/wellness_sheet.dart';
+import '../widgets/wellness_panel.dart';
+import '../theme/cozy_colors.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -26,7 +29,7 @@ Future<void> showVoiceRecorder(
     context: context,
     barrierDismissible: false,
     barrierLabel: 'Voice recorder',
-    barrierColor: Colors.black12,
+    barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: .32),
     pageBuilder: (context, animation, secondaryAnimation) => SafeArea(
       child: Align(
         alignment: Alignment.bottomRight,
@@ -40,7 +43,7 @@ Future<void> showVoiceRecorder(
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: 320,
-              maxHeight: size.height * .58,
+              maxHeight: math.min(size.height * .58, 400),
             ),
             child: Material(
               elevation: 12,
@@ -53,9 +56,7 @@ Future<void> showVoiceRecorder(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
                 side: BorderSide(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.outlineVariant.withValues(alpha: .55),
+                  color: Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
               clipBehavior: Clip.antiAlias,
@@ -251,9 +252,17 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _discard() async {
+    if (_busy) return;
+    _timer?.cancel();
+    await _amplitudes?.cancel();
+    await _recorder.cancel();
+    if (mounted) Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final w = context.cozyColors.wellness;
     final label = _recording
         ? 'Recording'
         : _path != null
@@ -263,242 +272,106 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
         '${_seconds ~/ 60}:${(_seconds % 60).toString().padLeft(2, '0')}';
     return PopScope(
       canPop: !_busy && !_recording,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: WellnessSheet(
+        title: widget.journal ? 'Voice journal' : 'Voice message',
+        busy: _busy,
+        onClose: _discard,
+        footer: _recording
+            ? Tooltip(
+                message: 'Stop',
+                child: WellnessAction(
+                  label: 'Stop',
+                  icon: Icons.stop_rounded,
+                  filled: true,
+                  onPressed: _busy ? null : _stop,
+                ),
+              )
+            : _path != null
+            ? WellnessAction(
+                key: const ValueKey('voice-confirm'),
+                label: widget.journal ? 'Save' : 'Send',
+                icon: widget.journal
+                    ? Icons.check_rounded
+                    : Icons.send_outlined,
+                filled: true,
+                onPressed: _busy ? null : _confirm,
+              )
+            : null,
         children: [
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: colors.primary.withValues(alpha: .09),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          widget.journal
-                              ? Icons.graphic_eq_rounded
-                              : Icons.mic_none_rounded,
-                          color: colors.primary,
-                          size: 21,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          widget.journal ? 'Voice journal' : 'Voice message',
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'How is this saved?',
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () => setState(() => _showInfo = !_showInfo),
-                        icon: Icon(
-                          _showInfo ? Icons.info : Icons.info_outline,
-                          size: 20,
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+          Tooltip(
+            message: 'How is this saved?',
+            child: WellnessAction(
+              label: 'How is this saved?',
+              icon: Icons.info_outline_rounded,
+              selected: _showInfo,
+              onPressed: () => setState(() => _showInfo = !_showInfo),
+            ),
+          ),
+          SizedBox(height: w.contentGap),
+          Text(label, style: Theme.of(context).textTheme.labelLarge),
+          Text(time, style: Theme.of(context).textTheme.headlineLarge),
+          SizedBox(height: w.contentGap),
+          WellnessPanel(
+            tinted: true,
+            child: _path == null
+                ? VoiceWaveform(samples: _samples, recording: _recording)
+                : VoicePlayer(
+                    key: ValueKey(_path),
+                    source: _path!,
+                    duration: _seconds,
+                    waveform: List.of(_samples),
                   ),
-                  const SizedBox(height: 18),
-                  Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_recording) ...[
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: colors.error,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 7),
-                        ],
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: colors.onSurfaceVariant,
-                            letterSpacing: .3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Center(
-                    child: Text(
-                      time,
-                      style: TextStyle(
-                        fontSize: 38,
-                        height: 1.2,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: -1.5,
-                        color: colors.onSurface,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.primary.withValues(alpha: .055),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: _path == null
-                        ? VoiceWaveform(
-                            samples: _samples,
-                            recording: _recording,
-                          )
-                        : VoicePlayer(
-                            key: ValueKey(_path),
-                            source: _path!,
-                            duration: _seconds,
-                            waveform: List.of(_samples),
-                          ),
-                  ),
-                  const SizedBox(height: 10),
-                  Center(
-                    child: Text(
-                      _path != null
-                          ? 'Listen back. Send when you are ready.'
-                          : 'A quiet space. A moment for your voice.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  if (_showInfo)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: colors.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          widget.journal
-                              ? 'Saved privately to your account when synced. Offline recordings stay on this device until uploaded. Your provider cannot hear your journal audio.'
-                              : 'Uploaded only when you tap Send, then available to you and your provider. Keep this card open to retry a failed send.',
-                          style: TextStyle(
-                            fontSize: 11,
-                            height: 1.5,
-                            color: colors.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (_error != null)
-                    Text(
-                      _error!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  if (_error?.contains('Settings') == true)
-                    TextButton(
-                      onPressed: PermissionService.openAppSettings,
-                      child: const Text('Open Settings'),
-                    ),
-                  if (_busy)
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 12),
-                      child: LinearProgressIndicator(
-                        semanticsLabel: 'Preparing voice recording',
-                      ),
-                    ),
-                ],
+          ),
+          SizedBox(height: w.small),
+          Text(
+            _path != null
+                ? 'Listen back. Send when you are ready.'
+                : 'A quiet space. A moment for your voice.',
+          ),
+          if (_showInfo) ...[
+            SizedBox(height: w.contentGap),
+            WellnessPanel(
+              child: Text(
+                widget.journal
+                    ? 'Saved privately to your account when synced. Offline recordings stay on this device until uploaded. Your provider cannot hear your journal audio.'
+                    : 'Uploaded only when you tap Send, then available to you and your provider. Keep this card open to retry a failed send.',
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton.outlined(
-                  tooltip: 'Discard recording',
-                  onPressed: _busy
-                      ? null
-                      : () async {
-                          _timer?.cancel();
-                          await _amplitudes?.cancel();
-                          await _recorder.cancel();
-                          if (context.mounted) Navigator.pop(context);
-                        },
-                  icon: const Icon(Icons.delete_outline_rounded, size: 21),
-                ),
-                if (_recording) ...[
-                  SizedBox(
-                    width: 60,
-                    height: 60,
-                    child: IconButton.filled(
-                      tooltip: 'Stop',
-                      onPressed: _busy ? null : _stop,
-                      icon: const Icon(Icons.stop_rounded, size: 28),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 48,
-                    child: Text(
-                      '5:00\nmax',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 10,
-                        height: 1.4,
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  IconButton.outlined(
-                    tooltip: 'Record again',
-                    onPressed: _busy ? null : _start,
-                    icon: const Icon(Icons.refresh_rounded, size: 21),
-                  ),
-                  if (_path != null)
-                    FilledButton.icon(
-                      onPressed: _busy ? null : _confirm,
-                      icon: Icon(
-                        widget.journal
-                            ? Icons.check_rounded
-                            : Icons.arrow_upward_rounded,
-                        size: 17,
-                      ),
-                      label: Text(widget.journal ? 'Save' : 'Send'),
-                    )
-                  else
-                    Text(
-                      '5 minute limit',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                ],
-              ],
+          ],
+          if (_error != null) ...[
+            SizedBox(height: w.small),
+            Semantics(liveRegion: true, child: Text(_error!)),
+          ],
+          if (_error?.contains('Settings') == true)
+            WellnessAction(
+              label: 'Open Settings',
+              onPressed: PermissionService.openAppSettings,
+            ),
+          if (_busy)
+            const LinearProgressIndicator(
+              semanticsLabel: 'Preparing voice recording',
+            ),
+          SizedBox(height: w.contentGap),
+          if (!_recording)
+            Tooltip(
+              message: 'Record again',
+              child: WellnessAction(
+                label: 'Record again',
+                icon: Icons.refresh_rounded,
+                onPressed: _busy ? null : _start,
+              ),
+            ),
+          SizedBox(height: w.small),
+          Tooltip(
+            message: 'Discard recording',
+            child: WellnessAction(
+              label: 'Discard recording',
+              icon: Icons.delete_outline_rounded,
+              onPressed: _busy ? null : _discard,
             ),
           ),
+          SizedBox(height: w.small),
+          const Text('5 minute limit'),
         ],
       ),
     );

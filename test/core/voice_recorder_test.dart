@@ -118,11 +118,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Preview recording'), findsOneWidget);
       expect(attempts, 0);
-      await tester.tap(find.widgetWithText(FilledButton, 'Send'));
+      await tester.tap(find.byKey(const ValueKey('voice-confirm')));
       await tester.pumpAndSettle();
       expect(find.textContaining('ready to retry'), findsOneWidget);
       expect(await tester.runAsync(() => File(recorder.path).exists()), isTrue);
-      await tester.tap(find.widgetWithText(FilledButton, 'Send'));
+      await tester.tap(find.byKey(const ValueKey('voice-confirm')));
       await tester.pumpAndSettle();
       expect(attempts, 2);
       expect(find.text('Preview recording'), findsNothing);

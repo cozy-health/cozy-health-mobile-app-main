@@ -218,7 +218,7 @@ void main() {
     await tester.tap(find.text('Revoke access'));
     await tester.pumpAndSettle();
     expect(find.text('Revoke provider access?'), findsOneWidget);
-    await tester.tap(find.widgetWithText(TextButton, 'Revoke access'));
+    await tester.tap(find.text('Revoke access').last);
     await tester.pumpAndSettle();
     expect(api.calls, contains('DELETE /me/provider/42'));
     expect(api.revoked, isTrue);
@@ -244,7 +244,7 @@ void main() {
     await tester.ensureVisible(find.text('Revoke access'));
     await tester.tap(find.text('Revoke access'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(api.revoked, isFalse);
     expect(api.calls.where((call) => call.startsWith('DELETE')), isEmpty);

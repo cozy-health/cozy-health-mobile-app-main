@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/wellness_panel.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
@@ -186,8 +187,10 @@ void main() {
       await select(tester);
       expect(
         tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Save picture'),
+            .widget<WellnessAction>(
+              find.byWidgetPredicate(
+                (w) => w is WellnessAction && w.label == 'Save picture',
+              ),
             )
             .onPressed,
         isNull,
@@ -196,8 +199,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Save picture'),
+            .widget<WellnessAction>(
+              find.byWidgetPredicate(
+                (w) => w is WellnessAction && w.label == 'Save picture',
+              ),
             )
             .onPressed,
         isNotNull,
@@ -243,8 +248,10 @@ void main() {
       await select(tester);
       expect(
         tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Save picture'),
+            .widget<WellnessAction>(
+              find.byWidgetPredicate(
+                (w) => w is WellnessAction && w.label == 'Save picture',
+              ),
             )
             .onPressed,
         isNull,
@@ -281,8 +288,10 @@ void main() {
       await select(tester);
       await tester.runAsync(() async {
         tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Save picture'),
+            .widget<WellnessAction>(
+              find.byWidgetPredicate(
+                (w) => w is WellnessAction && w.label == 'Save picture',
+              ),
             )
             .onPressed!();
         await repository.operation!.timeout(const Duration(seconds: 15));
@@ -315,8 +324,10 @@ void main() {
       await tester.runAsync(() async {
         transport.delay = Completer<void>();
         tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Save picture'),
+            .widget<WellnessAction>(
+              find.byWidgetPredicate(
+                (w) => w is WellnessAction && w.label == 'Save picture',
+              ),
             )
             .onPressed!();
         await transport.requested.future.timeout(const Duration(seconds: 15));
@@ -449,8 +460,10 @@ void main() {
     await select(tester);
     expect(
       tester
-          .widget<FilledButton>(
-            find.widgetWithText(FilledButton, 'Save picture'),
+          .widget<WellnessAction>(
+            find.byWidgetPredicate(
+              (w) => w is WellnessAction && w.label == 'Save picture',
+            ),
           )
           .onPressed,
       isNull,

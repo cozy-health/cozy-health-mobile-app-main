@@ -1,3 +1,7 @@
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:cozy_health/core/theme/app_theme.dart';
+import 'provider_record_picker_test.dart' show PickerApi;
 import 'package:cozy_health/core/api/api_exceptions.dart';
 import 'package:cozy_health/core/constants/api_constants.dart';
 import 'package:cozy_health/features/settings/data/settings_service.dart';
@@ -12,6 +16,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../support/local_fonts.dart';
+import 'package:cozy_health/core/widgets/app_pressable.dart';
 
 class MessagingApi extends Fake implements ApiClient {
   bool connected = true, failSend = false;
@@ -33,8 +38,8 @@ class MessagingApi extends Fake implements ApiClient {
     reads.add(path);
     if (path == ApiConstants.provider) {
       return response({
-        'has_provider': true,
-        'provider': {'id': 3, 'name': 'Dr. Avery'},
+        'has_provider': connected,
+        'provider': connected ? {'id': 3, 'name': 'Dr. Avery'} : null,
       });
     }
     if (path == '/me/resources') {
@@ -88,6 +93,40 @@ class MessagingApi extends Fake implements ApiClient {
       });
     }
     return response({'id': 1});
+  }
+}
+
+class PreviewMessagingApi extends MessagingApi {
+  @override
+  Future<dynamic> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? query,
+    bool withAuth = true,
+    Options? options,
+  }) async {
+    if (path == '/provider-conversations') {
+      return response([
+        {
+          'id': 1,
+          'name': 'Dr. Avery',
+          'consent_flags': {'moods': true},
+        },
+        {
+          'id': 2,
+          'name': 'Dr. Jordan',
+          'consent_flags': {'moods': true},
+        },
+      ]);
+    }
+    if (path.endsWith('/records')) return PickerApi().get(path, query: query);
+    return super.get(
+      path,
+      queryParameters: queryParameters,
+      query: query,
+      withAuth: withAuth,
+      options: options,
+    );
   }
 }
 
@@ -192,7 +231,7 @@ void main() {
       expect(find.text('Saved care message'), findsOneWidget);
       expect(
         tester
-            .widget<TextButton>(find.widgetWithText(TextButton, 'Send'))
+            .widget<AppPressable>(find.byKey(const ValueKey('provider-send')))
             .onPressed,
         isNull,
       );
@@ -240,7 +279,7 @@ void main() {
       expect(find.text('Shared by Taylor'), findsOneWidget);
       expect(find.text('Feeling calm'), findsOneWidget);
       expect(find.textContaining('2026-10-17'), findsNothing);
-      await tester.tap(find.text('Shared history'));
+      await tester.tap(find.byKey(const ValueKey('provider-tab-1')));
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 30)),
       );
@@ -290,7 +329,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Hello doctor');
-      await tester.tap(find.text('Send'));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('provider-send')));
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 30)),
       );
@@ -299,6 +339,13 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Hello doctor'), findsOneWidget);
+      expect(find.text('Retry send'), findsOneWidget);
+      // Successful polling must not dismiss an unconfirmed send.
+      await tester.pump(const Duration(seconds: 6));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 30)),
+      );
+      await tester.pumpAndSettle();
       expect(find.text('Retry send'), findsOneWidget);
       api.failSend = false;
       await tester.tap(find.text('Retry send'));
@@ -317,6 +364,84 @@ void main() {
         isEmpty,
       );
       await tester.runAsync(() => tester.pumpWidget(const SizedBox()));
+      await flushCache(tester);
+    },
+  );
+  testWidgets(
+    'provider chooser preserves selection and open record preview clears on account change',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const captureKey = ValueKey('provider-popup-capture');
+      Future<void> drive() async {
+        for (var i = 0; i < 8; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      Future<void> capture(String name) async {
+        await tester.pump();
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(captureKey),
+        );
+        await tester.runAsync(() async {
+          final img = await boundary.toImage(pixelRatio: 2);
+          final data = await img.toByteData(format: ui.ImageByteFormat.png);
+          await Directory(
+            'docs/design/approved-popups-implemented',
+          ).create(recursive: true);
+          await File(
+            'docs/design/approved-popups-implemented/$name.png',
+          ).writeAsBytes(data!.buffer.asUint8List());
+          img.dispose();
+        });
+      }
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          builder: (context, child) =>
+              RepaintBoundary(key: captureKey, child: child!),
+          home: ProviderHubScreen(apiClient: PreviewMessagingApi()),
+        ),
+      );
+      await drive();
+      await tester.tap(find.bySemanticsLabel('Choose provider, Dr. Avery'));
+      await tester.pumpAndSettle();
+      expect(find.text('Choose a provider'), findsOneWidget);
+      await capture('provider-chooser-light-blue');
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(
+        find.bySemanticsLabel('Choose provider, Dr. Avery'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byTooltip('Share a record'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Mood check-in').last);
+      await drive();
+      expect(find.text('Feeling calm'), findsOneWidget);
+      await tester.tap(find.text('Select record'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel(RegExp('Preview ')));
+      await tester.pumpAndSettle();
+      expect(find.text('Record preview'), findsOneWidget);
+      expect(find.text('Feeling calm'), findsOneWidget);
+      await capture('record-preview-light-blue');
+      await flushCache(tester);
+      await tester.runAsync(
+        () => LocalDbService().activateAccount('guest_popup_review'),
+      );
+      await drive();
+      expect(find.text('Feeling calm'), findsNothing);
+      expect(find.textContaining('Close this preview'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
       await flushCache(tester);
     },
   );

@@ -65,8 +65,11 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final title = widget.extra['title'] as String? ?? 'Article';
-    final category = widget.extra['category'] as String? ?? 'Anxiety';
-    final readTime = widget.extra['readTime'] as String? ?? '5 min read';
+    final published = widget.extra['publishedArticle'] == true;
+    final category =
+        widget.extra['category'] as String? ?? (published ? '' : 'Anxiety');
+    final readTime =
+        widget.extra['readTime'] as String? ?? (published ? '' : '5 min read');
 
     // For body text, using a serif fallback
     final serifStyle = TextStyle(
@@ -135,6 +138,15 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (published && widget.extra['artwork'] is String) ...[
+                      Image.asset(
+                        widget.extra['artwork'] as String,
+                        height: 96,
+                        fit: BoxFit.contain,
+                        excludeFromSemantics: true,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     if (widget.extra['image'] != null) ...[
                       SvgPicture.asset(
                         widget.extra['image'] as String,
@@ -179,7 +191,9 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                     SizedBox(height: 16),
 
                     Text(
-                      '$readTime · Sarah Chen\nOctober 1, 2026',
+                      published
+                          ? readTime
+                          : '$readTime · Sarah Chen\nOctober 1, 2026',
                       style: AppTextStyles.body2.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         height: 1.4,
@@ -269,30 +283,32 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                     ),
                     SizedBox(height: 48),
 
-                    Text(
-                      'More in $category',
-                      style: AppTextStyles.heading2.copyWith(
-                        fontSize: 18,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-
-                    for (final article
-                        in ContentRepository().catalog
-                            .where((a) => a['id'] != _articleId)
-                            .take(3))
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: ArticleCardCompact(
-                          title: article['title']!,
-                          metadata: article['readTime'] ?? '',
-                          onTap: () => context.push(
-                            AppRouter.articleDetail,
-                            extra: article,
-                          ),
+                    if (!published)
+                      Text(
+                        'More in $category',
+                        style: AppTextStyles.heading2.copyWith(
+                          fontSize: 18,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
+                    SizedBox(height: 16),
+
+                    if (!published)
+                      for (final article
+                          in ContentRepository().catalog
+                              .where((a) => a['id'] != _articleId)
+                              .take(3))
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: ArticleCardCompact(
+                            title: article['title']!,
+                            metadata: article['readTime'] ?? '',
+                            onTap: () => context.push(
+                              AppRouter.articleDetail,
+                              extra: article,
+                            ),
+                          ),
+                        ),
 
                     SizedBox(height: 64),
                   ],

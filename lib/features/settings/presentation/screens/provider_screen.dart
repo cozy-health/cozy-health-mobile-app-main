@@ -1,3 +1,7 @@
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/services/local_db_service.dart';
 import '../../../../core/services/network_status.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'dart:async';
@@ -396,26 +400,19 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _confirmRevoke() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        scrollable: true,
-        title: const Text('Revoke provider access?'),
-        content: const Text(
+    final owner = LocalDbService().activeUserId;
+    final linkId = _provider?['link_id'] ?? _provider?['id'];
+    final confirmed = await confirmWellnessAction(
+      context,
+      title: 'Revoke provider access?',
+      message:
           'Your provider will lose access to your shared data and cannot add notes. You can reconnect later; all sharing choices will start off.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Revoke access'),
-          ),
-        ],
-      ),
+      action: 'Revoke access',
     );
+    if (owner != LocalDbService().activeUserId ||
+        linkId != (_provider?['link_id'] ?? _provider?['id'])) {
+      return;
+    }
     if (confirmed == true && mounted) await _revokeAccess();
   }
 
@@ -672,62 +669,62 @@ class _ProviderScreenState extends State<ProviderScreen>
     final original = _provider?['provider_email']?.toString() ?? '';
     var corrected = _correctionEmail ?? original;
     final formKey = GlobalKey<FormState>();
-    final email = await showDialog<String>(
+    final owner = LocalDbService().activeUserId,
+        linkId = _provider?['link_id'] ?? _provider?['id'];
+    final email = await showWellnessSheet<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Correct provider email'),
-        content: SingleChildScrollView(
-          child: Form(
+      builder: (dialogContext) => WellnessSheet(
+        title: 'Correct provider email',
+        children: [
+          const Text(
+            'Sending to the corrected address cancels the old invitation and replaces its code. Your sharing choices will stay the same.',
+          ),
+          SizedBox(height: dialogContext.cozyColors.wellness.gap),
+          Form(
             key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Sending to the corrected address cancels the old invitation and replaces its code. Your sharing choices will stay the same.',
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  initialValue: corrected,
-                  autofocus: true,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Correct provider email',
-                  ),
-                  onChanged: (value) => corrected = value,
-                  validator: (value) {
-                    final email = (value ?? '').trim();
-                    if (!RegExp(
-                          r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
-                        ).hasMatch(email) ||
-                        email.length > 190) {
-                      return 'Enter a valid email address.';
-                    }
-                    if (email.toLowerCase() == original.toLowerCase()) {
-                      return 'Enter a different email address.';
-                    }
-                    return null;
-                  },
-                ),
-              ],
+            child: TextFormField(
+              initialValue: corrected,
+              autofocus: true,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Correct provider email',
+              ),
+              onChanged: (value) => corrected = value,
+              validator: (value) {
+                final email = (value ?? '').trim();
+                if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email) ||
+                    email.length > 190) {
+                  return 'Enter a valid email address.';
+                }
+                if (email.toLowerCase() == original.toLowerCase()) {
+                  return 'Enter a different email address.';
+                }
+                return null;
+              },
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Keep current invitation'),
-          ),
-          TextButton(
+          SizedBox(height: dialogContext.cozyColors.wellness.gap),
+          WellnessAction(
+            label: 'Send corrected invitation',
+            filled: true,
             onPressed: () {
-              if (formKey.currentState!.validate()) {
+              if (formKey.currentState?.validate() == true) {
                 Navigator.pop(dialogContext, corrected.trim());
               }
             },
-            child: const Text('Send corrected invitation'),
+          ),
+          SizedBox(height: dialogContext.cozyColors.wellness.small),
+          WellnessAction(
+            label: 'Keep current invitation',
+            onPressed: () => Navigator.pop(dialogContext),
           ),
         ],
       ),
     );
+    if (owner != LocalDbService().activeUserId ||
+        linkId != (_provider?['link_id'] ?? _provider?['id'])) {
+      return;
+    }
     if (email != null && mounted) {
       await _correctProviderEmail(email);
     }
@@ -735,6 +732,7 @@ class _ProviderScreenState extends State<ProviderScreen>
 
   Future<void> _correctProviderEmail(String email) async {
     if (_sending || _removing || _hasProvider || _provider == null) return;
+    final owner = LocalDbService().activeUserId;
     final linkId = (_provider!['link_id'] ?? _provider!['id']).toString();
     final name = _provider!['provider_name']?.toString() ?? '';
     final flags = Map<String, bool>.from(_invitationFlags);
@@ -746,8 +744,9 @@ class _ProviderScreenState extends State<ProviderScreen>
     });
     try {
       await _settingsService.cancelProviderInvitation(linkId);
+      if (!mounted || owner != LocalDbService().activeUserId) return;
     } on ApiException catch (e) {
-      if (!mounted) return;
+      if (!mounted || owner != LocalDbService().activeUserId) return;
       if (e.statusCode == 409) {
         await _loadProvider();
         if (!mounted) return;
@@ -768,7 +767,7 @@ class _ProviderScreenState extends State<ProviderScreen>
       }
       return;
     }
-    if (!mounted) return;
+    if (!mounted || owner != LocalDbService().activeUserId) return;
     _resendTimer?.cancel();
     _invitationExpiryTimer?.cancel();
     setState(() {

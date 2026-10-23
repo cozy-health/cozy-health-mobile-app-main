@@ -1,150 +1,196 @@
-import 'package:cozy_health/core/theme/app_surface.dart';
-import '../../../../core/widgets/empty_state.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../../core/data/demo_mode.dart';
 import 'package:go_router/go_router.dart';
-import '../community_theme.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import '../../../../core/data/demo_mode.dart';
+import '../../data/community_repository.dart';
+import '../community_local_state.dart';
+import '../widgets/post_card.dart';
+import '../widgets/post_actions.dart';
 
 class CommunitySearchScreen extends StatefulWidget {
   const CommunitySearchScreen({super.key});
-
   @override
   State<CommunitySearchScreen> createState() => _CommunitySearchScreenState();
 }
 
-class _CommunitySearchScreenState extends State<CommunitySearchScreen>
-    with SingleTickerProviderStateMixin {
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-  late TabController _tabController;
-
+class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
+  final _query = TextEditingController();
+  List<Map<String, dynamic>> _posts = [], _groups = [];
+  String? _error;
+  bool _loading = true;
+  int _tab = 0, _generation = 0;
+  StreamSubscription<void>? _account;
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
+    _account = LocalDbService().accountChanges.listen((_) {
+      if (mounted) {
+        _query.clear();
+        _load();
+      }
     });
+    _load();
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
-    _focusNode.dispose();
-    _tabController.dispose();
+    _account?.cancel();
+    _query.dispose();
     super.dispose();
+  }
+
+  Future<void> _load() async {
+    final generation = ++_generation;
+    setState(() {
+      _posts = [];
+      _groups = [];
+      _error = null;
+      _loading = true;
+    });
+    try {
+      final demo = DemoMode.instance.enabled;
+      final result = demo
+          ? <List<Map<String, dynamic>>>[
+              DemoMode.instance.posts,
+              CommunityLocalState.instance.groups
+                  .map(
+                    (g) => <String, dynamic>{
+                      'name': g.name,
+                      'description': g.description,
+                      'member_count': g.members,
+                    },
+                  )
+                  .toList(),
+            ]
+          : await Future.wait([
+              CommunityRepository.pages('/community/posts'),
+              CommunityRepository.pages('/community/groups'),
+            ]);
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _posts = demo
+            ? result[0]
+            : result[0].map(CommunityRepository.post).toList();
+        _groups = result[1];
+      });
+    } catch (_) {
+      if (mounted && generation == _generation) {
+        setState(
+          () =>
+              _error = 'Search could not load community content. Please retry.',
+        );
+      }
+    } finally {
+      if (mounted && generation == _generation) {
+        setState(() => _loading = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!DemoMode.instance.enabled) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Community search')),
-        body: const SafeArea(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text(
-              'Community search is not available yet. Browse the community feed or groups.',
-            ),
-          ),
-        ),
-      );
-    }
+    final t = Theme.of(context),
+        w = context.cozyColors.wellness,
+        q = _query.text.trim().toLowerCase();
+    final posts = _posts
+        .where(
+          (p) =>
+              CommunityLocalState.instance.isVisible(p) &&
+              '${p['content']} ${p['topic']}'.toLowerCase().contains(q),
+        )
+        .toList();
+    final groups = _groups
+        .where(
+          (g) => '${g['name']} ${g['description']}'.toLowerCase().contains(q),
+        )
+        .toList();
     return Scaffold(
-      backgroundColor: context.communityBackground,
-      appBar: AppBar(
-        backgroundColor: context.communityBackground,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onPressed: () => context.pop(),
-        ),
+      backgroundColor: w.canvas(
+        t.brightness,
+        MediaQuery.highContrastOf(context),
       ),
+      appBar: AppBar(title: const Text('Search community')),
       body: SafeArea(
-        child: Column(
+        child: ListView(
+          padding: EdgeInsets.all(w.page),
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  border: AppSurface.border(context),
+            TextField(
+              controller: _query,
+              onChanged: (_) => setState(() {}),
+              textInputAction: TextInputAction.search,
+              decoration: const InputDecoration(
+                labelText: 'Search posts and groups',
+                prefixIcon: Icon(Icons.search_rounded),
+              ),
+            ),
+            SizedBox(height: w.gap),
+            WellnessSegments(
+              labels: const ['Posts', 'Groups'],
+              selected: _tab,
+              keyPrefix: 'search-tab',
+              onSelected: (i) => setState(() => _tab = i),
+            ),
+            SizedBox(height: w.gap),
+            if (_loading)
+              const LinearProgressIndicator()
+            else if (_error != null) ...[
+              Text(_error!),
+              WellnessAction(label: 'Retry search', onPressed: _load),
+            ] else if (q.isEmpty)
+              const Text(
+                'Type a word or topic to search community posts and groups.',
+              )
+            else if (_tab == 0) ...[
+              if (posts.isEmpty) const Text('No posts match your search.'),
+              for (final p in posts)
+                Padding(
+                  padding: EdgeInsets.only(bottom: w.gap),
+                  child: PostCard(
+                    post: p,
+                    onTap: () =>
+                        context.push(AppRouter.postDetail, extra: {'post': p}),
+                    onAvatarTap: () {
+                      if (p['isAnonymous'] != true) {
+                        context.push(
+                          AppRouter.userProfile,
+                          extra: {
+                            'username': p['username'],
+                            'authorId': p['authorId'],
+                          },
+                        );
+                      }
+                    },
+                    onLongPress: () => PostActions.show(context, p),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.search, color: context.communityMuted, size: 20),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        focusNode: _focusNode,
-                        decoration: InputDecoration(
-                          hintText: 'Search community...',
-                          hintStyle: context.communityBody1.copyWith(
-                            color: context.communityMuted,
-                          ),
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
+            ] else ...[
+              if (groups.isEmpty) const Text('No groups match your search.'),
+              for (final g in groups)
+                Padding(
+                  padding: EdgeInsets.only(bottom: w.gap),
+                  child: WellnessPanel(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${g['name']}', style: t.textTheme.titleMedium),
+                        SizedBox(height: w.small),
+                        Text('${g['description'] ?? ''}'),
+                        SizedBox(height: w.small),
+                        Text('${g['member_count'] ?? 0} members'),
+                        const Text(
+                          'Open Community → Groups to manage membership.',
                         ),
-                        style: context.communityBody1,
-                        onChanged: (v) {
-                          setState(() {});
-                        },
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(height: 16),
-            TabBar(
-              controller: _tabController,
-              labelColor: Theme.of(context).colorScheme.primary,
-              unselectedLabelColor: context.communityMuted,
-              indicatorColor: Theme.of(context).colorScheme.primary,
-              tabs: const [
-                Tab(text: 'Posts'),
-                Tab(text: 'People'),
-                Tab(text: 'Topics'),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _searchController.text.trim().isEmpty
-                      ? _buildEmptyState('Type to search public posts.')
-                      : EmptyState(
-                          icon: Icons.search,
-                          title:
-                              "No posts match '${_searchController.text.trim()}'.",
-                          primaryCtaLabel: 'Clear search',
-                          onPrimaryCta: () =>
-                              setState(() => _searchController.clear()),
-                        ),
-                  _buildEmptyState('Type to search usernames.'),
-                  _buildEmptyState('Type to search topics.'),
-                ],
-              ),
-            ),
+            ],
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String message) {
-    return Center(
-      child: Text(
-        message,
-        style: context.communityBody1.copyWith(color: context.communityMuted),
       ),
     );
   }
