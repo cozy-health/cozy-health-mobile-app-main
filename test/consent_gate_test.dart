@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:cozy_health/core/services/consent_service.dart';
 import 'package:cozy_health/core/widgets/consent_gate.dart';
+import 'package:cozy_health/core/storage/token_storage.dart';
+import 'package:cozy_health/core/routing/app_router.dart';
 
 ConsentService service({required bool blocking, required bool published}) =>
     ConsentService(
@@ -49,6 +52,115 @@ ConsentService service({required bool blocking, required bool published}) =>
 
 void main() {
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+  testWidgets(
+    'saved emergency contacts require consent while public support stays reachable',
+    (tester) async {
+      await TokenStorage().saveToken('fixture-session', stayLoggedIn: false);
+      AppRouter.router.go(AppRouter.crisisContact);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ConsentGate(
+            service: service(blocking: true, published: true),
+            child: const Text('Route content'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Route content'), findsNothing);
+      expect(find.text('Approved privacy text for this test.'), findsOneWidget);
+      AppRouter.router.go(AppRouter.crisisHub);
+      await tester.pumpAndSettle();
+      expect(find.text('Route content'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      AppRouter.router.go(AppRouter.home);
+      await TokenStorage().clearToken();
+    },
+  );
+  testWidgets('session change hides old consent while the new account loads', (
+    tester,
+  ) async {
+    await TokenStorage().saveToken('first');
+    final next = Completer<Map<String, dynamic>>();
+    var loadingSecond = false;
+    final scoped = ConsentService(
+      get: (path) async {
+        if (path == '/config') {
+          if (loadingSecond) return next.future;
+          return {
+            'consent': {
+              'enforce_blocking': false,
+              'documents': <String, dynamic>{},
+            },
+          };
+        }
+        return {
+          'owner_id': loadingSecond ? 2 : 1,
+          'data': <Map<String, dynamic>>[],
+        };
+      },
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConsentGate(
+          service: scoped,
+          observeRoutes: false,
+          child: const Text('Private content'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Private content'), findsOneWidget);
+    loadingSecond = true;
+    await TokenStorage().saveToken('second');
+    await tester.pump();
+    expect(find.text('Private content'), findsNothing);
+    next.completeError(StateError('Offline'));
+    await tester.pumpAndSettle();
+    expect(find.text('Private content'), findsNothing);
+    expect(find.text('Retry'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await TokenStorage().clearToken();
+  });
+  testWidgets(
+    'unknown consent hides private content and failure offers retry',
+    (tester) async {
+      var attempts = 0;
+      final pending = Completer<Map<String, dynamic>>();
+      final recovery = ConsentService(
+        token: () async => 'fixture-session',
+        get: (path) async {
+          attempts++;
+          if (attempts == 1) return pending.future;
+          return path == '/config'
+              ? {
+                  'consent': {
+                    'enforce_blocking': false,
+                    'documents': <String, dynamic>{},
+                  },
+                }
+              : {'owner_id': 1, 'data': <Map<String, dynamic>>[]};
+        },
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ConsentGate(
+            service: recovery,
+            observeRoutes: false,
+            child: const Text('Private content'),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Private content'), findsNothing);
+      pending.completeError(StateError('Network unavailable'));
+      await tester.pumpAndSettle();
+      expect(find.text('Private content'), findsNothing);
+      expect(find.text('Retry'), findsOneWidget);
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+      expect(find.text('Private content'), findsOneWidget);
+    },
+  );
   testWidgets(
     'age enforcement requires current effective consent even before the legacy blocking flag changes',
     (tester) async {

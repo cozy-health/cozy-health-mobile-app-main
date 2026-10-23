@@ -94,7 +94,9 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                   Icons.arrow_back,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
-                onPressed: () => context.pop(),
+                onPressed: () => context.canPop()
+                    ? context.pop()
+                    : context.go(AppRouter.contentHome),
               ),
               actions: [
                 IconButton(

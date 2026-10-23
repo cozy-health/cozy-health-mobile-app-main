@@ -419,6 +419,7 @@ class PushNotificationService extends ChangeNotifier
     'streak' => '${AppRouter.home}?focus=streak',
     'affirmation' => AppRouter.dailyAffirmation,
     'quiz_share' => '/quiz-shared',
+    'reply' || 'like' => AppRouter.communityHub,
     _ => AppRouter.notifications,
   };
 

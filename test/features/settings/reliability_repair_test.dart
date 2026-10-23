@@ -1,3 +1,6 @@
+import 'package:cozy_health/features/journal/presentation/screens/journal_screen.dart';
+import 'package:cozy_health/core/models/user_profile.dart';
+import 'package:cozy_health/features/settings/presentation/screens/notification_preferences_screen.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/core/storage/token_storage.dart';
@@ -58,6 +61,80 @@ void main() {
   }
 
   testWidgets(
+    'journal editor clears unfinished text before a different account can use it',
+    (tester) async {
+      await show(tester, const JournalEditorScreen(type: 'Free'));
+      await tester.enterText(
+        find.byType(TextField),
+        'Private unfinished journal',
+      );
+      await tester.runAsync(() async {
+        await local.activateAccount('different-account');
+        await TokenStorage().saveToken('different-session');
+      });
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Private unfinished journal'), findsNothing);
+      expect(local.getJournalDraft('journal_draft_Free_free'), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'offline community settings preserve separate inbox and phone choices',
+    (tester) async {
+      final wasPaused = local.syncPaused;
+      local.syncPaused = true;
+      addTearDown(() => local.syncPaused = wasPaused);
+      await tester.runAsync(() async {
+        await local.saveUserProfile(
+          UserProfile(
+            id: 'settings-profile',
+            name: 'Test account',
+            email: 'test@example.com',
+            pushConsent: false,
+            notificationsMaster: true,
+            updatedAt: DateTime.now(),
+          ),
+        );
+      });
+      await show(tester, const NotificationPreferencesScreen());
+      final likes = find.widgetWithText(SwitchListTile, 'Likes on my posts');
+      await tester.scrollUntilVisible(likes, 250);
+      expect(tester.widget<SwitchListTile>(likes).value, isTrue);
+      expect(tester.widget<SwitchListTile>(likes).onChanged, isNotNull);
+      final phone = find.widgetWithText(
+        SwitchListTile,
+        'Community phone alerts',
+      );
+      await tester.ensureVisible(phone);
+      expect(tester.widget<SwitchListTile>(phone).onChanged, isNull);
+      await tester.ensureVisible(likes);
+      await tester.runAsync(() async {
+        await tester.tap(likes);
+        for (
+          var attempt = 0;
+          attempt < 50 && local.pendingItems.isEmpty;
+          attempt++
+        ) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        }
+        expect(
+          local.pendingItems.any((item) => item.type == 'user_profile'),
+          isTrue,
+        );
+        await local.waitForSyncIdle();
+      });
+      await tester.pumpAndSettle();
+      expect(
+        local.getUserProfile()!.reminderSettings['community_likes_enabled'],
+        isFalse,
+      );
+      expect(local.getUserProfile()!.pushConsent, isFalse);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
     'monthly navigation changes the month and prevents future months',
     (tester) async {
       await show(tester, const MonthlyReportScreen());
@@ -111,13 +188,20 @@ void main() {
         ],
       },
     };
-    await show(tester, const SubscriptionScreen());
+    await show(tester, const SubscriptionScreen(deferBilling: true));
     expect(find.text('NGN 5,000/month'), findsOneWidget);
     await tester.tap(find.byType(SwitchListTile));
     await tester.pumpAndSettle();
     expect(find.text('NGN 48,000/year'), findsOneWidget);
     expect(find.text('NGN 96,000/year'), findsOneWidget);
     expect(find.text('Start Free Trial'), findsNothing);
+    expect(find.byKey(const ValueKey('restore-store-purchases')), findsNothing);
+    await tester.ensureVisible(find.text('Student'));
+    await tester.tap(find.text('Student'));
+    await tester.pumpAndSettle();
+    expect(find.text('Billing unavailable'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('wellness-sheet-close')));
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await captureSurface(tester, 'reliability-regional-prices');
   });

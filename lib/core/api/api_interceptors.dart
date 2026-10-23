@@ -9,6 +9,7 @@ import 'api_exceptions.dart';
 import '../routing/app_router.dart';
 import '../services/local_db_service.dart';
 import '../services/age_eligibility_service.dart';
+import '../services/consent_refresh_signal.dart';
 import '../storage/token_storage.dart';
 
 class AuthInterceptor extends Interceptor {
@@ -188,6 +189,13 @@ class ErrorInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     final payload = err.response?.data;
+    if (payload is Map &&
+        payload['code'] == 'consent_required' &&
+        err.response?.statusCode == 403 &&
+        err.requestOptions.extra['sessionGeneration'] ==
+            TokenStorage.generation) {
+      consentRefreshSignal.value++;
+    }
     if (payload is Map &&
         err.requestOptions.extra['sessionGeneration'] ==
             TokenStorage.generation &&

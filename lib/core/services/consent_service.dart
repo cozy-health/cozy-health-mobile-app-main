@@ -69,7 +69,8 @@ class ConsentService {
   final ConsentGet _get;
   final ConsentPost _post;
   final Future<String?> Function() _token;
-  String? _loadedToken;
+  final _stateTokens = Expando<String>('consent session');
+  final _stateGenerations = Expando<int>('consent generation');
 
   static Map<String, dynamic> _map(dynamic response) =>
       Map<String, dynamic>.from(
@@ -82,12 +83,14 @@ class ConsentService {
   ) async => _map(await ApiClient().post('/me/consents', data: body));
 
   Future<ConsentState?> load() async {
+    final generation = TokenStorage.generation;
     final token = await _token();
     if (token == null) return null;
     final config = (await _get('/config'))['consent'] as Map;
     final response = await _get('/me/consents');
-    if (await _token() != token) return null;
-    _loadedToken = token;
+    if (await _token() != token || generation != TokenStorage.generation) {
+      throw StateError('Your account changed. Review again.');
+    }
     final state = ConsentState(
       ownerId: response['owner_id'] as int,
       documents: (config['documents'] as Map).entries
@@ -103,6 +106,8 @@ class ConsentService {
           .toList(),
       enforceBlocking: config['enforce_blocking'] == true,
     );
+    _stateTokens[state] = token;
+    _stateGenerations[state] = generation;
     for (final doc in state.pending.toList()) {
       final hasHistory = state.records.any(
         (record) => record['document_type'] == doc.type,
@@ -126,7 +131,11 @@ class ConsentService {
     required bool accepted,
     bool preAcceptance = false,
   }) async {
-    if (_loadedToken == null || await _token() != _loadedToken) {
+    final token = _stateTokens[state];
+    final generation = _stateGenerations[state];
+    if (token == null ||
+        await _token() != token ||
+        generation != TokenStorage.generation) {
       throw StateError('Your account changed. Review again.');
     }
     final response = await _post({
@@ -136,7 +145,8 @@ class ConsentService {
       'pre_acceptance': preAcceptance,
       'actor_id': state.ownerId,
     });
-    if (await _token() != _loadedToken ||
+    if (await _token() != token ||
+        generation != TokenStorage.generation ||
         response['owner_id'] != state.ownerId) {
       throw StateError('Your account changed. Review again.');
     }

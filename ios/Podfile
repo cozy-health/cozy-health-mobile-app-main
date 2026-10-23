@@ -36,7 +36,7 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       definitions = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
-      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (Array(definitions) + ['PERMISSION_NOTIFICATIONS=1']).uniq
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (Array(definitions) + ['PERMISSION_NOTIFICATIONS=1', 'PERMISSION_MICROPHONE=1']).uniq
     end
   end
 end

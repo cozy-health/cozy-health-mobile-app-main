@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cozy_health/core/storage/encrypted_hive.dart';
 
 import '../../support/repository_fixture.dart';
+import 'package:flutter/material.dart';
+import 'package:cozy_health/features/notifications/presentation/screens/notification_detail_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +25,29 @@ void main() {
     LocalDbService().syncPaused = false;
   });
   tearDownAll(fixture.close);
+  testWidgets(
+    'detail does not revive a notification absent from the active account',
+    (tester) async {
+      final previous = AppNotification(
+        id: 'previous-owner',
+        title: 'Previous private title',
+        body: 'Previous private body',
+        type: 'system',
+        read: false,
+        createdAt: DateTime.utc(2026),
+      );
+      await tester.pumpWidget(
+        MaterialApp(home: NotificationDetailScreen(notification: previous)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Previous private body'), findsNothing);
+      expect(
+        find.text('This notification is no longer available.'),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   for (final shape in ['paginator', 'raw list', 'data list']) {
     test(

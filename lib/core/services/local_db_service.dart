@@ -1,5 +1,4 @@
 import '../storage/encrypted_hive.dart';
-import 'age_eligibility_service.dart';
 import '../storage/hive_files.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -474,11 +473,12 @@ class LocalDbService {
 
   Future<void> saveMoodEntry(MoodEntry entry) async {
     final owner = activeUserId;
-    await AgeEligibilityService.instance.requirePrivateAccess();
-    if (owner != activeUserId) throw StateError('Mood recording account changed');
+    if (owner != activeUserId)
+      throw StateError('Mood recording account changed');
     final box = moodBox;
     await box.put(entry.id, entry);
-    if (owner != activeUserId) throw StateError('Mood recording account changed');
+    if (owner != activeUserId)
+      throw StateError('Mood recording account changed');
     await _retainEarnedMilestones();
   }
 
@@ -491,7 +491,6 @@ class LocalDbService {
       _watchScoped(getAllMoodEntries, () => moodBox.watch());
 
   Future<void> deleteMoodEntry(String id) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await _retainEarnedMilestones();
     await moodBox.delete(id);
   }
@@ -501,7 +500,6 @@ class LocalDbService {
       EncryptedHive.box<JournalEntry>(boxName(journalBoxName));
 
   Future<void> saveJournalEntry(JournalEntry entry) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await journalBox.put(entry.id, entry);
     if (!entry.isDraft) await _retainEarnedMilestones();
   }
@@ -515,7 +513,6 @@ class LocalDbService {
       _watchScoped(getAllJournalEntries, () => journalBox.watch());
 
   Future<void> deleteJournalEntry(String id) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await _retainEarnedMilestones();
     final entry = journalBox.get(id);
     await VoiceAudio.removeLocal(entry?.localVoicePath);
@@ -526,7 +523,6 @@ class LocalDbService {
   }
 
   Future<void> saveJournalDraft(JournalEntry entry) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await journalBox.put(entry.id, entry);
   }
 
@@ -590,7 +586,6 @@ class LocalDbService {
   }
 
   Future<void> deleteJournalDraft(String id) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     final entry = journalBox.get(id);
     if (entry != null && entry.isDraft) {
       await journalBox.delete(id);
@@ -604,12 +599,10 @@ class LocalDbService {
       EncryptedHive.box<ChatConversation>(boxName(chatConversationBoxName));
 
   Future<void> saveChatMessage(ChatMessage message) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await chatMessageBox.put(message.id, message);
   }
 
   Future<void> saveChatConversation(ChatConversation conversation) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await chatConversationBox.put(conversation.id, conversation);
   }
 
@@ -627,7 +620,6 @@ class LocalDbService {
   List<ChatConversation> getAllChatConversations() => getAllConversations();
 
   Future<void> deleteChatConversation(String id) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await chatConversationBox.delete(id);
     // Also delete messages
     final messages = getMessagesForConversation(id);
@@ -661,7 +653,6 @@ class LocalDbService {
       EncryptedHive.box<SafetyPlan>(boxName(safetyPlanBoxName));
 
   Future<void> saveSafetyPlan(SafetyPlan plan) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await safetyPlanBox.put(plan.id, plan);
     for (final key in safetyPlanBox.keys.toList()) {
       if (key != plan.id) await safetyPlanBox.delete(key);
@@ -676,7 +667,6 @@ class LocalDbService {
   }
 
   Future<void> clearSafetyPlan() async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await safetyPlanBox.clear();
   }
 
@@ -725,7 +715,6 @@ class LocalDbService {
       EncryptedHive.box<QuizAttempt>(boxName(quizAttemptBoxName));
 
   Future<void> saveQuizAttempt(QuizAttempt attempt) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await quizAttemptBox.put(attempt.id, attempt);
   }
 
@@ -744,12 +733,10 @@ class LocalDbService {
       EncryptedHive.box<SavedArticle>(boxName(savedArticleBoxName));
 
   Future<void> saveSavedArticle(SavedArticle article) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await savedArticleBox.put(article.articleId, article);
   }
 
   Future<void> deleteSavedArticle(String articleId) async {
-    await AgeEligibilityService.instance.requirePrivateAccess();
     await savedArticleBox.delete(articleId);
   }
 
@@ -950,13 +937,6 @@ class LocalDbService {
   }
 
   Future<SyncSummary> _processSyncQueue({required bool force}) async {
-    if (AgeEligibilityService.instance.enabled) {
-      try {
-        await AgeEligibilityService.instance.requirePrivateAccess();
-      } catch (_) {
-        return const SyncSummary();
-      }
-    }
     _isProcessingSyncQueue = true;
     var synced = 0;
     var failed = 0;

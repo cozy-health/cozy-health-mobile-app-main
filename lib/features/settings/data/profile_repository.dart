@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/storage/token_storage.dart';
 import '../../../core/services/user_data_merge.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -55,6 +56,8 @@ class ProfileRepository {
   }
 
   Future<UserProfile> saveProfile(UserProfile profile) async {
+    final owner = _local.activeUserId;
+    final generation = TokenStorage.generation;
     final current = _local.getUserProfile();
     if (current != null &&
         current.id == profile.id &&
@@ -66,6 +69,9 @@ class ProfileRepository {
       );
     }
     await _local.saveUserProfile(profile);
+    if (owner != _local.activeUserId || generation != TokenStorage.generation) {
+      throw StateError('Account changed before saving could complete');
+    }
     await _local.enqueueSync(
       type: 'user_profile',
       action: 'upsert',

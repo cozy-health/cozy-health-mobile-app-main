@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 import '../permissions/permission_service.dart';
+import '../storage/token_storage.dart';
 import 'audio_recorder_service.dart';
 import 'voice_audio.dart';
 import 'voice_player.dart';
@@ -93,9 +94,14 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
   late final _recorder = widget.recorder ?? AudioRecorderService();
   final _watch = Stopwatch();
   Timer? _timer;
+  StreamSubscription<void>? _clearing, _sessions;
+  late final int _sessionGeneration = TokenStorage.generation;
+  bool _sessionEnded = false;
+  bool _settingsPending = false;
   StreamSubscription<Amplitude>? _amplitudes;
   final List<double> _samples = [];
   bool _showInfo = false;
+  bool _confirmDiscard = false;
   bool _recording = false, _busy = false;
   int _seconds = 0;
   String? _path, _error;
@@ -103,13 +109,55 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _clearing = TokenStorage.sessionClearing.listen((_) => _endSession());
+    _sessions = TokenStorage.sessionChanges.listen((_) => _endSession());
     unawaited(_start());
+  }
+
+  void _endSession() {
+    if (!mounted || _sessionEnded) return;
+    _sessionEnded = true;
+    _timer?.cancel();
+    _watch.stop();
+    unawaited(_recorder.cancel().catchError((Object _) {}));
+    Navigator.of(context).pop();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _settingsPending) {
+      _settingsPending = false;
+      unawaited(_checkPermission());
+    }
     if (state != AppLifecycleState.resumed && _recording && !_busy) {
       unawaited(_stop());
+    }
+  }
+
+  Future<void> _checkPermission() async {
+    try {
+      final status = await PermissionService.microphoneStatus();
+      if (mounted && !_sessionEnded && status == MicPermissionResult.granted) {
+        setState(() => _error = null);
+      }
+    } catch (_) {
+      // Keep the existing explanation and explicit retry action.
+    }
+  }
+
+  Future<void> _openSettings() async {
+    _settingsPending = true;
+    try {
+      if (await PermissionService.openAppSettings()) return;
+    } catch (_) {
+      // Explain failure below instead of swallowing an unavailable settings app.
+    }
+    _settingsPending = false;
+    if (mounted && !_sessionEnded) {
+      setState(
+        () => _error =
+            'Could not open Settings. Open your phone settings and allow microphone access for Cozy Health.',
+      );
     }
   }
 
@@ -128,6 +176,8 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_clearing?.cancel());
+    unawaited(_sessions?.cancel());
     _timer?.cancel();
     unawaited(_amplitudes?.cancel());
     _watch.stop();
@@ -137,6 +187,7 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
   }
 
   Future<void> _start() async {
+    if (_sessionEnded || _sessionGeneration != TokenStorage.generation) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -145,18 +196,26 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
       final permission =
           await (widget.requestMicrophone?.call() ??
               PermissionService.requestMicrophone());
-      if (!mounted) return;
+      if (!mounted ||
+          _sessionEnded ||
+          _sessionGeneration != TokenStorage.generation) {
+        return;
+      }
       if (permission != MicPermissionResult.granted) {
         setState(
           () => _error = permission == MicPermissionResult.permanentlyDenied
               ? 'Microphone access is blocked. Enable it in Settings.'
+              : permission == MicPermissionResult.restricted
+              ? 'Microphone access is restricted by your device settings or administrator.'
               : 'Microphone access is needed to record.',
         );
         return;
       }
       await _delete();
       await _recorder.start();
-      if (!mounted) {
+      if (!mounted ||
+          _sessionEnded ||
+          _sessionGeneration != TokenStorage.generation) {
         await _recorder.cancel();
         return;
       }
@@ -231,6 +290,7 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
   }
 
   Future<void> _confirm() async {
+    if (_sessionEnded || _sessionGeneration != TokenStorage.generation) return;
     final path = _path;
     if (path == null) return;
     setState(() {
@@ -249,6 +309,15 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
       }
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _requestDiscard() {
+    if (_busy) return;
+    if (_recording || _path != null) {
+      setState(() => _confirmDiscard = true);
+    } else {
+      unawaited(_discard());
     }
   }
 
@@ -271,12 +340,34 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
     final time =
         '${_seconds ~/ 60}:${(_seconds % 60).toString().padLeft(2, '0')}';
     return PopScope(
-      canPop: !_busy && !_recording,
+      canPop: !_busy && !_recording && _path == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _requestDiscard();
+      },
       child: WellnessSheet(
         title: widget.journal ? 'Voice journal' : 'Voice message',
         busy: _busy,
-        onClose: _discard,
-        footer: _recording
+        onClose: _requestDiscard,
+        footer: _confirmDiscard
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('Discard this recording? It has not been saved.'),
+                  SizedBox(height: w.small),
+                  WellnessAction(
+                    label: 'Keep recording',
+                    onPressed: () => setState(() => _confirmDiscard = false),
+                  ),
+                  SizedBox(height: w.small),
+                  WellnessAction(
+                    key: const ValueKey('voice-discard-confirm'),
+                    label: 'Discard permanently',
+                    onPressed: _discard,
+                  ),
+                ],
+              )
+            : _recording
             ? Tooltip(
                 message: 'Stop',
                 child: WellnessAction(
@@ -343,10 +434,7 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
             Semantics(liveRegion: true, child: Text(_error!)),
           ],
           if (_error?.contains('Settings') == true)
-            WellnessAction(
-              label: 'Open Settings',
-              onPressed: PermissionService.openAppSettings,
-            ),
+            WellnessAction(label: 'Open Settings', onPressed: _openSettings),
           if (_busy)
             const LinearProgressIndicator(
               semanticsLabel: 'Preparing voice recording',
@@ -367,7 +455,7 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
             child: WellnessAction(
               label: 'Discard recording',
               icon: Icons.delete_outline_rounded,
-              onPressed: _busy ? null : _discard,
+              onPressed: _busy ? null : _requestDiscard,
             ),
           ),
           SizedBox(height: w.small),

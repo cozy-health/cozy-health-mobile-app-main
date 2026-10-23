@@ -63,17 +63,41 @@ class PublishedArticlesRepository {
   PublishedArticlesRepository({ApiClient? api})
     : _api = api ?? ApiClient.instance;
   final ApiClient _api;
-  Future<PublishedArticlePage> load({int page = 1}) async {
+  Future<PublishedArticlePage> load({int page = 1}) => browse(page: page);
+
+  Future<List<Map<String, String>>> categories() async {
+    final response = responseMap(await _api.get('/content/categories'));
+    final data = response['data'];
+    if (data is! List) throw const FormatException('Invalid categories');
+    return data.map((row) {
+      if (row is! Map || row['slug'] is! String || row['name'] is! String) {
+        throw const FormatException('Invalid category');
+      }
+      return {'slug': row['slug'] as String, 'name': row['name'] as String};
+    }).toList();
+  }
+
+  Future<PublishedArticlePage> browse({
+    int page = 1,
+    String query = '',
+    String? category,
+  }) async {
     final local = LocalDbService(), owner = LocalDbService().activeUserId;
     final box = await local.settingsBox();
     bool current() => owner == local.activeUserId;
-    const key = 'published_articles_v1';
+    final key =
+        'published_articles_v2:${Uri.encodeComponent(query)}:${category ?? ''}';
     try {
       if (networkOffline.value == true) throw StateError('Offline');
       final raw = responseMap(
         await _api.get(
           '/content/articles',
-          queryParameters: {'page': page, 'per_page': 20},
+          queryParameters: {
+            'page': page,
+            'per_page': 20,
+            if (query.trim().isNotEmpty) 'q': query.trim(),
+            if (category != null && category.isNotEmpty) 'category': category,
+          },
         ),
       );
       if (!current()) throw StateError('Account changed');
@@ -90,6 +114,9 @@ class PublishedArticlesRepository {
           .where((a) => a.id != 'null' && a.title.trim().isNotEmpty)
           .toList();
       final last = (payload['last_page'] as num?)?.toInt() ?? page;
+      if (last < page || last > 1000) {
+        throw const FormatException('Invalid article pagination');
+      }
       if (page == 1 && current()) {
         await box.put(key, {'data': rows.map((a) => a.toJson()).toList()});
       }

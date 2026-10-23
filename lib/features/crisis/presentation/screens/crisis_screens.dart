@@ -1635,18 +1635,23 @@ class _GroundingExerciseScreenState extends State<GroundingExerciseScreen> {
 }
 
 class BreathingExerciseScreen extends StatefulWidget {
-  const BreathingExerciseScreen({super.key});
+  const BreathingExerciseScreen({super.key, this.elapsed});
+  final Duration Function()? elapsed;
 
   @override
   State<BreathingExerciseScreen> createState() =>
       _BreathingExerciseScreenState();
 }
 
-class _BreathingExerciseScreenState extends State<BreathingExerciseScreen> {
+class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
+    with WidgetsBindingObserver {
   int _phase = 0;
   int _cycle = 0;
-  bool _paused = false;
+  bool _paused = true, _started = false;
   Timer? _timer;
+  final _watch = Stopwatch();
+  Duration _elapsed = Duration.zero, _lastTick = Duration.zero;
+  int _phaseElapsed = 0;
 
   static const _labels = ['Breathe in', 'Hold', 'Breathe out', 'Pause'];
   static const _subtitles = ['through your nose', '', 'through your mouth', ''];
@@ -1655,30 +1660,74 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen> {
   @override
   void initState() {
     super.initState();
-    _schedule();
+    WidgetsBinding.instance.addObserver(this);
+    _watch.start();
   }
 
-  void _schedule() {
-    _timer?.cancel();
-    if (_paused || _cycle >= 4) return;
-    HapticFeedback.lightImpact();
-    _timer = Timer(Duration(seconds: _durations[_phase]), () {
-      if (!mounted) return;
-      setState(() {
-        if (_phase == 3) {
-          _phase = 0;
-          _cycle++;
-        } else {
-          _phase++;
-        }
-      });
-      _schedule();
+  Duration get _now => widget.elapsed?.call() ?? _watch.elapsed;
+  int get _secondsLeft =>
+      ((80000 - _elapsed.inMilliseconds).clamp(0, 80000) + 999) ~/ 1000;
+  int get _phaseSecondsLeft =>
+      (_durations[_phase] * 1000 - _phaseElapsed + 999) ~/ 1000;
+
+  void _tick() {
+    if (_paused || !mounted) return;
+    final now = _now;
+    final difference = now - _lastTick;
+    _lastTick = now;
+    final previousPhase = _phase;
+    setState(() {
+      if (!difference.isNegative) _elapsed += difference;
+      final milliseconds = _elapsed.inMilliseconds.clamp(0, 80000);
+      _cycle = milliseconds ~/ 20000;
+      _phase = 0;
+      var phaseElapsed = milliseconds % 20000;
+      while (_phase < 3 && phaseElapsed >= _durations[_phase] * 1000) {
+        phaseElapsed -= _durations[_phase] * 1000;
+        _phase++;
+      }
+      _phaseElapsed = phaseElapsed;
     });
+    if (_cycle >= 4) {
+      _timer?.cancel();
+    } else if (_phase != previousPhase) {
+      HapticFeedback.lightImpact();
+    }
+  }
+
+  void _toggle() {
+    if (!_paused) _tick();
+    _timer?.cancel();
+    setState(() {
+      _paused = !_paused;
+      _started = true;
+    });
+    _lastTick = _now;
+    if (!_paused && _cycle < 4) {
+      _timer = Timer.periodic(const Duration(milliseconds: 50), (_) => _tick());
+    }
+  }
+
+  void _restart() {
+    _timer?.cancel();
+    setState(() {
+      _elapsed = Duration.zero;
+      _phaseElapsed = _phase = _cycle = 0;
+      _paused = true;
+      _started = false;
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed && !_paused && _cycle < 4) _toggle();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _watch.stop();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -1721,21 +1770,36 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen> {
             label: 'Back to Home',
             onPressed: () => context.go(AppRouter.home),
           ),
+          CrisisButton(label: 'Restart', outlined: true, onPressed: _restart),
         ],
       );
     }
 
-    final scale = _phase == 0 || _phase == 1 ? 1.35 : 1.0;
+    final progress = _phaseElapsed / (_durations[_phase] * 1000);
+    final scale = MediaQuery.disableAnimationsOf(context)
+        ? 1.0
+        : switch (_phase) {
+            0 => 1.0 + .35 * progress,
+            1 => 1.35,
+            2 => 1.35 - .35 * progress,
+            _ => 1.0,
+          };
     return CrisisShell(
-      title: _labels[_phase],
+      title: _started ? _labels[_phase] : 'Ready to breathe?',
       subtitle: _subtitles[_phase].isEmpty ? null : _subtitles[_phase],
       children: [
+        Center(
+          child: Text(
+            '${_secondsLeft ~/ 60}:${(_secondsLeft % 60).toString().padLeft(2, '0')} remaining',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+        ),
+        Center(child: Text('$_phaseSecondsLeft seconds')),
+        if (_started && _paused) const Center(child: Text('Paused')),
         const SizedBox(height: 40),
         Center(
-          child: AnimatedScale(
+          child: Transform.scale(
             scale: scale,
-            duration: Duration(seconds: _durations[_phase]),
-            curve: Curves.easeInOut,
             child: Container(
               width: 200,
               height: 200,
@@ -1774,18 +1838,22 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen> {
         ),
         const SizedBox(height: 40),
         CrisisButton(
-          label: _paused ? 'Resume' : 'Pause',
+          label: !_started
+              ? 'Start'
+              : _paused
+              ? 'Resume'
+              : 'Pause',
           outlined: true,
-          onPressed: () => setState(() {
-            _paused = !_paused;
-            _schedule();
-          }),
+          onPressed: _toggle,
         ),
+        CrisisButton(label: 'Restart', textOnly: true, onPressed: _restart),
         const SizedBox(height: 12),
         CrisisButton(
           label: 'Stop',
           textOnly: true,
-          onPressed: () => context.pop(),
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go(AppRouter.crisisHub),
         ),
       ],
     );

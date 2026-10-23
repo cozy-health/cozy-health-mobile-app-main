@@ -26,6 +26,21 @@ void main() {
     expect(group.joined, isTrue);
     expect(state.groups.last, same(group));
   });
+  test('account reset removes preview groups and previous memberships', () {
+    state.toggleMembership(state.groups.first);
+    state.createGroup(
+      name: 'Private draft group',
+      topic: 'Sleep',
+      description: 'Owner draft',
+    );
+    state.clearAccountState();
+    expect(state.groups, hasLength(3));
+    expect(state.groups.any((group) => group.joined), isFalse);
+    expect(
+      state.groups.any((group) => group.name == 'Private draft group'),
+      isFalse,
+    );
+  });
   test('post category and anonymous visibility survive publishing', () {
     state.publish(content: 'Hello', topic: 'Anxiety', visibility: 'anonymous');
     expect(state.posts.single['topic'], 'Anxiety');

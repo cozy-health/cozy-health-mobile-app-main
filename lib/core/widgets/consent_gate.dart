@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../routing/app_router.dart';
 import '../services/legal_documents.dart';
 import '../services/consent_service.dart';
+import '../services/consent_refresh_signal.dart';
 import '../storage/token_storage.dart';
+import '../../features/auth/data/auth_service.dart';
 
 class ConsentGate extends StatefulWidget {
   const ConsentGate({
@@ -25,6 +28,10 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
   ConsentState? _state;
   String? _session;
   bool _loading = false, _busy = false;
+  bool _verified = false;
+  int _request = 0;
+  StreamSubscription<void>? _clearing, _sessions;
+  String? _loadError;
   String? _error;
   final Set<String> _dismissed = {};
   final Set<String> _healthChoices = {};
@@ -32,6 +39,12 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     _service = widget.service ?? ConsentService();
+    consentRefreshSignal.addListener(_consentRequired);
+    _clearing = TokenStorage.sessionClearing.listen((_) => _invalidate());
+    _sessions = TokenStorage.sessionChanges.listen((_) {
+      _invalidate();
+      _refresh();
+    });
     WidgetsBinding.instance.addObserver(this);
     if (widget.observeRoutes) {
       AppRouter.router.routeInformationProvider.addListener(_routeChanged);
@@ -68,24 +81,64 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
 
   Future<void> _refresh() async {
     if (_loading) return;
-    _loading = true;
+    final request = ++_request;
+    final generation = TokenStorage.generation;
+    setState(() {
+      _loading = true;
+      _verified = false;
+      _loadError = null;
+    });
     try {
       final result = await _service.load();
       final token = await TokenStorage().getToken();
-      if (mounted) {
+      if (mounted &&
+          request == _request &&
+          generation == TokenStorage.generation) {
         setState(() {
           _state = result;
           _session = token;
+          _verified = true;
         });
       }
     } catch (_) {
-      // Draft rollout must not lock out users on connectivity failures.
+      if (mounted &&
+          request == _request &&
+          generation == TokenStorage.generation) {
+        setState(() {
+          _state = null;
+          _loadError =
+              'Could not check your consent. Check your connection and retry.';
+        });
+      }
     } finally {
-      _loading = false;
+      if (mounted && request == _request) setState(() => _loading = false);
     }
   }
 
+  void _invalidate() {
+    if (!mounted) return;
+    setState(() {
+      _request++;
+      _loading = false;
+      _verified = false;
+      _state = null;
+      _session = null;
+      _busy = false;
+      _error = null;
+      _loadError = null;
+      _dismissed.clear();
+      _healthChoices.clear();
+    });
+  }
+
+  void _consentRequired() {
+    _invalidate();
+    _refresh();
+  }
+
   Future<void> _review(ConsentDocument doc) async {
+    final state = _state;
+    final generation = TokenStorage.generation;
     await showDialog<void>(
       context: context,
       animationStyle: MediaQuery.disableAnimationsOf(context)
@@ -115,7 +168,10 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                _accept(doc);
+                if (identical(state, _state) &&
+                    generation == TokenStorage.generation) {
+                  _accept(doc);
+                }
               },
               child: const Text('Accept'),
             ),
@@ -126,24 +182,31 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
 
   Future<void> _accept(ConsentDocument doc) async {
     if (_busy || _state == null) return;
+    final generation = TokenStorage.generation;
+    final state = _state!;
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      await _service.accept(_state!, doc);
-      if (mounted) setState(() {});
+      await _service.accept(state, doc);
+      if (mounted && generation == TokenStorage.generation) setState(() {});
     } catch (_) {
-      if (mounted) {
+      if (mounted && generation == TokenStorage.generation) {
         setState(() => _error = 'Could not save your choice. Please retry.');
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted && generation == TokenStorage.generation) {
+        setState(() => _busy = false);
+      }
     }
   }
 
   @override
   void dispose() {
+    consentRefreshSignal.removeListener(_consentRequired);
+    _clearing?.cancel();
+    _sessions?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     if (widget.observeRoutes) {
       AppRouter.router.routeInformationProvider.removeListener(_routeChanged);
@@ -156,7 +219,11 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
     final path = widget.observeRoutes
         ? AppRouter.router.routeInformationProvider.value.uri.path
         : '';
-    if (path.startsWith('/crisis') ||
+    if ({
+          AppRouter.crisisHub,
+          AppRouter.crisisOverlay,
+          AppRouter.crisisFollowUp,
+        }.contains(path) ||
         {
           AppRouter.ageAuthorization,
           AppRouter.accountDeletion,
@@ -172,10 +239,45 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
           AppRouter.createAccount,
           AppRouter.forgotPassword,
         }.contains(path) ||
-        path.contains('breathing') ||
-        path.contains('grounding') ||
-        path.contains('safety-plan')) {
+        path == AppRouter.breathing ||
+        path == AppRouter.grounding) {
       return widget.child;
+    }
+    if (!_verified) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_loading) const CircularProgressIndicator(),
+                  Text(_loadError ?? 'Checking your consent…'),
+                  if (!_loading)
+                    FilledButton(
+                      onPressed: _refresh,
+                      child: const Text('Retry'),
+                    ),
+                  if (widget.observeRoutes) ...[
+                    TextButton(
+                      onPressed: () => AppRouter.router.go(AppRouter.crisisHub),
+                      child: const Text('Get urgent support'),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        await AuthService().logout();
+                        if (mounted) AppRouter.router.go(AppRouter.login);
+                      },
+                      child: const Text('Log out'),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
     }
     final pending = _state?.pending ?? [];
     final required = pending
@@ -207,6 +309,9 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
                     child: const Text('Read online'),
                   ),
                 TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
+                  ),
                   onPressed: () => AppRouter.router.go(AppRouter.crisisHub),
                   child: const Text('Get urgent support'),
                 ),

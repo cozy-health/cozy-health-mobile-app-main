@@ -1,3 +1,4 @@
+import '../../../../core/storage/token_storage.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
@@ -618,6 +619,25 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   Timer? _autoSaveTimer;
   String _saveStatus = 'No draft yet';
   bool _saving = false;
+  final _owner = LocalDbService.instance.activeUserId;
+  final _sessionGeneration = TokenStorage.generation;
+  StreamSubscription<void>? _sessionClearing, _sessionChanges, _accountChanges;
+  bool _sessionEnded = false;
+  bool get _active =>
+      !_sessionEnded &&
+      _owner == LocalDbService.instance.activeUserId &&
+      _sessionGeneration == TokenStorage.generation;
+
+  void _endSession() {
+    if (!mounted || _sessionEnded) return;
+    _autoSaveTimer?.cancel();
+    _controller.clear();
+    _tags.clear();
+    setState(() {
+      _sessionEnded = true;
+      _availableDraft = null;
+    });
+  }
 
   @override
   void initState() {
@@ -633,12 +653,22 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
     _controller = TextEditingController(text: widget.existing?.body ?? '');
     _tags = [...(widget.existing?.tags ?? const <String>[])];
     if (_availableDraft != null) _saveStatus = 'Draft available';
+    _sessionClearing = TokenStorage.sessionClearing.listen(
+      (_) => _endSession(),
+    );
+    _sessionChanges = TokenStorage.sessionChanges.listen((_) => _endSession());
+    _accountChanges = LocalDbService.instance.accountChanges.listen((_) {
+      if (_owner != LocalDbService.instance.activeUserId) _endSession();
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _autoSaveTimer?.cancel();
+    unawaited(_sessionClearing?.cancel());
+    unawaited(_sessionChanges?.cancel());
+    unawaited(_accountChanges?.cancel());
     _controller.dispose();
     super.dispose();
   }
@@ -652,7 +682,15 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   }
 
   @override
-  Widget build(BuildContext context) => _buildProtected(context);
+  Widget build(BuildContext context) => _active
+      ? _buildProtected(context)
+      : const Scaffold(
+          body: Center(
+            child: Text(
+              'Your session changed. Reopen the journal to continue.',
+            ),
+          ),
+        );
 
   Widget _buildProtected(BuildContext context) {
     final prompt =
@@ -780,6 +818,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   }
 
   Future<void> _discardDraft() async {
+    if (!_active) return;
     await LocalDbService.instance.deleteJournalDraft(_draftId);
     if (!mounted) return;
     setState(() {
@@ -790,6 +829,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   }
 
   void _addTag() {
+    if (!_active) return;
     final controller = TextEditingController();
     showModalBottomSheet<void>(
       context: context,
@@ -810,6 +850,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   }
 
   void _scheduleAutoSave() {
+    if (!_active) return;
     setState(() => _saveStatus = 'Saving draft...');
     _autoSaveTimer?.cancel();
     _autoSaveTimer = Timer(
@@ -819,6 +860,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   }
 
   Future<void> _saveDraftNow() async {
+    if (!_active) return;
     _autoSaveTimer?.cancel();
     final body = _controller.text.trim();
     if (body.isEmpty && _tags.isEmpty) {
@@ -827,34 +869,43 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
       return;
     }
 
-    await LocalDbService.instance.saveJournalDraft(
-      JournalEntry(
-        id: _draftId,
-        type: widget.type,
-        title:
-            widget.prompt?.category ??
-            widget.existing?.title ??
-            'Journal entry',
-        body: body,
-        voiceUrl: widget.existing?.voiceUrl,
-        localVoicePath: widget.existing?.localVoicePath,
-        voiceDuration: widget.existing?.voiceDuration,
-        transcription: widget.existing?.transcription,
-        tags: _tags,
-        promptId: widget.prompt?.id ?? widget.existing?.promptId,
-        promptText: widget.prompt?.text ?? widget.existing?.promptText,
-        createdAt: widget.existing?.createdAt ?? DateTime.now(),
-        updatedAt: DateTime.now(),
-        isDraft: true,
-        wordCount: _wordCount,
-      ),
-    );
+    try {
+      await LocalDbService.instance.saveJournalDraft(
+        JournalEntry(
+          id: _draftId,
+          type: widget.type,
+          title:
+              widget.prompt?.category ??
+              widget.existing?.title ??
+              'Journal entry',
+          body: body,
+          voiceUrl: widget.existing?.voiceUrl,
+          localVoicePath: widget.existing?.localVoicePath,
+          voiceDuration: widget.existing?.voiceDuration,
+          transcription: widget.existing?.transcription,
+          tags: _tags,
+          promptId: widget.prompt?.id ?? widget.existing?.promptId,
+          promptText: widget.prompt?.text ?? widget.existing?.promptText,
+          createdAt: widget.existing?.createdAt ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+          isDraft: true,
+          wordCount: _wordCount,
+        ),
+      );
 
-    if (mounted) setState(() => _saveStatus = 'Draft saved ${_timeNow()}');
+      if (mounted && _active)
+        setState(() => _saveStatus = 'Draft saved ${_timeNow()}');
+    } catch (_) {
+      if (mounted && _active)
+        setState(
+          () => _saveStatus =
+              'Draft could not save. Keep this page open and retry.',
+        );
+    }
   }
 
   Future<void> _finish() async {
-    if (_saving) return;
+    if (_saving || !_active) return;
     setState(() => _saving = true);
     _autoSaveTimer?.cancel();
     try {
@@ -875,6 +926,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   }
 
   Future<void> _finishEntry() async {
+    if (!_active) return;
     final body = _controller.text.trim();
     if (body.isEmpty && widget.existing == null) {
       await LocalDbService.instance.deleteJournalDraft(_draftId);
@@ -904,8 +956,10 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
       wordCount: _wordCount,
     );
     if (widget.onSave != null && !await widget.onSave!(entry)) return;
+    if (!_active) return;
     await LocalDbService.instance.deleteJournalDraft(_draftId);
-    if (mounted) Navigator.pop(context, widget.onSave == null ? entry : null);
+    if (mounted && _active)
+      Navigator.pop(context, widget.onSave == null ? entry : null);
   }
 }
 

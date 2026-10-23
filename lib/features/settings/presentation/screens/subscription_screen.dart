@@ -5,9 +5,19 @@ import '../../../../core/services/local_db_service.dart';
 import '../../../../core/routing/app_router.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/subscription_repository.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import '../../../../core/theme/cozy_colors.dart';
 
 class SubscriptionScreen extends StatefulWidget {
-  const SubscriptionScreen({super.key});
+  const SubscriptionScreen({
+    super.key,
+    this.title = 'Plans and pricing',
+    this.deferBilling = false,
+  });
+  final String title;
+  final bool deferBilling;
   @override
   State<SubscriptionScreen> createState() => _SubscriptionScreenState();
 }
@@ -83,7 +93,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   Widget build(BuildContext context) {
     final rows = (_catalog?['packages'] as List? ?? []).whereType<Map>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Plans and pricing')),
+      appBar: AppBar(
+        title: Text(widget.title),
+        leading: AppPressable(
+          label: 'Back',
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go(AppRouter.settings),
+          child: SizedBox(
+            width: context.cozyColors.wellness.touch,
+            height: context.cozyColors.wellness.touch,
+            child: const Icon(Icons.arrow_back),
+          ),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
@@ -122,7 +144,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               'Pricing is not available for this country yet. No other region’s prices have been substituted.',
             ),
           for (final row in rows) _plan(row),
-          const LaunchBillingPanel(),
+          if (widget.deferBilling)
+            const Text(
+              'Billing is on hold until Apple and Google store setup is complete. No purchase is available here.',
+            )
+          else
+            const LaunchBillingPanel(),
           const SizedBox(height: 20),
           const Card(
             child: Padding(
@@ -132,14 +159,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
             ),
           ),
-          TextButton(
-            onPressed: () => context.push(AppRouter.billingHistory),
-            child: const Text('Billing history'),
-          ),
-          TextButton(
-            onPressed: () => context.push(AppRouter.restorePurchases),
-            child: const Text('Restore purchases'),
-          ),
+          if (!widget.deferBilling)
+            TextButton(
+              onPressed: () => context.push(AppRouter.billingHistory),
+              child: const Text('Billing history'),
+            ),
+          if (!widget.deferBilling)
+            TextButton(
+              onPressed: () => context.push(AppRouter.restorePurchases),
+              child: const Text('Restore purchases'),
+            ),
         ],
       ),
     );
@@ -156,39 +185,60 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final monthly = num.tryParse('${row['price']}') ?? 0;
     final annual = num.tryParse('${row['yearly_price']}') ?? 0;
     final free = row['tier'] == 'free';
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(22),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return AppPressable(
+      label: 'View ${row['package_name']} package',
+      onPressed: () => showWellnessSheet<void>(
+        context: context,
+        builder: (context) => WellnessSheet(
+          title: row['package_name']?.toString() ?? 'Package details',
           children: [
-            Text(
-              '${row['package_name']}',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 10),
+            if (row['description'] != null) Text(row['description'].toString()),
             Text(
               '${format.format(_yearly ? annual : monthly)}/${_yearly ? 'year' : 'month'}',
-              style: Theme.of(context).textTheme.headlineSmall,
             ),
-            if (_yearly && !free)
-              Text(
-                '${format.format(annual / 12)} equivalent per month · ${row['annual_discount']}% annual saving',
-              ),
-            const SizedBox(height: 12),
             for (final feature in row['features'] as List? ?? [])
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text('✓ $feature'),
-              ),
-            Text(
-              free
-                  ? 'Basic tracking and journaling'
-                  : 'Paid activation coming later',
-              style: Theme.of(context).textTheme.labelLarge,
+              Text(feature.toString()),
+            const Text(
+              'Billing is on hold until Apple and Google store setup is complete.',
             ),
+            const WellnessAction(label: 'Billing unavailable', onPressed: null),
           ],
+        ),
+      ),
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 10),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${row['package_name']}',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '${format.format(_yearly ? annual : monthly)}/${_yearly ? 'year' : 'month'}',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              if (_yearly && !free)
+                Text(
+                  '${format.format(annual / 12)} equivalent per month · ${row['annual_discount']}% annual saving',
+                ),
+              const SizedBox(height: 12),
+              for (final feature in row['features'] as List? ?? [])
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text('✓ $feature'),
+                ),
+              Text(
+                free
+                    ? 'Basic tracking and journaling'
+                    : 'Paid activation coming later',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ],
+          ),
         ),
       ),
     );

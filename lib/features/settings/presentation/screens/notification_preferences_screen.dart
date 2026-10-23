@@ -220,7 +220,7 @@ class _NotificationPreferencesScreenState
               ),
             ),
             SwitchListTile(
-              title: const Text('Allow reminders'),
+              title: const Text('Allow notifications'),
               value: enabled,
               onChanged: _saving
                   ? null
@@ -239,6 +239,32 @@ class _NotificationPreferencesScreenState
                     : () => _change(p, 'push_consent', false),
                 child: const Text('Withdraw reminder consent'),
               ),
+            const Divider(),
+            const Text('Community activity'),
+            SwitchListTile(
+              title: const Text('Replies to my posts'),
+              value: p.commentsNotifications,
+              onChanged: _saving
+                  ? null
+                  : (v) => _change(p, 'comments_notifications', v),
+            ),
+            SwitchListTile(
+              title: const Text('Likes on my posts'),
+              value: s['community_likes_enabled'] as bool,
+              onChanged: _saving
+                  ? null
+                  : (v) => _setting(p, 'community_likes_enabled', v),
+            ),
+            SwitchListTile(
+              title: const Text('Community phone alerts'),
+              subtitle: const Text(
+                'Also send permitted phone notifications. Your inbox remains available without phone alerts.',
+              ),
+              value: s['community_push_enabled'] as bool,
+              onChanged: _saving || !enabled
+                  ? null
+                  : (v) => _setting(p, 'community_push_enabled', v),
+            ),
             for (final c in ['mood', 'journal', 'streak', 'affirmation']) ...[
               const Divider(),
               SwitchListTile(
@@ -294,7 +320,7 @@ class _NotificationPreferencesScreenState
               ),
               ListTile(
                 title: const Text('Days'),
-                trailing: Text(
+                subtitle: Text(
                   (s['${c}_days'] as List)
                       .map(
                         (d) => const [

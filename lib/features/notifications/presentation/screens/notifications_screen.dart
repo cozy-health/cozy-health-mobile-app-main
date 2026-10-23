@@ -12,6 +12,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/models/app_notification.dart';
 import '../../data/notification_repository.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/storage/token_storage.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -62,7 +63,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Icons.chevron_left,
             color: Theme.of(context).colorScheme.onSurface,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go(AppRouter.home),
         ),
         actions: [
           StreamBuilder<List<AppNotification>>(
@@ -201,8 +203,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       child: GestureDetector(
         onTap: () async {
+          final generation = TokenStorage.generation;
           await NotificationRepository().markAsRead(item.id);
-          if (mounted) {
+          if (mounted && generation == TokenStorage.generation) {
             context.push(
               AppRouter.notificationDetail,
               extra: item.copyWith(read: true),

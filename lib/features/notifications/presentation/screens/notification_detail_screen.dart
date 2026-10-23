@@ -13,7 +13,16 @@ class NotificationDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final item = notification;
     return Scaffold(
-      appBar: AppBar(title: const Text('Notification')),
+      appBar: AppBar(
+        title: const Text('Notification'),
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go(AppRouter.notifications),
+        ),
+      ),
       body: item == null
           ? const EmptyState(
               icon: Icons.notifications_none,
@@ -21,12 +30,17 @@ class NotificationDetailScreen extends StatelessWidget {
             )
           : StreamBuilder<List<AppNotification>>(
               stream: NotificationRepository().watchNotifications(),
+              initialData: NotificationRepository().currentEntries(),
               builder: (context, snapshot) {
-                final current =
-                    (snapshot.data ?? [])
-                        .where((row) => row.id == item.id)
-                        .firstOrNull ??
-                    item;
+                final current = (snapshot.data ?? [])
+                    .where((row) => row.id == item.id)
+                    .firstOrNull;
+                if (current == null) {
+                  return const EmptyState(
+                    icon: Icons.notifications_none,
+                    title: 'This notification is no longer available.',
+                  );
+                }
                 final theme = Theme.of(context);
                 final destination = switch (current.type) {
                   'reply' || 'like' => AppRouter.communityHub,

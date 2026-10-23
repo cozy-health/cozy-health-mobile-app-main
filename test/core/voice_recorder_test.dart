@@ -6,6 +6,8 @@ import 'package:cozy_health/core/permissions/permission_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:record/record.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:cozy_health/core/storage/token_storage.dart';
 
 class FakeRecorder extends Fake implements AudioRecorderService {
   FakeRecorder(this.path);
@@ -43,6 +45,7 @@ void main() {
   late Directory temporary;
   late FakeRecorder recorder;
   setUp(() async {
+    FlutterSecureStorage.setMockInitialValues({});
     temporary = await Directory.systemTemp.createTemp('voice-widget-');
     final file = await File(
       '${temporary.path}/voice.m4a',
@@ -58,6 +61,7 @@ void main() {
     required bool journal,
     required Future<void> Function(RecordedAudio) confirm,
     bool denied = false,
+    MicPermissionResult? permission,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -69,9 +73,11 @@ void main() {
                 context,
                 journal: journal,
                 recorder: recorder,
-                requestMicrophone: () async => denied
-                    ? MicPermissionResult.denied
-                    : MicPermissionResult.granted,
+                requestMicrophone: () async =>
+                    permission ??
+                    (denied
+                        ? MicPermissionResult.denied
+                        : MicPermissionResult.granted),
                 onConfirm: confirm,
               ),
               child: const Icon(Icons.mic),
@@ -152,9 +158,54 @@ void main() {
     );
     await tester.ensureVisible(find.byTooltip('Discard recording'));
     await tester.tap(find.byTooltip('Discard recording'));
+    await tester.pump();
+    expect(
+      find.text('Discard this recording? It has not been saved.'),
+      findsOneWidget,
+    );
+    expect(recorder.cancels, 0);
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('voice-discard-confirm')),
+    );
+    await tester.tap(find.byKey(const ValueKey('voice-discard-confirm')));
     await driveUntil(tester, () => recorder.cancels == 1);
     await tester.pumpAndSettle();
     expect(recorder.cancels, 1);
+    expect(saved, isFalse);
+  });
+  testWidgets(
+    'device restrictions explain why microphone access cannot be requested',
+    (tester) async {
+      await open(
+        tester,
+        journal: true,
+        permission: MicPermissionResult.restricted,
+        confirm: (_) async {},
+      );
+      expect(recorder.starts, 0);
+      expect(
+        find.text(
+          'Microphone access is restricted by your device settings or administrator.',
+        ),
+        findsOneWidget,
+      );
+      await tester.ensureVisible(find.byTooltip('Discard recording'));
+      await tester.tap(find.byTooltip('Discard recording'));
+      await driveUntil(tester, () => recorder.cancels == 1);
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets('account replacement closes and cancels the previous recording', (
+    tester,
+  ) async {
+    var saved = false;
+    await open(tester, journal: true, confirm: (_) async => saved = true);
+    expect(find.text('Recording'), findsOneWidget);
+    await TokenStorage().saveToken('different-account', stayLoggedIn: false);
+    await tester.pumpAndSettle();
+    expect(find.text('Voice journal'), findsNothing);
+    expect(recorder.cancels, greaterThanOrEqualTo(1));
     expect(saved, isFalse);
   });
 }

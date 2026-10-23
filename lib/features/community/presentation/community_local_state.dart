@@ -38,6 +38,11 @@ class CommunityLocalState extends ChangeNotifier {
     _threads.clear();
     _blockedUsers.clear();
     _hiddenPosts.clear();
+    groups
+      ..clear()
+      ..addAll(_defaultGroups());
+    _sequence = 0;
+    notifyListeners();
   }
 
   static const topics = [
@@ -52,7 +57,8 @@ class CommunityLocalState extends ChangeNotifier {
     'Work',
     'Self-care',
   ];
-  final List<CommunityGroup> groups = [
+  final List<CommunityGroup> groups = _defaultGroups();
+  static List<CommunityGroup> _defaultGroups() => [
     CommunityGroup(
       id: 'anxiety',
       name: 'Anxiety Group',

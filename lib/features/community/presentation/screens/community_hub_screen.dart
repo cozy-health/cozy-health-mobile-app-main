@@ -9,6 +9,7 @@ import '../community_local_state.dart';
 import '../widgets/community_groups.dart';
 import '../widgets/post_actions.dart';
 import '../widgets/post_card.dart';
+import '../../../notifications/presentation/widgets/notification_bell.dart';
 
 class CommunityHubScreen extends StatefulWidget {
   const CommunityHubScreen({super.key, this.posts});
@@ -91,15 +92,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> {
                       ),
                     ),
                   ),
-                  AppPressable(
-                    label: 'Notifications',
-                    onPressed: () => context.push(AppRouter.notifications),
-                    child: SizedBox(
-                      width: w.touch,
-                      height: w.touch,
-                      child: const Icon(Icons.notifications_outlined),
-                    ),
-                  ),
+                  const NotificationBell(),
                 ],
               ),
               SizedBox(height: w.small),

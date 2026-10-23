@@ -10,6 +10,7 @@ import 'package:cozy_health/features/content/data/published_articles_repository.
 
 class ArticleApi extends Fake implements ApiClient {
   final paths = <String>[];
+  final queries = <Map<String, dynamic>?>[];
   bool fail = false;
   Map<String, dynamic> article = {
     'id': 'a1',
@@ -27,6 +28,7 @@ class ArticleApi extends Fake implements ApiClient {
     Options? options,
   }) async {
     paths.add(path);
+    queries.add(queryParameters);
     if (fail) throw StateError('Unavailable');
     return Response(
       requestOptions: RequestOptions(path: path),
@@ -96,6 +98,27 @@ void main() {
         'A complete published body.',
       );
       expect(api.paths.length, 1);
+    },
+  );
+  test(
+    'search and category use server filters and do not share unrelated cached pages',
+    () async {
+      final api = ArticleApi();
+      final source = PublishedArticlesRepository(api: api);
+      await source.browse(query: 'sleep', category: 'sleep');
+      expect(api.queries.single, {
+        'page': 1,
+        'per_page': 20,
+        'q': 'sleep',
+        'category': 'sleep',
+      });
+      networkOffline.value = true;
+      final cached = await source.browse(query: 'sleep', category: 'sleep');
+      expect(cached.cached, isTrue);
+      await expectLater(
+        source.browse(query: 'work', category: 'work'),
+        throwsStateError,
+      );
     },
   );
   test(

@@ -101,6 +101,42 @@ void main() {
   });
 
   test(
+    'reloading for another account cannot rebind an old consent state',
+    () async {
+      var token = 'first';
+      var submitted = 0;
+      final service = ConsentService(
+        token: () async => token,
+        get: (path) async => path == '/config'
+            ? {
+                'consent': {
+                  'enforce_blocking': true,
+                  'documents': {
+                    'privacy_policy': document(version: '1.0', published: true),
+                  },
+                },
+              }
+            : {'owner_id': token == 'first' ? 1 : 2, 'data': []},
+        post: (body) async {
+          submitted++;
+          return {
+            'owner_id': 1,
+            'data': {...body, 'status': 'accepted'},
+          };
+        },
+      );
+      final oldState = (await service.load())!;
+      token = 'second';
+      await service.load();
+      await expectLater(
+        service.accept(oldState, oldState.documents.single),
+        throwsStateError,
+      );
+      expect(submitted, 0);
+    },
+  );
+
+  test(
     'marketing choice persists only after explicit submission and can be withdrawn',
     () async {
       final service = ConsentService(
@@ -109,7 +145,13 @@ void main() {
             ? {
                 'consent': {
                   'enforce_blocking': false,
-                  'documents': {'marketing': document(version: '1.0', published: true, required: false)},
+                  'documents': {
+                    'marketing': document(
+                      version: '1.0',
+                      published: true,
+                      required: false,
+                    ),
+                  },
                 },
               }
             : {'owner_id': 1, 'data': []},

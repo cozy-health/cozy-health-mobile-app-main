@@ -45,7 +45,9 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
             Icons.arrow_back,
             color: Theme.of(context).colorScheme.onSurface,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go(AppRouter.contentHome),
         ),
         title: Text('Saved', style: Theme.of(context).textTheme.headlineMedium),
         centerTitle: true,
@@ -95,7 +97,15 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
                 onTap: () {
                   context.push(
                     AppRouter.articleDetail,
-                    extra: {'id': article.articleId, 'title': article.title},
+                    extra: {
+                      'id': article.articleId,
+                      'title': article.title,
+                      'slug': article.articleSlug,
+                      'body': article.body,
+                      'excerpt': article.excerpt,
+                      'category': article.category,
+                      'read_time_minutes': article.readTimeMinutes,
+                    },
                   );
                 },
                 trailing: IconButton(

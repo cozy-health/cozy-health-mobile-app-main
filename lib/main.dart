@@ -15,8 +15,6 @@ import 'core/storage/token_storage.dart';
 import 'core/widgets/device_integrity_notice.dart';
 import 'core/widgets/consent_gate.dart';
 import 'package:flutter/material.dart';
-import 'core/widgets/age_eligibility_gate.dart';
-import 'core/services/age_eligibility_service.dart';
 import 'core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'core/routing/app_router.dart';
@@ -185,15 +183,10 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
                             child: AppAvailabilityGate(
                               child: SecurityCaptureOverlay(
                                 child: SecurityGate(
-                                  child: AgeEligibilityGate(
-                                    child: ConsentGate(
-                                      forceBlocking: AgeEligibilityService
-                                          .instance
-                                          .enabled,
-                                      child: PushNotificationHost(
-                                        child: DeviceIntegrityNotice(
-                                          child: child!,
-                                        ),
+                                  child: ConsentGate(
+                                    child: PushNotificationHost(
+                                      child: DeviceIntegrityNotice(
+                                        child: child!,
                                       ),
                                     ),
                                   ),

@@ -12,6 +12,7 @@ import '../../../../core/data/demo_mode.dart';
 import '../../../../core/api/api_client.dart';
 import '../../data/community_repository.dart';
 import '../../../../core/services/local_db_service.dart';
+import '../../../../core/routing/app_router.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -170,7 +171,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             Icons.arrow_back,
             color: Theme.of(context).colorScheme.onSurface,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go(AppRouter.communityHub),
         ),
         actions: [
           IconButton(

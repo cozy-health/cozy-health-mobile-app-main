@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/storage/token_storage.dart';
 import '../data/demo_mode.dart';
 import '../services/user_data_merge.dart';
 import 'package:flutter/foundation.dart';
@@ -80,11 +81,16 @@ class JournalRepository {
   }
 
   Future<JournalEntry> saveJournalEntry(JournalEntry entry) async {
+    final owner = _local.activeUserId;
+    final generation = TokenStorage.generation;
     if (usePlaceholderData) {
       DemoMode.instance.upsertJournal(entry);
       return entry;
     }
     await _local.saveJournalEntry(entry);
+    if (owner != _local.activeUserId || generation != TokenStorage.generation) {
+      throw StateError('Account changed before saving could complete');
+    }
     await _local.enqueueSync(
       type: 'journal_entry',
       action: 'upsert',

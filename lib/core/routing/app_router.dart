@@ -1,7 +1,6 @@
 import '../../features/settings/presentation/screens/digital_wellbeing_screen.dart';
 import '../../features/wellness/presentation/wellness_screen.dart';
 import '../security_gate.dart';
-import '../widgets/age_eligibility_gate.dart';
 import 'package:flutter/material.dart';
 import '../models/app_notification.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
@@ -14,6 +13,8 @@ import 'package:cozy_health/features/quiz/presentation/screen/quiz_taking_screen
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_history_screen.dart';
 import 'package:cozy_health/features/quiz/presentation/screen/quiz_result_detail_screen.dart';
 import 'package:cozy_health/features/content/presentation/screens/content_home_screen.dart';
+import '../../features/content/presentation/screens/published_article_browser.dart';
+import '../data/demo_mode.dart';
 import 'package:cozy_health/features/content/presentation/screens/category_detail_screen.dart';
 import 'package:cozy_health/features/content/presentation/screens/article_detail_screen.dart';
 import 'package:cozy_health/features/content/presentation/screens/saved_articles_screen.dart';
@@ -446,17 +447,27 @@ class AppRouter {
       GoRoute(
         path: contentHome,
         name: 'contentHome',
-        builder: (_, __) => const ContentHomeScreen(),
+        builder: (_, __) => DemoMode.instance.enabled
+            ? const ContentHomeScreen()
+            : const PublishedArticleBrowser(),
       ),
       GoRoute(
         path: categoryDetail,
         name: 'categoryDetail',
-        builder: (_, state) => CategoryDetailScreen(extra: _extraMap(state)),
+        builder: (_, state) => DemoMode.instance.enabled
+            ? CategoryDetailScreen(extra: _extraMap(state))
+            : PublishedArticleBrowser(
+                category: _extraMap(state)['id']?.toString(),
+              ),
       ),
       GoRoute(
         path: articleDetail,
         name: 'articleDetail',
-        builder: (_, state) => ArticleDetailScreen(extra: _extraMap(state)),
+        builder: (_, state) =>
+            !DemoMode.instance.enabled &&
+                _extraMap(state)['publishedArticle'] != true
+            ? PublishedArticleLoader(extra: _extraMap(state))
+            : ArticleDetailScreen(extra: _extraMap(state)),
       ),
       GoRoute(
         path: savedArticles,
@@ -466,7 +477,9 @@ class AppRouter {
       GoRoute(
         path: contentSearch,
         name: 'contentSearch',
-        builder: (_, __) => const ContentSearchScreen(),
+        builder: (_, __) => DemoMode.instance.enabled
+            ? const ContentSearchScreen()
+            : const PublishedArticleBrowser(search: true),
       ),
       GoRoute(
         path: dailyAffirmation,
@@ -484,7 +497,10 @@ class AppRouter {
       ),
       GoRoute(
         path: wellnessPackages,
-        builder: (_, __) => const WellnessScreen(packages: true),
+        builder: (_, __) => const SubscriptionScreen(
+          title: 'Cozy Packages',
+          deferBilling: true,
+        ),
       ),
       GoRoute(
         path: createPost,
@@ -592,8 +608,7 @@ class AppRouter {
       ),
       GoRoute(
         path: ageAuthorization,
-        builder: (_, __) =>
-            const AgeEligibilityGate(review: true, child: SizedBox.shrink()),
+        redirect: (_, __) => settings,
       ),
       GoRoute(
         path: editProfile,

@@ -17,7 +17,6 @@ import 'package:cozy_health/core/widgets/app_snackbar.dart';
 
 import '../widgets/feature_tour.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../widgets/preference_suggestions.dart';
 import '../../../../core/widgets/affirmation_panel.dart';
@@ -36,8 +35,7 @@ import '../../../../core/repositories/mood_repository.dart';
 import '../../../../core/models/mood_entry.dart';
 import '../../../../core/models/user_profile.dart';
 import '../../../../features/settings/data/profile_repository.dart';
-import '../../../../core/models/app_notification.dart';
-import '../../../../features/notifications/data/notification_repository.dart';
+import '../../../../features/notifications/presentation/widgets/notification_bell.dart';
 
 enum HomeDashboardState {
   returningUser,
@@ -560,48 +558,7 @@ class _Header extends StatelessWidget {
                 ],
               ),
             ),
-            Semantics(
-              button: true,
-              label: 'Notifications',
-              child: StreamBuilder<List<AppNotification>>(
-                stream: NotificationRepository().watchNotifications(),
-                builder: (context, notifSnapshot) {
-                  final unreadCount = (notifSnapshot.data ?? [])
-                      .where((n) => !n.read)
-                      .length;
-
-                  return IconButton(
-                    onPressed: () => context.push(AppRouter.notifications),
-                    icon: SizedBox(
-                      width: 30,
-                      height: 30,
-                      child: Stack(
-                        children: [
-                          SvgPicture.asset(
-                            'assets/svg/home_notification_bell.svg',
-                            width: 30,
-                            height: 30,
-                            excludeFromSemantics: true,
-                          ),
-                          if (unreadCount > 0)
-                            const Positioned(
-                              left: 16,
-                              top: 4,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: AppColors.success,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: SizedBox(width: 8, height: 8),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+            const NotificationBell(),
           ],
         );
       },

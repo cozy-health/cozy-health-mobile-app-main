@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cozy_health/core/api/api_interceptors.dart';
 import 'package:cozy_health/core/storage/token_storage.dart';
+import 'package:cozy_health/core/services/consent_refresh_signal.dart';
 
 class Adapter implements HttpClientAdapter {
   Adapter(this.respond);
@@ -32,6 +33,38 @@ void main() {
     FlutterSecureStorage.setMockInitialValues({});
     await TokenStorage().clearToken();
   });
+  test(
+    'only current-session consent denials request a consent recheck',
+    () async {
+      final before = consentRefreshSignal.value;
+      final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+      dio.httpClientAdapter = Adapter(
+        (_) async => json('{"code":"consent_required"}', 403),
+      );
+      dio.interceptors.add(ErrorInterceptor());
+      await expectLater(
+        dio.get(
+          '/mood-entries',
+          options: Options(
+            extra: {'sessionGeneration': TokenStorage.generation - 1},
+          ),
+        ),
+        throwsA(isA<DioException>()),
+      );
+      expect(consentRefreshSignal.value, before);
+      await expectLater(
+        dio.get(
+          '/mood-entries',
+          options: Options(
+            extra: {'sessionGeneration': TokenStorage.generation},
+          ),
+        ),
+        throwsA(isA<DioException>()),
+      );
+      expect(consentRefreshSignal.value, before + 1);
+      dio.close();
+    },
+  );
   test('concurrent 401 responses share one refresh and retry once', () async {
     final tokens = TokenStorage();
     await tokens.saveToken('old');
