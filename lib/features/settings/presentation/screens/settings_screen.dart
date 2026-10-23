@@ -168,6 +168,11 @@ class SettingsScreen extends StatelessWidget {
                     onTap: () => context.push(AppRouter.privacySettings),
                   ),
                   _SettingsRow(
+                    icon: Icons.family_restroom_outlined,
+                    label: 'Age & Guardian',
+                    onTap: () => context.push(AppRouter.ageAuthorization),
+                  ),
+                  _SettingsRow(
                     icon: Icons.palette_outlined,
                     label: 'Appearance',
                     onTap: () => context.push(AppRouter.appearanceSettings),

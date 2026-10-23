@@ -1,4 +1,5 @@
 import '../../../../core/widgets/analytics_opt_in.dart';
+import '../../../../core/widgets/age_details_fields.dart';
 import '../../../../core/services/usage_analytics.dart';
 import '../../../../core/services/legal_documents.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
@@ -21,6 +22,8 @@ class CreateAccountScreen extends StatefulWidget {
 
 class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final AuthService _authService = AuthService();
+  final _dobController = TextEditingController(),
+      _countryController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -40,7 +43,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool get _isFormValid {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    return _nameController.text.trim().isNotEmpty &&
+    return _dobController.text.isNotEmpty &&
+        _countryController.text.trim().length == 2 &&
+        _nameController.text.trim().isNotEmpty &&
         email.contains('@') &&
         password.length >= 8 &&
         _confirmController.text == password &&
@@ -68,6 +73,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   @override
   void dispose() {
+    _dobController.dispose();
+    _countryController.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -125,6 +132,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         email: email,
         password: password,
         confirmPassword: _confirmController.text,
+        dateOfBirth: _dobController.text,
+        residenceCountry: _countryController.text.trim().toUpperCase(),
       );
       await UsageAnalytics.instance.track('signup_completed');
       if (!mounted) return;
@@ -141,7 +150,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         context,
         type: AuthToastType.error,
         onRetry: _submit,
-        title: _friendlyError(e.message),
+        title: e is ApiValidationException && e.fieldErrors.isNotEmpty
+            ? e.fieldErrors.values.expand((messages) => messages).join(' ')
+            : _friendlyError(e.message),
       );
     } catch (_) {
       if (!mounted) return;
@@ -164,7 +175,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       });
       return 'That email is already registered.';
     }
-    return "We couldn't create your account. Check your connection and try again.";
+    return message;
   }
 
   @override
@@ -182,6 +193,13 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           label: 'Full Name',
           error: _nameError,
           controller: _nameController,
+          enabled: !_busy,
+        ),
+        const SizedBox(height: 24),
+        AgeDetailsFields(
+          dob: _dobController,
+          country: _countryController,
+          onChanged: _clearLiveErrors,
           enabled: !_busy,
         ),
         const SizedBox(height: 24),

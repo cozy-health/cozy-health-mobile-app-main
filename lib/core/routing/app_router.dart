@@ -1,6 +1,7 @@
 import '../../features/settings/presentation/screens/digital_wellbeing_screen.dart';
 import '../../features/wellness/presentation/wellness_screen.dart';
 import '../security_gate.dart';
+import '../widgets/age_eligibility_gate.dart';
 import 'package:flutter/material.dart';
 import '../models/app_notification.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
@@ -108,6 +109,7 @@ class AppRouter {
   static const String personalization = '/personalization';
   static const String preparingCozy = '/preparing-cozy';
   static const String settings = '/settings';
+  static const String ageAuthorization = '/age-and-guardian';
   static const String editProfile = '/edit-profile';
   static const String privacySettings = '/privacy-settings';
   static const String helpSupport = '/help-support';
@@ -587,6 +589,11 @@ class AppRouter {
         path: settings,
         name: 'settings',
         builder: (_, __) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: ageAuthorization,
+        builder: (_, __) =>
+            const AgeEligibilityGate(review: true, child: SizedBox.shrink()),
       ),
       GoRoute(
         path: editProfile,

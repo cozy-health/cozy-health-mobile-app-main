@@ -156,6 +156,12 @@ class ConsentService {
     enabled,
   );
 
+  Future<void> withdrawHealth(ConsentState state) async => _save(
+    state,
+    state.documents.firstWhere((doc) => doc.type == 'health_data'),
+    false,
+  );
+
   Future<void> _save(
     ConsentState state,
     ConsentDocument doc,

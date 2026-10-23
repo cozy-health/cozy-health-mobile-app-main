@@ -13,6 +13,7 @@ class AppConfiguration {
     this.minAppVersion = '1.0.0',
     this.latestAppVersion = '1.0.0',
     this.maintenanceMode = false,
+    this.ageEnforcement = false,
     this.maintenanceMessage,
     this.updateIosUrl,
     this.updateAndroidUrl,
@@ -31,6 +32,7 @@ class AppConfiguration {
   final String minAppVersion;
   final String latestAppVersion;
   final bool maintenanceMode;
+  final bool ageEnforcement;
   final String? maintenanceMessage;
   final String? updateIosUrl;
   final String? updateAndroidUrl;
@@ -61,6 +63,8 @@ class AppConfiguration {
       minAppVersion: version('min_app_version'),
       latestAppVersion: version('latest_app_version'),
       maintenanceMode: json['maintenance_mode'] == true,
+      ageEnforcement:
+          json['age'] is Map && (json['age'] as Map)['enforced'] == true,
       maintenanceMessage: json['maintenance_message'] as String?,
       updateIosUrl: json['update_ios_url'] as String?,
       updateAndroidUrl: json['update_android_url'] as String?,

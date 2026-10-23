@@ -10,10 +10,12 @@ class ConsentGate extends StatefulWidget {
     required this.child,
     this.service,
     this.observeRoutes = true,
+    this.forceBlocking = false,
   });
   final Widget child;
   final ConsentService? service;
   final bool observeRoutes;
+  final bool forceBlocking;
   @override
   State<ConsentGate> createState() => _ConsentGateState();
 }
@@ -155,13 +157,34 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
         ? AppRouter.router.routeInformationProvider.value.uri.path
         : '';
     if (path.startsWith('/crisis') ||
+        {
+          AppRouter.ageAuthorization,
+          AppRouter.accountDeletion,
+          AppRouter.helpSupport,
+          AppRouter.reportProblem,
+          AppRouter.feedback,
+          AppRouter.legalHub,
+          AppRouter.termsPolicies,
+          AppRouter.about,
+          AppRouter.emailSettings,
+          AppRouter.login,
+          AppRouter.welcome,
+          AppRouter.createAccount,
+          AppRouter.forgotPassword,
+        }.contains(path) ||
         path.contains('breathing') ||
         path.contains('grounding') ||
         path.contains('safety-plan')) {
       return widget.child;
     }
     final pending = _state?.pending ?? [];
-    final required = pending.where((doc) => _state!.blocking(doc)).toList();
+    final required = pending
+        .where(
+          (doc) =>
+              _state!.blocking(doc) ||
+              (widget.forceBlocking && doc.required && doc.reviewable),
+        )
+        .toList();
     if (required.isNotEmpty) {
       final doc = required.first;
       return Scaffold(

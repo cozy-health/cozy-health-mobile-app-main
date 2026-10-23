@@ -20,6 +20,7 @@ import '../../features/settings/data/profile_repository.dart';
 import '../../features/notifications/data/notification_repository.dart';
 import 'feature_flags_service.dart';
 import 'local_db_service.dart';
+import 'age_eligibility_service.dart';
 import 'notification_permission_controller.dart';
 import 'phone_notification_test_service.dart';
 import '../repositories/affirmation_repository.dart';
@@ -49,7 +50,7 @@ class PushNotificationService extends ChangeNotifier
     currentOwner: () => _local.activeUserId,
     allowed: () async {
       await phonePermission.check();
-      return phonePermission.allowed;
+      return phonePermission.allowed && !AgeEligibilityService.instance.blocked;
     },
     onOpen: open,
     affirmation: () async => (await AffirmationRepository().cached())?.body,
@@ -80,6 +81,12 @@ class PushNotificationService extends ChangeNotifier
       unawaited(refresh());
     });
     FeatureFlagsService.instance.addListener(() => unawaited(refresh()));
+    AgeEligibilityService.instance.addListener(() {
+      if (AgeEligibilityService.instance.blocked) {
+        _pendingTap = null;
+        unawaited(phoneTests.cancel());
+      }
+    });
     AppRouter.router.routeInformationProvider.addListener(_drainTap);
     try {
       await phoneTests.initialize();

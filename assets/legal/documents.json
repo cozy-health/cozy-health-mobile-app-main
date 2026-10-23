@@ -80,7 +80,7 @@
           "heading": "Young people",
           "paragraphs": [
             "Cozy Health is intended for ages 13 and older; under-13 accounts are not permitted. Users aged 13–17 need the applicable verified guardian authorization before health-data features are enabled. Additional local age and consent restrictions may apply. Worldwide interest does not mean every feature is available in every country.",
-            "A guardian confirms contact details and authority, and staff review authorization before activation. Entering an email or ticking a box is not completed verification. Guardian approval does not automatically expose private journals, messages or provider records. Read cozyhealth.org/guardians for the Young People and Guardian Notice."
+            "A parent or legal guardian confirms email access, declares their authority and explicitly authorizes the processing described in the effective documents. This records email-confirmed authorization; it does not verify identity or guardianship. Cozy Health handles disputes and corrections. Health-data access remains restricted wherever additional assurance or country approval is outstanding. Guardian approval does not automatically expose private journals, messages or provider records. Read cozyhealth.org/guardians for the Young People and Guardian Notice."
           ]
         },
         {
@@ -558,7 +558,7 @@
         {
           "heading": "Before health-data features are enabled",
           "paragraphs": [
-            "We need an accurate age and the applicable guardian authorization. A guardian must confirm their email and authority, review the current Terms, Privacy Policy and Health-Data Consent, and complete proportionate verification. Staff review must finish before activation; entering an email or ticking a box is not enough.",
+            "We ask for date of birth and country of residence before private features can open. A parent or legal guardian confirms email access, declares adulthood and authority, reviews the current effective Terms, Privacy Policy, Health-Data Consent and this notice, and explicitly authorizes participation. Ordinary email authorization is automated. Email access and self-declaration do not prove identity or guardianship; health-data features remain restricted where additional assurance or country approval is required. The young person also makes their own applicable consent choices.",
             "Do not send identity documents, full journals or medical records by ordinary email. Contact Team@cozyhealth.org for the secure verification instructions available for your country. If verified authorization cannot be obtained, health-data access must remain unavailable. Emergency information must remain accessible."
           ]
         },
@@ -574,6 +574,13 @@
           "paragraphs": [
             "A guardian or young person can contact Team@cozyhealth.org about withdrawal, incorrect information, a changed guardian relationship or privacy concerns. We verify authority proportionately and consider the young person’s rights before disclosure or account action. On reaching adulthood, the individual must make their own applicable choices; guardian authorization does not provide indefinite authority.",
             "Email Team@cozyhealth.org. Requests enter a shared team queue and are assigned to an available team member. Responses are generally faster between 8am and 5pm West Africa Time (WAT, UTC+1). These are not guaranteed operating hours or a response-time promise; the inbox is not continuously monitored."
+          ]
+        },
+        {
+          "heading": "Internet access and team support",
+          "paragraphs": [
+            "Young people need an online eligibility check to open private features. Public crisis resources and calming exercises remain available offline. Existing private records and pending changes are preserved securely while access is restricted.",
+            "Cozy Health handles disputed requests, date-of-birth corrections, changes of guardian, appeals and privacy requests through the team queue. Do not send identity documents or private journals by ordinary email. We do not automatically give guardians access to private records. An unresolved dispute can pause private access."
           ]
         }
       ],

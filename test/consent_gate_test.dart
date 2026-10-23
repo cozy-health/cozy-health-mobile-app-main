@@ -50,6 +50,26 @@ ConsentService service({required bool blocking, required bool published}) =>
 void main() {
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
   testWidgets(
+    'age enforcement requires current effective consent even before the legacy blocking flag changes',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ConsentGate(
+            service: service(blocking: false, published: true),
+            forceBlocking: true,
+            observeRoutes: false,
+            child: const Scaffold(body: Text('Application content')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Application content'), findsNothing);
+      await tester.tap(find.text('Accept'));
+      await tester.pumpAndSettle();
+      expect(find.text('Application content'), findsOneWidget);
+    },
+  );
+  testWidgets(
     'draft update can be dismissed and never offers fake acceptance',
     (tester) async {
       await tester.pumpWidget(

@@ -8,6 +8,7 @@ import 'auth_token_service.dart';
 import 'api_exceptions.dart';
 import '../routing/app_router.dart';
 import '../services/local_db_service.dart';
+import '../services/age_eligibility_service.dart';
 import '../storage/token_storage.dart';
 
 class AuthInterceptor extends Interceptor {
@@ -186,6 +187,16 @@ class LoggingInterceptor extends Interceptor {
 class ErrorInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
+    final payload = err.response?.data;
+    if (payload is Map &&
+        err.requestOptions.extra['sessionGeneration'] ==
+            TokenStorage.generation &&
+        payload['eligibility'] is Map &&
+        err.response?.statusCode == 403) {
+      AgeEligibilityService.instance.restricted(
+        Map<String, dynamic>.from(payload['eligibility'] as Map),
+      );
+    }
     ApiException exception;
 
     if (err.type == DioExceptionType.badCertificate) {

@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/services/local_db_service.dart';
+import '../../../core/services/age_eligibility_service.dart';
+import '../../../core/services/network_status.dart';
 import '../../../core/storage/token_storage.dart';
 
 class NativeBillingService extends ChangeNotifier {
@@ -36,6 +38,7 @@ class NativeBillingService extends ChangeNotifier {
         }.contains(defaultTargetPlatform)) {
       return;
     }
+    if (!await _ageAllowsStore()) return;
     final owner = LocalDbService().activeUserId;
     final token = await TokenStorage().getToken();
     if (owner != _owner || token != _token) {
@@ -68,7 +71,7 @@ class NativeBillingService extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    // Start the native connection only after account and billing gates pass.
+    // Do not start a native store connection before both account and billing gates pass.
     _subscription ??= _store.purchaseStream.listen(
       _purchases,
       onError: (_) {
@@ -100,6 +103,7 @@ class NativeBillingService extends ChangeNotifier {
   }
 
   Future<void> purchase(ProductDetails product) async {
+    if (!await _ageAllowsStore()) return;
     if (!enabled ||
         busy ||
         _owner != LocalDbService().activeUserId ||
@@ -128,6 +132,22 @@ class NativeBillingService extends ChangeNotifier {
       message = 'Purchase could not start. No entitlement was granted.';
       notifyListeners();
     }
+  }
+
+  Future<bool> _ageAllowsStore() async {
+    final eligibility = AgeEligibilityService.instance;
+    if (!eligibility.enabled) return true;
+    await eligibility.refresh();
+    if (eligibility.blocked || networkOffline.value != false) {
+      enabled = false;
+      products = [];
+      busy = false;
+      message =
+          'Connect and complete age, guardian and consent requirements before starting a purchase.';
+      notifyListeners();
+      return false;
+    }
+    return true;
   }
 
   Future<void> restore() async {

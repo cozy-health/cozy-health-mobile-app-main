@@ -110,6 +110,8 @@ class AuthService {
     required String email,
     required String password,
     required String confirmPassword,
+    String? dateOfBirth,
+    String? residenceCountry,
   }) async {
     final name = '$firstname $lastname'.trim();
     final response = await _apiClient.post(
@@ -120,6 +122,8 @@ class AuthService {
         'email': email,
         'password': password,
         'password_confirmation': confirmPassword,
+        if (dateOfBirth != null) 'date_of_birth': dateOfBirth,
+        if (residenceCountry != null) 'residence_country': residenceCountry,
         'device_id': await _tokenStorage.deviceId(),
         'device_name': defaultTargetPlatform.name,
       },
