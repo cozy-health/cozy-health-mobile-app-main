@@ -48,7 +48,11 @@ void main() {
   testWidgets('Settings legal catalog exposes every bundled consumer notice', (
     tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: LegalHubScreen()));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LegalHubScreen(loadDocuments: () async => bundledDocuments),
+      ),
+    );
     await tester.pumpAndSettle();
     final documents = bundledDocuments;
     final consumer = documents.where((doc) => doc['audience'] == 'consumer');
