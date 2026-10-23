@@ -1,3 +1,5 @@
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../gen/assets.gen.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
@@ -85,11 +87,15 @@ class AboutScreen extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(32),
                   ),
-                  child: Icon(
-                    Icons.favorite,
-                    size: 60,
-                    color: Theme.of(context).colorScheme.primary,
-                  ), // Mock logo
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: SvgPicture.asset(
+                      Assets.svg.logo,
+                      key: const ValueKey('about-cozy-logo'),
+                      fit: BoxFit.contain,
+                      semanticsLabel: 'Cozy Health logo',
+                    ),
+                  ),
                 ),
               ),
               SizedBox(height: 24),
@@ -193,10 +199,12 @@ class AboutScreen extends StatelessWidget {
                           context: context,
                           applicationName: 'Cozy Health',
                           applicationVersion: info.version,
-                          applicationIcon: Icon(
-                            Icons.favorite,
-                            size: 60,
-                            color: Theme.of(context).colorScheme.primary,
+                          applicationIcon: SvgPicture.asset(
+                            Assets.svg.logo,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.contain,
+                            semanticsLabel: 'Cozy Health logo',
                           ),
                         );
                       },
