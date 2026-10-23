@@ -229,7 +229,39 @@ class ErrorInterceptor extends Interceptor {
         );
       }
 
-      if (statusCode == 401 || statusCode == 403) {
+      if ({
+            '/me/age',
+            '/me/residence',
+            '/me/guardian',
+            '/me/age-support',
+          }.any((path) => err.requestOptions.path.endsWith(path)) &&
+          statusCode != 401) {
+        final fields = <String, List<String>>{};
+        if (statusCode == 422 && data is Map && data['errors'] is Map) {
+          for (final entry in (data['errors'] as Map).entries) {
+            if (entry.value is List) {
+              fields[entry.key.toString()] = (entry.value as List)
+                  .whereType<String>()
+                  .where((value) => value.length <= 300)
+                  .toList();
+            }
+          }
+        }
+        final retry = int.tryParse(
+          err.response?.headers.value('retry-after') ??
+              (data is Map ? '${data['retry_after'] ?? ''}' : ''),
+        );
+        exception = ApiAgeActionException(
+          statusCode: statusCode,
+          fieldErrors: fields,
+          code: data is Map && data['code'] is String
+              ? data['code'] as String
+              : null,
+          retryAfterSeconds: retry != null && retry > 0 && retry <= 86400
+              ? retry
+              : null,
+        );
+      } else if (statusCode == 401 || statusCode == 403) {
         exception = ApiAuthException(statusCode: statusCode);
       } else if (statusCode == 422) {
         Map<String, List<String>> errors = {};

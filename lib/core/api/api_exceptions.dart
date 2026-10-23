@@ -32,6 +32,18 @@ class ApiServerException extends ApiException {
     : super('Server error', statusCode: statusCode);
 }
 
+class ApiAgeActionException extends ApiValidationException {
+  ApiAgeActionException({
+    required super.statusCode,
+    required Map<String, List<String>> fieldErrors,
+    this.code,
+    this.retryAfterSeconds,
+  }) : super(fieldErrors, 'The age or guardian step could not be confirmed.');
+
+  final String? code;
+  final int? retryAfterSeconds;
+}
+
 class ApiUnknownException extends ApiException {
   ApiUnknownException(super.message, {super.statusCode});
 }

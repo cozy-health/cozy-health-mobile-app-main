@@ -8,10 +8,13 @@ class AgeDetailsFields extends StatelessWidget {
     required this.country,
     required this.onChanged,
     this.enabled = true,
+    this.dobError,
+    this.countryError,
   });
   final TextEditingController dob, country;
   final VoidCallback onChanged;
   final bool enabled;
+  final String? dobError, countryError;
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -20,10 +23,12 @@ class AgeDetailsFields extends StatelessWidget {
         controller: dob,
         readOnly: true,
         enabled: enabled,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           labelText: 'Date of birth',
           helperText: 'Used to apply age and guardian requirements.',
-          suffixIcon: Icon(Icons.calendar_today_outlined),
+          suffixIcon: const Icon(Icons.calendar_today_outlined),
+          errorText: dobError,
+          errorMaxLines: 3,
         ),
         onTap: () async {
           final now = DateTime.now().toUtc();
@@ -43,6 +48,7 @@ class AgeDetailsFields extends StatelessWidget {
       ResidenceCountryField(
         country: country,
         enabled: enabled,
+        errorText: countryError,
         onChanged: onChanged,
       ),
     ],
@@ -55,10 +61,12 @@ class ResidenceCountryField extends StatelessWidget {
     required this.country,
     required this.onChanged,
     this.enabled = true,
+    this.errorText,
   });
   final TextEditingController country;
   final VoidCallback onChanged;
   final bool enabled;
+  final String? errorText;
   @override
   Widget build(BuildContext context) => DropdownMenu<String>(
     enabled: enabled,
@@ -77,6 +85,7 @@ class ResidenceCountryField extends StatelessWidget {
     expandedInsets: EdgeInsets.zero,
     label: const Text('Country of residence'),
     helperText: 'Availability depends on local requirements.',
+    errorText: errorText,
     dropdownMenuEntries: residenceCountries.entries
         .map((entry) => DropdownMenuEntry(value: entry.key, label: entry.value))
         .toList(),

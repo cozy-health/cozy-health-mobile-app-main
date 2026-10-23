@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../routing/app_router.dart';
 import '../services/age_eligibility_service.dart';
+import '../services/age_action_feedback.dart';
 import '../services/feature_flags_service.dart';
 import '../services/guest_session_service.dart';
 import '../services/consent_service.dart';
@@ -16,16 +17,20 @@ class AgeEligibilityGate extends StatefulWidget {
     super.key,
     required this.child,
     this.review = false,
+    this.service,
+    this.observeRoutes = true,
   });
   final bool review;
   final Widget child;
+  final AgeEligibilityService? service;
+  final bool observeRoutes;
   @override
   State<AgeEligibilityGate> createState() => _AgeEligibilityGateState();
 }
 
 class _AgeEligibilityGateState extends State<AgeEligibilityGate>
     with WidgetsBindingObserver {
-  final service = AgeEligibilityService.instance;
+  late final service = widget.service ?? AgeEligibilityService.instance;
   final dob = TextEditingController(), country = TextEditingController();
   final name = TextEditingController(),
       email = TextEditingController(),
@@ -37,16 +42,26 @@ class _AgeEligibilityGateState extends State<AgeEligibilityGate>
       _busy = false,
       _sessionKnown = false;
   String? _error;
+  final _errorKey = GlobalKey();
+  Map<String, String> _fieldErrors = {};
   String _relationship = 'parent', _caseKind = 'dob_correction';
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    AppRouter.router.routeInformationProvider.addListener(_route);
+    if (widget.observeRoutes) {
+      AppRouter.router.routeInformationProvider.addListener(_route);
+    }
     FeatureFlagsService.instance.addListener(_changed);
     service.addListener(_changed);
     networkOffline.addListener(_network);
     _sessions = TokenStorage.sessionChanges.listen((_) {
+      for (final controller in [dob, country, name, email, note]) {
+        controller.clear();
+      }
+      _error = null;
+      _fieldErrors = {};
+      _busy = false;
       service.invalidate();
       _refresh();
     });
@@ -99,25 +114,39 @@ class _AgeEligibilityGateState extends State<AgeEligibilityGate>
 
   Future<void> _run(Future<void> Function() action) async {
     if (_busy) return;
+    final generation = TokenStorage.generation;
     setState(() {
       _busy = true;
       _error = null;
+      _fieldErrors = {};
     });
     try {
       await action();
-    } catch (_) {
-      if (mounted) {
-        setState(
-          () => _error =
-              'We could not save this step. Check the details and your connection, then retry.',
-        );
+    } catch (error) {
+      if (mounted && generation == TokenStorage.generation) {
+        final feedback = AgeActionFeedback.from(error);
+        setState(() {
+          _error = feedback.message;
+          _fieldErrors = feedback.fieldErrors;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final errorContext = _errorKey.currentContext;
+          if (mounted &&
+              generation == TokenStorage.generation &&
+              errorContext != null) {
+            Scrollable.ensureVisible(errorContext, alignment: 0.15);
+          }
+        });
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted && generation == TokenStorage.generation) {
+        setState(() => _busy = false);
+      }
     }
   }
 
   bool get _publicRoute {
+    if (!widget.observeRoutes) return false;
     final path = AppRouter.router.routeInformationProvider.value.uri.path;
     return {
       AppRouter.ageAuthorization,
@@ -210,7 +239,12 @@ class _AgeEligibilityGateState extends State<AgeEligibilityGate>
                       onPressed: () => AppRouter.router.go(AppRouter.settings),
                       child: const Text('Back to settings'),
                     ),
-                  if (_error != null) Text(_error!, semanticsLabel: _error),
+                  if (_error != null)
+                    Semantics(
+                      key: _errorKey,
+                      liveRegion: true,
+                      child: Text(_error!),
+                    ),
                   if (state?.data['date_of_birth'] != null)
                     Text(
                       'Date of birth: ${state!.data['date_of_birth']}. To correct this, contact the team below.',
@@ -225,6 +259,7 @@ class _AgeEligibilityGateState extends State<AgeEligibilityGate>
                         ResidenceCountryField(
                           country: country,
                           enabled: !_busy,
+                          errorText: _fieldErrors['residence_country'],
                           onChanged: _changed,
                         ),
                         TextButton(
@@ -255,6 +290,8 @@ class _AgeEligibilityGateState extends State<AgeEligibilityGate>
                       country: country,
                       onChanged: _changed,
                       enabled: !_busy,
+                      dobError: _fieldErrors['date_of_birth'],
+                      countryError: _fieldErrors['residence_country'],
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
@@ -289,15 +326,21 @@ class _AgeEligibilityGateState extends State<AgeEligibilityGate>
                         state?.reason != 'age_disputed') ...[
                       TextField(
                         controller: name,
-                        decoration: const InputDecoration(
+                        enabled: !_busy,
+                        decoration: InputDecoration(
                           labelText: 'Guardian name',
+                          errorText: _fieldErrors['guardian_name'],
+                          errorMaxLines: 3,
                         ),
                         maxLength: 120,
                       ),
                       TextField(
                         controller: email,
-                        decoration: const InputDecoration(
+                        enabled: !_busy,
+                        decoration: InputDecoration(
                           labelText: 'Guardian email',
+                          errorText: _fieldErrors['guardian_email'],
+                          errorMaxLines: 3,
                         ),
                         keyboardType: TextInputType.emailAddress,
                         maxLength: 190,
@@ -341,7 +384,9 @@ class _AgeEligibilityGateState extends State<AgeEligibilityGate>
                     ],
                     if (state?.data['authorization'] is Map)
                       Text(
-                        'Request status: ${(state!.data['authorization'] as Map)['status']}',
+                        guardianAuthorizationStatus(
+                          state!.data['authorization'],
+                        ),
                       ),
                     TextButton(
                       onPressed: _busy
@@ -388,29 +433,38 @@ class _AgeEligibilityGateState extends State<AgeEligibilityGate>
                               child: Text('Privacy request'),
                             ),
                           ],
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => _caseKind = value);
-                            }
-                          },
+                          onChanged: _busy
+                              ? null
+                              : (value) {
+                                  if (value != null) {
+                                    setState(() => _caseKind = value);
+                                  }
+                                },
                         ),
                         TextField(
                           controller: note,
+                          enabled: !_busy,
                           maxLength: 2000,
                           maxLines: 3,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Explain the request',
+                            errorText: _fieldErrors['message'],
+                            errorMaxLines: 3,
                           ),
                         ),
                         TextButton(
                           onPressed: _busy
                               ? null
                               : () => _run(() async {
+                                  final generation = TokenStorage.generation;
                                   await service.submit('/me/age-support', {
                                     'kind': _caseKind,
                                     'message': note.text.trim(),
                                   });
-                                  if (!context.mounted) return;
+                                  if (!context.mounted ||
+                                      generation != TokenStorage.generation) {
+                                    return;
+                                  }
                                   note.clear();
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -484,7 +538,9 @@ class _AgeEligibilityGateState extends State<AgeEligibilityGate>
     _timer?.cancel();
     _sessions?.cancel();
     WidgetsBinding.instance.removeObserver(this);
-    AppRouter.router.routeInformationProvider.removeListener(_route);
+    if (widget.observeRoutes) {
+      AppRouter.router.routeInformationProvider.removeListener(_route);
+    }
     FeatureFlagsService.instance.removeListener(_changed);
     service.removeListener(_changed);
     networkOffline.removeListener(_network);
