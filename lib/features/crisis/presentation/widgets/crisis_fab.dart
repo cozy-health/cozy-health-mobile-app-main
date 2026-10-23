@@ -75,18 +75,21 @@ class _CrisisFabState extends State<CrisisFab> {
       onTap: () => context.push(AppRouter.crisisContact),
       onLongPress: _showQuickCalm,
       child: ExcludeSemantics(
-        child: GestureDetector(
-          onLongPress: _showQuickCalm,
-          child: FloatingActionButton(
-            heroTag: 'crisis-support',
-            tooltip: 'Contact next of kin',
-            elevation: 2,
-            highlightElevation: 4,
-            backgroundColor: AppColors.crisisPrimary,
-            foregroundColor: AppColors.crisisTextOnDark,
-            shape: const CircleBorder(),
-            onPressed: () => context.push(AppRouter.crisisContact),
-            child: const Icon(Icons.favorite_border),
+        child: Tooltip(
+          message: 'Contact next of kin',
+          triggerMode: TooltipTriggerMode.manual,
+          child: GestureDetector(
+            onLongPress: _showQuickCalm,
+            child: FloatingActionButton(
+              heroTag: 'crisis-support',
+              elevation: 2,
+              highlightElevation: 4,
+              backgroundColor: AppColors.crisisPrimary,
+              foregroundColor: AppColors.crisisTextOnDark,
+              shape: const CircleBorder(),
+              onPressed: () => context.push(AppRouter.crisisContact),
+              child: const Icon(Icons.favorite_border),
+            ),
           ),
         ),
       ),

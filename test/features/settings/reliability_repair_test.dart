@@ -139,14 +139,28 @@ void main() {
       }
     });
     await show(tester, const AchievementsScreen());
-    expect(find.text('2 of 5 milestones earned'), findsOneWidget);
+    expect(find.textContaining('2 of 5 milestones earned.'), findsOneWidget);
+    expect(
+      tester
+          .widget<AchievementContent>(find.byType(AchievementContent))
+          .snapshot
+          .awards
+          .keys,
+      containsAll(['first_mood', 'streak_3']),
+    );
     expect(find.text('Your first check-in'), findsOneWidget);
-    expect(find.text('Three days of checking in'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Three steady days'), 300);
+    expect(find.text('Three steady days'), findsOneWidget);
     await captureSurface(tester, 'reliability-achievements');
     await tester.pumpWidget(const SizedBox());
     await tester.runAsync(() => local.moodBox.clear());
     await show(tester, const AchievementsScreen());
-    expect(find.text('2 of 5 milestones earned'), findsOneWidget);
+    expect(find.textContaining('2 of 5 milestones earned.'), findsOneWidget);
+    final snapshot = tester
+        .widget<AchievementContent>(find.byType(AchievementContent))
+        .snapshot;
+    expect(snapshot.progress.current, 0);
+    expect(snapshot.awards.keys, containsAll(['first_mood', 'streak_3']));
     expect(tester.takeException(), isNull);
   });
 }

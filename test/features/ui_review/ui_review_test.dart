@@ -485,7 +485,8 @@ void main() {
       await tester.tap(find.text('Groups'));
       await tester.pumpAndSettle();
       expect(find.text('Discover groups'), findsOneWidget);
-      expect(find.text('General Posts'), findsNothing);
+      expect(find.text('Latest posts'), findsNothing);
+      expect(find.text('Create a post'), findsNothing);
       expect(find.text('Create new group'), findsNothing);
       await captureSurface(
         tester,
@@ -493,7 +494,9 @@ void main() {
       );
       await tester.tap(find.text('Posts'));
       await tester.pumpAndSettle();
-      expect(find.text('General Posts'), findsOneWidget);
+      expect(find.text('Latest posts'), findsOneWidget);
+      expect(find.text('Create a post'), findsOneWidget);
+      expect(find.text('Discover groups'), findsNothing);
       expect(tester.takeException(), isNull);
     });
     testWidgets('Home cards remain defined after scrolling, dark=$dark', (
@@ -505,8 +508,26 @@ void main() {
         dark: dark,
         size: const Size(390, 844),
       );
-      await tester.ensureVisible(find.text('Journaling'));
+      await tester.ensureVisible(find.text('Your journal'));
       await tester.pump(const Duration(milliseconds: 300));
+      final cards = find.descendant(
+        of: find.byType(HomeFeatureCards),
+        matching: find.byType(HomeDesignCard),
+      );
+      expect(cards, findsNWidgets(2));
+      for (final element in cards.evaluate()) {
+        final card = find.byWidget(element.widget);
+        final container = tester.widget<Container>(
+          find.descendant(of: card, matching: find.byType(Container)).first,
+        );
+        final decoration = container.decoration! as BoxDecoration;
+        expect(decoration.border, isNotNull);
+        expect(decoration.color, Theme.of(element).colorScheme.surface);
+        expect(decoration.borderRadius, isNotNull);
+      }
+      await tester.ensureVisible(find.text('Well-being check'));
+      expect(find.text('Start journaling →'), findsOneWidget);
+      expect(find.text('Take a quiz →'), findsOneWidget);
       await captureSurface(
         tester,
         'home_${dark ? 'dark' : 'light'}_lower_cards',
@@ -918,7 +939,8 @@ void main() {
   testWidgets('Community header create menu stays accessible', (tester) async {
     await mount(tester, const CommunityHubScreen(), dark: true);
     expect(find.text('Create new group'), findsNothing);
-    await tester.tap(find.text('Post'));
+    await tester.ensureVisible(find.text('Create a post'));
+    await tester.tap(find.text('Create a post'));
     await tester.pumpAndSettle();
     expect(find.text('destination:${AppRouter.createPost}'), findsOneWidget);
   });

@@ -56,8 +56,7 @@ app.*.map.json
 /android/build/
 /android/.kotlin/
 
-# Local agent instructions
-AGENTS.md
+# Repository agent instructions are versioned.
 
 # Flutter generated desktop plugin files
 linux/flutter/generated_plugin_registrant.cc

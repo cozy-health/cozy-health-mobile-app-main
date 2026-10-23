@@ -1,4 +1,5 @@
 import 'package:cozy_health/core/theme/app_theme.dart';
+import 'package:cozy_health/core/widgets/mood_artwork.dart';
 import 'package:cozy_health/features/home/presentation/widgets/home_quiz_card.dart';
 import 'package:cozy_health/features/home/presentation/widgets/mood_chips_row.dart';
 import 'package:flutter/material.dart';
@@ -42,14 +43,52 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        expect(
-          tester.getTopLeft(find.text('Angry')).dx,
-          lessThan(tester.getTopLeft(find.text('Sad')).dx),
-        );
-        expect(
-          tester.getTopLeft(find.text('Sad')).dx,
-          lessThan(tester.getTopLeft(find.text('Good')).dx),
-        );
+        const labels = [
+          'Angry',
+          'Sad',
+          'Good',
+          'Upset',
+          'Spectacular',
+          'Happy',
+        ];
+        final readingOrder = List<String>.of(labels)
+          ..sort((a, b) {
+            final first = tester.getTopLeft(
+              find.byKey(ValueKey('mood-category-${a.toLowerCase()}')),
+            );
+            final second = tester.getTopLeft(
+              find.byKey(ValueKey('mood-category-${b.toLowerCase()}')),
+            );
+            return (first.dy - second.dy).abs() < 1
+                ? first.dx.compareTo(second.dx)
+                : first.dy.compareTo(second.dy);
+          });
+        expect(readingOrder, labels);
+        for (final label in labels) {
+          final tile = find.byKey(
+            ValueKey('mood-category-${label.toLowerCase()}'),
+          );
+          final rect = tester.getRect(tile);
+          expect(rect.width, greaterThanOrEqualTo(48));
+          expect(rect.height, greaterThanOrEqualTo(48));
+          expect(rect.left, greaterThanOrEqualTo(16));
+          expect(rect.right, lessThanOrEqualTo(width - 16));
+          final artwork = tester.getRect(
+            find.descendant(of: tile, matching: find.byType(MoodArtwork)),
+          );
+          final text = tester.getRect(find.text(label));
+          expect(
+            rect.contains(artwork.topLeft) &&
+                rect.contains(artwork.bottomRight),
+            isTrue,
+            reason: '$label artwork fits',
+          );
+          expect(
+            rect.contains(text.topLeft) && rect.contains(text.bottomRight),
+            isTrue,
+            reason: '$label label fits',
+          );
+        }
         if (scale == 1 && width == 375) {
           expect(
             tester.getSize(find.byType(HomeQuizCard)).height,

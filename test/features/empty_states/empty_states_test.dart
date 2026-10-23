@@ -9,6 +9,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cozy_health/core/widgets/empty_state.dart';
+import 'package:cozy_health/core/data/demo_mode.dart';
+import 'package:cozy_health/features/home/presentation/widgets/home_design_widgets.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/core/models/journal_entry.dart';
 import 'package:cozy_health/core/models/app_notification.dart';
@@ -114,6 +116,8 @@ void main() {
           AppRouter.contentHome,
           AppRouter.quizSelection,
           AppRouter.createPost,
+          AppRouter.moodHistory,
+          AppRouter.insights,
         ])
           GoRoute(
             path: route,
@@ -145,28 +149,43 @@ void main() {
     await mount(tester, const HomeScreen());
     expect(find.byType(MoodChipsRow), findsOneWidget);
     expect(find.text('Your first check-in starts here.'), findsNothing);
-    expect(find.text('Cozy Calendar'), findsOneWidget);
-    expect(find.text('Journaling'), findsOneWidget);
-    await tapCta(tester, 'Start your streak', AppRouter.moodFeeling);
+    expect(find.byType(HomeRhythmCard), findsOneWidget);
+    expect(find.text('Your check-in rhythm'), findsOneWidget);
+    expect(
+      find.text('A small check-in can be a place to start.'),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(find.text('Your journal'));
+    expect(find.byType(HomeFeatureCards), findsOneWidget);
+    await tapCta(tester, 'Happy', AppRouter.moodFeeling);
   });
 
-  testWidgets('Home partial data keeps trend invitation', (tester) async {
-    final now = DateTime.now();
-    await tester.runAsync(
-      () => local.saveMoodEntry(
-        MoodEntry(
-          id: 'one',
-          mood: 'calm',
-          intensity: 5,
-          createdAt: now,
-          updatedAt: now,
+  testWidgets(
+    'Home partial data confirms the check-in and keeps insights reachable',
+    (tester) async {
+      final now = DateTime.now();
+      await tester.runAsync(
+        () => local.saveMoodEntry(
+          MoodEntry(
+            id: 'one',
+            mood: 'calm',
+            intensity: 5,
+            createdAt: now,
+            updatedAt: now,
+          ),
         ),
-      ),
-    );
-    await mount(tester, const HomeScreen());
-    expect(find.text('Your first check-in starts here.'), findsNothing);
-    expect(find.text('Log 3 moods to see trends'), findsOneWidget);
-  });
+      );
+      await mount(tester, const HomeScreen());
+      expect(find.text('Your first check-in starts here.'), findsNothing);
+      final rhythm = tester.widget<HomeRhythmCard>(find.byType(HomeRhythmCard));
+      expect(rhythm.entries.map((entry) => entry.id), contains('one'));
+      await tester.ensureVisible(
+        find.text('Your check-in is saved for today.'),
+      );
+      expect(find.text('Your check-in is saved for today.'), findsOneWidget);
+      await tapCta(tester, 'View insights', AppRouter.insights);
+    },
+  );
 
   testWidgets('Mood history loads then invites logging', (tester) async {
     await mount(tester, const MoodHistoryScreen());
@@ -447,14 +466,26 @@ void main() {
     await tester.ensureVisible(sleepFilter);
     await tester.tap(sleepFilter);
     await tester.pumpAndSettle();
-    expect(find.text('No posts yet. Be the first to share.'), findsOneWidget);
-    await tapCta(tester, 'Create Post', AppRouter.createPost);
+    await tester.ensureVisible(
+      find.text('No posts here yet. Share something when you’re ready.'),
+    );
+    expect(
+      find.text('No posts here yet. Share something when you’re ready.'),
+      findsOneWidget,
+    );
+    await tapCta(tester, 'Create a post', AppRouter.createPost);
   });
 
   testWidgets('Community empty feed invites sharing', (tester) async {
     await mount(tester, const CommunityHubScreen(posts: []));
-    expect(find.text('No posts yet. Be the first to share.'), findsOneWidget);
-    await tapCta(tester, 'Create Post', AppRouter.createPost);
+    await tester.ensureVisible(
+      find.text('No posts here yet. Share something when you’re ready.'),
+    );
+    expect(
+      find.text('No posts here yet. Share something when you’re ready.'),
+      findsOneWidget,
+    );
+    await tapCta(tester, 'Create a post', AppRouter.createPost);
   });
 
   testWidgets('Notifications invitation disappears when notification arrives', (
@@ -508,18 +539,35 @@ void main() {
     expect(find.text('A gentle read'), findsOneWidget);
   });
 
-  testWidgets('Community search explains availability without fake results', (
-    tester,
-  ) async {
-    await mount(tester, const CommunitySearchScreen());
-    expect(
-      find.text(
-        'Community search is not available yet. Browse the community feed or groups.',
-      ),
-      findsOneWidget,
-    );
-    expect(find.byType(TextField), findsNothing);
-  });
+  testWidgets(
+    'Community search invites a query and shows honest empty results',
+    (tester) async {
+      final previousDemo = DemoMode.instance.enabled;
+      DemoMode.instance.enabled = true;
+      addTearDown(() => DemoMode.instance.enabled = previousDemo);
+      await mount(tester, const CommunitySearchScreen());
+      expect(
+        find.text('Type a word or topic to search community posts and groups.'),
+        findsOneWidget,
+      );
+      expect(find.byType(TextField), findsOneWidget);
+      await tester.enterText(
+        find.byType(TextField),
+        'no-match-synthetic-search-9271',
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('No posts match your search.'), findsOneWidget);
+      await tester.tap(find.text('Groups'));
+      await tester.pumpAndSettle();
+      expect(find.text('No groups match your search.'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Type a word or topic to search community posts and groups.'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('Content feed has an empty featured state', (tester) async {
     await mount(tester, const ContentHomeScreen(featuredArticles: []));

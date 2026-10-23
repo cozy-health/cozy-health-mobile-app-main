@@ -66,21 +66,31 @@ class _MainScreenState extends State<MainScreen> {
                   child: Semantics(
                     button: true,
                     label: 'Open quick actions',
-                    child: GestureDetector(
-                      onLongPress: () => context.push(AppRouter.crisisContact),
-                      child: FloatingActionButton(
-                        key: _tourTargets.journal,
-                        heroTag: 'quick-actions',
-                        shape: const CircleBorder(),
-                        elevation: 2,
-                        highlightElevation: 4,
-                        tooltip: 'Open quick actions',
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onPrimary,
-                        onPressed: () => _showQuickActionsSheet(context),
-                        child: const Icon(Icons.add),
+                    hint: 'Long press to contact your next of kin',
+                    onTap: () => _showQuickActionsSheet(context),
+                    onLongPress: () => context.push(AppRouter.crisisContact),
+                    excludeSemantics: true,
+                    child: Tooltip(
+                      message: 'Open quick actions',
+                      triggerMode: TooltipTriggerMode.manual,
+                      child: GestureDetector(
+                        onLongPress: () =>
+                            context.push(AppRouter.crisisContact),
+                        child: FloatingActionButton(
+                          key: _tourTargets.journal,
+                          heroTag: 'quick-actions',
+                          shape: const CircleBorder(),
+                          elevation: 2,
+                          highlightElevation: 4,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onPrimary,
+                          onPressed: () => _showQuickActionsSheet(context),
+                          child: const Icon(Icons.add),
+                        ),
                       ),
                     ),
                   ),
