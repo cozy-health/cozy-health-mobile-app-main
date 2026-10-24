@@ -47,7 +47,8 @@ jobs:
       - name: Prepare development Firebase configuration
         env:
           FIREBASE_OPTIONS_JSON: ${{ secrets.FIREBASE_OPTIONS_DEV_JSON }}
-          EXPECTED_FIREBASE_PROJECT_SHA256: 1d1e10adb1ade74fd85721c9199e2faa31280f3e4eeaae1106df32121135af0b
+          # cozy-health-dev-2026; never inherit the old backend's production sender.
+          EXPECTED_FIREBASE_PROJECT_SHA256: 64526e360071c454724b58a1a9aedaba5b001bf49948fcb1da84bc4a6302ec8b
         run: |
           python3 -m unittest discover -s tool/tests
           python3 - <<'PY'
