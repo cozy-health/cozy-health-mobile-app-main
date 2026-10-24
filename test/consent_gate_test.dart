@@ -6,6 +6,8 @@ import 'package:cozy_health/core/services/consent_service.dart';
 import 'package:cozy_health/core/widgets/consent_gate.dart';
 import 'package:cozy_health/core/storage/token_storage.dart';
 import 'package:cozy_health/core/routing/app_router.dart';
+import 'package:cozy_health/core/services/feature_flags_service.dart';
+import 'package:cozy_health/core/services/consent_refresh_signal.dart';
 
 ConsentService service({required bool blocking, required bool published}) =>
     ConsentService(
@@ -52,6 +54,184 @@ ConsentService service({required bool blocking, required bool published}) =>
 
 void main() {
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+  testWidgets('new blocking policy hides content before history arrives', (
+    tester,
+  ) async {
+    var blocking = false;
+    final flags = FeatureFlagsService(
+      fetch: () async => {
+        'flags': <String, bool>{},
+        'consent': {'enforce_blocking': blocking},
+      },
+    );
+    await flags.refresh();
+    final policy = Completer<Map<String, dynamic>>();
+    final history = Completer<Map<String, dynamic>>();
+    final scoped = ConsentService(
+      token: () async => 'fixture-session',
+      get: (path) async => path == '/config' ? policy.future : history.future,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConsentGate(
+          service: scoped,
+          flags: flags,
+          observeRoutes: false,
+          child: const Text('Private content'),
+        ),
+      ),
+    );
+    expect(find.text('Private content'), findsOneWidget);
+    blocking = true;
+    await flags.refresh();
+    await tester.pump();
+    expect(find.text('Private content'), findsNothing);
+    policy.complete({
+      'consent': {'enforce_blocking': true, 'documents': <String, dynamic>{}},
+    });
+    await tester.pump();
+    expect(find.text('Private content'), findsNothing);
+    history.completeError(StateError('Unavailable'));
+    await tester.pumpAndSettle();
+    expect(find.text('Private content'), findsNothing);
+    expect(find.text('Retry'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    flags.dispose();
+  });
+  testWidgets(
+    'fresh nonblocking config skips startup gate but server denial wins',
+    (tester) async {
+      final flags = FeatureFlagsService(
+        fetch: () async => {
+          'flags': <String, bool>{},
+          'consent': {'enforce_blocking': false},
+        },
+      );
+      await flags.refresh();
+      final configuration = Completer<Map<String, dynamic>>();
+      final scoped = ConsentService(
+        token: () async => 'fixture-session',
+        get: (path) async => configuration.future,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ConsentGate(
+            service: scoped,
+            flags: flags,
+            observeRoutes: false,
+            child: const Text('Application content'),
+          ),
+        ),
+      );
+      expect(find.text('Application content'), findsOneWidget);
+      consentRefreshSignal.value++;
+      await tester.pump();
+      expect(find.text('Application content'), findsNothing);
+      configuration.completeError(StateError('Offline'));
+      await tester.pumpAndSettle();
+      expect(find.text('Application content'), findsNothing);
+      expect(find.text('Retry'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      flags.dispose();
+    },
+  );
+  testWidgets('unknown policy times out and late response cannot unblock', (
+    tester,
+  ) async {
+    final policy = Completer<Map<String, dynamic>>();
+    final scoped = ConsentService(
+      token: () async => 'fixture-session',
+      get: (path) async => path == '/config'
+          ? policy.future
+          : {'owner_id': 1, 'data': <Map<String, dynamic>>[]},
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConsentGate(
+          service: scoped,
+          observeRoutes: false,
+          child: const Text('Private content'),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 16));
+    await tester.pump();
+    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('Private content'), findsNothing);
+    policy.complete({
+      'consent': {'enforce_blocking': false, 'documents': <String, dynamic>{}},
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Private content'), findsNothing);
+  });
+  testWidgets('nonblocking policy does not wait for consent history', (
+    tester,
+  ) async {
+    final history = Completer<Map<String, dynamic>>();
+    final scoped = ConsentService(
+      token: () async => 'fixture-session',
+      get: (path) async => path == '/config'
+          ? {
+              'consent': {
+                'enforce_blocking': false,
+                'documents': <String, dynamic>{},
+              },
+            }
+          : history.future,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConsentGate(
+          service: scoped,
+          observeRoutes: false,
+          child: const Text('Application content'),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Application content'), findsOneWidget);
+    history.completeError(StateError('History unavailable'));
+    await tester.pumpAndSettle();
+    expect(find.text('Application content'), findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
+  });
+  testWidgets('resume keeps verified same-session content while refreshing', (
+    tester,
+  ) async {
+    final refresh = Completer<Map<String, dynamic>>();
+    var resumed = false;
+    final scoped = ConsentService(
+      token: () async => 'fixture-session',
+      get: (path) async => path == '/config'
+          ? resumed
+                ? refresh.future
+                : {
+                    'consent': {
+                      'enforce_blocking': false,
+                      'documents': <String, dynamic>{},
+                    },
+                  }
+          : {'owner_id': 1, 'data': <Map<String, dynamic>>[]},
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConsentGate(
+          service: scoped,
+          observeRoutes: false,
+          child: const Text('Application content'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    resumed = true;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(find.text('Application content'), findsOneWidget);
+    refresh.completeError(StateError('Offline'));
+    await tester.pumpAndSettle();
+    expect(find.text('Application content'), findsOneWidget);
+  });
   testWidgets(
     'saved emergency contacts require consent while public support stays reachable',
     (tester) async {

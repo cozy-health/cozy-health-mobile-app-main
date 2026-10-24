@@ -107,6 +107,9 @@ class FeatureFlagsService extends ChangeNotifier with WidgetsBindingObserver {
   String get minAppVersion => _configuration.minAppVersion;
   bool get maintenanceMode => _configuration.maintenanceMode;
   bool ready = false;
+  // Network-confirmed only. Never infer permission from cached/default flags.
+  bool? _consentEnforcement;
+  bool? get consentEnforcement => _consentEnforcement;
   bool _disposed = false;
   bool _observing = false;
   Timer? _timer;
@@ -153,6 +156,11 @@ class FeatureFlagsService extends ChangeNotifier with WidgetsBindingObserver {
       final parsed = AppConfiguration.fromJson(payload);
       if (_disposed) return;
       _configuration = parsed;
+      final consent = payload['consent'];
+      _consentEnforcement =
+          consent is Map && consent['enforce_blocking'] is bool
+          ? consent['enforce_blocking'] as bool
+          : null;
       await _cache?.put('configuration', {
         'payload': payload,
         'fetched_at': _now().toIso8601String(),

@@ -48,11 +48,24 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Prepare optional Firebase configuration
+      - name: Prepare development Firebase configuration
         env:
-          FIREBASE_OPTIONS_JSON: ${{ secrets.FIREBASE_OPTIONS_JSON }}
+          FIREBASE_OPTIONS_JSON: ${{ secrets.FIREBASE_OPTIONS_DEV_JSON }}
+          EXPECTED_FIREBASE_PROJECT_SHA256: 1d1e10adb1ade74fd85721c9199e2faa31280f3e4eeaae1106df32121135af0b
         run: |
           python3 -m unittest discover -s tool/tests
+          python3 - <<'PY'
+          import hashlib, json, os
+          raw = os.environ.get('FIREBASE_OPTIONS_JSON', '')
+          if not raw.strip():
+              raise RuntimeError('Development Firebase configuration is required')
+          options = json.loads(raw)
+          for platform in ('android', 'ios'):
+              project = options[platform]['projectId']
+              if hashlib.sha256(project.encode()).hexdigest() != os.environ['EXPECTED_FIREBASE_PROJECT_SHA256']:
+                  raise RuntimeError('Firebase client does not match the approved development project')
+          print('Development Firebase project verified; no credential values logged.')
+          PY
           python3 tool/prepare_push_config.py
 
       - name: Run analyzer

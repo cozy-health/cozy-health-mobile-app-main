@@ -71,7 +71,28 @@ void main() {
     await service!.refresh();
     expect(service!.isEnabled('ai_assistant'), false);
     expect(service!.ready, true);
+    expect(service!.consentEnforcement, isNull);
   });
+
+  test(
+    'consent enforcement is taken only from a valid network policy',
+    () async {
+      var policy = <String, dynamic>{'enforce_blocking': false};
+      service = FeatureFlagsService(
+        cache: cache,
+        fetch: () async => {...payload(), 'consent': policy},
+      );
+      expect(service!.consentEnforcement, isNull);
+      await service!.refresh();
+      expect(service!.consentEnforcement, false);
+      policy = {'enforce_blocking': true};
+      await service!.refresh();
+      expect(service!.consentEnforcement, true);
+      policy = {'enforce_blocking': 'false'};
+      await service!.refresh();
+      expect(service!.consentEnforcement, isNull);
+    },
+  );
 
   test('expires caches at sixty minutes and uses defaults offline', () async {
     await cache.put('configuration', {

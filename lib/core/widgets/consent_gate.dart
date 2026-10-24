@@ -4,6 +4,7 @@ import '../routing/app_router.dart';
 import '../services/legal_documents.dart';
 import '../services/consent_service.dart';
 import '../services/consent_refresh_signal.dart';
+import '../services/feature_flags_service.dart';
 import '../storage/token_storage.dart';
 import '../../features/auth/data/auth_service.dart';
 
@@ -14,11 +15,13 @@ class ConsentGate extends StatefulWidget {
     this.service,
     this.observeRoutes = true,
     this.forceBlocking = false,
+    this.flags,
   });
   final Widget child;
   final ConsentService? service;
   final bool observeRoutes;
   final bool forceBlocking;
+  final FeatureFlagsService? flags;
   @override
   State<ConsentGate> createState() => _ConsentGateState();
 }
@@ -29,6 +32,8 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
   String? _session;
   bool _loading = false, _busy = false;
   bool _verified = false;
+  bool _requiredByServer = false;
+  FeatureFlagsService? _flags;
   int _request = 0;
   StreamSubscription<void>? _clearing, _sessions;
   String? _loadError;
@@ -39,6 +44,11 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     _service = widget.service ?? ConsentService();
+    _flags =
+        widget.flags ??
+        (widget.service == null ? FeatureFlagsService.instance : null);
+    _verified = !widget.forceBlocking && _flags?.consentEnforcement == false;
+    _flags?.addListener(_configurationChanged);
     consentRefreshSignal.addListener(_consentRequired);
     _clearing = TokenStorage.sessionClearing.listen((_) => _invalidate());
     _sessions = TokenStorage.sessionChanges.listen((_) {
@@ -85,11 +95,32 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
     final generation = TokenStorage.generation;
     setState(() {
       _loading = true;
-      _verified = false;
       _loadError = null;
     });
     try {
-      final result = await _service.load();
+      final result = await _service
+          .load(
+            onPolicy: (blocking) {
+              if (blocking &&
+                  mounted &&
+                  _loading &&
+                  request == _request &&
+                  generation == TokenStorage.generation &&
+                  (_state == null || !_state!.enforceBlocking)) {
+                setState(() => _verified = false);
+              }
+              if (!blocking &&
+                  !widget.forceBlocking &&
+                  !_requiredByServer &&
+                  mounted &&
+                  _loading &&
+                  request == _request &&
+                  generation == TokenStorage.generation) {
+                setState(() => _verified = true);
+              }
+            },
+          )
+          .timeout(const Duration(seconds: 15));
       final token = await TokenStorage().getToken();
       if (mounted &&
           request == _request &&
@@ -105,7 +136,7 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
           request == _request &&
           generation == TokenStorage.generation) {
         setState(() {
-          _state = null;
+          if (!_verified) _state = null;
           _loadError =
               'Could not check your consent. Check your connection and retry.';
         });
@@ -120,7 +151,8 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
     setState(() {
       _request++;
       _loading = false;
-      _verified = false;
+      _requiredByServer = false;
+      _verified = !widget.forceBlocking && _flags?.consentEnforcement == false;
       _state = null;
       _session = null;
       _busy = false;
@@ -133,6 +165,26 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
 
   void _consentRequired() {
     _invalidate();
+    _requiredByServer = true;
+    _verified = false;
+    _refresh();
+  }
+
+  void _configurationChanged() {
+    if (!mounted) return;
+    if (_flags?.consentEnforcement == true &&
+        (_state == null || !_state!.enforceBlocking)) {
+      setState(() {
+        _request++;
+        _loading = false;
+        _verified = false;
+      });
+    }
+    if (_flags?.consentEnforcement == false &&
+        !widget.forceBlocking &&
+        !_requiredByServer) {
+      setState(() => _verified = true);
+    }
     _refresh();
   }
 
@@ -204,6 +256,7 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _flags?.removeListener(_configurationChanged);
     consentRefreshSignal.removeListener(_consentRequired);
     _clearing?.cancel();
     _sessions?.cancel();
@@ -253,7 +306,7 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (_loading) const CircularProgressIndicator(),
-                  Text(_loadError ?? 'Checking your consent…'),
+                  if (_loadError != null) Text(_loadError!),
                   if (!_loading)
                     FilledButton(
                       onPressed: _refresh,
@@ -284,7 +337,9 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
         .where(
           (doc) =>
               _state!.blocking(doc) ||
-              (widget.forceBlocking && doc.required && doc.reviewable),
+              ((widget.forceBlocking || _requiredByServer) &&
+                  doc.required &&
+                  doc.reviewable),
         )
         .toList();
     if (required.isNotEmpty) {

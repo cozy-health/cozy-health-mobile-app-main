@@ -82,11 +82,18 @@ class ConsentService {
     Map<String, dynamic> body,
   ) async => _map(await ApiClient().post('/me/consents', data: body));
 
-  Future<ConsentState?> load() async {
+  Future<ConsentState?> load({void Function(bool)? onPolicy}) async {
     final generation = TokenStorage.generation;
     final token = await _token();
     if (token == null) return null;
     final config = (await _get('/config'))['consent'] as Map;
+    if (config['enforce_blocking'] is! bool) {
+      throw const FormatException('Consent policy is unavailable.');
+    }
+    if (await _token() != token || generation != TokenStorage.generation) {
+      throw StateError('Your account changed. Review again.');
+    }
+    onPolicy?.call(config['enforce_blocking'] as bool);
     final response = await _get('/me/consents');
     if (await _token() != token || generation != TokenStorage.generation) {
       throw StateError('Your account changed. Review again.');
