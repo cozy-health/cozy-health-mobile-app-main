@@ -467,7 +467,7 @@ class _ProviderScreenState extends State<ProviderScreen>
             title: Text(entry.value),
             subtitle: entry.key == 'journals'
                 ? const Text(
-                    'Metadata only: title, type, word count and date. Your journal body, transcript and recordings are never shared.',
+                    'Shares title, type, word count and date. Written text is shared only after you review and confirm a copy. Recordings and transcripts stay private.',
                   )
                 : null,
             value: flags[entry.key] == true,
@@ -652,7 +652,7 @@ class _ProviderScreenState extends State<ProviderScreen>
             title: Text(entry.value),
             subtitle: entry.key == 'journals'
                 ? const Text(
-                    'Titles, type, word count and dates only. Journal text, transcripts and recordings stay private.',
+                    'Shares title, type, word count and date. Written text is shared only after you review and confirm a copy. Recordings and transcripts stay private.',
                   )
                 : null,
             value: _invitationFlags[entry.key]!,

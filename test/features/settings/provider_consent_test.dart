@@ -144,6 +144,16 @@ void main() {
     addTearDown(router.dispose);
     expect(api.calls, contains('GET /provider'));
     expect(find.text('Dr. Avery'), findsOneWidget);
+    expect(
+      find.textContaining(
+        'Written text is shared only after you review and confirm a copy.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Recordings and transcripts stay private.'),
+      findsOneWidget,
+    );
     expect(find.text('Link verified • Provider verified'), findsOneWidget);
     for (final entry in api.flags.entries) {
       final toggle = tester.widget<SwitchListTile>(
