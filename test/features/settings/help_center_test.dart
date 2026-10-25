@@ -23,8 +23,8 @@ void main() {
         },
         {
           'Getting Started': 3,
-          'Mood & Journal': 4,
-          'Next of kin': 4,
+          'Mood & Journal': 5,
+          'Next of kin': 3,
           'Privacy & Data': 3,
           'Account': 3,
           'Community': 3,

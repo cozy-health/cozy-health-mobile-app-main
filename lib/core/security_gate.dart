@@ -198,38 +198,40 @@ class _SecurityGateState extends State<SecurityGate>
     appBar: widget.journal ? AppBar(title: const Text('Journal locked')) : null,
     body: SafeArea(
       child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.lock_outline, size: 48),
-              const SizedBox(height: 20),
-              Text(
-                widget.journal
-                    ? 'Enter your journal PIN'
-                    : 'Unlock Cozy Health',
-              ),
-              if (widget.journal)
-                TextField(
-                  controller: _pin,
-                  obscureText: true,
-                  maxLength: 6,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onSubmitted: (_) => _unlock(),
-                ),
-              if (_error != null) Text(_error!),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: _busy || !_ready ? null : _unlock,
-                child: Text(
+        child: Dialog(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock_outline, size: 48),
+                const SizedBox(height: 20),
+                Text(
                   widget.journal
-                      ? 'Open journal'
-                      : 'Unlock with Face ID / biometrics',
+                      ? 'Enter your journal PIN'
+                      : 'Confirm your identity',
                 ),
-              ),
-            ],
+                if (widget.journal)
+                  TextField(
+                    controller: _pin,
+                    obscureText: true,
+                    maxLength: 6,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onSubmitted: (_) => _unlock(),
+                  ),
+                if (_error != null) Text(_error!),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: _busy || !_ready ? null : _unlock,
+                  child: Text(
+                    widget.journal
+                        ? 'Open journal'
+                        : 'Unlock with Face ID / biometrics',
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -102,13 +102,13 @@ void main() {
                       IconButton(
                         key: targets.journal,
                         onPressed: () {},
-                        tooltip: 'Quick actions',
+                        tooltip: 'What would you like to do?',
                         icon: const Icon(Icons.add),
                       ),
                       IconButton(
-                        key: targets.assistant,
+                        key: targets.provider,
                         onPressed: () {},
-                        tooltip: 'Provider',
+                        tooltip: 'Your provider',
                         icon: const Icon(Icons.chat),
                       ),
                       SizedBox(
@@ -158,7 +158,7 @@ void main() {
   ) async {
     await tester.runAsync(() => settings.put('has_seen_tour', false));
     await mount(tester);
-    expect(find.text('Want a quick look around?'), findsOneWidget);
+    expect(find.text('A quick introduction'), findsOneWidget);
     expect(find.text('Show me'), findsOneWidget);
     expect(find.text('Skip'), findsOneWidget);
   });
@@ -168,13 +168,13 @@ void main() {
   ) async {
     await tester.runAsync(() => settings.delete('new_account_tour_pending'));
     await mount(tester);
-    expect(find.text('Want a quick look around?'), findsNothing);
+    expect(find.text('A quick introduction'), findsNothing);
   });
 
   testWidgets('Seen tour shows no offer or coach marks', (tester) async {
     await tester.runAsync(() => settings.put('has_seen_tour', true));
     await mount(tester);
-    expect(find.text('Want a quick look around?'), findsNothing);
+    expect(find.text('A quick introduction'), findsNothing);
     expect(find.text("Log how you're feeling"), findsNothing);
   });
 
@@ -183,7 +183,7 @@ void main() {
     await tap(tester, 'Skip');
     await flush(tester);
     expect(settings.get('has_seen_tour'), isTrue);
-    expect(find.text('Want a quick look around?'), findsNothing);
+    expect(find.text('A quick introduction'), findsNothing);
   });
 
   testWidgets('Skipping coach marks persists has_seen_tour', (tester) async {
@@ -224,7 +224,7 @@ void main() {
     await flush(tester);
     await tester.pumpWidget(const SizedBox.shrink());
     await mount(tester);
-    expect(find.text('Want a quick look around?'), findsNothing);
+    expect(find.text('A quick introduction'), findsNothing);
   });
 
   testWidgets('Card entrance settles without repeating animation', (
@@ -283,7 +283,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Want a quick look around?'), findsOneWidget);
+    expect(find.text('A quick introduction'), findsOneWidget);
     await tap(tester, 'Show me');
     for (final message in [
       "Log how you're feeling",

@@ -20,57 +20,14 @@ Future<void> showVoiceRecorder(
   AudioRecorderService? recorder,
   Future<MicPermissionResult> Function()? requestMicrophone,
 }) async {
-  final box = context.findRenderObject();
-  final size = MediaQuery.sizeOf(context);
-  final anchorTop = box is RenderBox && box.hasSize && box.size.height <= 100
-      ? box.localToGlobal(Offset.zero).dy
-      : size.height - 80;
-  final bottom = (size.height - anchorTop + 8).clamp(80.0, size.height * .35);
-  await showGeneralDialog<void>(
+  await showWellnessSheet<void>(
     context: context,
-    barrierDismissible: false,
-    barrierLabel: 'Voice recorder',
-    barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: .32),
-    pageBuilder: (context, animation, secondaryAnimation) => SafeArea(
-      child: Align(
-        alignment: Alignment.bottomRight,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            12,
-            16,
-            math.max(bottom, MediaQuery.viewInsetsOf(context).bottom + 12),
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 320,
-              maxHeight: math.min(size.height * .58, 400),
-            ),
-            child: Material(
-              elevation: 12,
-              shadowColor: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.transparent
-                  : Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: .18),
-              color: Theme.of(context).colorScheme.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-                side: BorderSide(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: _Recorder(
-                journal: journal,
-                onConfirm: onConfirm,
-                recorder: recorder,
-                requestMicrophone: requestMicrophone,
-              ),
-            ),
-          ),
-        ),
-      ),
+    dismissible: false,
+    builder: (context) => _Recorder(
+      journal: journal,
+      onConfirm: onConfirm,
+      recorder: recorder,
+      requestMicrophone: requestMicrophone,
     ),
   );
 }
@@ -100,7 +57,6 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
   bool _settingsPending = false;
   StreamSubscription<Amplitude>? _amplitudes;
   final List<double> _samples = [];
-  bool _showInfo = false;
   bool _confirmDiscard = false;
   bool _recording = false, _busy = false;
   int _seconds = 0;
@@ -111,8 +67,47 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _clearing = TokenStorage.sessionClearing.listen((_) => _endSession());
     _sessions = TokenStorage.sessionChanges.listen((_) => _endSession());
-    unawaited(_start());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _offerMicrophone());
   }
+
+  Future<void> _offerMicrophone() async {
+    final proceed = await showWellnessDialog<bool>(
+      context: context,
+      builder: (context) => WellnessSheet(
+        title: 'Use your microphone?',
+        children: [
+          const Text(
+            'Your phone may ask for microphone permission. Continue to start recording.',
+          ),
+          WellnessAction(
+            label: 'Continue',
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || _sessionEnded) return;
+    if (proceed == true) {
+      await _start();
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
+  Future<void> _explain(String title, String message) =>
+      showWellnessDialog<void>(
+        context: context,
+        builder: (context) => WellnessSheet(
+          title: title,
+          children: [
+            Text(message),
+            WellnessAction(
+              label: 'Got it',
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      );
 
   void _endSession() {
     if (!mounted || _sessionEnded) return;
@@ -120,7 +115,10 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
     _timer?.cancel();
     _watch.stop();
     unawaited(_recorder.cancel().catchError((Object _) {}));
-    Navigator.of(context).pop();
+    final route = ModalRoute.of(context);
+    if (route != null && route.isActive) {
+      Navigator.of(context).removeRoute(route);
+    }
   }
 
   @override
@@ -158,6 +156,7 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
         () => _error =
             'Could not open Settings. Open your phone settings and allow microphone access for Cozy Health.',
       );
+      await _explain('Could not open settings', _error!);
     }
   }
 
@@ -209,6 +208,8 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
               ? 'Microphone access is restricted by your device settings or administrator.'
               : 'Microphone access is needed to record.',
         );
+        setState(() => _busy = false);
+        await _explain('Microphone access is off', _error!);
         return;
       }
       await _delete();
@@ -243,7 +244,11 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
       });
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Could not start recording. Please retry.');
+        setState(() {
+          _busy = false;
+          _error = 'Could not start recording. Please retry.';
+        });
+        await _explain('Could not start recording', _error!);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -257,14 +262,18 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
     _watch.stop();
     try {
       final path = await _recorder.stop();
-      if (!mounted) {
+      if (!mounted ||
+          _sessionEnded ||
+          _sessionGeneration != TokenStorage.generation) {
         if (path != null) await File(path).delete();
         return;
       }
+      final file = path == null ? null : await File(path).stat();
       if (path == null ||
-          !await File(path).exists() ||
-          await File(path).length() == 0 ||
-          await File(path).length() > 20 * 1024 * 1024) {
+          file == null ||
+          file.type != FileSystemEntityType.file ||
+          file.size == 0 ||
+          file.size > 20 * 1024 * 1024) {
         if (path != null && await File(path).exists()) {
           await File(path).delete();
         }
@@ -281,8 +290,10 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
       if (mounted) {
         setState(() {
           _recording = false;
+          _busy = false;
           _error = 'Could not capture audio. Please record again.';
         });
+        await _explain('Could not capture recording', _error!);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -305,6 +316,13 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
         setState(
           () => _error =
               'Could not ${widget.journal ? 'save' : 'send'}. Your recording is ready to retry.',
+        );
+        setState(() => _busy = false);
+        await _explain(
+          widget.journal
+              ? 'Could not save recording'
+              : 'Could not send recording',
+          'Your recording is still available here. Retry before closing, or choose to discard it.',
         );
       }
     } finally {
@@ -394,8 +412,12 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
             child: WellnessAction(
               label: 'How is this saved?',
               icon: Icons.info_outline_rounded,
-              selected: _showInfo,
-              onPressed: () => setState(() => _showInfo = !_showInfo),
+              onPressed: () => _explain(
+                'About this feature',
+                widget.journal
+                    ? 'Saved privately to your account when synced. Offline recordings stay on this device until uploaded. Your provider cannot hear your journal audio.'
+                    : 'Uploaded only when you tap Send, then available to you and your provider. Keep this card open to retry a failed send.',
+              ),
             ),
           ),
           SizedBox(height: w.contentGap),
@@ -419,16 +441,6 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
                 ? 'Listen back. Send when you are ready.'
                 : 'A quiet space. A moment for your voice.',
           ),
-          if (_showInfo) ...[
-            SizedBox(height: w.contentGap),
-            WellnessPanel(
-              child: Text(
-                widget.journal
-                    ? 'Saved privately to your account when synced. Offline recordings stay on this device until uploaded. Your provider cannot hear your journal audio.'
-                    : 'Uploaded only when you tap Send, then available to you and your provider. Keep this card open to retry a failed send.',
-              ),
-            ),
-          ],
           if (_error != null) ...[
             SizedBox(height: w.small),
             Semantics(liveRegion: true, child: Text(_error!)),

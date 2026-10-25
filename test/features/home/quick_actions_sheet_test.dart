@@ -62,8 +62,13 @@ void main() {
       tester,
     ) async {
       await open(tester, dark: dark);
-      expect(find.text('Quick actions'), findsOneWidget);
-      for (final title in ['Log mood', 'Journal', 'Provider', 'Breathe']) {
+      expect(find.text('What would you like to do?'), findsOneWidget);
+      for (final title in [
+        'Check in with your mood',
+        'Open your journal',
+        'Your provider',
+        'Start breathing',
+      ]) {
         expect(find.text(title).hitTestable(), findsOneWidget);
       }
       expect(find.text('Cancel'), findsNothing);
@@ -80,11 +85,11 @@ void main() {
     expect(tester.takeException(), isNull);
     await captureSurface(tester, 'quick-actions-large-text');
     await tester.scrollUntilVisible(
-      find.text('Breathe'),
+      find.text('Start breathing'),
       150,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('Breathe'));
+    await tester.tap(find.text('Start breathing'));
     await tester.pumpAndSettle();
     expect(selected, 3);
     expect(find.byType(QuickActionsSheet), findsNothing);
@@ -92,10 +97,10 @@ void main() {
   });
 
   for (final entry in [
-    'Log mood',
-    'Journal',
-    'Provider',
-    'Breathe',
+    'Check in with your mood',
+    'Open your journal',
+    'Your provider',
+    'Start breathing',
   ].asMap().entries) {
     testWidgets('${entry.value} dismisses before invoking its destination', (
       tester,
@@ -123,14 +128,14 @@ void main() {
       await open(tester, onAction: (value) => selected = value);
       switch (method) {
         case 'close':
-          await tester.tap(find.byTooltip('Close quick actions'));
+          await tester.tap(find.byTooltip('Close'));
         case 'outside':
           await tester.tapAt(const Offset(10, 40));
         case 'back':
           await tester.binding.handlePopRoute();
         case 'swipe':
           await tester.fling(
-            find.text('Quick actions'),
+            find.text('What would you like to do?'),
             const Offset(0, 600),
             1600,
           );
@@ -147,13 +152,15 @@ void main() {
     final semantics = tester.ensureSemantics();
     await open(tester);
     expect(
-      find.bySemanticsLabel('Log mood. Check in with how you feel'),
+      find.bySemanticsLabel(
+        'Check in with your mood. Record how you feel right now.',
+      ),
       findsOneWidget,
     );
-      expect(
-        find.bySemanticsLabel('Provider. Open your care conversations'),
-        findsOneWidget,
-      );
-      semantics.dispose();
+    expect(
+      find.bySemanticsLabel('Your provider. Open your provider area.'),
+      findsOneWidget,
+    );
+    semantics.dispose();
   });
 }

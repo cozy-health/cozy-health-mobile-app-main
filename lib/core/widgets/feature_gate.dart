@@ -24,7 +24,7 @@ class FeatureGate extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.all(24),
                   child: Text(
-                    'Assistant is temporarily unavailable',
+                    'This feature is unavailable',
                     textAlign: TextAlign.center,
                   ),
                 ),

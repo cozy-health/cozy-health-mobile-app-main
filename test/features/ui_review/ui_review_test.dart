@@ -329,6 +329,10 @@ void main() {
               findsNothing,
               reason: 'Provider composer must remain clear of overlays',
             );
+            expect(
+              find.byKey(const ValueKey('quick-actions-control')),
+              findsNothing,
+            );
             final page = tester.getRect(
               find.byKey(const ValueKey('main-tab-content')),
             );
@@ -339,14 +343,14 @@ void main() {
             expect(tester.takeException(), isNull, reason: 'Provider tab');
             continue;
           }
-          expect(buttons, findsNWidgets(2));
+          expect(buttons, findsOneWidget);
+          expect(
+            find.byKey(const ValueKey('quick-actions-control')),
+            findsOneWidget,
+          );
           final crisis = tester.getRect(find.byType(CrisisFab));
           final quick = tester.getRect(
-            find.byWidgetPredicate(
-              (widget) =>
-                  widget is FloatingActionButton &&
-                  widget.heroTag == 'quick-actions',
-            ),
+            find.byKey(const ValueKey('quick-actions-control')),
           );
           final page = tester.getRect(
             find.byKey(const ValueKey('main-tab-content')),
@@ -355,7 +359,18 @@ void main() {
             find.byType(CustomBottomNavigationBar),
           );
           expect(crisis.size, const Size(56, 56));
-          expect(quick.size, const Size(56, 56));
+          expect(quick.height, greaterThanOrEqualTo(48));
+          expect(find.text('Actions').hitTestable(), findsOneWidget);
+          expect(
+            quick.contains(tester.getRect(find.text('Actions')).topLeft),
+            isTrue,
+          );
+          expect(
+            quick.contains(tester.getRect(find.text('Actions')).bottomRight),
+            isTrue,
+          );
+          expect(quick.top - crisis.bottom, 16);
+          expect(quick.width, greaterThan(quick.height));
           expect(page.contains(crisis.center), isTrue);
           expect(page.contains(quick.center), isTrue);
           expect(crisis.overlaps(quick), isFalse);
@@ -366,19 +381,13 @@ void main() {
           expect(quick.bottom, lessThan(navigation.top));
           expect(tester.takeException(), isNull, reason: 'Tab $index');
         }
-        await tester.tap(
-          find.byWidgetPredicate(
-            (widget) =>
-                widget is FloatingActionButton &&
-                widget.heroTag == 'quick-actions',
-          ),
-        );
+        await tester.tap(find.byKey(const ValueKey('quick-actions-control')));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
-        expect(find.text('Quick actions'), findsOneWidget);
-        await tester.ensureVisible(find.text('Journal'));
+        expect(find.text('What would you like to do?'), findsOneWidget);
+        await tester.ensureVisible(find.text('Open your journal'));
         await tester.pump(const Duration(milliseconds: 500));
-        await tester.tap(find.text('Journal'));
+        await tester.tap(find.text('Open your journal'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
         expect(find.text('destination:${AppRouter.journal}'), findsOneWidget);
@@ -389,11 +398,7 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
         await tester.longPress(
-          find.byWidgetPredicate(
-            (widget) =>
-                widget is FloatingActionButton &&
-                widget.heroTag == 'quick-actions',
-          ),
+          find.byKey(const ValueKey('quick-actions-control')),
         );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));

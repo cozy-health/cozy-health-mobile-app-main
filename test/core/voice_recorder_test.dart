@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cozy_health/core/widgets/wellness_sheet.dart';
 import 'package:cozy_health/core/audio/audio_recorder_service.dart';
 import 'package:cozy_health/core/audio/voice_audio.dart';
 import 'package:cozy_health/core/audio/voice_recorder_popup.dart';
@@ -89,10 +90,18 @@ void main() {
     await tester.tap(find.byIcon(Icons.mic));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
+    expect(recorder.starts, 0);
+    await tester.tap(find.text('Continue'));
+    await tester.pump(const Duration(milliseconds: 300));
+    if (find.text('Microphone access is off').evaluate().isNotEmpty) {
+      expect(find.byType(Dialog), findsOneWidget);
+      await tester.tap(find.text('Got it'));
+      await tester.pumpAndSettle();
+    }
   }
 
   testWidgets(
-    'compact recorder previews before sending and preserves failed sends for retry',
+    'bottom recorder sheet previews before sending and preserves failed sends for retry',
     (tester) async {
       var attempts = 0;
       await open(
@@ -105,12 +114,11 @@ void main() {
       );
       expect(find.text('Recording'), findsOneWidget);
       expect(find.text('Conversation remains visible'), findsOneWidget);
-      final panel = find.byWidgetPredicate(
-        (widget) => widget is Material && widget.elevation == 12,
-      );
+      final panel = find.byType(WellnessSheet);
+      expect(find.byType(BottomSheet), findsOneWidget);
       expect(
-        tester.getSize(panel).height,
-        lessThan(tester.view.physicalSize.height * .6),
+        tester.getRect(panel).bottom,
+        tester.view.physicalSize.height / tester.view.devicePixelRatio,
       );
       expect(attempts, 0);
       await tester.runAsync(() async {
@@ -128,6 +136,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('ready to retry'), findsOneWidget);
       expect(await tester.runAsync(() => File(recorder.path).exists()), isTrue);
+      expect(find.text('Could not send recording'), findsOneWidget);
+      await tester.tap(find.text('Got it'));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('voice-confirm')));
       await tester.pumpAndSettle();
       expect(attempts, 2);

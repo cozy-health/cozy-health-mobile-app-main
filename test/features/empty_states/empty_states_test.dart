@@ -378,7 +378,7 @@ void main() {
       expect(find.text('🎤 Voice note'), findsOneWidget);
       await tester.tap(find.byTooltip('New journal entry'));
       await tester.pumpAndSettle();
-      expect(find.text('Free write'), findsOneWidget);
+      expect(find.text('Write freely'), findsOneWidget);
     },
   );
 

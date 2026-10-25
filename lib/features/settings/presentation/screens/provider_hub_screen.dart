@@ -1,3 +1,4 @@
+import '../../../journal/presentation/widgets/journal_share_flow.dart';
 import '../../../../core/widgets/wellness_sheet.dart';
 import '../../../../core/services/network_status.dart';
 import 'dart:async';
@@ -817,7 +818,21 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ...records.map((r) => SharedRecordCard(record: r)),
+                    ...records.map(
+                      (r) => r['type'] == 'journal_shares'
+                          ? WellnessAction(
+                              label: 'Review shared journal copy',
+                              icon: Icons.menu_book_outlined,
+                              onPressed: _offline
+                                  ? null
+                                  : () => showSharedJournalCopy(
+                                      context,
+                                      linkId: _thread!['id'].toString(),
+                                      shareId: r['id'].toString(),
+                                    ),
+                            )
+                          : SharedRecordCard(record: r),
+                    ),
                     if (m['audio'] is Map)
                       VoicePlayer(
                         key: ValueKey(m['id']),

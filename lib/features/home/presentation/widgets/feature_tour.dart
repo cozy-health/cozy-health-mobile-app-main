@@ -6,7 +6,7 @@ import '../../../../core/services/local_db_service.dart';
 class FeatureTourTargets {
   final hero = GlobalKey();
   final journal = GlobalKey();
-  final assistant = GlobalKey();
+  final provider = GlobalKey();
   final crisis = GlobalKey();
 }
 
@@ -50,7 +50,7 @@ class _FeatureTourState extends State<FeatureTour> {
         context: context,
         builder: (context) => AlertDialog(
           scrollable: true,
-          title: const Text('Want a quick look around?'),
+          title: const Text('A quick introduction'),
           content: const Text(
             'A short tour can help you find your way. You can skip it anytime.',
           ),
@@ -111,12 +111,12 @@ class _FeatureTourState extends State<FeatureTour> {
       (
         targets.journal,
         'Keep a private journal',
-        'Tap +, then Journal to make room for your thoughts.',
+        'Tap Actions, then Open your journal to make room for your thoughts.',
         ContentAlign.top,
       ),
-      if (targets.assistant.currentContext != null)
+      if (targets.provider.currentContext != null)
         (
-          targets.assistant,
+          targets.provider,
           'Talk to your provider',
           'Message your provider and share selected history in the Provider tab.',
           ContentAlign.top,

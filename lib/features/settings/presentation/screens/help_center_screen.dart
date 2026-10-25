@@ -24,7 +24,7 @@ const helpFaqs = <FaqItem>[
   FaqItem(
     'Getting Started',
     'What does the feature tour show?',
-    'The optional tour introduces mood check-ins, the Journal quick action, your assistant, and help resources. You can leave the tour whenever you like.',
+    'The optional tour introduces mood check-ins, the Journal action, your provider, and help resources. You can leave the tour whenever you like.',
   ),
   FaqItem(
     'Mood & Journal',
@@ -39,12 +39,17 @@ const helpFaqs = <FaqItem>[
   FaqItem(
     'Mood & Journal',
     'How do I write a journal entry?',
-    'Open Journal from the + quick action and choose a new entry. You can write freely or use a prompt. Your entry does not need to be long.',
+    'Choose Actions, then Open your journal, and start a new entry. You can write freely or use a prompt. Your entry does not need to be long.',
   ),
   FaqItem(
     'Mood & Journal',
     'Why are my insights empty?',
     'Patterns need a little history. Log a few moods to begin; some cards need at least three check-ins. There is no need to rush.',
+  ),
+  FaqItem(
+    'Mood & Journal',
+    'How can I share a journal entry with my provider?',
+    'Save a written entry, open Entry actions, and choose Share with provider. Select a connected provider with journal sharing enabled, review the written copy, and confirm. Audio and later edits stay private. You can stop sharing a copy from your Provider conversation.',
   ),
   FaqItem(
     'Next of kin',
@@ -62,11 +67,6 @@ const helpFaqs = <FaqItem>[
     'Next of kin',
     'What is a safety plan?',
     'A safety plan brings together warning signs, coping ideas, trusted contacts, and professional support. You can create one in help resources and review it with a qualified professional.',
-  ),
-  FaqItem(
-    'Next of kin',
-    'Can the assistant replace a therapist?',
-    'The assistant offers space for reflection. It cannot replace a qualified professional or emergency care. Reach out to a professional when you need personal clinical guidance.',
   ),
   FaqItem(
     'Privacy & Data',

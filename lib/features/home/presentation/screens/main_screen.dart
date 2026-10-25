@@ -1,4 +1,5 @@
 import '../../../../core/services/feature_flags_service.dart';
+import '../../../../core/widgets/app_pressable.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
 import 'package:cozy_health/features/settings/presentation/screens/provider_hub_screen.dart';
 import 'package:cozy_health/features/community/presentation/screens/community_hub_screen.dart';
@@ -54,45 +55,76 @@ class _MainScreenState extends State<MainScreen> {
                   MediaQuery.viewInsetsOf(context).bottom == 0) ...[
                 Positioned(
                   right: context.cozyColors.wellness.floatingInset,
-                  bottom:
-                      context.cozyColors.wellness.floatingInset +
-                      context.cozyColors.wellness.floatingSize +
-                      context.cozyColors.wellness.floatingGap,
-                  child: CrisisFab(key: _tourTargets.crisis),
-                ),
-                Positioned(
-                  right: 16,
                   bottom: context.cozyColors.wellness.floatingInset,
-                  child: Semantics(
-                    button: true,
-                    label: 'Open quick actions',
-                    hint: 'Long press to contact your next of kin',
-                    onTap: () => _showQuickActionsSheet(context),
-                    onLongPress: () => context.push(AppRouter.crisisContact),
-                    excludeSemantics: true,
-                    child: Tooltip(
-                      message: 'Open quick actions',
-                      triggerMode: TooltipTriggerMode.manual,
-                      child: GestureDetector(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      CrisisFab(key: _tourTargets.crisis),
+                      SizedBox(height: context.cozyColors.wellness.floatingGap),
+                      Semantics(
+                        button: true,
+                        label: 'Open quick actions',
+                        hint: 'Long press to contact your next of kin',
+                        onTap: () => _showQuickActionsSheet(context),
                         onLongPress: () =>
                             context.push(AppRouter.crisisContact),
-                        child: FloatingActionButton(
-                          key: _tourTargets.journal,
-                          heroTag: 'quick-actions',
-                          shape: const CircleBorder(),
-                          elevation: 2,
-                          highlightElevation: 4,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onPrimary,
-                          onPressed: () => _showQuickActionsSheet(context),
-                          child: const Icon(Icons.add),
+                        excludeSemantics: true,
+                        child: Tooltip(
+                          message: 'Open quick actions',
+                          triggerMode: TooltipTriggerMode.manual,
+                          child: GestureDetector(
+                            onLongPress: () =>
+                                context.push(AppRouter.crisisContact),
+                            child: AppPressable(
+                              key: _tourTargets.journal,
+                              label: 'Actions',
+                              onPressed: () => _showQuickActionsSheet(context),
+                              child: Container(
+                                key: const ValueKey('quick-actions-control'),
+                                constraints: BoxConstraints(
+                                  minHeight: context.cozyColors.wellness.touch,
+                                ),
+                                padding: EdgeInsets.all(
+                                  context.cozyColors.wellness.contentGap,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(
+                                    context.cozyColors.wellness.tileRadius,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.grid_view_rounded,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary,
+                                    ),
+                                    SizedBox(
+                                      width: context.cozyColors.wellness.small,
+                                    ),
+                                    Text(
+                                      'Actions',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
@@ -100,8 +132,8 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ),
         bottomNavigationBar: CustomBottomNavigationBar(
-          showAssistant: true,
-          assistantTourKey: _tourTargets.assistant,
+          showProvider: true,
+          providerTourKey: _tourTargets.provider,
           currentIndex: _currentIndex,
           onTap: (index) {
             setState(() {

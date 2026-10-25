@@ -1,3 +1,5 @@
+import 'wellness_sheet.dart';
+import 'wellness_panel.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/app_surface.dart';
@@ -9,6 +11,7 @@ import '../utils/motion.dart';
 enum _NoticeKind { success, error, info, warning }
 
 class AppSnackbar {
+  static bool _syncDialogOpen = false;
   static OverlayEntry? _entry;
   static VoidCallback? _dismissCurrent;
   static void dismiss() => _dismissCurrent?.call();
@@ -85,6 +88,31 @@ class AppSnackbar {
   }
 
   static void show(BuildContext context, SnackBar snack) {
+    final message = snack.content is Text
+        ? (snack.content as Text).data ?? ''
+        : '';
+    if (message.contains('will sync') ||
+        message.contains('Changes will sync')) {
+      if (!_syncDialogOpen) {
+        _syncDialogOpen = true;
+        unawaited(
+          showWellnessDialog<void>(
+            context: context,
+            builder: (context) => WellnessSheet(
+              title: 'Saved on this device',
+              children: [
+                const Text('Your saved changes will sync when you reconnect.'),
+                WellnessAction(
+                  label: 'Got it',
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ).whenComplete(() => _syncDialogOpen = false),
+        );
+      }
+      return;
+    }
     if (snack is! _Notice) {
       snack = fromLegacy(content: snack.content, action: snack.action);
     }

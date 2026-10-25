@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cozy_health/core/widgets/wellness_sheet.dart';
 import 'dart:ui' as ui;
 import 'package:cozy_health/core/audio/audio_recorder_service.dart';
 import 'package:cozy_health/core/audio/voice_audio.dart';
@@ -113,15 +114,16 @@ void main() {
         await tester.tap(find.byIcon(Icons.mic));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
+        await tester.tap(find.text('Continue'));
+        await tester.pump(const Duration(milliseconds: 400));
         expect(find.text('Voice journal'), findsOneWidget);
         expect(find.textContaining('Offline recordings'), findsNothing);
-        final card = find.byWidgetPredicate(
-          (widget) => widget is Material && widget.elevation == 12,
-        );
+        final card = find.byType(WellnessSheet);
         final bounds = tester.getRect(card);
-        expect(bounds.left, greaterThanOrEqualTo(16));
-        expect(bounds.right, lessThanOrEqualTo(374));
-        expect(bounds.height, lessThan(400));
+        expect(find.byType(BottomSheet), findsOneWidget);
+        expect(bounds.left, 0);
+        expect(bounds.right, 390);
+        expect(bounds.bottom, 844);
         await capture('recording');
         await tester.tap(find.byTooltip('How is this saved?'));
         // The live recording timer keeps scheduling frames. Wait for the
@@ -129,7 +131,7 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
         expect(find.textContaining('Offline recordings'), findsOneWidget);
-        await tester.tap(find.byTooltip('How is this saved?'));
+        await tester.tap(find.text('Got it'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
         await tester.runAsync(() async {

@@ -1,3 +1,5 @@
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/wellness_panel.dart';
 import '../widgets/next_of_kin_panel.dart';
 import '../../data/next_of_kin_repository.dart';
 import 'package:cozy_health/core/widgets/app_scroll_body.dart';
@@ -1749,28 +1751,26 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
           Row(
             children: [
               Expanded(
-                child: CrisisButton(
+                child: WellnessAction(
                   label: 'Better',
-                  outlined: true,
                   onPressed: () => context.go(AppRouter.home),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: CrisisButton(
+                child: WellnessAction(
                   label: 'Same',
-                  outlined: true,
                   onPressed: () => context.push(AppRouter.crisisFollowUp),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 32),
-          CrisisButton(
+          WellnessAction(
             label: 'Back to Home',
             onPressed: () => context.go(AppRouter.home),
           ),
-          CrisisButton(label: 'Restart', outlined: true, onPressed: _restart),
+          WellnessAction(label: 'Restart', onPressed: _restart),
         ],
       );
     }
@@ -1785,8 +1785,8 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
             _ => 1.0,
           };
     return CrisisShell(
-      title: _started ? _labels[_phase] : 'Ready to breathe?',
-      subtitle: _subtitles[_phase].isEmpty ? null : _subtitles[_phase],
+      title: 'Breathe',
+      subtitle: 'Follow the rhythm at your own pace.',
       children: [
         Center(
           child: Text(
@@ -1794,7 +1794,11 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
             style: Theme.of(context).textTheme.headlineSmall,
           ),
         ),
-        Center(child: Text('$_phaseSecondsLeft seconds')),
+        Center(child: Text('Cycle ${_cycle + 1} of 4')),
+        LinearProgressIndicator(
+          value: _elapsed.inMilliseconds.clamp(0, 80000) / 80000,
+          semanticsLabel: 'Breathing session progress',
+        ),
         if (_started && _paused) const Center(child: Text('Paused')),
         const SizedBox(height: 40),
         Center(
@@ -1802,23 +1806,36 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
             scale: scale,
             child: Container(
               width: 200,
-              height: 200,
+              constraints: const BoxConstraints(minHeight: 200),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: _crisisSubtle(context),
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.crisisPrimary, width: 2),
               ),
-              child: Text(
-                'Breathe',
-                style: CrisisText.h2.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
+              child: Padding(
+                padding: EdgeInsets.all(context.cozyColors.wellness.gap),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _started ? _labels[_phase] : 'Ready to breathe?',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    Text(
+                      '$_phaseSecondsLeft seconds',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    if (_subtitles[_phase].isNotEmpty)
+                      Text(_subtitles[_phase], textAlign: TextAlign.center),
+                  ],
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 80),
+        const SizedBox(height: 40),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
@@ -1837,20 +1854,19 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
           ),
         ),
         const SizedBox(height: 40),
-        CrisisButton(
+        WellnessAction(
           label: !_started
               ? 'Start'
               : _paused
               ? 'Resume'
               : 'Pause',
-          outlined: true,
           onPressed: _toggle,
         ),
-        CrisisButton(label: 'Restart', textOnly: true, onPressed: _restart),
+        WellnessAction(label: 'Restart', onPressed: _restart),
         const SizedBox(height: 12),
-        CrisisButton(
+        WellnessAction(
           label: 'Stop',
-          textOnly: true,
+
           onPressed: () => context.canPop()
               ? context.pop()
               : context.go(AppRouter.crisisHub),

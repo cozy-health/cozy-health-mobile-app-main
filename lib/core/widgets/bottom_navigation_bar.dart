@@ -10,15 +10,15 @@ import '../../gen/assets.gen.dart';
 class CustomBottomNavigationBar extends StatefulWidget {
   final int currentIndex;
   final Function(int) onTap;
-  final GlobalKey? assistantTourKey;
-  final bool showAssistant;
+  final GlobalKey? providerTourKey;
+  final bool showProvider;
 
   const CustomBottomNavigationBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
-    this.assistantTourKey,
-    this.showAssistant = true,
+    this.providerTourKey,
+    this.showProvider = true,
   });
 
   @override
@@ -82,7 +82,7 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
               final labels = [
                 'Home',
                 'Activity',
-                if (widget.showAssistant) 'Provider',
+                if (widget.showProvider) 'Provider',
                 'Community',
                 'Settings',
               ];
@@ -106,11 +106,11 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
               final extra = total < box.maxWidth
                   ? (box.maxWidth - total) / widths.length
                   : 0.0;
-              final indices = [0, 1, if (widget.showAssistant) 2, 3, 4];
+              final indices = [0, 1, if (widget.showProvider) 2, 3, 4];
               final assets = [
                 Assets.svg.home,
                 Assets.svg.activity,
-                if (widget.showAssistant) Assets.svg.community,
+                if (widget.showProvider) Assets.svg.community,
                 Assets.svg.community,
                 Assets.svg.settings,
               ];
@@ -163,7 +163,7 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
         navTheme.unselectedItemColor ?? Theme.of(context).colorScheme.onSurface;
 
     return AppPressable(
-      key: index == 2 ? widget.assistantTourKey : null,
+      key: index == 2 ? widget.providerTourKey : null,
       selected: isSelected,
       label: label,
       onPressed: () => widget.onTap(index),

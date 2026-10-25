@@ -1,3 +1,6 @@
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import '../widgets/journal_share_flow.dart';
 import '../../../../core/storage/token_storage.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/skeleton_loader.dart';
@@ -408,6 +411,9 @@ class _JournalScreenState extends State<JournalScreen>
     if (result.action == 'edit') {
       await _openEditor(type: entry.type, existing: entry);
     }
+    if (result.action == 'tag') {
+      _showAddTagSheet(entry);
+    }
     if (result.action == 'delete') {
       _deleteEntry(entry);
     }
@@ -450,12 +456,7 @@ class _JournalScreenState extends State<JournalScreen>
         },
         onShare: () {
           Navigator.pop(context);
-          AppSnackbar.show(
-            context,
-            AppSnackbar.fromLegacy(
-              content: Text('Provider sharing is opt-in only.'),
-            ),
-          );
+          showJournalShareFlow(this.context, entry);
         },
         onAddTag: () {
           Navigator.pop(context);
@@ -499,11 +500,8 @@ class _JournalScreenState extends State<JournalScreen>
 
   void _showAddTagSheet(JournalEntry entry) {
     final controller = TextEditingController();
-    showModalBottomSheet<void>(
+    showWellnessDialog<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(),
       builder: (context) => _AddTagSheet(
         controller: controller,
         onAdd: () async {
@@ -527,11 +525,20 @@ class _JournalScreenState extends State<JournalScreen>
             createdAt: entry.createdAt,
             updatedAt: DateTime.now(),
             isDraft: entry.isDraft,
+            isCrisisFlagged: entry.isCrisisFlagged,
           );
 
           try {
             await _repo.save(updatedEntry);
-          } catch (_) {}
+          } catch (_) {
+            if (context.mounted) {
+              AppSnackbar.show(
+                context,
+                AppSnackbar.error('Could not save tag. Try again.'),
+              );
+            }
+            return;
+          }
 
           HapticFeedback.selectionClick();
           if (context.mounted) Navigator.pop(context);
@@ -831,11 +838,8 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
   void _addTag() {
     if (!_active) return;
     final controller = TextEditingController();
-    showModalBottomSheet<void>(
+    showWellnessDialog<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(),
       builder: (context) => _AddTagSheet(
         controller: controller,
         onAdd: () {
@@ -1291,14 +1295,12 @@ class JournalEntryDetailScreen extends StatelessWidget {
         },
         onShare: () {
           Navigator.pop(sheetContext);
-          AppSnackbar.show(
-            context,
-            AppSnackbar.fromLegacy(
-              content: Text('Provider sharing is opt-in only.'),
-            ),
-          );
+          showJournalShareFlow(context, entry);
         },
-        onAddTag: () => Navigator.pop(sheetContext),
+        onAddTag: () {
+          Navigator.pop(sheetContext);
+          Navigator.pop(context, const _EntryAction('tag'));
+        },
         onDelete: () {
           Navigator.pop(sheetContext);
           Navigator.pop(context, const _EntryAction('delete'));
@@ -1585,110 +1587,32 @@ class _EntryTypePicker extends StatelessWidget {
     required this.onGuided,
     required this.onVoice,
   });
-
-  final VoidCallback onFree;
-  final VoidCallback onGuided;
-  final VoidCallback onVoice;
-
+  final VoidCallback onFree, onGuided, onVoice;
   @override
-  Widget build(BuildContext context) {
-    return _BottomSheetFrame(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'What kind of entry?',
-            style: AppTextStyles.heading2.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          SizedBox(height: 18),
-          _EntryActionButton(
-            icon: '✎',
-            title: 'Free write',
-            subtitle: 'Just start',
-            onTap: onFree,
-          ),
-          SizedBox(height: 10),
-          _EntryActionButton(
-            icon: '💡',
-            title: 'Guided prompt',
-            subtitle: 'Need a nudge?',
-            onTap: onGuided,
-          ),
-          SizedBox(height: 10),
-          _EntryActionButton(
-            icon: '🎤',
-            title: 'Voice note',
-            subtitle: 'Speak instead',
-            onTap: onVoice,
-          ),
-          SizedBox(height: 14),
-          _SecondaryButton(
-            label: 'Cancel',
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
+  Widget build(BuildContext context) => WellnessSheet(
+    title: 'Start a journal entry',
+    children: [
+      const Text('Choose how you want to capture your thoughts.'),
+      WellnessSheetOption(
+        label: 'Write freely',
+        subtitle: 'Start a blank entry and write your thoughts.',
+        icon: Icons.edit_outlined,
+        onPressed: onFree,
       ),
-    );
-  }
-}
-
-class _EntryActionButton extends StatelessWidget {
-  const _EntryActionButton({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final String icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: _WarmPanel(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Text(icon, style: TextStyle(fontSize: 24)),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (subtitle.isNotEmpty) ...[
-                    SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: AppTextStyles.body2.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.textMutedDark
-                            : AppColors.textMutedLight,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
+      WellnessSheetOption(
+        label: 'Write with a prompt',
+        subtitle: 'Choose a question to help you get started.',
+        icon: Icons.quiz_outlined,
+        onPressed: onGuided,
       ),
-    );
-  }
+      WellnessSheetOption(
+        label: 'Record a voice note',
+        subtitle: 'Record your thoughts using your microphone.',
+        icon: Icons.mic_none_outlined,
+        onPressed: onVoice,
+      ),
+    ],
+  );
 }
 
 class _PromptCategories extends StatelessWidget {
@@ -1919,39 +1843,38 @@ class _EntryMoreSheet extends StatelessWidget {
     required this.onAddTag,
     required this.onDelete,
   });
-
-  final VoidCallback onEdit;
-  final VoidCallback onShare;
-  final VoidCallback onAddTag;
-  final VoidCallback onDelete;
-
+  final VoidCallback onEdit, onShare, onAddTag, onDelete;
   @override
-  Widget build(BuildContext context) {
-    return _BottomSheetFrame(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _SheetTile(icon: Icons.edit_outlined, label: 'Edit', onTap: onEdit),
-          _SheetTile(
-            icon: Icons.ios_share_outlined,
-            label: 'Share with provider',
-            onTap: onShare,
-          ),
-          _SheetTile(
-            icon: Icons.sell_outlined,
-            label: 'Add tag',
-            onTap: onAddTag,
-          ),
-          _SheetTile(
-            icon: Icons.delete_outline,
-            label: 'Delete',
-            danger: true,
-            onTap: onDelete,
-          ),
-        ],
+  Widget build(BuildContext context) => WellnessSheet(
+    title: 'Entry actions',
+    children: [
+      WellnessSheetOption(
+        label: 'Edit entry',
+        subtitle: 'Change this entry.',
+        icon: Icons.edit_outlined,
+        onPressed: onEdit,
       ),
-    );
-  }
+      WellnessSheetOption(
+        label: 'Add a tag',
+        subtitle: 'Add a label to help find this entry later.',
+        icon: Icons.sell_outlined,
+        onPressed: onAddTag,
+      ),
+      WellnessSheetOption(
+        label: 'Share with provider',
+        subtitle: 'Send a reviewed copy to a provider you choose.',
+        icon: Icons.ios_share_outlined,
+        onPressed: onShare,
+      ),
+      WellnessSheetOption(
+        label: 'Delete entry',
+        subtitle: 'Remove this entry from your journal.',
+        icon: Icons.delete_outline,
+        destructive: true,
+        onPressed: onDelete,
+      ),
+    ],
+  );
 }
 
 class _DeleteConfirmation extends StatelessWidget {
@@ -2015,40 +1938,29 @@ class _DeleteConfirmation extends StatelessWidget {
 
 class _AddTagSheet extends StatelessWidget {
   const _AddTagSheet({required this.controller, required this.onAdd});
-
   final TextEditingController controller;
   final VoidCallback onAdd;
-
   @override
-  Widget build(BuildContext context) {
-    return _BottomSheetFrame(
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Add tag',
-              style: AppTextStyles.heading2.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            SizedBox(height: 14),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              decoration: _inputDecoration(context, '#tag'),
-            ),
-            SizedBox(height: 14),
-            _PrimaryButton(label: 'Add tag', onPressed: onAdd),
-          ],
+  Widget build(BuildContext context) => WellnessSheet(
+    title: 'Add a tag',
+    children: [
+      const Text('Add a label to help find this entry later.'),
+      TextField(
+        key: const ValueKey('journal-tag-input'),
+        controller: controller,
+        autofocus: true,
+        decoration: const InputDecoration(
+          labelText: 'Tag name',
+          hintText: 'e.g. Reflection',
         ),
       ),
-    );
-  }
+      WellnessAction(
+        label: 'Save tag',
+        icon: Icons.sell_outlined,
+        onPressed: onAdd,
+      ),
+    ],
+  );
 }
 
 class _SearchSection extends StatelessWidget {
@@ -2231,41 +2143,6 @@ class _BottomSheetFrame extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _SheetTile extends StatelessWidget {
-  const _SheetTile({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.danger = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool danger;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: danger
-            ? AppColors.danger
-            : Theme.of(context).colorScheme.onSurface,
-      ),
-      title: Text(
-        label,
-        style: AppTextStyles.body1.copyWith(
-          color: danger
-              ? AppColors.danger
-              : Theme.of(context).colorScheme.onSurface,
-        ),
-      ),
-      onTap: onTap,
     );
   }
 }

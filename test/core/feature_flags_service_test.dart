@@ -199,7 +199,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Assistant is temporarily unavailable'), findsOneWidget);
+      expect(find.text('This feature is unavailable'), findsOneWidget);
       expect(built, 0);
       assistant = true;
       await tester.runAsync(() => service!.refresh());
@@ -209,7 +209,7 @@ void main() {
     },
   );
 
-  testWidgets('hidden assistant preserves the other navigation indices', (
+  testWidgets('hidden provider preserves the other navigation indices', (
     tester,
   ) async {
     int? selected;
@@ -218,7 +218,7 @@ void main() {
         home: Scaffold(
           bottomNavigationBar: CustomBottomNavigationBar(
             currentIndex: 0,
-            showAssistant: false,
+            showProvider: false,
             onTap: (index) => selected = index,
           ),
         ),
