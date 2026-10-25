@@ -79,7 +79,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> {
               w.page,
               w.page,
               w.page,
-              w.floatingClearance,
+              wellnessFloatingClearance(context),
             ),
             children: [
               Row(

@@ -1,3 +1,4 @@
+import '../../../../core/widgets/wellness_panel.dart';
 import '../../../settings/data/wellness_progress.dart';
 import '../../../settings/presentation/screens/achievements_screen.dart';
 import '../../../../core/widgets/profile_avatar.dart';
@@ -248,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen>
                           context.cozyColors.wellness.page,
                           context.cozyColors.wellness.page,
                           context.cozyColors.wellness.page,
-                          context.cozyColors.wellness.floatingClearance,
+                          wellnessFloatingClearance(context),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

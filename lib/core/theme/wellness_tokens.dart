@@ -21,6 +21,7 @@ class WellnessTokens {
   double get tileHeight => 96;
   double get compactTileHeight => 76;
   double get touch => 48;
+  double get actionIcon => 24;
   double get floatingSize => 56;
   double get floatingGap => 16;
   double get floatingInset => 16;

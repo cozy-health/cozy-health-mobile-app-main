@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/cozy_colors.dart';
 import 'app_pressable.dart';
@@ -9,6 +10,29 @@ Color wellnessAccentInk(BuildContext context, {Color? background}) {
     c.primary,
     background ?? c.surface,
     c.onSurface,
+  );
+}
+
+/// Reserve the actual labelled Actions height as system text grows.
+/// The content must be able to scroll entirely above both floating controls.
+double wellnessFloatingClearance(BuildContext context) {
+  final w = context.cozyColors.wellness;
+  final text = TextPainter(
+    text: TextSpan(
+      text: 'Actions',
+      style: Theme.of(context).textTheme.labelLarge,
+    ),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+  )..layout();
+  final actionHeight = math.max(
+    w.touch,
+    math.max(w.actionIcon, text.height) + 2 * w.contentGap,
+  );
+  text.dispose();
+  return math.max(
+    w.floatingClearance,
+    w.floatingInset + w.floatingSize + w.floatingGap + actionHeight + w.small,
   );
 }
 

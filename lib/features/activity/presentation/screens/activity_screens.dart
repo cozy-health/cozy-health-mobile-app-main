@@ -79,7 +79,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                   w.page,
                   w.contentGap,
                   w.page,
-                  w.floatingClearance,
+                  wellnessFloatingClearance(context),
                 ),
                 children: [
                   Text(

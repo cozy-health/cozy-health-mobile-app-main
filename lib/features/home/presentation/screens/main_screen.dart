@@ -99,6 +99,10 @@ class _MainScreenState extends State<MainScreen> {
                                   children: [
                                     Icon(
                                       Icons.grid_view_rounded,
+                                      size: context
+                                          .cozyColors
+                                          .wellness
+                                          .actionIcon,
                                       color: Theme.of(
                                         context,
                                       ).colorScheme.onPrimary,
