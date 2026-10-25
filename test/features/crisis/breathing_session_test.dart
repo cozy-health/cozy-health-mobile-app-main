@@ -10,6 +10,15 @@ void main() {
     expect(find.text('1:20 remaining'), findsOneWidget);
     expect(find.text('Start'), findsOneWidget);
     expect(find.text('4 seconds'), findsOneWidget);
+    final primary = tester.getRect(
+      find.byKey(const ValueKey('breathing-primary-control')),
+    );
+    expect(primary.left, 24);
+    expect(
+      primary.right,
+      tester.view.physicalSize.width / tester.view.devicePixelRatio - 24,
+    );
+    expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
   testWidgets(
@@ -39,14 +48,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('Hold'), findsOneWidget);
       expect(find.text('7 seconds'), findsOneWidget);
-      tester.binding.handleAppLifecycleStateChanged(
-        AppLifecycleState.paused,
-      );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       await tester.pump();
       now = const Duration(seconds: 64);
-      tester.binding.handleAppLifecycleStateChanged(
-        AppLifecycleState.resumed,
-      );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
       expect(find.text('Paused'), findsOneWidget);
       expect(find.text('1:16 remaining'), findsOneWidget);

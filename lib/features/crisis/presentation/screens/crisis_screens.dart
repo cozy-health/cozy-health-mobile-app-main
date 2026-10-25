@@ -1854,22 +1854,43 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
           ),
         ),
         const SizedBox(height: 40),
-        WellnessAction(
-          label: !_started
-              ? 'Start'
-              : _paused
-              ? 'Resume'
-              : 'Pause',
-          onPressed: _toggle,
+        SizedBox(
+          key: const ValueKey('breathing-primary-control'),
+          width: double.infinity,
+          child: WellnessAction(
+            label: !_started
+                ? 'Start'
+                : _paused
+                ? 'Resume'
+                : 'Pause',
+            icon: _started && !_paused
+                ? Icons.pause_rounded
+                : Icons.play_arrow_rounded,
+            filled: true,
+            onPressed: _toggle,
+          ),
         ),
-        WellnessAction(label: 'Restart', onPressed: _restart),
-        const SizedBox(height: 12),
-        WellnessAction(
-          label: 'Stop',
-
-          onPressed: () => context.canPop()
-              ? context.pop()
-              : context.go(AppRouter.crisisHub),
+        SizedBox(height: context.cozyColors.wellness.contentGap),
+        Row(
+          children: [
+            Expanded(
+              child: WellnessAction(
+                label: 'Restart',
+                icon: Icons.replay_rounded,
+                onPressed: _restart,
+              ),
+            ),
+            SizedBox(width: context.cozyColors.wellness.contentGap),
+            Expanded(
+              child: WellnessAction(
+                label: 'Stop',
+                icon: Icons.stop_rounded,
+                onPressed: () => context.canPop()
+                    ? context.pop()
+                    : context.go(AppRouter.crisisHub),
+              ),
+            ),
+          ],
         ),
       ],
     );
