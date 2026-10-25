@@ -379,6 +379,24 @@ void main() {
       await tester.tap(find.byTooltip('New journal entry'));
       await tester.pumpAndSettle();
       expect(find.text('Write freely'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('wellness-sheet-close')));
+      await tester.pumpAndSettle();
+      for (var attempt = 0; attempt < 2; attempt++) {
+        await tester.tap(find.byTooltip('More options').first);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Add a tag'));
+        await tester.pumpAndSettle();
+        expect(find.byType(Dialog), findsOneWidget);
+        expect(find.widgetWithText(TextField, 'Tag name'), findsOneWidget);
+        await tester.enterText(
+          find.byKey(const ValueKey('journal-tag-input')),
+          'Unfinished tag',
+        );
+        await tester.tap(find.byKey(const ValueKey('wellness-sheet-close')));
+        await tester.pumpAndSettle();
+        expect(find.text('Add a tag'), findsNothing);
+        expect(tester.takeException(), isNull);
+      }
     },
   );
 

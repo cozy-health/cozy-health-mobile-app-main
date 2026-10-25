@@ -499,14 +499,17 @@ class _JournalScreenState extends State<JournalScreen>
   }
 
   void _showAddTagSheet(JournalEntry entry) {
-    final controller = TextEditingController();
+    final owner = LocalDbService.instance.activeUserId;
+    final generation = TokenStorage.generation;
     showWellnessDialog<void>(
       context: context,
       builder: (context) => _AddTagSheet(
-        controller: controller,
-        onAdd: () async {
-          final tag = controller.text.trim().replaceAll('#', '');
-          if (tag.isEmpty) return;
+        onAdd: (tag) async {
+          if (!mounted ||
+              owner != LocalDbService.instance.activeUserId ||
+              generation != TokenStorage.generation) {
+            throw StateError('Journal session changed');
+          }
 
           final updatedEntry = JournalEntry(
             id: entry.id,
@@ -528,23 +531,11 @@ class _JournalScreenState extends State<JournalScreen>
             isCrisisFlagged: entry.isCrisisFlagged,
           );
 
-          try {
-            await _repo.save(updatedEntry);
-          } catch (_) {
-            if (context.mounted) {
-              AppSnackbar.show(
-                context,
-                AppSnackbar.error('Could not save tag. Try again.'),
-              );
-            }
-            return;
-          }
-
+          await _repo.save(updatedEntry);
           HapticFeedback.selectionClick();
-          if (context.mounted) Navigator.pop(context);
         },
       ),
-    ).whenComplete(controller.dispose);
+    );
   }
 
   void _confirmDelete(JournalEntry entry) {
@@ -837,20 +828,18 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
 
   void _addTag() {
     if (!_active) return;
-    final controller = TextEditingController();
     showWellnessDialog<void>(
       context: context,
       builder: (context) => _AddTagSheet(
-        controller: controller,
-        onAdd: () {
-          final tag = controller.text.trim().replaceAll('#', '');
-          if (tag.isEmpty) return;
+        onAdd: (tag) async {
+          if (!mounted || !_active) {
+            throw StateError('Journal session changed');
+          }
           setState(() => _tags.add(tag));
           HapticFeedback.selectionClick();
-          Navigator.pop(context);
         },
       ),
-    ).whenComplete(controller.dispose);
+    );
   }
 
   void _scheduleAutoSave() {
@@ -1936,28 +1925,66 @@ class _DeleteConfirmation extends StatelessWidget {
   }
 }
 
-class _AddTagSheet extends StatelessWidget {
-  const _AddTagSheet({required this.controller, required this.onAdd});
-  final TextEditingController controller;
-  final VoidCallback onAdd;
+class _AddTagSheet extends StatefulWidget {
+  const _AddTagSheet({required this.onAdd});
+  final Future<void> Function(String) onAdd;
+  @override
+  State<_AddTagSheet> createState() => _AddTagSheetState();
+}
+
+class _AddTagSheetState extends State<_AddTagSheet> {
+  final _controller = TextEditingController();
+  bool _busy = false;
+  String? _error;
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_busy) return;
+    final tag = _controller.text.trim().replaceAll('#', '');
+    if (tag.isEmpty) {
+      setState(() => _error = 'Enter a tag name.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.onAdd(tag);
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Could not save tag. Try again.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => WellnessSheet(
     title: 'Add a tag',
+    busy: _busy,
     children: [
       const Text('Add a label to help find this entry later.'),
       TextField(
         key: const ValueKey('journal-tag-input'),
-        controller: controller,
+        controller: _controller,
         autofocus: true,
-        decoration: const InputDecoration(
+        enabled: !_busy,
+        decoration: InputDecoration(
           labelText: 'Tag name',
           hintText: 'e.g. Reflection',
+          errorText: _error,
         ),
       ),
       WellnessAction(
+        key: const ValueKey('journal-tag-save'),
         label: 'Save tag',
         icon: Icons.sell_outlined,
-        onPressed: onAdd,
+        onPressed: _busy ? null : _save,
       ),
     ],
   );
