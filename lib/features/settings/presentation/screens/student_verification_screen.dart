@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -19,7 +20,21 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
   PlatformFile? _file;
   Map<String, dynamic>? _application;
   bool _enabled = false, _busy = false, _acknowledged = false;
+  bool _loading = true, _loadFailed = false, _resubmitting = false;
   String? _message;
+  bool get _showForm =>
+      !_loading && !_loadFailed && (_application == null || _resubmitting);
+  bool get _canReapply {
+    final status = _application?['status'];
+    if (status == 'rejected' || status == 'expired') return true;
+    final until = DateTime.tryParse(
+      _application?['eligible_until']?.toString() ?? '',
+    );
+    return status == 'approved' &&
+        until != null &&
+        !until.isAfter(DateTime.now());
+  }
+
   @override
   void initState() {
     super.initState();
@@ -34,6 +49,11 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
   }
 
   Future<void> _load() async {
+    if (!mounted || _owner != LocalDbService().activeUserId) return;
+    setState(() {
+      _loading = true;
+      _loadFailed = false;
+    });
     try {
       final response = await ApiClient().get('/student-verification');
       if (!mounted || _owner != LocalDbService().activeUserId) return;
@@ -43,10 +63,16 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
         _application = data['application'] == null
             ? null
             : Map<String, dynamic>.from(data['application'] as Map);
+        _loading = false;
+        _resubmitting = false;
       });
     } catch (_) {
-      if (mounted) {
-        setState(() => _message = 'Student review is currently unavailable.');
+      if (mounted && _owner == LocalDbService().activeUserId) {
+        setState(() {
+          _loading = false;
+          _loadFailed = true;
+          _message = 'Could not load your application. Please retry.';
+        });
       }
     }
   }
@@ -71,6 +97,8 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
 
   Future<void> _submit() async {
     if (_file == null ||
+        !_showForm ||
+        !_enabled ||
         !_acknowledged ||
         _institution.text.trim().isEmpty ||
         _busy) {
@@ -123,49 +151,88 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
         padding: const EdgeInsets.all(24),
         children: [
           const Text(
-            'Current enrolment is reviewed by our team. Use a dated enrolment letter or student document. Cover unrelated details; do not upload government ID. Approval lasts up to 12 months and must be renewed.',
+            'An admin reviews your current enrolment. Upload a current course form, enrolment letter or transcript showing your name, institution and current academic term. Cover grades and unrelated details. Approval lasts 12 months and must be renewed.',
           ),
+          const Text(
+            'Your submission is locked while it is reviewed. Documents are deleted after approval or rejection, or after 14 days without a decision.',
+          ),
+          if (_loading) const Text('Loading your application...'),
+          if (_loadFailed)
+            AppButton(text: 'Retry application', onPressed: _load),
           if (_application != null)
             Text(
               'Application: ${_application?['status']}\n${_application?['review_note'] ?? ''}\nEligible until: ${_application?['eligible_until'] ?? 'Not approved'}',
             ),
           if (!_enabled) const Text('Student applications are not open yet.'),
-          TextField(
-            controller: _institution,
-            decoration: const InputDecoration(labelText: 'Institution'),
-          ),
-          TextField(
-            controller: _email,
-            decoration: const InputDecoration(
-              labelText: 'Institution email (optional)',
+          if (_application?['status'] == 'pending') ...[
+            const Text(
+              'Your application is awaiting review and cannot be edited.',
             ),
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 16),
-          AppButton(
-            key: const ValueKey('student-evidence'),
-            text: _file?.name ?? 'Choose enrolment evidence · PDF or image',
-            isOutlined: true,
-            onPressed: !_enabled || _busy ? null : _choose,
-          ),
-          CheckboxListTile(
-            value: _acknowledged,
-            onChanged: !_enabled || _busy
-                ? null
-                : (value) => setState(() => _acknowledged = value == true),
-            title: const Text(
-              'I authorize private review of this evidence for Student eligibility.',
+            AppButton(
+              text: 'Refresh application status',
+              isOutlined: true,
+              onPressed: _busy || _loading ? null : _load,
             ),
-          ),
-          AppButton(
-            key: const ValueKey('student-submit'),
-            text: 'Submit for review',
-            isLoading: _busy,
-            onPressed: !_enabled || !_acknowledged || _file == null
-                ? null
-                : _submit,
-          ),
+          ],
+          if (_canReapply && !_resubmitting) ...[
+            AppButton(
+              text: _application?['status'] == 'approved'
+                  ? 'Renew student eligibility'
+                  : 'Submit new evidence',
+              onPressed: !_enabled || _busy
+                  ? null
+                  : () => setState(() {
+                      _resubmitting = true;
+                      _file = null;
+                      _acknowledged = false;
+                      _message = null;
+                    }),
+            ),
+            AppButton(
+              text: 'Choose another plan',
+              isOutlined: true,
+              onPressed: () => context.push('/wellness/packages'),
+            ),
+          ],
+          if (_showForm) ...[
+            TextField(
+              controller: _institution,
+              decoration: const InputDecoration(labelText: 'Institution'),
+            ),
+            TextField(
+              controller: _email,
+              decoration: const InputDecoration(
+                labelText: 'Institution email (optional)',
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 16),
+            AppButton(
+              key: const ValueKey('student-evidence'),
+              text: _file?.name ?? 'Choose enrolment evidence · PDF or image',
+              isOutlined: true,
+              onPressed: !_enabled || _busy ? null : _choose,
+            ),
+            CheckboxListTile(
+              value: _acknowledged,
+              onChanged: !_enabled || _busy
+                  ? null
+                  : (value) => setState(() => _acknowledged = value == true),
+              title: const Text(
+                'I authorize private review of this evidence for Student eligibility.',
+              ),
+            ),
+            AppButton(
+              key: const ValueKey('student-submit'),
+              text: 'Submit for review',
+              isLoading: _busy,
+              onPressed: !_enabled || !_acknowledged || _file == null
+                  ? null
+                  : _submit,
+            ),
+          ],
           if (_application?['id'] is String &&
+              _application?['status'] == 'pending' &&
               _application?['institution_email'] != null)
             AppButton(
               text: 'Verify institution email',
