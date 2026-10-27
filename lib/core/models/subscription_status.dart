@@ -19,12 +19,17 @@ class SubscriptionStatus extends HiveObject {
   @HiveField(4)
   final bool cancelAtPeriodEnd;
 
+  @HiveField(5)
+  final String? source;
+  bool get isDevelopmentTest => source == 'development_test';
+
   SubscriptionStatus({
     required this.id,
     required bool isActive,
     required this.tier,
     this.expiresAt,
     required this.cancelAtPeriodEnd,
+    this.source,
   }) : _isActive = isActive;
 
   SubscriptionStatus copyWith({
@@ -33,6 +38,7 @@ class SubscriptionStatus extends HiveObject {
     String? tier,
     DateTime? expiresAt,
     bool? cancelAtPeriodEnd,
+    String? source,
   }) {
     return SubscriptionStatus(
       id: id ?? this.id,
@@ -40,6 +46,7 @@ class SubscriptionStatus extends HiveObject {
       tier: tier ?? this.tier,
       expiresAt: expiresAt ?? this.expiresAt,
       cancelAtPeriodEnd: cancelAtPeriodEnd ?? this.cancelAtPeriodEnd,
+      source: source ?? this.source,
     );
   }
 
@@ -48,6 +55,7 @@ class SubscriptionStatus extends HiveObject {
       'id': id,
       'plan': tier,
       'status': isActive ? 'active' : 'inactive',
+      if (source != null) 'source': source,
     };
     if (expiresAt != null) {
       json['expires_at'] = expiresAt!.toUtc().toIso8601String();
@@ -64,6 +72,7 @@ class SubscriptionStatus extends HiveObject {
           ? DateTime.parse(json['expires_at'])
           : null,
       cancelAtPeriodEnd: false,
+      source: json['source'] as String?,
     );
   }
 }
@@ -84,13 +93,14 @@ class SubscriptionStatusAdapter extends TypeAdapter<SubscriptionStatus> {
       tier: fields[2] as String,
       expiresAt: fields[3] as DateTime?,
       cancelAtPeriodEnd: fields[4] as bool,
+      source: fields[5] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, SubscriptionStatus obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -100,6 +110,8 @@ class SubscriptionStatusAdapter extends TypeAdapter<SubscriptionStatus> {
       ..writeByte(3)
       ..write(obj.expiresAt)
       ..writeByte(4)
-      ..write(obj.cancelAtPeriodEnd);
+      ..write(obj.cancelAtPeriodEnd)
+      ..writeByte(5)
+      ..write(obj.source);
   }
 }

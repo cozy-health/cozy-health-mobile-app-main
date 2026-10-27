@@ -37,18 +37,25 @@ class SubscriptionRepository {
   }
 
   Future<SubscriptionStatus?> fetchSubscription() async {
+    final owner = _local.activeUserId;
+    final subscriptionBox = _local.subscriptionStatusBox;
     try {
       final response = await ApiClient.instance.get('/subscription');
+      if (owner != _local.activeUserId) return null;
       final data = _extractMapData(response.data);
       if (data != null) {
         final sub = SubscriptionStatus.fromJson(data);
-        await _local.saveSubscriptionStatus(sub);
+        // This is a current-status cache, not purchase history. A test grant
+        // has its own ID; retaining the old first row would mask grant/revoke.
+        await subscriptionBox.clear();
+        if (owner != _local.activeUserId) return null;
+        await subscriptionBox.put(sub.id, sub);
         return sub;
       }
     } catch (e) {
       debugPrint('Fetch subscription failed: details withheld.');
     }
-    return _local.getSubscriptionStatus();
+    return owner == _local.activeUserId ? _local.getSubscriptionStatus() : null;
   }
 
   Stream<SubscriptionStatus?> watchSubscription() {

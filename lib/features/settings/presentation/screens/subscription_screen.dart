@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_pressable.dart';
 import '../../../../core/widgets/wellness_sheet.dart';
 import '../../../../core/widgets/wellness_panel.dart';
 import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/models/subscription_status.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({
@@ -29,9 +30,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   bool _yearly = false, _loading = true;
   String? _error;
   int _generation = 0;
+  final _owner = LocalDbService().activeUserId;
+  late final Future<SubscriptionStatus?> _subscription;
   @override
   void initState() {
     super.initState();
+    _subscription = _repo.fetchSubscription();
     _initialize();
   }
 
@@ -109,6 +113,39 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
+          FutureBuilder<SubscriptionStatus?>(
+            future: _subscription,
+            builder: (context, snapshot) {
+              final subscription = snapshot.data;
+              if (_owner != LocalDbService().activeUserId ||
+                  subscription == null ||
+                  !subscription.isDevelopmentTest ||
+                  !subscription.isActive) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: WellnessPanel(
+                  tinted: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Development test access',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      Text(
+                        '${subscription.tier} · Ends ${subscription.expiresAt == null ? 'at the scheduled expiry' : DateFormat.yMMMd().add_jm().format(subscription.expiresAt!.toLocal())}',
+                      ),
+                      const Text(
+                        'Temporary access for testing. No payment was collected.',
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
           Text(
             'Choose your pace',
             style: Theme.of(context).textTheme.headlineMedium,
