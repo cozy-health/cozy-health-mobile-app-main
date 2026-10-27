@@ -1,5 +1,6 @@
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/wellness_panel.dart';
+import '../../../../core/widgets/plan_access_prompt.dart';
 import 'dart:async';
 // TODO: wire to backend when endpoint exists
 import 'package:flutter/material.dart';
@@ -81,6 +82,11 @@ class _CommunityGroupsState extends State<CommunityGroups> {
   }
 
   Future<void> _toggle(CommunityGroup group) async {
+    if (!group.joined &&
+        (!await ensurePlanAccess(context, 'community_participate') ||
+            !mounted)) {
+      return;
+    }
     if (DemoMode.instance.enabled) {
       CommunityLocalState.instance.toggleMembership(group);
       return;

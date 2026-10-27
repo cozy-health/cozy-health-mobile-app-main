@@ -27,6 +27,7 @@ class AppConfiguration {
     'quiz': true,
     'widgets': false,
     'analytics': false,
+    'plan_access': false,
   };
   final Map<String, bool> flags;
   final String minAppVersion;

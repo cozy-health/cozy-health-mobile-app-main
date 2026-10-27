@@ -1,4 +1,5 @@
 import '../widgets/wellness_sheet.dart';
+import '../widgets/plan_access_prompt.dart';
 import '../widgets/wellness_panel.dart';
 import '../theme/cozy_colors.dart';
 import 'dart:async';
@@ -20,6 +21,7 @@ Future<void> showVoiceRecorder(
   AudioRecorderService? recorder,
   Future<MicPermissionResult> Function()? requestMicrophone,
 }) async {
+  if (!await ensurePlanAccess(context, 'voice') || !context.mounted) return;
   await showWellnessSheet<void>(
     context: context,
     dismissible: false,

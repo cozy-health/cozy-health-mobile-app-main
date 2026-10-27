@@ -1283,6 +1283,7 @@ class LocalDbService {
         'dependency_missing',
         'database',
         'feature_paused',
+        'plan_required',
         'rate_limited',
         'conflict',
         'gone',

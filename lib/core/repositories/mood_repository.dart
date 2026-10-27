@@ -1,5 +1,6 @@
 import '../data/demo_mode.dart';
 import '../services/user_data_merge.dart';
+import '../services/plan_access_service.dart';
 import 'package:flutter/foundation.dart';
 import '../models/mood_entry.dart';
 import '../services/local_db_service.dart';
@@ -81,6 +82,10 @@ class MoodRepository {
       return entry;
     }
     final owner = _local.boxName(LocalDbService.userSettingsBoxName);
+    await PlanAccessService.instance.require('mood_checkin');
+    if (owner != _local.boxName(LocalDbService.userSettingsBoxName)) {
+      throw StateError('Account changed');
+    }
     await _local.saveMoodEntry(entry);
     if (owner != _local.boxName(LocalDbService.userSettingsBoxName)) {
       throw StateError('Mood recording account changed');

@@ -95,7 +95,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final rows = (_catalog?['packages'] as List? ?? []).whereType<Map>();
+    final rows = (_catalog?['packages'] as List? ?? []).whereType<Map>().where(
+      (row) => const ['standard', 'student', 'premium'].contains(row['tier']),
+    );
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -152,7 +154,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Free, Student, and Premium. Prices depend on your confirmed billing country.',
+            'Standard, Student, and Premium. Student includes all Premium features. Prices depend on your confirmed billing country.',
           ),
           const SizedBox(height: 20),
           TextField(
@@ -221,7 +223,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
     final monthly = num.tryParse('${row['price']}') ?? 0;
     final annual = num.tryParse('${row['yearly_price']}') ?? 0;
-    final free = row['tier'] == 'free';
     return AppPressable(
       label: 'View ${row['package_name']} package',
       onPressed: () => showWellnessSheet<void>(
@@ -258,7 +259,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 '${format.format(_yearly ? annual : monthly)}/${_yearly ? 'year' : 'month'}',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
-              if (_yearly && !free)
+              if (_yearly)
                 Text(
                   '${format.format(annual / 12)} equivalent per month · ${row['annual_discount']}% annual saving',
                 ),
@@ -269,9 +270,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   child: Text('✓ $feature'),
                 ),
               Text(
-                free
-                    ? 'Basic tracking and journaling'
-                    : 'Paid activation coming later',
+                'Paid activation coming later',
                 style: Theme.of(context).textTheme.labelLarge,
               ),
             ],

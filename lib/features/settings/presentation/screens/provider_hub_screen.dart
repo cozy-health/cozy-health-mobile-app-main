@@ -1,5 +1,6 @@
 import '../../../journal/presentation/widgets/journal_share_flow.dart';
 import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/plan_access_prompt.dart';
 import '../../../../core/services/network_status.dart';
 import 'dart:async';
 import '../../../../core/audio/voice_audio.dart';
@@ -276,6 +277,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
   }
 
   Future<void> _send() async {
+    if (!await ensurePlanAccess(context, 'provider_chat') || !mounted) return;
     if (_offline ||
         !_current ||
         _sending ||

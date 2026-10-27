@@ -3,6 +3,7 @@ import '../../../core/models/quiz_attempt.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/services/user_data_fetcher.dart';
+import '../../../core/services/plan_access_service.dart';
 import '../domain/clinical_assessment.dart';
 
 class QuizRepository {
@@ -61,6 +62,9 @@ class QuizRepository {
   }
 
   Future<QuizAttempt> saveAttempt(QuizAttempt attempt) async {
+    final owner = _local.activeUserId;
+    await PlanAccessService.instance.require('assessments');
+    if (owner != _local.activeUserId) throw StateError('Account changed');
     await _local.saveQuizAttempt(attempt);
     await _local.enqueueSync(
       type: 'quiz_attempt',

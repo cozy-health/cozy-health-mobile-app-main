@@ -138,6 +138,8 @@ class _QueueSheetState extends State<_QueueSheet> {
   String? _failureLabel(String? code) => const {
     'session_expired': 'Log in again to upload this change.',
     'access_denied': 'This account cannot sync right now. Contact support.',
+    'plan_required':
+        'An eligible active plan is needed to sync this change. It remains saved on this device.',
     'connection': 'Waiting for a connection.',
     'server': 'Sync is temporarily unavailable.',
     'secure_connection':

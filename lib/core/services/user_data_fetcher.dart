@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../features/crisis/data/next_of_kin_repository.dart';
 import '../api/api_client.dart';
-import '../models/subscription_status.dart';
+import '../../features/settings/data/subscription_repository.dart';
 import 'local_db_service.dart';
 import 'user_data_merge.dart';
 import 'background_restore_service.dart';
@@ -51,18 +51,8 @@ class UserDataFetcher {
   Future<void> fetchProfile() => _single('/user/profile', 'user_profile');
   Future<void> fetchSafetyPlan() => _single('/safety-plan', 'safety_plan');
   Future<void> fetchSubscription() async {
-    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
     try {
-      final response = await _api.get('/subscription');
-      final data = response.data is Map
-          ? response.data['data'] ?? response.data
-          : null;
-      if (data is Map &&
-          scope == _local.boxName(LocalDbService.userSettingsBoxName)) {
-        await _local.saveSubscriptionStatus(
-          SubscriptionStatus.fromJson(Map<String, dynamic>.from(data)),
-        );
-      }
+      await SubscriptionRepository().fetchSubscription();
     } catch (_) {
       debugPrint('Subscription refresh unavailable; retaining cache.');
     }

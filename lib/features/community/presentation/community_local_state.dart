@@ -5,6 +5,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/widgets/app_snackbar.dart';
+import '../../../core/widgets/plan_access_prompt.dart';
 
 class CommunityGroup {
   CommunityGroup({
@@ -196,6 +197,11 @@ class CommunityLocalState extends ChangeNotifier {
   Future<void> toggleLike(Map<String, dynamic> item) async {
     final liked = item['isLiked'] as bool? ?? false;
     if (!DemoMode.instance.enabled) {
+      final context = AppRouter.navigatorKey.currentContext;
+      if (context != null &&
+          !await ensurePlanAccess(context, 'community_participate')) {
+        return;
+      }
       final owner = LocalDbService().activeUserId;
       try {
         final response = await ApiClient().put(

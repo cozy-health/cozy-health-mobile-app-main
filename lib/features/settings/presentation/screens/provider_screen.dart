@@ -1,4 +1,5 @@
 import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/plan_access_prompt.dart';
 import '../../../../core/widgets/wellness_panel.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/services/local_db_service.dart';
@@ -171,6 +172,9 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _requestProvider() async {
+    if (!await ensurePlanAccess(context, 'provider_connect') || !mounted) {
+      return;
+    }
     if (_sending || _removing) return;
     _retry = _requestProvider;
     final email = emailController.text.trim().isNotEmpty
@@ -250,6 +254,9 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _verifyProvider() async {
+    if (!await ensurePlanAccess(context, 'provider_connect') || !mounted) {
+      return;
+    }
     _retry = _verifyProvider;
     final code = codeController.text.trim();
 
@@ -365,6 +372,10 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _updateConsent(String type, bool value) async {
+    if (value &&
+        (!await ensurePlanAccess(context, 'provider_connect') || !mounted)) {
+      return;
+    }
     final linkId = _provider?['link_id'] ?? _provider?['id'];
     if (linkId == null || _updatingConsent != null || _removing) return;
     _retry = () => _updateConsent(type, value);

@@ -249,7 +249,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   _SettingsRow(
                     icon: Icons.star_border,
-                    label: 'Current Plan: Free',
+                    label: 'My plan and access',
                     onTap: () => context.push(AppRouter.subscription),
                   ),
                   _SettingsRow(

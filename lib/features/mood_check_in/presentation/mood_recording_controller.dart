@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../core/services/plan_access_service.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -379,9 +380,11 @@ class MoodRecordingController extends ChangeNotifier {
         }
       }
       return active ? saved : null;
-    } catch (_) {
+    } catch (failure) {
       if (active) {
-        error = "We couldn't save your check-in. Your draft is still here.";
+        error = failure is PlanAccessException
+            ? failure.message
+            : "We couldn't save your check-in. Your draft is still here.";
       }
       return null;
     } finally {

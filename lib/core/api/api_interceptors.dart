@@ -269,6 +269,15 @@ class ErrorInterceptor extends Interceptor {
               ? retry
               : null,
         );
+      } else if (statusCode == 403 &&
+          data is Map &&
+          data['code'] == 'plan_required') {
+        exception = ApiValidationException(
+          const {},
+          data['message'] as String? ??
+              'An eligible active plan is needed for this action.',
+          statusCode: 403,
+        );
       } else if (statusCode == 401 || statusCode == 403) {
         exception = ApiAuthException(statusCode: statusCode);
       } else if (statusCode == 422) {

@@ -1,6 +1,7 @@
 import 'package:cozy_health/core/storage/token_storage.dart';
 import '../data/demo_mode.dart';
 import '../services/user_data_merge.dart';
+import '../services/plan_access_service.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/journal_entry.dart';
@@ -86,6 +87,16 @@ class JournalRepository {
     if (usePlaceholderData) {
       DemoMode.instance.upsertJournal(entry);
       return entry;
+    }
+    await PlanAccessService.instance.require(
+      entry.type == 'voice' ||
+              (entry.voiceUrl?.isNotEmpty ?? false) ||
+              (entry.localVoicePath?.isNotEmpty ?? false)
+          ? 'voice'
+          : 'written_journal',
+    );
+    if (owner != _local.activeUserId || generation != TokenStorage.generation) {
+      throw StateError('Account changed');
     }
     await _local.saveJournalEntry(entry);
     if (owner != _local.activeUserId || generation != TokenStorage.generation) {

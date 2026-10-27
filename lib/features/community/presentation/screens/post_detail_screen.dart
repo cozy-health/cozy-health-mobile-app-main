@@ -2,6 +2,7 @@ import 'package:cozy_health/core/theme/app_surface.dart';
 // TODO: wire to backend when endpoint exists
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/plan_access_prompt.dart';
 import 'package:go_router/go_router.dart';
 import '../community_theme.dart';
 import '../widgets/comment_card.dart';
@@ -55,6 +56,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _sendComment() async {
+    if (!await ensurePlanAccess(context, 'community_participate') || !mounted) {
+      return;
+    }
     if (_sending || _commentController.text.trim().isEmpty) return;
     setState(() => _sending = true);
     try {

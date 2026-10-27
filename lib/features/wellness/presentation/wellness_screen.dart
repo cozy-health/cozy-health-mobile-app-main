@@ -1,5 +1,6 @@
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
+import '../../../core/widgets/plan_access_prompt.dart';
 import '../../../core/repositories/wellness_repository.dart';
 
 class WellnessScreen extends StatefulWidget {
@@ -28,6 +29,15 @@ class _WellnessScreenState extends State<WellnessScreen> {
       }
       final data = widget.packages
           ? (catalog!['packages'] as List)
+                .where(
+                  (row) =>
+                      row is Map &&
+                      const [
+                        'standard',
+                        'student',
+                        'premium',
+                      ].contains(row['tier']),
+                )
                 .map((row) => Map<String, dynamic>.from(row as Map))
                 .toList()
           : await repository.challenges();
@@ -48,6 +58,7 @@ class _WellnessScreenState extends State<WellnessScreen> {
   }
 
   Future<void> _action(Future<void> Function() action) async {
+    if (!await ensurePlanAccess(context, 'challenges') || !mounted) return;
     setState(() => busy = true);
     try {
       await action();

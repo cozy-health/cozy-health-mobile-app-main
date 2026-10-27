@@ -1,4 +1,5 @@
 import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/plan_access_prompt.dart';
 import '../../../../core/widgets/wellness_panel.dart';
 import '../widgets/journal_share_flow.dart';
 import '../../../../core/storage/token_storage.dart';
@@ -263,6 +264,12 @@ class _JournalScreenState extends State<JournalScreen>
   }
 
   Future<bool> _saveEntry(JournalEntry entry) async {
+    if (!await ensurePlanAccess(
+      context,
+      entry.type == 'voice' ? 'voice' : 'written_journal',
+    )) {
+      return false;
+    }
     final signal = _crisisDetector.analyze(entry.body);
     final shouldShowCrisisSupport = _crisisDetector.canTrigger(
       'journal',
@@ -323,6 +330,13 @@ class _JournalScreenState extends State<JournalScreen>
     JournalPrompt? prompt,
     JournalEntry? existing,
   }) async {
+    if (!await ensurePlanAccess(
+          context,
+          type == 'voice' ? 'voice' : 'written_journal',
+        ) ||
+        !mounted) {
+      return;
+    }
     final entry = await Navigator.of(context).push<JournalEntry>(
       MaterialPageRoute(
         builder: (_) => SecurityGate(

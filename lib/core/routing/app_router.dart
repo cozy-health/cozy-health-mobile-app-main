@@ -2,6 +2,7 @@ import '../../features/settings/presentation/screens/digital_wellbeing_screen.da
 import '../../features/wellness/presentation/wellness_screen.dart';
 import '../security_gate.dart';
 import 'package:flutter/material.dart';
+import '../widgets/plan_feature_gate.dart';
 import '../models/app_notification.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
@@ -442,7 +443,10 @@ class AppRouter {
       GoRoute(
         path: quizTaking,
         name: 'quizTaking',
-        builder: (_, state) => QuizTakingScreen(extra: _extraMap(state)),
+        builder: (_, state) => PlanFeatureGate(
+          feature: 'assessments',
+          child: QuizTakingScreen(extra: _extraMap(state)),
+        ),
       ),
       GoRoute(
         path: contentHome,
@@ -505,7 +509,10 @@ class AppRouter {
       GoRoute(
         path: createPost,
         name: 'createPost',
-        builder: (_, __) => const CreatePostScreen(),
+        builder: (_, __) => const PlanFeatureGate(
+          feature: 'community_participate',
+          child: CreatePostScreen(),
+        ),
       ),
       GoRoute(
         path: postDetail,
@@ -606,10 +613,7 @@ class AppRouter {
         name: 'settings',
         builder: (_, __) => const SettingsScreen(),
       ),
-      GoRoute(
-        path: ageAuthorization,
-        redirect: (_, __) => settings,
-      ),
+      GoRoute(path: ageAuthorization, redirect: (_, __) => settings),
       GoRoute(
         path: editProfile,
         name: 'editProfile',

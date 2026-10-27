@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/widgets/plan_access_prompt.dart';
 import '../../../../core/api/api_exceptions.dart';
 import '../../../../core/api/response_data.dart';
 import '../../../../core/models/journal_entry.dart';
@@ -173,6 +174,7 @@ class _JournalShareFlowState extends State<JournalShareFlow>
   }
 
   Future<void> _send() async {
+    if (!await ensurePlanAccess(context, 'journal_share') || !mounted) return;
     if (_busy || _preview == null || _clientId == null) return;
     setState(() {
       _busy = true;
