@@ -154,6 +154,12 @@ void main() {
           .toUtc()
           .toIso8601String();
       await settings.put('plan_access_v1', saved);
+      await PlanAccessService.instance.require('mood_checkin');
+      saved['data'] = {
+        ...Map<String, dynamic>.from(saved['data'] as Map),
+        'expires_at': '2000-01-01T00:00:00Z',
+      };
+      await settings.put('plan_access_v1', saved);
       await expectLater(
         PlanAccessService.instance.require('mood_checkin'),
         throwsA(isA<PlanAccessException>()),

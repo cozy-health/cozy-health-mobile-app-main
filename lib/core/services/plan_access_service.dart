@@ -8,8 +8,8 @@ class PlanAccessException extends ApiException {
   PlanAccessException(super.message) : super(statusCode: 403);
 }
 
-/// Per-account permissions from the server. Offline use is bounded by both
-/// subscription expiry and a short cache lifetime; it never creates a plan.
+/// Per-account permissions from the server. Offline use is bounded by
+/// the last verified subscription expiry; it never creates a plan.
 class PlanAccessService {
   static final instance = PlanAccessService();
   Future<void> require(String feature) async {
@@ -28,7 +28,8 @@ class PlanAccessService {
         throw const FormatException('Invalid plan permissions');
       }
       permissions = Map<String, dynamic>.from(data);
-      if (owner != local.activeUserId || generation != TokenStorage.generation) {
+      if (owner != local.activeUserId ||
+          generation != TokenStorage.generation) {
         throw StateError('Account changed');
       }
       await settings.put('plan_access_v1', {
@@ -70,7 +71,12 @@ class PlanAccessService {
     final checked = DateTime.tryParse('${cached['checked_at']}');
     if (checked == null) return null;
     final age = DateTime.now().difference(checked);
-    if (age.isNegative || age > const Duration(minutes: 5)) return null;
-    return Map<String, dynamic>.from(cached['data'] as Map);
+    if (age.isNegative) return null;
+    final data = Map<String, dynamic>.from(cached['data'] as Map);
+    final expiry = DateTime.tryParse('${data['expires_at']}');
+    // Offline creation needs a finite verified entitlement. Missing or expired
+    // permission never blocks reading existing records or emergency help.
+    if (expiry == null || !expiry.isAfter(DateTime.now())) return null;
+    return data;
   }
 }
