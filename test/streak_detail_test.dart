@@ -1,12 +1,21 @@
 import 'package:cozy_health/core/repositories/home_repository.dart';
+import 'package:cozy_health/core/repositories/streak_repository.dart';
+import 'package:cozy_health/core/services/streak_controller.dart';
 import 'package:cozy_health/core/theme/app_theme.dart';
 import 'package:cozy_health/features/home/presentation/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'support/local_fonts.dart';
+import 'package:cozy_health/core/models/mood_entry.dart';
+import 'package:cozy_health/features/home/presentation/widgets/home_design_widgets.dart';
+import 'package:cozy_health/features/settings/presentation/widgets/streak_progress_panel.dart';
+import 'package:cozy_health/features/settings/data/wellness_progress.dart';
+import 'streak_progress_test.dart' show baseline;
 
 class StreakFixture extends HomeRepository {
   bool fail = false;
+  @override
+  Future<Map<String, dynamic>?> getCachedStreak() async => null;
   @override
   Future<Map<String, dynamic>> fetchStreak() async {
     if (fail) throw StateError('offline');
@@ -24,6 +33,19 @@ class StreakFixture extends HomeRepository {
 void main() {
   setUp(installLocalTestFonts);
   tearDown(resetLocalTestFonts);
+  StreakController controllerFor(StreakFixture fixture) {
+    final controller = StreakController(
+      repository: StreakRepository(api: fixture),
+      localMoods: () => [],
+      moodChanges: const Stream.empty(),
+      accountChanges: const Stream.empty(),
+      syncResults: const Stream.empty(),
+      tick: false,
+    );
+    addTearDown(controller.dispose);
+    return controller;
+  }
+
   for (final dark in [false, true]) {
     testWidgets('protected day stays at seven with large text, dark=$dark', (
       tester,
@@ -41,7 +63,10 @@ void main() {
             ).copyWith(textScaler: const TextScaler.linear(2)),
             child: child!,
           ),
-          home: StreakDetailScreen(streak: 99, repository: StreakFixture()),
+          home: StreakDetailScreen(
+            streak: 99,
+            controller: controllerFor(StreakFixture()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -59,7 +84,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: StreakDetailScreen(streak: 99, repository: fixture),
+        home: StreakDetailScreen(
+          streak: 99,
+          controller: controllerFor(fixture),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -70,4 +98,50 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('7 days'), findsOneWidget);
   });
+
+  testWidgets(
+    'Home and Profile panels show the same protected day and number',
+    (tester) async {
+      final progress = baseline().project(
+        DateTime.utc(2026, 10, 9, 12),
+        <MoodEntry>[],
+      );
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: Column(
+                children: [
+                  HomeRhythmCard(
+                    entries: const [],
+                    streak: progress.currentDays,
+                    hasMoodToday: false,
+                    progress: progress,
+                    onStreak: () {},
+                  ),
+                  StreakProgressPanel(
+                    progress: WellnessProgress(
+                      moods: const [],
+                      journals: const [],
+                      now: DateTime.utc(2026, 10, 9),
+                    ),
+                    streak: progress,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('7 day streak'), findsOneWidget);
+      expect(find.text('7 days'), findsOneWidget);
+      expect(find.byIcon(Icons.nightlight_outlined), findsNWidgets(2));
+      expect(find.bySemanticsLabel(RegExp('rest day used')), findsNWidgets(2));
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    },
+  );
 }

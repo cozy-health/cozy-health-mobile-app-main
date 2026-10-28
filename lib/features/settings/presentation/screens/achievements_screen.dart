@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/services/local_db_service.dart';
+import '../../../../core/services/streak_controller.dart';
+import '../../../../core/models/streak_progress.dart';
+import '../../../../core/data/demo_mode.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/wellness_panel.dart';
 import '../../data/achievements_repository.dart';
@@ -17,6 +20,30 @@ class AchievementsScreen extends StatefulWidget {
 class _AchievementsScreenState extends State<AchievementsScreen> {
   late Future<AchievementSnapshot> _future = _load();
   final _owner = LocalDbService().activeUserId;
+  StreakController? _streak;
+  @override
+  void initState() {
+    super.initState();
+    if (_owner != null &&
+        !_owner.startsWith('guest_') &&
+        !DemoMode.instance.enabled) {
+      _streak = StreakController()
+        ..addListener(_changed)
+        ..start();
+    }
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _streak?.removeListener(_changed);
+    _streak?.dispose();
+    super.dispose();
+  }
+
   Future<AchievementSnapshot> _load() =>
       (widget.load ?? AchievementsRepository().load)();
   @override
@@ -51,7 +78,10 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                return AchievementContent(snapshot: snapshot.data!);
+                return AchievementContent(
+                  snapshot: snapshot.data!,
+                  streak: _streak?.progress,
+                );
               },
             );
           },
@@ -62,8 +92,9 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
 }
 
 class AchievementContent extends StatelessWidget {
-  const AchievementContent({super.key, required this.snapshot});
+  const AchievementContent({super.key, required this.snapshot, this.streak});
   final AchievementSnapshot snapshot;
+  final StreakProgress? streak;
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context),
@@ -72,6 +103,7 @@ class AchievementContent extends StatelessWidget {
     final earned = WellnessMilestone.catalog
         .where((m) => snapshot.awards.containsKey(m.id))
         .length;
+    final current = streak?.currentDays ?? snapshot.progress.current;
     return ListView(
       padding: EdgeInsets.all(w.page),
       children: [
@@ -81,7 +113,7 @@ class AchievementContent extends StatelessWidget {
           '$earned of ${WellnessMilestone.catalog.length} milestones earned. Your progress belongs to you.',
         ),
         SizedBox(height: w.sectionSpacing),
-        StreakProgressPanel(progress: snapshot.progress),
+        StreakProgressPanel(progress: snapshot.progress, streak: streak),
         SizedBox(height: w.sectionSpacing),
         if (snapshot.localOnly || snapshot.remoteUnavailable) ...[
           WellnessPanel(
@@ -133,13 +165,13 @@ class AchievementContent extends StatelessWidget {
                   if (milestone.streakTarget case final int target) ...[
                     SizedBox(height: w.small),
                     LinearProgressIndicator(
-                      value: (snapshot.progress.current / target).clamp(0, 1),
+                      value: (current / target).clamp(0, 1),
                       semanticsLabel:
-                          'Current streak: ${snapshot.progress.current} of $target consecutive days towards ${milestone.title}',
+                          'Current streak: $current of $target check-in days towards ${milestone.title}',
                     ),
                     SizedBox(height: w.small),
                     Text(
-                      '${snapshot.progress.current} of $target consecutive days in your current streak',
+                      '$current of $target check-in days in your current streak',
                     ),
                   ],
                 ],

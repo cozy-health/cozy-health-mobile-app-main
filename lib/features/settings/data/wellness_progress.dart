@@ -24,19 +24,19 @@ class WellnessMilestone {
     WellnessMilestone(
       'streak_3',
       'Three steady days',
-      'Check in on 3 consecutive calendar days.',
+      'Save mood check-ins on 3 days in your streak.',
       streakTarget: 3,
     ),
     WellnessMilestone(
       'streak_7',
       'A week of checking in',
-      'Check in on 7 consecutive calendar days.',
+      'Save mood check-ins on 7 days in your streak.',
       streakTarget: 7,
     ),
     WellnessMilestone(
       'streak_30',
       'Thirty days of checking in',
-      'Check in on 30 consecutive calendar days.',
+      'Save mood check-ins on 30 days in your streak. Earned rest days protect progress without adding check-ins.',
       streakTarget: 30,
     ),
   ];

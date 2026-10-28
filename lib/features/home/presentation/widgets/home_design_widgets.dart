@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/models/mood_entry.dart';
+import '../../../../core/models/streak_progress.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/app_pressable.dart';
@@ -40,35 +41,44 @@ class HomeRhythmCard extends StatelessWidget {
     required this.hasMoodToday,
     required this.onStreak,
     this.now,
+    this.progress,
   });
   final List<MoodEntry> entries;
   final int streak;
   final bool hasMoodToday;
   final VoidCallback onStreak;
   final DateTime? now;
+  final StreakProgress? progress;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context), t = context.cozyColors.wellness;
-    final current = (now ?? DateTime.now()).toLocal();
-    final today = DateTime(current.year, current.month, current.day);
+    final current = progress == null
+        ? (now ?? DateTime.now()).toLocal()
+        : DateTime.parse(progress!.localDate);
+    final today = progress == null
+        ? DateTime(current.year, current.month, current.day)
+        : DateTime.utc(current.year, current.month, current.day);
     final recordedToday =
-        hasMoodToday ||
-        entries.any((entry) {
-          final date = entry.createdAt.toLocal();
-          return date.year == today.year &&
-              date.month == today.month &&
-              date.day == today.day;
-        });
+        progress?.todayCompleted ??
+        (hasMoodToday ||
+            entries.any((entry) {
+              final date = entry.createdAt.toLocal();
+              return date.year == today.year &&
+                  date.month == today.month &&
+                  date.day == today.day;
+            }));
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final action = context.cozyColors.recording.controlColor(
       theme.colorScheme.primary,
       theme.colorScheme.surface,
       theme.colorScheme.onSurface,
     );
-    final days = [
-      for (var i = 6; i >= 0; i--)
-        DateTime(today.year, today.month, today.day - i),
-    ];
+    final days =
+        progress?.week ??
+        [
+          for (var i = 6; i >= 0; i--)
+            DateTime(today.year, today.month, today.day - i),
+        ];
     return HomeDesignCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,7 +104,11 @@ class HomeRhythmCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const Text('A little consistency. A little more you.'),
+                      Text(
+                        progress?.estimated == true
+                            ? 'Saved on this device. Waiting to confirm progress.'
+                            : 'A little consistency. A little more you.',
+                      ),
                     ],
                   ),
                 ),
@@ -120,7 +134,19 @@ class HomeRhythmCard extends StatelessWidget {
                       builder: (context) {
                         final matches =
                             entries.where((entry) {
-                              final date = entry.createdAt.toLocal();
+                              if (progress != null &&
+                                  !progress!.completedDates.contains(
+                                    streakDate(day),
+                                  )) {
+                                return false;
+                              }
+                              final originalDate =
+                                  progress?.creditedSources[entry.id];
+                              final date =
+                                  (originalDate == null
+                                      ? progress?.dayAt(entry.createdAt)
+                                      : DateTime.parse(originalDate)) ??
+                                  entry.createdAt.toLocal();
                               return date.year == day.year &&
                                   date.month == day.month &&
                                   date.day == day.day;
@@ -131,6 +157,22 @@ class HomeRhythmCard extends StatelessWidget {
                         final saved =
                             latest != null || day == today && recordedToday;
                         final isToday = day == today;
+                        final dateLabel = streakDate(day);
+                        final rested =
+                            progress?.protectedDates.contains(dateLabel) ??
+                            false;
+                        final pending =
+                            progress?.pendingDates.contains(dateLabel) ?? false;
+                        final completed =
+                            saved ||
+                            (progress?.completedDates.contains(dateLabel) ??
+                                false);
+                        final status = pending
+                            ? 'check-in waiting to sync'
+                            : rested
+                            ? 'rest day used'
+                            : latest?.displayFeeling ??
+                                  (completed ? 'check-in saved' : 'no entry');
                         return SizedBox(
                           width: width,
                           child: Semantics(
@@ -139,7 +181,7 @@ class HomeRhythmCard extends StatelessWidget {
                               'rhythm-day-${day.toIso8601String()}',
                             ),
                             label:
-                                '${weekdays[day.weekday - 1]}, ${day.day}/${day.month}, ${latest?.displayFeeling ?? (saved ? 'check-in saved' : 'no entry')}${isToday ? ', today' : ''}',
+                                '${weekdays[day.weekday - 1]}, ${day.day}/${day.month}, $status${isToday ? ', today' : ''}',
                             child: Container(
                               padding: EdgeInsets.symmetric(vertical: t.small),
                               decoration: BoxDecoration(
@@ -177,7 +219,13 @@ class HomeRhythmCard extends StatelessWidget {
                                     SizedBox(
                                       height: t.section,
                                       child: Center(
-                                        child: saved
+                                        child: rested
+                                            ? Icon(
+                                                Icons.nightlight_outlined,
+                                                color: action,
+                                                size: t.section,
+                                              )
+                                            : completed
                                             ? Icon(
                                                 Icons.check_circle_outline,
                                                 color: action,

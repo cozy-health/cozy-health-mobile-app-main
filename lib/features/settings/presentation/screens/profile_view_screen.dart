@@ -4,6 +4,8 @@ import '../../../../core/models/user_profile.dart';
 import '../../../../core/models/mood_entry.dart';
 import '../../../../core/repositories/mood_repository.dart';
 import '../../../../core/services/local_db_service.dart';
+import '../../../../core/services/streak_controller.dart';
+import '../../../../core/data/demo_mode.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/app_pressable.dart';
@@ -28,6 +30,30 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
       widget.profileStream ?? ProfileRepository().watchProfile();
   late final _moods = widget.moodStream ?? MoodRepository().watchMoodEntries();
   final _owner = LocalDbService().activeUserId;
+  StreakController? _streak;
+  @override
+  void initState() {
+    super.initState();
+    if (_owner != null &&
+        !_owner.startsWith('guest_') &&
+        !DemoMode.instance.enabled) {
+      _streak = StreakController()
+        ..addListener(_changed)
+        ..start();
+    }
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _streak?.removeListener(_changed);
+    _streak?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context), w = context.cozyColors.wellness;
@@ -138,7 +164,10 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                                 ),
                               ),
                               SizedBox(height: w.contentGap),
-                              StreakProgressPanel(progress: progress),
+                              StreakProgressPanel(
+                                progress: progress,
+                                streak: _streak?.progress,
+                              ),
                               SizedBox(height: w.sectionSpacing),
                             ],
                           );

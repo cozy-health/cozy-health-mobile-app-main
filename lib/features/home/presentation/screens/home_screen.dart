@@ -1,4 +1,7 @@
 import '../../../../core/widgets/wellness_panel.dart';
+import 'dart:async';
+import '../../../../core/repositories/streak_repository.dart';
+import '../../../../core/services/streak_controller.dart';
 import '../../../settings/data/wellness_progress.dart';
 import '../../../settings/presentation/screens/achievements_screen.dart';
 import '../../../../core/widgets/profile_avatar.dart';
@@ -66,7 +69,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _entranceController;
   final _reminderTarget = GlobalKey();
   bool _reminderFocused = false;
@@ -90,10 +93,26 @@ class _HomeScreenState extends State<HomeScreen>
   late final Stream<List<MoodEntry>> _moodStream;
   DashboardData? _dashboard;
   bool _loadingDashboard = true;
+  late final StreakController _streakController;
+  StreamSubscription<void>? _accountSubscription;
+  int _dashboardRevision = 0;
   @override
   void initState() {
     super.initState();
     _moodStream = _moodRepo.watchMoodEntries();
+    _streakController = StreakController()
+      ..addListener(_streakChanged)
+      ..start();
+    WidgetsBinding.instance.addObserver(this);
+    _accountSubscription = LocalDbService().accountChanges.listen((_) {
+      if (!mounted) return;
+      _dashboardRevision++;
+      setState(() {
+        _dashboard = null;
+        _loadingDashboard = false;
+      });
+      unawaited(_loadDashboard());
+    });
     _loadDashboard();
     _entranceController = AnimationController(
       vsync: this,
@@ -110,11 +129,27 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _accountSubscription?.cancel();
+    _streakController.removeListener(_streakChanged);
+    _streakController.dispose();
     _entranceController.dispose();
     super.dispose();
   }
 
+  void _streakChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_streakController.refresh());
+    }
+  }
+
   Future<void> _loadDashboard() async {
+    final revision = ++_dashboardRevision;
     if (DemoMode.instance.enabled) {
       if (mounted) {
         setState(() {
@@ -127,21 +162,23 @@ class _HomeScreenState extends State<HomeScreen>
     final cached = await _homeRepo.getCachedDashboard();
     final offline =
         cached ?? await _homeRepo.getCachedDashboard(allowStale: true);
-    if (!mounted) return;
+    if (!mounted || revision != _dashboardRevision) return;
     if (offline != null) setState(() => _dashboard = offline);
     if (!await AuthTokenService.hasToken()) {
-      if (mounted) setState(() => _loadingDashboard = false);
+      if (mounted && revision == _dashboardRevision) {
+        setState(() => _loadingDashboard = false);
+      }
       return;
     }
     try {
       final fresh = await _homeRepo.fetchDashboard();
-      if (mounted) {
+      if (mounted && revision == _dashboardRevision) {
         setState(() {
           _dashboard = fresh;
         });
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted && revision == _dashboardRevision) {
         if (_dashboard == null) {
           AppSnackbar.show(
             context,
@@ -154,7 +191,9 @@ class _HomeScreenState extends State<HomeScreen>
         }
       }
     } finally {
-      if (mounted) setState(() => _loadingDashboard = false);
+      if (mounted && revision == _dashboardRevision) {
+        setState(() => _loadingDashboard = false);
+      }
     }
   }
 
@@ -186,6 +225,7 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         body: SafeArea(
           child: StreamBuilder<List<MoodEntry>>(
+            key: ValueKey(LocalDbService().activeUserId),
             stream: _moodStream,
             initialData: _moodRepo.currentEntries(),
             builder: (context, snapshot) {
@@ -198,36 +238,30 @@ class _HomeScreenState extends State<HomeScreen>
               }
 
               final entries = snapshot.data ?? [];
-              final isEmpty = _dashboard == null
-                  ? entries.isEmpty
-                  : _dashboard!.recentEntries.isEmpty &&
-                        _dashboard!.todayMood == null;
+              final isEmpty =
+                  entries.isEmpty &&
+                  (_dashboard?.recentEntries.isEmpty ?? true) &&
+                  _dashboard?.todayMood == null;
               // Compute streak
               final now = DateTime.now();
-              final streak = _dashboard?.streakDays ?? _localStreak(entries);
+              final progress = _streakController.progress;
+              final streak =
+                  progress?.currentDays ??
+                  _dashboard?.streakDays ??
+                  _localStreak(entries);
 
               // Up to three recent entries
               final recentEntries =
-                  _dashboard?.recentEntries.take(3).map((row) {
-                    final local = entries
-                        .where((entry) => entry.id == row['id'])
-                        .firstOrNull;
-                    return local ??
-                        MoodEntry.fromJson({
-                          ...row,
-                          'client_created_at':
-                              row['client_created_at'] ?? row['created_at'],
-                          'client_updated_at':
-                              row['client_created_at'] ?? row['created_at'],
-                        });
-                  }).toList() ??
-                  entries.take(3).toList();
-              final hasMoodToday = _dashboard != null
-                  ? _dashboard!.todayMood != null
-                  : entries.isNotEmpty &&
-                        entries.first.createdAt.day == now.day &&
-                        entries.first.createdAt.month == now.month &&
-                        entries.first.createdAt.year == now.year;
+                  _dashboard?.recentMoods(entries) ?? entries.take(3).toList();
+              final today = LocalDbService().accountTime(now);
+              final hasMoodToday =
+                  progress?.todayCompleted ??
+                  entries.any((entry) {
+                    final day = LocalDbService().accountTime(entry.createdAt);
+                    return day.year == today.year &&
+                        day.month == today.month &&
+                        day.day == today.day;
+                  });
 
               return FeatureTour(
                 targets: widget.tourTargets,
@@ -242,6 +276,7 @@ class _HomeScreenState extends State<HomeScreen>
                           await UserDataFetcher().fetchAll();
                         }
                         await _loadDashboard();
+                        await _streakController.refresh();
                       },
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -329,6 +364,7 @@ class _HomeScreenState extends State<HomeScreen>
                               notificationFocus: widget.notificationFocus,
                               entries: entries,
                               streak: streak,
+                              streakController: _streakController,
                               isEmpty: isEmpty,
                               hasMoodToday: hasMoodToday,
                               affirmation: AffirmationPanel(
@@ -453,12 +489,14 @@ class _HomeDesignCards extends StatelessWidget {
     this.notificationFocus,
     required this.entries,
     required this.streak,
+    required this.streakController,
     required this.isEmpty,
     required this.hasMoodToday,
     required this.affirmation,
   });
   final List<MoodEntry> entries;
   final int streak;
+  final StreakController streakController;
   final bool isEmpty, hasMoodToday;
   final Widget affirmation;
   final GlobalKey? reminderKey;
@@ -489,9 +527,16 @@ class _HomeDesignCards extends StatelessWidget {
           entries: entries,
           streak: streak,
           hasMoodToday: hasMoodToday,
+          progress: streakController.progress,
           onStreak: isEmpty
               ? () => context.push(AppRouter.moodFeeling)
-              : () => _pushPage(context, StreakDetailScreen(streak: streak)),
+              : () => _pushPage(
+                  context,
+                  StreakDetailScreen(
+                    streak: streak,
+                    controller: streakController,
+                  ),
+                ),
         ),
         SizedBox(height: t.sectionSpacing),
         const PreferenceSuggestions(),
@@ -690,20 +735,43 @@ class _HomeErrorView extends StatelessWidget {
 }
 
 class StreakDetailScreen extends StatefulWidget {
-  const StreakDetailScreen({super.key, required this.streak, this.repository});
+  const StreakDetailScreen({
+    super.key,
+    required this.streak,
+    this.repository,
+    this.controller,
+  });
   final int streak;
   final HomeRepository? repository;
+  final StreakController? controller;
   @override
   State<StreakDetailScreen> createState() => _StreakDetailScreenState();
 }
 
-class _StreakDetailScreenState extends State<StreakDetailScreen> {
-  late Future<Map<String, dynamic>> _progress;
+class _StreakDetailScreenState extends State<StreakDetailScreen>
+    with WidgetsBindingObserver {
+  late final StreakController _controller;
 
   @override
   void initState() {
     super.initState();
-    _progress = (widget.repository ?? HomeRepository()).fetchStreak();
+    _controller =
+        widget.controller ??
+        StreakController(repository: StreakRepository(api: widget.repository));
+    _controller.start();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (widget.controller == null) _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_controller.refresh());
   }
 
   @override
@@ -711,17 +779,18 @@ class _StreakDetailScreenState extends State<StreakDetailScreen> {
     final t = context.cozyColors.wellness;
     return _DetailScaffold(
       title: 'Your streak',
-      child: FutureBuilder<Map<String, dynamic>>(
-        future: _progress,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final progress = _controller.progress;
+          if (_controller.loading && progress == null) {
             return const Center(
               child: CircularProgressIndicator(
                 semanticsLabel: 'Loading your streak',
               ),
             );
           }
-          if (snapshot.hasError || snapshot.data == null) {
+          if (progress == null) {
             return Column(
               children: [
                 const Text(
@@ -730,28 +799,17 @@ class _StreakDetailScreenState extends State<StreakDetailScreen> {
                 WellnessAction(
                   label: 'Try again',
                   icon: Icons.refresh,
-                  onPressed: () {
-                    final progress = (widget.repository ?? HomeRepository())
-                        .fetchStreak();
-                    setState(() {
-                      _progress = progress;
-                    });
-                  },
+                  onPressed: _controller.refresh,
                 ),
               ],
             );
           }
-          final data = snapshot.data!;
-          final count = (data['current_days'] as num?)?.toInt() ?? 0;
-          final bank = (data['rest_days'] as num?)?.toInt() ?? 0;
-          final run = (data['earning_progress'] as num?)?.toInt() ?? 0;
-          final today = DateTime.parse(data['local_date'] as String);
-          final completed = (data['completed_dates'] as List)
-              .cast<String>()
-              .toSet();
-          final protected = (data['protected_dates'] as List)
-              .cast<String>()
-              .toSet();
+          final count = progress.currentDays,
+              bank = progress.restDays,
+              run = progress.earningProgress;
+          final today = DateTime.parse(progress.localDate);
+          final completed = progress.completedDates,
+              protected = progress.protectedDates;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -766,6 +824,24 @@ class _StreakDetailScreenState extends State<StreakDetailScreen> {
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
               SizedBox(height: t.gap),
+              if (_controller.offline ||
+                  progress.estimated ||
+                  progress.clockChanged) ...[
+                Text(
+                  progress.clockChanged
+                      ? 'Your device time changed. Check your date and time settings. Showing the last confirmed streak.'
+                      : progress.estimated
+                      ? 'Progress shown is an estimate from this device. Your rest days and check-ins will be confirmed after sync.'
+                      : 'Showing your saved streak. Connect to refresh.',
+                ),
+                SizedBox(height: t.small),
+                WellnessAction(
+                  label: 'Refresh streak',
+                  icon: Icons.refresh,
+                  onPressed: _controller.loading ? null : _controller.refresh,
+                ),
+                SizedBox(height: t.gap),
+              ],
               const Text(
                 'One saved mood check-in completes your day. Your streak stays with you on every plan.',
               ),
@@ -807,7 +883,9 @@ class _StreakDetailScreenState extends State<StreakDetailScreen> {
                     final active = completed.contains(date),
                         rested = protected.contains(date);
                     final label = active
-                        ? 'Check-in saved'
+                        ? progress.pendingDates.contains(date)
+                              ? 'Check-in waiting to sync'
+                              : 'Check-in saved'
                         : rested
                         ? 'Rest day used'
                         : i == 0

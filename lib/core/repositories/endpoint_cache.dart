@@ -45,7 +45,9 @@ class EndpointCache {
           (age.isNegative || age >= const Duration(minutes: 5))) {
         return null;
       }
-      return Map<String, dynamic>.from(record['data'] as Map);
+      final data = Map<String, dynamic>.from(record['data'] as Map);
+      if (scope != await owner()) return null;
+      return data;
     } catch (_) {
       return null;
     }
