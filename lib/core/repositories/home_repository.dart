@@ -35,6 +35,16 @@ class HomeRepository {
   HomeRepository({EndpointCache? cache}) : _cache = cache ?? EndpointCache();
   final EndpointCache _cache;
 
+  Future<Map<String, dynamic>> fetchStreak() async {
+    final scope = await _cache.owner();
+    if (scope == null) throw StateError('Sign in to view your streak.');
+    final response = await ApiClient.instance.get('/wellness/streak');
+    if (scope != await _cache.owner()) {
+      throw StateError('The signed-in account changed.');
+    }
+    return Map<String, dynamic>.from(response.data['data'] as Map);
+  }
+
   Future<DashboardData> fetchDashboard() async {
     final scope = await _cache.owner();
     final response = await ApiClient.instance.get('/dashboard');

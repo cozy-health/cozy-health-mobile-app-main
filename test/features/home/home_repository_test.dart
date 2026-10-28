@@ -31,6 +31,26 @@ void main() {
   });
   tearDownAll(fixture.close);
 
+  test('streak reads authoritative rest-day accounting', () async {
+    fixture.body = {
+      'data': {
+        'current_days': 7,
+        'rest_days': 0,
+        'protected_dates': ['2026-10-08'],
+      },
+    };
+    final streak = await repository.fetchStreak();
+    expect(streak['current_days'], 7);
+    expect(streak['rest_days'], 0);
+    expect(fixture.requests.single.path, '/api/v1/wellness/streak');
+  });
+
+  test('streak cannot be requested after logout', () async {
+    await TokenStorage().clearToken();
+    await expectLater(repository.fetchStreak(), throwsStateError);
+    expect(fixture.requests, isEmpty);
+  });
+
   test(
     'dashboard parses all API metrics and caches without another request',
     () async {

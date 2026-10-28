@@ -689,11 +689,171 @@ class _HomeErrorView extends StatelessWidget {
   }
 }
 
-class StreakDetailScreen extends StatelessWidget {
-  const StreakDetailScreen({super.key, required this.streak});
+class StreakDetailScreen extends StatefulWidget {
+  const StreakDetailScreen({super.key, required this.streak, this.repository});
   final int streak;
+  final HomeRepository? repository;
   @override
-  Widget build(BuildContext context) => const AchievementsScreen();
+  State<StreakDetailScreen> createState() => _StreakDetailScreenState();
+}
+
+class _StreakDetailScreenState extends State<StreakDetailScreen> {
+  late Future<Map<String, dynamic>> _progress;
+
+  @override
+  void initState() {
+    super.initState();
+    _progress = (widget.repository ?? HomeRepository()).fetchStreak();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.cozyColors.wellness;
+    return _DetailScaffold(
+      title: 'Your streak',
+      child: FutureBuilder<Map<String, dynamic>>(
+        future: _progress,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(
+              child: CircularProgressIndicator(
+                semanticsLabel: 'Loading your streak',
+              ),
+            );
+          }
+          if (snapshot.hasError || snapshot.data == null) {
+            return Column(
+              children: [
+                const Text(
+                  'We could not check your streak. Your saved mood check-ins are safe. Connect to the internet and try again.',
+                ),
+                WellnessAction(
+                  label: 'Try again',
+                  icon: Icons.refresh,
+                  onPressed: () {
+                    final progress = (widget.repository ?? HomeRepository())
+                        .fetchStreak();
+                    setState(() {
+                      _progress = progress;
+                    });
+                  },
+                ),
+              ],
+            );
+          }
+          final data = snapshot.data!;
+          final count = (data['current_days'] as num?)?.toInt() ?? 0;
+          final bank = (data['rest_days'] as num?)?.toInt() ?? 0;
+          final run = (data['earning_progress'] as num?)?.toInt() ?? 0;
+          final today = DateTime.parse(data['local_date'] as String);
+          final completed = (data['completed_dates'] as List)
+              .cast<String>()
+              .toSet();
+          final protected = (data['protected_dates'] as List)
+              .cast<String>()
+              .toSet();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Icon(
+                Icons.local_fire_department_rounded,
+                size: t.streakIcon,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              Text(
+                '$count ${count == 1 ? 'day' : 'days'}',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+              SizedBox(height: t.gap),
+              const Text(
+                'One saved mood check-in completes your day. Your streak stays with you on every plan.',
+              ),
+              SizedBox(height: t.gap),
+              WellnessPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$bank of 2 rest days saved',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SizedBox(height: t.small),
+                    const Text(
+                      'A rest day is used automatically when you miss a day. It protects your number without adding a check-in.',
+                    ),
+                    SizedBox(height: t.small),
+                    Text(
+                      '$run of 7 uninterrupted check-in days toward your next rest day.',
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: t.gap),
+              Text(
+                'Your last 7 days',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              for (var i = 6; i >= 0; i--)
+                Builder(
+                  builder: (context) {
+                    // UTC arithmetic preserves calendar labels across device DST changes.
+                    final day = DateTime.utc(
+                      today.year,
+                      today.month,
+                      today.day,
+                    ).subtract(Duration(days: i));
+                    final date = day.toIso8601String().substring(0, 10);
+                    final active = completed.contains(date),
+                        rested = protected.contains(date);
+                    final label = active
+                        ? 'Check-in saved'
+                        : rested
+                        ? 'Rest day used'
+                        : i == 0
+                        ? 'Still time to check in'
+                        : 'No check-in';
+                    return Padding(
+                      padding: EdgeInsets.symmetric(vertical: t.small),
+                      child: Row(
+                        children: [
+                          Icon(
+                            active
+                                ? Icons.check_circle_outline
+                                : rested
+                                ? Icons.nightlight_outlined
+                                : Icons.radio_button_unchecked,
+                          ),
+                          SizedBox(width: t.small),
+                          Expanded(child: Text('$date · $label')),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              SizedBox(height: t.gap),
+              WellnessAction(
+                label: 'Save a mood check-in',
+                icon: Icons.add_circle_outline,
+                filled: true,
+                onPressed: () => context.push(AppRouter.moodFeeling),
+              ),
+              SizedBox(height: t.small),
+              WellnessAction(
+                label: 'View achievements',
+                icon: Icons.emoji_events_outlined,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AchievementsScreen(),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 class InsightsScreen extends StatelessWidget {
