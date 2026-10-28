@@ -1,4 +1,5 @@
 import '../widgets/launch_billing_panel.dart';
+import '../widgets/store_plan_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/services/local_db_service.dart';
@@ -31,7 +32,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   String? _error;
   int _generation = 0;
   final _owner = LocalDbService().activeUserId;
-  late final Future<SubscriptionStatus?> _subscription;
+  late Future<SubscriptionStatus?> _subscription;
   @override
   void initState() {
     super.initState();
@@ -119,6 +120,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             future: _subscription,
             builder: (context, snapshot) {
               final subscription = snapshot.data;
+              if (_owner == LocalDbService().activeUserId &&
+                  subscription != null &&
+                  subscription.isStoreManaged) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: StorePlanPanel(
+                    subscription: subscription,
+                    onRefresh: () => setState(
+                      () => _subscription = _repo.fetchSubscription(),
+                    ),
+                  ),
+                );
+              }
               if (_owner != LocalDbService().activeUserId ||
                   subscription == null ||
                   !subscription.isDevelopmentTest ||

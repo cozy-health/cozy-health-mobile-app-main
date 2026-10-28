@@ -32,6 +32,10 @@ void main() {
         'id': 'store-id',
         'plan': 'standard',
         'status': 'active',
+        'platform': 'apple',
+        'store_management': {'store': 'Apple App Store'},
+        'store_state': 'canceled',
+        'auto_renews': false,
       });
       await local.saveSubscriptionStatus(real);
       fixture.body = {
@@ -53,11 +57,14 @@ void main() {
       fixture.body = {'data': real.toJson()};
       expect((await repo.fetchSubscription())?.id, 'store-id');
       expect(local.getSubscriptionStatus()?.isDevelopmentTest, false);
+      expect(local.getSubscriptionStatus()?.storePlatform, 'apple');
+      expect(local.getSubscriptionStatus()?.cancelAtPeriodEnd, true);
       expect(local.subscriptionStatusBox.length, 1);
       await local.activateAccount('another-owner');
       expect(local.getSubscriptionStatus(), isNull);
       await local.activateAccount('test-owner');
       expect(local.getSubscriptionStatus()?.id, 'store-id');
+      expect(local.getSubscriptionStatus()?.storePlatform, 'apple');
     },
   );
   test('expired test access is inactive and legacy JSON has no test label', () {
