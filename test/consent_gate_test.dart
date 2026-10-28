@@ -361,31 +361,26 @@ void main() {
       expect(find.text('Application content'), findsOneWidget);
     },
   );
-  testWidgets(
-    'draft update can be dismissed and never offers fake acceptance',
-    (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ConsentGate(
-            service: service(blocking: false, published: false),
-            observeRoutes: false,
-            child: const Scaffold(body: Text('Application content')),
-          ),
+  testWidgets('draft changes stay silent and never offer fake acceptance', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConsentGate(
+          service: service(blocking: false, published: false),
+          observeRoutes: false,
+          child: const Scaffold(body: Text('Application content')),
         ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('Application content'), findsOneWidget);
-      await tester.tap(find.text('Review'));
-      await tester.pumpAndSettle();
-      expect(find.text('Accept'), findsNothing);
-      await tester.tap(find.text('Close'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Dismiss'));
-      await tester.pumpAndSettle();
-      expect(find.text('Review'), findsNothing);
-      expect(find.text('Application content'), findsOneWidget);
-    },
-  );
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Application content'), findsOneWidget);
+    expect(find.byType(MaterialBanner), findsNothing);
+    expect(find.text('Review'), findsNothing);
+    expect(find.text('Accept'), findsNothing);
+    expect(find.text('Dismiss'), findsNothing);
+    expect(find.text('Application content'), findsOneWidget);
+  });
   testWidgets(
     'published required document blocks only after server flag and explicit accept unblocks',
     (tester) async {

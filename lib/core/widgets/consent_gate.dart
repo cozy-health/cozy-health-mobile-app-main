@@ -5,6 +5,7 @@ import '../services/legal_documents.dart';
 import '../services/consent_service.dart';
 import '../services/consent_refresh_signal.dart';
 import '../services/feature_flags_service.dart';
+import '../services/legal_notice_preferences.dart';
 import '../storage/token_storage.dart';
 import '../../features/auth/data/auth_service.dart';
 
@@ -38,6 +39,8 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
   StreamSubscription<void>? _clearing, _sessions;
   String? _loadError;
   String? _error;
+  String? _noticeError;
+  final _noticePreferences = const LegalNoticePreferences();
   final Set<String> _dismissed = {};
   final Set<String> _healthChoices = {};
   @override
@@ -121,12 +124,21 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
             },
           )
           .timeout(const Duration(seconds: 15));
+      Set<String> dismissed = {};
+      if (result != null) {
+        try {
+          dismissed = await _noticePreferences.dismissed(result);
+        } catch (_) {
+          // Optional preferences must never prevent a required consent review.
+        }
+      }
       final token = await TokenStorage().getToken();
       if (mounted &&
           request == _request &&
           generation == TokenStorage.generation) {
         setState(() {
           _state = result;
+          _dismissed.addAll(dismissed);
           _session = token;
           _verified = true;
         });
@@ -157,6 +169,7 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
       _session = null;
       _busy = false;
       _error = null;
+      _noticeError = null;
       _loadError = null;
       _dismissed.clear();
       _healthChoices.clear();
@@ -254,6 +267,39 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _dismissNotice(ConsentDocument document) async {
+    final state = _state;
+    if (state == null || _busy) return;
+    final generation = TokenStorage.generation;
+    setState(() {
+      _busy = true;
+      _noticeError = null;
+    });
+    try {
+      await _noticePreferences.dismiss(state.ownerId, document);
+      if (mounted &&
+          identical(state, _state) &&
+          generation == TokenStorage.generation) {
+        setState(
+          () => _dismissed.add(LegalNoticePreferences.noticeId(document)),
+        );
+      }
+    } catch (_) {
+      if (mounted &&
+          identical(state, _state) &&
+          generation == TokenStorage.generation) {
+        setState(
+          () => _noticeError =
+              'Could not remember this dismissal. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted && generation == TokenStorage.generation) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
   @override
   void dispose() {
     _flags?.removeListener(_configurationChanged);
@@ -305,14 +351,18 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (_loading) const CircularProgressIndicator(),
+                  if (_loading) ...[
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    const Text('Opening Cozy…'),
+                  ],
                   if (_loadError != null) Text(_loadError!),
                   if (!_loading)
                     FilledButton(
                       onPressed: _refresh,
                       child: const Text('Retry'),
                     ),
-                  if (widget.observeRoutes) ...[
+                  if (widget.observeRoutes && !_loading) ...[
                     TextButton(
                       onPressed: () => AppRouter.router.go(AppRouter.crisisHub),
                       child: const Text('Get urgent support'),
@@ -401,7 +451,7 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
         ),
       );
     }
-    final notices = pending
+    final notices = (_state?.updates ?? <ConsentDocument>[])
         .where((doc) => !_dismissed.contains('${doc.type}:${doc.version}'))
         .toList();
     if (notices.isEmpty) return widget.child;
@@ -411,16 +461,17 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
         SafeArea(
           bottom: false,
           child: MaterialBanner(
-            content: Text("We've updated our ${doc.title}. Tap to review."),
+            content: Text(
+              _noticeError ??
+                  '${doc.title} has a new version. Review what changed.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => _review(doc),
                 child: const Text('Review'),
               ),
               TextButton(
-                onPressed: () => setState(
-                  () => _dismissed.add('${doc.type}:${doc.version}'),
-                ),
+                onPressed: _busy ? null : () => _dismissNotice(doc),
                 child: const Text('Dismiss'),
               ),
             ],

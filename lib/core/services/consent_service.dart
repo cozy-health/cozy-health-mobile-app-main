@@ -54,6 +54,19 @@ class ConsentState {
       .toList();
   bool blocking(ConsentDocument doc) =>
       enforceBlocking && doc.required && doc.reviewable;
+  // A draft or a first publication is not an update to previously accepted text.
+  List<ConsentDocument> get updates => pending
+      .where(
+        (doc) =>
+            doc.reviewable &&
+            records.any(
+              (record) =>
+                  record['document_type'] == doc.type &&
+                  record['version'] != doc.version &&
+                  record['status'] == 'accepted',
+            ),
+      )
+      .toList();
   bool get marketingAllowed =>
       documents.where((doc) => doc.type == 'marketing').any(current);
 }
