@@ -9,7 +9,15 @@ import '../../data/subscription_repository.dart';
 import '../widgets/store_plan_panel.dart';
 
 class CancelSubscriptionScreen extends StatefulWidget {
-  const CancelSubscriptionScreen({super.key});
+  const CancelSubscriptionScreen({
+    super.key,
+    this.title = 'Manage subscription',
+    this.introduction =
+        'Manage renewal and cancellation in the store account used to purchase. Deleting your Cozy Health account does not cancel store billing.',
+  });
+
+  final String title;
+  final String introduction;
   @override
   State<CancelSubscriptionScreen> createState() =>
       _CancelSubscriptionScreenState();
@@ -30,7 +38,7 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Manage subscription'),
+      title: Text(widget.title),
       leading: AppPressable(
         label: 'Back',
         onPressed: () =>
@@ -46,9 +54,7 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          const Text(
-            'Manage renewal and cancellation in the store account used to purchase. Deleting your Cozy Health account does not cancel store billing.',
-          ),
+          Text(widget.introduction),
           const SizedBox(height: 24),
           FutureBuilder<SubscriptionStatus?>(
             future: _subscription,

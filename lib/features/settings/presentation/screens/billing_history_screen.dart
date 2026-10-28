@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
+import 'cancel_subscription_screen.dart';
 
 class BillingHistoryScreen extends StatelessWidget {
   const BillingHistoryScreen({super.key});
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Billing history')),
-    body: const SafeArea(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text(
-          'Billing records are not available in this app yet. No sample charges or receipts are shown.',
-        ),
-      ),
-    ),
+  Widget build(BuildContext context) => const CancelSubscriptionScreen(
+    title: 'Store purchase history',
+    introduction:
+        'Apple or Google provides your purchase receipts and tax details. Use the store account that paid for your Cozy subscription.',
   );
 }
