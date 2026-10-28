@@ -156,7 +156,7 @@ void main() {
     },
   );
 
-  testWidgets('regional pricing shows actual monthly and annual totals', (
+  testWidgets('packages never ask for country or show legacy regional prices', (
     tester,
   ) async {
     await tester.runAsync(() async {
@@ -189,11 +189,19 @@ void main() {
       },
     };
     await show(tester, const SubscriptionScreen(deferBilling: true));
-    expect(find.text('NGN 5,000/month'), findsOneWidget);
-    await tester.tap(find.byType(SwitchListTile));
-    await tester.pumpAndSettle();
-    expect(find.text('NGN 48,000/year'), findsOneWidget);
-    expect(find.text('NGN 96,000/year'), findsOneWidget);
+    expect(
+      fixture.requests.where(
+        (uri) => uri.path.endsWith('/subscription/prices'),
+      ),
+      isEmpty,
+    );
+    expect(find.text('Billing country code'), findsNothing);
+    expect(find.text('Confirm country and load prices'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.textContaining('NGN '), findsNothing);
+    expect(find.text('Standard'), findsOneWidget);
+    expect(find.text('Student'), findsOneWidget);
+    expect(find.text('Premium'), findsOneWidget);
     expect(find.text('Start Free Trial'), findsNothing);
     expect(find.byKey(const ValueKey('restore-store-purchases')), findsNothing);
     await tester.ensureVisible(find.text('Student'));
@@ -203,7 +211,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('wellness-sheet-close')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    await captureSurface(tester, 'reliability-regional-prices');
+    await captureSurface(tester, 'reliability-packages');
   });
 
   testWidgets('all earned milestones remain visible after a streak ends', (

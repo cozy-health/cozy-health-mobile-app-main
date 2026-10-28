@@ -5,27 +5,6 @@ import '../../../core/api/api_client.dart';
 
 class SubscriptionRepository {
   final LocalDbService _local = LocalDbService();
-  Future<Map<String, dynamic>> fetchPrices(String country) async {
-    final owner = _local.activeUserId;
-    final settings = await _local.settingsBox();
-    try {
-      final response = await ApiClient.instance.get(
-        '/subscription/prices',
-        query: {'country': country},
-      );
-      if (owner != _local.activeUserId) throw StateError('Account changed');
-      final data = Map<String, dynamic>.from(response.data['data'] as Map);
-      await settings.put('billing_country', country);
-      await settings.put('mobile_prices_$country', data);
-      return data;
-    } catch (_) {
-      if (owner != _local.activeUserId) rethrow;
-      final cached = settings.get('mobile_prices_$country');
-      if (cached is Map) return Map<String, dynamic>.from(cached);
-      rethrow;
-    }
-  }
-
   Map<String, dynamic>? _extractMapData(dynamic data) {
     if (data is Map<String, dynamic>) {
       final nested = data['data'];

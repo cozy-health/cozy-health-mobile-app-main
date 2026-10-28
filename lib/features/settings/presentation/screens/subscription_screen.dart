@@ -25,80 +25,48 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
+  // Plan benefits are independent of country. Only native store product
+  // metadata may supply checkout prices; legacy regional caches are ignored.
+  static const _packages = [
+    {
+      'package_name': 'Standard',
+      'features': [
+        'Written journals',
+        'Mood tracking and streaks',
+        'Emergency support',
+        'Limited community access',
+      ],
+    },
+    {
+      'package_name': 'Student',
+      'features': [
+        'All Premium features',
+        'Requires verified current student enrolment',
+      ],
+    },
+    {
+      'package_name': 'Premium',
+      'features': [
+        'Written and voice journals',
+        'Mood tracking and streaks',
+        'Connect and chat with a provider',
+        'Assessments',
+        'Full community access',
+        'Emergency support',
+      ],
+    },
+  ];
   final _repo = SubscriptionRepository();
-  final _country = TextEditingController();
-  Map<String, dynamic>? _catalog;
-  bool _yearly = false, _loading = true;
-  String? _error;
-  int _generation = 0;
   final _owner = LocalDbService().activeUserId;
   late Future<SubscriptionStatus?> _subscription;
   @override
   void initState() {
     super.initState();
     _subscription = _repo.fetchSubscription();
-    _initialize();
-  }
-
-  Future<void> _initialize() async {
-    final settings = await LocalDbService().settingsBox();
-    if (!mounted) return;
-    _country.text =
-        settings.get('billing_country') as String? ??
-        WidgetsBinding.instance.platformDispatcher.locale.countryCode ??
-        '';
-    if (_country.text.isEmpty) {
-      setState(() => _loading = false);
-      return;
-    }
-    await _load();
-  }
-
-  Future<void> _load() async {
-    final country = _country.text.trim().toUpperCase();
-    if (!RegExp(r'^[A-Z]{2}$').hasMatch(country)) {
-      setState(() {
-        _error = 'Enter a two-letter billing country code, such as NG.';
-        _loading = false;
-      });
-      return;
-    }
-    final generation = ++_generation;
-    setState(() {
-      _loading = true;
-      _error = null;
-      _catalog = null;
-    });
-    try {
-      final data = await _repo.fetchPrices(country);
-      if (!mounted || generation != _generation) return;
-      setState(() {
-        _catalog = data;
-        _loading = false;
-      });
-    } catch (_) {
-      if (mounted && generation == _generation) {
-        setState(() {
-          _loading = false;
-          _error =
-              'Could not load regional prices. Check your connection and retry.';
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _generation++;
-    _country.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final rows = (_catalog?['packages'] as List? ?? []).whereType<Map>().where(
-      (row) => const ['standard', 'student', 'premium'].contains(row['tier']),
-    );
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -168,35 +136,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Standard, Student, and Premium. Student includes all Premium features. Prices depend on your confirmed billing country.',
+            'Choose Standard, Student, or Premium. Student includes all Premium features with verified current enrolment.',
           ),
           const SizedBox(height: 20),
-          TextField(
-            controller: _country,
-            maxLength: 2,
-            textCapitalization: TextCapitalization.characters,
-            decoration: const InputDecoration(
-              labelText: 'Billing country code',
-              helperText: 'For example NG for Nigeria or GB for United Kingdom',
-            ),
-          ),
-          FilledButton(
-            onPressed: _loading ? null : _load,
-            child: const Text('Confirm country and load prices'),
-          ),
-          SwitchListTile(
-            title: const Text('Pay yearly'),
-            subtitle: const Text('See the full annual charge and savings'),
-            value: _yearly,
-            onChanged: (value) => setState(() => _yearly = value),
-          ),
-          if (_loading) const Center(child: CircularProgressIndicator()),
-          if (_error != null) Text(_error!),
-          if (!_loading && _error == null && _catalog != null && rows.isEmpty)
-            const Text(
-              'Pricing is not available for this country yet. No other region’s prices have been substituted.',
-            ),
-          for (final row in rows) _plan(row),
+          for (final row in _packages) _plan(row),
           if (widget.deferBilling)
             const Text(
               'Billing is on hold until Apple and Google store setup is complete. No purchase is available here.',
@@ -228,15 +171,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _plan(Map row) {
-    final currency = row['currency']?.toString() ?? '';
-    final digits = (row['currency_decimals'] as num?)?.toInt() ?? 2;
-    final format = NumberFormat.currency(
-      name: currency,
-      symbol: '$currency ',
-      decimalDigits: digits,
-    );
-    final monthly = num.tryParse('${row['price']}') ?? 0;
-    final annual = num.tryParse('${row['yearly_price']}') ?? 0;
     return AppPressable(
       label: 'View ${row['package_name']} package',
       onPressed: () => showWellnessSheet<void>(
@@ -245,9 +179,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           title: row['package_name']?.toString() ?? 'Package details',
           children: [
             if (row['description'] != null) Text(row['description'].toString()),
-            Text(
-              '${format.format(_yearly ? annual : monthly)}/${_yearly ? 'year' : 'month'}',
-            ),
+
             for (final feature in row['features'] as List? ?? [])
               Text(feature.toString()),
             const Text(
@@ -268,15 +200,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 '${row['package_name']}',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              const SizedBox(height: 10),
-              Text(
-                '${format.format(_yearly ? annual : monthly)}/${_yearly ? 'year' : 'month'}',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              if (_yearly)
-                Text(
-                  '${format.format(annual / 12)} equivalent per month · ${row['annual_discount']}% annual saving',
-                ),
               const SizedBox(height: 12),
               for (final feature in row['features'] as List? ?? [])
                 Padding(
