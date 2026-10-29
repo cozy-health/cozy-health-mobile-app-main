@@ -56,8 +56,12 @@ void main() {
     await tester.pumpAndSettle();
     final documents = bundledDocuments;
     final consumer = documents.where((doc) => doc['audience'] == 'consumer');
-    expect(consumer.length, 9);
+    expect(consumer.length, 8);
+    expect(consumer.any((doc) => doc['id'] == 'guardians'), isFalse);
     for (final doc in consumer) {
+      expect(doc['version'], '1.1');
+      expect(doc['effective_date'], '2026-10-29');
+      expect(doc['published'], isTrue);
       final row = find.byKey(ValueKey('legal-document-${doc['id']}'));
       await tester.scrollUntilVisible(
         row,
@@ -68,11 +72,27 @@ void main() {
     }
     expect(find.text('Data Processing Agreement'), findsNothing);
     expect(find.text('Last updated: October 1, 2026'), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('legal-document-guardians')));
+    expect(
+      find.byKey(const ValueKey('legal-document-guardians')),
+      findsNothing,
+    );
+    final privacy = find.byKey(const ValueKey('legal-document-privacy_policy'));
+    await tester.scrollUntilVisible(
+      privacy,
+      -250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await Scrollable.ensureVisible(tester.element(privacy), alignment: 0.5);
+    await tester.pumpAndSettle();
+    await tester.tap(privacy);
     await tester.pumpAndSettle();
     expect(
-      find.textContaining('not yet effective or available for acceptance'),
+      find.textContaining('Version 1.1 · Effective 29 October 2026'),
       findsOneWidget,
+    );
+    expect(
+      find.textContaining('not yet effective or available for acceptance'),
+      findsNothing,
     );
     expect(find.byType(SelectableText), findsWidgets);
     expect(find.text('Accept'), findsNothing);

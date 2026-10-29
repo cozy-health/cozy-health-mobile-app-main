@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/services/legal_documents.dart';
 import '../../../../core/theme/app_surface.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -83,10 +84,21 @@ class _TermsPoliciesScreenState extends State<TermsPoliciesScreen> {
     }
   }
 
-  Widget _status(Map<String, dynamic> doc) => Text(
-    'Version ${doc['version']} · ${doc['published'] == true ? 'Published' : 'Prepared document — not yet effective or available for acceptance'}',
-    style: Theme.of(context).textTheme.bodyMedium,
-  );
+  Widget _status(Map<String, dynamic> doc) {
+    final effective = DateTime.tryParse(
+      doc['effective_date']?.toString() ?? '',
+    );
+    final status = doc['published'] != true
+        ? 'Prepared document — not yet effective or available for acceptance'
+        : effective == null
+        ? 'Published'
+        : 'Effective ${DateFormat('d MMMM yyyy', 'en_US').format(effective)}';
+    return Text(
+      'Version ${doc['version']} · $status',
+      style: Theme.of(context).textTheme.bodyMedium,
+    );
+  }
+
   Widget _message(String message, {bool retry = false}) => Padding(
     padding: const EdgeInsets.all(24),
     child: Column(
@@ -125,8 +137,9 @@ class _TermsPoliciesScreenState extends State<TermsPoliciesScreen> {
                   ),
                 );
               }
-              if (!snapshot.hasData)
+              if (!snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
+              }
               final docs = (snapshot.data ?? <Map<String, dynamic>>[])
                   .where(
                     (doc) =>
@@ -134,16 +147,17 @@ class _TermsPoliciesScreenState extends State<TermsPoliciesScreen> {
                         (_documentId == null || doc['id'] == _documentId),
                   )
                   .toList();
-              if (docs.isEmpty)
+              if (docs.isEmpty) {
                 return _message(
                   'This document is not included in this build. Contact Team@cozyhealth.org for help.',
                 );
+              }
               return ListView(
                 padding: const EdgeInsets.all(24),
                 children: _documentId == null
                     ? [
                         const Text(
-                          'Read the documents included with this app, even when offline. Prepared documents are not effective policies and reading them does not record acceptance.',
+                          'Read the documents included with this app, even when offline. Each document shows its version and status. Reading a document does not record acceptance.',
                         ),
                         const SizedBox(height: 24),
                         for (final doc in docs) ...[
