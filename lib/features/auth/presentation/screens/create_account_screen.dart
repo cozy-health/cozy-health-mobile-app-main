@@ -1,5 +1,4 @@
 import '../../../../core/widgets/analytics_opt_in.dart';
-import '../../../../core/widgets/age_details_fields.dart';
 import '../../../../core/services/usage_analytics.dart';
 import '../../../../core/services/legal_documents.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
@@ -22,8 +21,6 @@ class CreateAccountScreen extends StatefulWidget {
 
 class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final AuthService _authService = AuthService();
-  final _dobController = TextEditingController(),
-      _countryController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -43,9 +40,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool get _isFormValid {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    return _dobController.text.isNotEmpty &&
-        _countryController.text.trim().length == 2 &&
-        _nameController.text.trim().isNotEmpty &&
+    return _nameController.text.trim().isNotEmpty &&
         email.contains('@') &&
         password.length >= 8 &&
         _confirmController.text == password &&
@@ -73,8 +68,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   @override
   void dispose() {
-    _dobController.dispose();
-    _countryController.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -132,8 +125,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         email: email,
         password: password,
         confirmPassword: _confirmController.text,
-        dateOfBirth: _dobController.text,
-        residenceCountry: _countryController.text.trim().toUpperCase(),
       );
       await UsageAnalytics.instance.track('signup_completed');
       if (!mounted) return;
@@ -196,20 +187,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           enabled: !_busy,
         ),
         const SizedBox(height: 24),
-        AgeDetailsFields(
-          dob: _dobController,
-          country: _countryController,
-          onChanged: _clearLiveErrors,
-          enabled: !_busy,
-        ),
-        const SizedBox(height: 24),
         AuthTextField(
           label: 'Email',
-          helper: "We'll never share this.",
+          helper: 'For account and security messages.',
           error: _emailError,
-          success: _emailController.text.contains('@')
-              ? 'Email available'
-              : null,
+          success: _emailController.text.contains('@') ? 'Email entered' : null,
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
           autofillHints: const [AutofillHints.email],
@@ -268,12 +250,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           children: [
             TextButton(
               onPressed: () =>
-                  LegalDocuments.open('https://cozyhealth.org/terms'),
+                  LegalDocuments.open(LegalDocuments.documentUrl('/terms')),
               child: const Text('Terms of Use'),
             ),
             TextButton(
               onPressed: () =>
-                  LegalDocuments.open('https://cozyhealth.org/privacy'),
+                  LegalDocuments.open(LegalDocuments.documentUrl('/privacy')),
               child: const Text('Privacy Policy'),
             ),
           ],
