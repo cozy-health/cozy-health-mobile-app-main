@@ -33,6 +33,61 @@ void main() {
     FlutterSecureStorage.setMockInitialValues({});
     await TokenStorage().clearToken();
   });
+  test('an old failed refresh cannot sign out the next account', () async {
+    final tokens = TokenStorage();
+    await tokens.saveSession('account-a', refreshToken: 'refresh-a');
+    final entered = Completer<void>();
+    final release = Completer<ResponseBody>();
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = Adapter((request) async {
+      if (request.path == '/auth/refresh') {
+        entered.complete();
+        return release.future;
+      }
+      return json('{}', 401);
+    });
+    dio.interceptors.add(
+      AuthInterceptor(dio: dio, onSessionExpired: () async {}),
+    );
+    final failed = expectLater(dio.get('/me'), throwsA(isA<DioException>()));
+    await entered.future;
+    await tokens.saveSession('account-b', refreshToken: 'refresh-b');
+    release.complete(json('{}', 401));
+    await failed;
+    expect(await tokens.getToken(), 'account-b');
+    expect(await tokens.getRefreshToken(), 'refresh-b');
+    dio.close();
+  });
+
+  test(
+    'a retry bound to an earlier session never transmits as the next account',
+    () async {
+      final tokens = TokenStorage();
+      await tokens.saveToken('account-a');
+      final earlier = TokenStorage.generation;
+      await tokens.saveToken('account-b');
+      var transmitted = false;
+      final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+      dio.httpClientAdapter = Adapter((_) async {
+        transmitted = true;
+        return json('{}', 200);
+      });
+      dio.interceptors.add(
+        AuthInterceptor(dio: dio, onSessionExpired: () async {}),
+      );
+      await expectLater(
+        dio.post(
+          '/journals',
+          data: {'body': 'account-a draft'},
+          options: Options(extra: {'expectedSessionGeneration': earlier}),
+        ),
+        throwsA(isA<DioException>()),
+      );
+      expect(transmitted, false);
+      expect(await tokens.getToken(), 'account-b');
+      dio.close();
+    },
+  );
   test(
     'only current-session consent denials request a consent recheck',
     () async {
@@ -68,7 +123,10 @@ void main() {
   test('concurrent 401 responses share one refresh and retry once', () async {
     final tokens = TokenStorage();
     await tokens.saveToken('old');
-    await tokens.saveRefreshToken('refresh-old');
+    await tokens.saveRefreshToken(
+      'refresh-old',
+      expectedGeneration: TokenStorage.generation,
+    );
     var refreshes = 0;
     final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
     dio.httpClientAdapter = Adapter((request) async {
@@ -96,7 +154,10 @@ void main() {
   test('failed refresh clears both credentials and calls logout', () async {
     final tokens = TokenStorage();
     await tokens.saveToken('old');
-    await tokens.saveRefreshToken('refresh');
+    await tokens.saveRefreshToken(
+      'refresh',
+      expectedGeneration: TokenStorage.generation,
+    );
     var loggedOut = 0;
     final dio = Dio(BaseOptions(baseUrl: 'https://example.test'))
       ..httpClientAdapter = Adapter((_) async => json('{}', 401));
@@ -119,7 +180,10 @@ void main() {
     () async {
       final tokens = TokenStorage();
       await tokens.saveToken('access', stayLoggedIn: false);
-      await tokens.saveRefreshToken('refresh');
+      await tokens.saveRefreshToken(
+        'refresh',
+        expectedGeneration: TokenStorage.generation,
+      );
       expect(await tokens.getRefreshToken(), 'refresh');
       expect(
         await const FlutterSecureStorage().read(

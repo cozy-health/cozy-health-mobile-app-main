@@ -143,6 +143,9 @@ class WidgetController extends RestoreController {
 }
 
 class SuccessfulLoginApi extends Fake implements ApiClient {
+  @override
+  void cancelSessionRequests() {}
+
   SuccessfulLoginApi({this.userId = '42'});
   final String userId;
   @override

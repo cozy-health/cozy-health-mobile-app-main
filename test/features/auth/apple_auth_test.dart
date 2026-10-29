@@ -73,6 +73,7 @@ class FakeAppleAuth extends AuthService {
     String? fullName,
     String? email,
     bool stayLoggedIn = true,
+    String? identityHint,
   }) async {
     received = {
       'identity_token': identityToken,
@@ -87,6 +88,9 @@ class FakeAppleAuth extends AuthService {
 }
 
 class FakeAppleApi extends Fake implements ApiClient {
+  @override
+  void cancelSessionRequests() {}
+
   dynamic response;
   Invocation? request;
   @override

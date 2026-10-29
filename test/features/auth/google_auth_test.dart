@@ -68,6 +68,7 @@ class FakeAuth extends AuthService {
   Future<Map<String, dynamic>> loginWithGoogle(
     String idToken, {
     bool stayLoggedIn = true,
+    String? identityHint,
   }) async {
     receivedToken = idToken;
     persistent = stayLoggedIn;
@@ -77,6 +78,9 @@ class FakeAuth extends AuthService {
 }
 
 class FakeApi extends Fake implements ApiClient {
+  @override
+  void cancelSessionRequests() {}
+
   dynamic response;
   Object? failure;
   Invocation? request;

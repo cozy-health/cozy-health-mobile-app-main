@@ -100,7 +100,10 @@ void main() {
     await local.clearAllUserData();
     local.syncPaused = false;
     await TokenStorage().saveToken('synthetic-token');
-    await TokenStorage().saveRefreshToken(null);
+    await TokenStorage().saveRefreshToken(
+      null,
+      expectedGeneration: TokenStorage.generation,
+    );
     adapter = LifecycleAdapter();
     ApiClient().transportForTesting = adapter;
   });

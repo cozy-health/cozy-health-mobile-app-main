@@ -12,15 +12,18 @@ import '../services/age_eligibility_service.dart';
 import '../services/consent_refresh_signal.dart';
 import '../storage/token_storage.dart';
 
+typedef _RefreshedSession = ({String token, int generation});
+
 class AuthInterceptor extends Interceptor {
   AuthInterceptor({this.dio, this.onSessionExpired});
   final Dio? dio;
   final Future<void> Function()? onSessionExpired;
-  Future<String?>? _refreshing;
+  Future<_RefreshedSession?>? _refreshing;
   String? _rotatedFrom;
+  int? _rotatedFromGeneration, _rotatedGeneration;
   final _tokens = TokenStorage();
 
-  Future<String?> _refresh() async {
+  Future<_RefreshedSession?> _refresh() async {
     final generation = TokenStorage.generation;
     final refresh = await _tokens.getRefreshToken();
     if (refresh == null || dio == null) return null;
@@ -38,17 +41,20 @@ class AuthInterceptor extends Interceptor {
         return null;
       }
       // A logout while refresh is in flight must not restore the session.
-      if (generation != TokenStorage.generation ||
-          await _tokens.getRefreshToken() != refresh) {
+      final storedRefresh = await _tokens.getRefreshToken();
+      if (generation != TokenStorage.generation || storedRefresh != refresh) {
         return null;
       }
-      await _tokens.saveToken(
+      final installedGeneration = await _tokens.saveSession(
         data['token'],
+        refreshToken: data['refresh_token'],
         stayLoggedIn: !_tokens.isSessionOnly,
       );
-      await _tokens.saveRefreshToken(data['refresh_token']);
+      if (TokenStorage.generation != installedGeneration) return null;
       _rotatedFrom = previous;
-      return data['token'];
+      _rotatedFromGeneration = generation;
+      _rotatedGeneration = installedGeneration;
+      return (token: data['token'] as String, generation: installedGeneration);
     } catch (_) {
       return null;
     }
@@ -64,6 +70,16 @@ class AuthInterceptor extends Interceptor {
     }
 
     final generation = TokenStorage.generation;
+    final expected = options.extra['expectedSessionGeneration'];
+    if (expected != null && expected != generation) {
+      return handler.reject(
+        DioException(
+          requestOptions: options,
+          type: DioExceptionType.cancel,
+          error: 'The original session ended',
+        ),
+      );
+    }
     final token = await AuthTokenService.getToken();
     if (generation != TokenStorage.generation) {
       return handler.reject(
@@ -94,9 +110,15 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
+    final origin = err.requestOptions.extra['sessionGeneration'];
+    final currentRotation =
+        origin == _rotatedFromGeneration &&
+        TokenStorage.generation == _rotatedGeneration &&
+        err.requestOptions.headers['Authorization'] == 'Bearer $_rotatedFrom';
     if (err.requestOptions.extra['sessionGeneration'] != null &&
         err.requestOptions.extra['sessionGeneration'] !=
-            TokenStorage.generation) {
+            TokenStorage.generation &&
+        !currentRotation) {
       return handler.next(err);
     }
     if (err.response?.statusCode == 401 &&
@@ -107,25 +129,36 @@ class AuthInterceptor extends Interceptor {
         // Concurrent 401s share one rotation; late 401s use the already updated token.
         final current = await _tokens.getToken();
         final sent = err.requestOptions.headers['Authorization'];
-        String? token;
+        _RefreshedSession? renewed;
         if (current != null && sent != 'Bearer $current') {
-          if (sent != 'Bearer $_rotatedFrom') return handler.next(err);
-          token = current;
+          if (sent != 'Bearer $_rotatedFrom' ||
+              origin != _rotatedFromGeneration ||
+              TokenStorage.generation != _rotatedGeneration) {
+            return handler.next(err);
+          }
+          renewed = (token: current, generation: TokenStorage.generation);
         } else {
           _refreshing ??= _refresh();
           final pending = _refreshing!;
-          token = await pending;
+          renewed = await pending;
           if (identical(_refreshing, pending)) _refreshing = null;
         }
-        if (token != null) {
+        if (renewed != null) {
+          if (renewed.generation != TokenStorage.generation) {
+            return handler.next(err);
+          }
           try {
             final response = await dio!.fetch(
               err.requestOptions.copyWith(
                 headers: {
                   ...err.requestOptions.headers,
-                  'Authorization': 'Bearer $token',
+                  'Authorization': 'Bearer ${renewed.token}',
                 },
-                extra: {...err.requestOptions.extra, 'refreshed': true},
+                extra: {
+                  ...err.requestOptions.extra,
+                  'refreshed': true,
+                  'expectedSessionGeneration': renewed.generation,
+                },
               ),
             );
             return handler.resolve(response);
@@ -134,13 +167,26 @@ class AuthInterceptor extends Interceptor {
           }
         }
       }
+      // An awaited refresh may have finished after logout or another login.
+      // Only its original session may be cleared or redirected.
+      if (origin != null && origin != TokenStorage.generation) {
+        return handler.next(err);
+      }
+      final clearedGeneration = TokenStorage.generation + 1;
       await AuthTokenService.clearToken();
+      if (TokenStorage.generation != clearedGeneration) {
+        return handler.next(err);
+      }
       // Preserve account-scoped unsynced drafts during reauthentication.
       if (onSessionExpired != null) {
         await onSessionExpired!();
       } else {
         // A sync request must finish before account switching waits for it.
         unawaited(LocalDbService().activateGuestAfterSync());
+      }
+
+      if (TokenStorage.generation != clearedGeneration) {
+        return handler.next(err);
       }
 
       final context = AppRouter.navigatorKey.currentContext;
