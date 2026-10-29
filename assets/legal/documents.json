@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "base_url": "https://cozyhealth.org",
-  "release": "launch-no-ai",
+  "release": "effective-2026-10-29",
   "review_issues": [
     "Obtain written Railway confirmation/appropriate agreement covering sensitive health data and record applicable international-transfer safeguards; verify Brevo, Formspree and support-mail vendor arrangements.",
-    "Complete and verify age/guardian enforcement for users aged 13–17, including social-sign-in and offline paths, before enabling health-data features for minors.",
+    "Review applicable local age/consent conditions and country availability for the intended 13+ audience; store age ratings are not identity verification. The custom guardian workflow remains retired.",
     "Verify and activate the approved retention limits across private files, backups, routine security logs and Formspree; document legal holds and deletion replay after restoration.",
     "Complete country-by-country availability/representation/health-data review and children’s privacy impact assessment before worldwide health-data activation.",
     "Assign operational safety escalation and appeal cover and verify permissions for every assessment/resource before enabling that content."
@@ -19,9 +19,9 @@
       "title": "Privacy Policy",
       "route": "/privacy",
       "audience": "consumer",
-      "version": "1.0",
-      "updated": "2026-10-21",
-      "published": false,
+      "version": "1.1",
+      "updated": "2026-10-29",
+      "published": true,
       "required": true,
       "sections": [
         {
@@ -49,15 +49,15 @@
         {
           "heading": "Provider sharing is your choice",
           "paragraphs": [
-            "A linked provider can see your first name, identifier, sharing choices and assigned-resource status. Optional categories start off: mood entries; journal summaries; assessment results; and provider notes. Journal summaries may include titles, type, word count and dates, but do not include journal bodies, transcripts or recordings. Specific assessment-result sharing requires the applicable result permission.",
+            "A linked provider can see your first name, identifier, sharing choices and assigned-resource status. Optional categories start off: mood entries, journal summaries, assessment results and provider notes. Journal summaries include metadata such as titles, type, word count and dates. Separately, after enabling journal sharing, you can preview and explicitly confirm a written entry snapshot containing its title and body for that provider. This does not automatically share other entries, later edits, recordings or transcripts. Specific assessment-result sharing also requires the applicable permission.",
             "Providers may view or export authorized information. You can turn categories off or disconnect in My Provider. New requests respect changes; already viewed, copied or downloaded information cannot be recalled. Reconnecting starts with optional categories off."
           ]
         },
         {
           "heading": "Optional analytics and diagnostics",
           "paragraphs": [
-            "PostHog is the selected usage-analytics provider but is not configured for this launch. Once configured and only after opt-in, selected events may measure participating users’ app activity, signup/onboarding progress, general feature use, return visits, app version and platform. Analytics excludes journal text, chat messages, mood values, assessment responses/results, crisis activity, emergency contacts and student evidence. Session recording and automatic interaction capture stay off. Analytics can be disabled in Privacy settings.",
-            "Sentry diagnostic code is integrated in the app, but transmission requires a configured release and a separate crash-reporting opt-in. Filtering is designed to exclude private content and credentials. Firebase Cloud Messaging is reserved for push notifications, which remain inactive until configured; it is not our usage-analytics provider."
+            "PostHog supports optional usage analytics when configured and only after opt-in. Selected events may measure participating users? general app activity, signup/onboarding progress, general feature use, return visits, app version and platform. Analytics excludes journal text, chat messages, mood values, assessment responses/results, crisis activity, emergency contacts and student evidence. Session recording and automatic interaction capture stay off. Analytics can be disabled in Privacy settings.",
+            "Sentry supports optional technical diagnostics when configured and crash-reporting consent is enabled. Filtering is designed to exclude private content and credentials. Firebase Cloud Messaging supports push notifications when configured, permission is granted and notifications are enabled. Delivery also depends on the device, operating system and network. Firebase is not our usage-analytics provider."
           ]
         },
         {
@@ -72,15 +72,15 @@
           "heading": "Retention and deletion",
           "paragraphs": [
             "We retain active account and wellbeing information while the account is active, unless you delete an item earlier or a shorter feature-specific period applies. Confirmed account deletion removes the active account and related records covered by the deletion process. Remaining account files and recoverable backup copies must be removed or expire within 30 days, except for a documented legal obligation or hold. Restricted backups are for recovery and must not reintroduce deleted accounts into ordinary service.",
-            "Routine security and access records have a two-year limit. Raw student-verification evidence is removed within 30 days of collection; the eligibility decision and expiry may remain while needed to administer the account. Inactive waitlist entries are removed after 12 months without renewed interest. We retain only the minimum records needed for a documented legal obligation, dispute or incident and review each exception when it ends.",
+            "Routine security and access records have a two-year limit. Raw student-verification evidence becomes inaccessible immediately on approval or rejection and is deleted immediately; failed physical deletion is retained only for restricted cleanup retry. Pending evidence expires 14 days after submission and is removed through the cleanup process. The eligibility decision and expiry may remain while needed to administer the account. Inactive waitlist entries are removed after 12 months without renewed interest. We retain only the minimum records needed for a documented legal obligation, dispute or incident and review each exception when it ends.",
             "Provider-held copies are controlled by the provider and cannot be recalled by deleting your Cozy Health account. Unlinking a provider is not account deletion. Visit cozyhealth.org/support to request deletion without the app. Store subscriptions, when available, must be cancelled through the store separately."
           ]
         },
         {
           "heading": "Young people",
           "paragraphs": [
-            "Cozy Health is intended for ages 13 and older; under-13 accounts are not permitted. Users aged 13–17 need the applicable verified guardian authorization before health-data features are enabled. Additional local age and consent restrictions may apply. Worldwide interest does not mean every feature is available in every country.",
-            "A parent or legal guardian confirms email access, declares their authority and explicitly authorizes the processing described in the effective documents. This records email-confirmed authorization; it does not verify identity or guardianship. Cozy Health handles disputes and corrections. Health-data access remains restricted wherever additional assurance or country approval is outstanding. Guardian approval does not automatically expose private journals, messages or provider records. Read cozyhealth.org/guardians for the Young People and Guardian Notice."
+            "Cozy Health is intended for people aged 13 and older. Store age restrictions and regional availability apply to distribution. Cozy does not operate a custom date-of-birth or guardian-authorization workflow. Store age ratings are not proof of identity or legal eligibility for every feature. Additional local age and consent conditions may apply.",
+            "Ordinary health-data and provider-sharing choices remain separate. An age rating or a provider connection does not give another person access to private journals, messages or records. Contact Team@cozyhealth.org about eligibility, privacy or an account concern."
           ]
         },
         {
@@ -98,16 +98,17 @@
           ]
         }
       ],
-      "editorial_status": "final"
+      "editorial_status": "final",
+      "effective_date": "2026-10-29"
     },
     {
       "id": "tos",
       "title": "Terms of Use",
       "route": "/terms",
       "audience": "consumer",
-      "version": "1.0",
-      "updated": "2026-10-21",
-      "published": false,
+      "version": "1.1",
+      "updated": "2026-10-29",
+      "published": true,
       "required": true,
       "sections": [
         {
@@ -160,16 +161,17 @@
           ]
         }
       ],
-      "editorial_status": "final"
+      "editorial_status": "final",
+      "effective_date": "2026-10-29"
     },
     {
       "id": "health_data",
       "title": "Health Data Consent",
       "route": "/health-data-consent",
       "audience": "consumer",
-      "version": "1.0",
-      "updated": "2026-10-21",
-      "published": false,
+      "version": "1.1",
+      "updated": "2026-10-29",
+      "published": true,
       "required": true,
       "sections": [
         {
@@ -193,19 +195,20 @@
         {
           "heading": "Young people",
           "paragraphs": [
-            "Users aged 13–17 need the applicable verified guardian authorization before health-data features are enabled. A guardian’s authorization is not automatic permission to read private journals, messages or provider records. The young person’s rights and choices remain relevant."
+            "Cozy Health is intended for people aged 13 and older, subject to store availability and applicable local age and consent conditions. The service does not operate a custom guardian-authorization workflow. Store age ratings do not establish identity or replace this separate health-data choice. Contact Team@cozyhealth.org with an eligibility or privacy concern."
           ]
         }
       ],
-      "editorial_status": "final"
+      "editorial_status": "final",
+      "effective_date": "2026-10-29"
     },
     {
       "id": "health_disclosures",
       "title": "Health and Assessment Disclosures",
       "route": "/health-disclosures",
       "audience": "consumer",
-      "version": "1.0",
-      "updated": "2026-10-21",
+      "version": "1.1",
+      "updated": "2026-10-29",
       "published": true,
       "required": false,
       "sections": [
@@ -243,15 +246,16 @@
           ]
         }
       ],
-      "editorial_status": "final"
+      "editorial_status": "final",
+      "effective_date": "2026-10-29"
     },
     {
       "id": "ugc_guidelines",
       "title": "Community Guidelines and Child Safety Standards",
       "route": "/community-standards",
       "audience": "consumer",
-      "version": "1.0",
-      "updated": "2026-10-21",
+      "version": "1.1",
+      "updated": "2026-10-29",
       "published": true,
       "required": false,
       "sections": [
@@ -278,7 +282,7 @@
           "heading": "Child safety",
           "paragraphs": [
             "Child sexual abuse material, exploitation, grooming, sexual solicitation of minors and facilitation of child abuse are prohibited. Team@cozyhealth.org is the shared team contact for child-safety reports. Include the account/content location and non-graphic context; do not download, forward or redistribute illegal imagery.",
-            "We assess reports, restrict harmful content/access, preserve necessary evidence securely and make legally required reports to relevant authorities. The shared inbox is not continuously monitored or an emergency reporting service. Under-13 accounts are not permitted; additional age/guardian requirements apply to younger users."
+            "We assess reports, restrict harmful content/access, preserve necessary evidence securely and make legally required reports to relevant authorities. The shared inbox is not continuously monitored or an emergency reporting service. Under-13 accounts are not permitted; additional local age and consent conditions may apply."
           ]
         },
         {
@@ -294,15 +298,16 @@
           ]
         }
       ],
-      "editorial_status": "final"
+      "editorial_status": "final",
+      "effective_date": "2026-10-29"
     },
     {
       "id": "support",
       "title": "Support, Complaints and Account Deletion",
       "route": "/support",
       "audience": "consumer",
-      "version": "1.0",
-      "updated": "2026-10-21",
+      "version": "1.1",
+      "updated": "2026-10-29",
       "published": true,
       "required": false,
       "sections": [
@@ -342,15 +347,16 @@
           ]
         }
       ],
-      "editorial_status": "final"
+      "editorial_status": "final",
+      "effective_date": "2026-10-29"
     },
     {
       "id": "cookies",
       "title": "Cookie Notice",
       "route": "/cookies",
       "audience": "consumer",
-      "version": "1.0",
-      "updated": "2026-10-21",
+      "version": "1.1",
+      "updated": "2026-10-29",
       "published": true,
       "required": false,
       "sections": [
@@ -377,16 +383,17 @@
           ]
         }
       ],
-      "editorial_status": "final"
+      "editorial_status": "final",
+      "effective_date": "2026-10-29"
     },
     {
       "id": "marketing",
       "title": "Marketing Consent Notice",
       "route": "/marketing",
       "audience": "consumer",
-      "version": "1.0",
-      "updated": "2026-10-21",
-      "published": false,
+      "version": "1.1",
+      "updated": "2026-10-29",
+      "published": true,
       "required": false,
       "sections": [
         {
@@ -399,20 +406,21 @@
           "heading": "Withdraw any time",
           "paragraphs": [
             "Turn Marketing emails off in Privacy settings or use an unsubscribe option supplied with promotional mail. Withdrawal does not stop necessary service and security communications. Waitlist requests are handled according to the purpose stated on the waitlist form.",
-            "I can also email Team@cozyhealth.org with the subject “Unsubscribe”. Waitlist interest is not consent to unrelated offers. Additional age/guardian requirements apply where required."
+            "I can also email Team@cozyhealth.org with the subject “Unsubscribe”. Waitlist interest is not consent to unrelated offers. Additional local age and consent conditions apply where required."
           ]
         }
       ],
-      "editorial_status": "final"
+      "editorial_status": "final",
+      "effective_date": "2026-10-29"
     },
     {
       "id": "tos",
       "title": "Provider Terms of Use",
       "route": "/providers/terms",
       "audience": "provider",
-      "version": "1.0",
-      "updated": "2026-10-21",
-      "published": false,
+      "version": "1.1",
+      "updated": "2026-10-29",
+      "published": true,
       "required": true,
       "sections": [
         {
@@ -437,7 +445,7 @@
         {
           "heading": "Data you may access",
           "paragraphs": [
-            "Patient identity/link status and assignment progress may remain visible while connected. Optional sharing covers mood entries, journal summaries, assessment results and provider notes as authorized. Journal bodies, recordings and transcripts are excluded from journal-sharing endpoints. Titles and summaries can still be sensitive."
+            "Patient identity/link status and assignment progress may remain visible while connected. Optional sharing covers mood entries, journal summaries, assessment results and provider notes as authorized. A separate, explicitly confirmed written-entry share can include a snapshot of its title and body. This does not automatically include later edits, recordings, transcripts or other entries. Titles and summaries can also be sensitive."
           ]
         },
         {
@@ -451,7 +459,7 @@
           "heading": "Patient rights and practice responsibilities",
           "paragraphs": [
             "Maintain your practice’s own privacy notices and permissions. Coordinate rights requests with Team@cozyhealth.org. Where patients are minors, verify the authority and permissions applicable to the service you provide. Platform policy acceptance does not replace professional consent requirements.",
-            "Guardian authorization for platform eligibility does not automatically give access to private journals, messages or professional records. Respect the young person’s confidentiality and applicable rights."
+            "An age rating or provider connection does not automatically give another person access to private journals, messages or professional records. Respect the young person’s confidentiality and applicable rights."
           ]
         },
         {
@@ -470,16 +478,17 @@
           ]
         }
       ],
-      "editorial_status": "final"
+      "editorial_status": "final",
+      "effective_date": "2026-10-29"
     },
     {
       "id": "privacy_policy",
       "title": "Provider Privacy Notice",
       "route": "/providers/privacy",
       "audience": "provider",
-      "version": "1.0",
-      "updated": "2026-10-21",
-      "published": false,
+      "version": "1.1",
+      "updated": "2026-10-29",
+      "published": true,
       "required": true,
       "sections": [
         {
@@ -498,7 +507,7 @@
         {
           "heading": "Patient workflows",
           "paragraphs": [
-            "We process patient links and sharing choices, assigned-resource status, provider notes, direct provider messages, authorized assessment results and generated reports. Access is scoped to the active relationship and relevant permissions. Journal-sharing endpoints exclude full journal text, recordings and transcripts."
+            "We process patient links and sharing choices, assigned-resource status, provider notes, direct provider messages, authorized assessment results and generated reports. Access is scoped to the active relationship and relevant permissions. Journal summaries exclude full text. A separately confirmed written-entry share can expose its title and body snapshot to the chosen provider; it does not include recordings or transcripts."
           ]
         },
         {
@@ -519,7 +528,7 @@
         {
           "heading": "Analytics and diagnostics",
           "paragraphs": [
-            "PostHog is unconfigured for launch and patient-data dashboard screens are not instrumented with it. Optional consumer analytics excludes patient content, assessment results, crisis activity and provider messages. Any configured technical diagnostics must exclude patient content and credentials."
+            "Patient-data dashboard screens are not instrumented with PostHog. Optional consumer analytics excludes patient content, assessment results, crisis activity and provider messages. Any configured technical diagnostics must exclude patient content and credentials."
           ]
         },
         {
@@ -537,54 +546,8 @@
           ]
         }
       ],
-      "editorial_status": "final"
-    },
-    {
-      "id": "guardians",
-      "title": "Young People and Guardian Notice",
-      "route": "/guardians",
-      "audience": "consumer",
-      "version": "1.0",
-      "updated": "2026-10-21",
-      "published": false,
-      "required": false,
-      "sections": [
-        {
-          "heading": "Who this is for",
-          "paragraphs": [
-            "Cozy Health Limited (registration number 8215009), Igwe Street, Rumuodara, Rivers State, Nigeria, provides Cozy Health for ages 13 and older. This notice explains the authorization required before users aged 13–17 can use health-data features. Under-13 accounts are not permitted. Local law may impose additional restrictions."
-          ]
-        },
-        {
-          "heading": "Before health-data features are enabled",
-          "paragraphs": [
-            "We ask for date of birth and country of residence before private features can open. A parent or legal guardian confirms email access, declares adulthood and authority, reviews the current effective Terms, Privacy Policy, Health-Data Consent and this notice, and explicitly authorizes participation. Ordinary email authorization is automated. Email access and self-declaration do not prove identity or guardianship; health-data features remain restricted where additional assurance or country approval is required. The young person also makes their own applicable consent choices.",
-            "Do not send identity documents, full journals or medical records by ordinary email. Contact Team@cozyhealth.org for the secure verification instructions available for your country. If verified authorization cannot be obtained, health-data access must remain unavailable. Emergency information must remain accessible."
-          ]
-        },
-        {
-          "heading": "Privacy and independent choices",
-          "paragraphs": [
-            "Guardian authorization does not automatically expose private journals, messages or provider records. We consider the young person’s rights, confidentiality, maturity and applicable law before disclosure. Providers remain responsible for additional permissions/confidentiality rules for their professional service.",
-            "Analytics, diagnostics, marketing and provider sharing remain separate choices. Private health information is not used for targeted advertising. Verification must collect only necessary information and explain its retention before collection."
-          ]
-        },
-        {
-          "heading": "Changes, withdrawal and help",
-          "paragraphs": [
-            "A guardian or young person can contact Team@cozyhealth.org about withdrawal, incorrect information, a changed guardian relationship or privacy concerns. We verify authority proportionately and consider the young person’s rights before disclosure or account action. On reaching adulthood, the individual must make their own applicable choices; guardian authorization does not provide indefinite authority.",
-            "Email Team@cozyhealth.org. Requests enter a shared team queue and are assigned to an available team member. Responses are generally faster between 8am and 5pm West Africa Time (WAT, UTC+1). These are not guaranteed operating hours or a response-time promise; the inbox is not continuously monitored."
-          ]
-        },
-        {
-          "heading": "Internet access and team support",
-          "paragraphs": [
-            "Young people need an online eligibility check to open private features. Public crisis resources and calming exercises remain available offline. Existing private records and pending changes are preserved securely while access is restricted.",
-            "Cozy Health handles disputed requests, date-of-birth corrections, changes of guardian, appeals and privacy requests through the team queue. Do not send identity documents or private journals by ordinary email. We do not automatically give guardians access to private records. An unresolved dispute can pause private access."
-          ]
-        }
-      ],
-      "editorial_status": "final"
+      "editorial_status": "final",
+      "effective_date": "2026-10-29"
     }
   ]
 }
