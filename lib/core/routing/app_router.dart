@@ -289,32 +289,50 @@ class AppRouter {
       GoRoute(
         path: insights,
         name: 'insights',
-        builder: (_, __) => const InsightsHomeScreen(),
+        builder: (_, __) => const PlanFeatureGate(
+          feature: 'trends_dashboard',
+          child: InsightsHomeScreen(),
+        ),
       ),
       GoRoute(
         path: insightsMoodTrend,
         name: 'insightsMoodTrend',
-        builder: (_, __) => const MoodTrendScreen(),
+        builder: (_, __) => const PlanFeatureGate(
+          feature: 'trends_dashboard',
+          child: MoodTrendScreen(),
+        ),
       ),
       GoRoute(
         path: insightsTriggers,
         name: 'insightsTriggers',
-        builder: (_, __) => const TriggersAnalysisScreen(),
+        builder: (_, __) => const PlanFeatureGate(
+          feature: 'trends_dashboard',
+          child: TriggersAnalysisScreen(),
+        ),
       ),
       GoRoute(
         path: insightsSleepMood,
         name: 'insightsSleepMood',
-        builder: (_, __) => const SleepMoodScreen(),
+        builder: (_, __) => const PlanFeatureGate(
+          feature: 'trends_dashboard',
+          child: SleepMoodScreen(),
+        ),
       ),
       GoRoute(
         path: insightsActivityMood,
         name: 'insightsActivityMood',
-        builder: (_, __) => const ActivityMoodScreen(),
+        builder: (_, __) => const PlanFeatureGate(
+          feature: 'trends_dashboard',
+          child: ActivityMoodScreen(),
+        ),
       ),
       GoRoute(
         path: insightsMonthlyReport,
         name: 'insightsMonthlyReport',
-        builder: (_, __) => const MonthlyReportScreen(),
+        builder: (_, __) => const PlanFeatureGate(
+          feature: 'trends_dashboard',
+          child: MonthlyReportScreen(),
+        ),
       ),
       GoRoute(
         path: moodFeeling,

@@ -13,7 +13,12 @@ class PlanAccessException extends ApiException {
 class PlanAccessService {
   static final instance = PlanAccessService();
   Future<void> require(String feature) async {
-    if (!FeatureFlagsService.instance.isEnabled('plan_access')) return;
+    await requireUntil(feature);
+  }
+
+  /// Verified expiry lets a mounted premium screen close when access ends.
+  Future<DateTime?> requireUntil(String feature) async {
+    if (!FeatureFlagsService.instance.isEnabled('plan_access')) return null;
     final local = LocalDbService();
     final owner = local.activeUserId;
     final generation = TokenStorage.generation;
@@ -49,11 +54,11 @@ class PlanAccessService {
         'Connect to the internet to check your plan, then try again. Your existing records remain available.',
       );
     }
-    if (permissions['enforcement_enabled'] == false) return;
+    if (permissions['enforcement_enabled'] == false) return null;
     final expiry = DateTime.tryParse('${permissions['expires_at']}');
     if ((expiry == null || expiry.isAfter(DateTime.now())) &&
         (permissions['features'] as List).contains(feature)) {
-      return;
+      return expiry;
     }
     throw PlanAccessException(
       const {

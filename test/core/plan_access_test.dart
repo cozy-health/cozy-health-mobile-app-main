@@ -1,3 +1,9 @@
+import '../support/local_fonts.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cozy_health/core/routing/app_router.dart';
+import 'package:cozy_health/core/theme/app_theme.dart';
+import 'package:cozy_health/core/widgets/plan_feature_gate.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:cozy_health/core/api/api_client.dart';
@@ -82,6 +88,7 @@ void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await fixture.open();
+    await installLocalTestFonts();
     registerSyncAdapters();
   });
   setUp(() async {
@@ -101,6 +108,7 @@ void main() {
     await FeatureFlagsService.instance.refresh();
     await local.waitForSyncIdle();
     await fixture.close();
+    resetLocalTestFonts();
   });
   test(
     'Standard allows written journals and denies voice before local persistence',
@@ -185,5 +193,175 @@ void main() {
       ),
     );
     expect(await TokenStorage().getToken(), 'fixture-only');
+  });
+
+  for (final path in [
+    AppRouter.insights,
+    AppRouter.insightsMoodTrend,
+    AppRouter.insightsTriggers,
+    AppRouter.insightsSleepMood,
+    AppRouter.insightsActivityMood,
+    AppRouter.insightsMonthlyReport,
+  ]) {
+    testWidgets(
+      'Standard direct link $path shows plans before private insights',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: path,
+          routes: AppRouter.router.configuration.routes,
+        );
+        await tester.runAsync(() async {
+          await tester.pumpWidget(
+            MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 40));
+        });
+        for (var i = 0; i < 5; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 25)),
+          );
+          await tester.pump();
+        }
+        expect(
+          find.text('Included with Premium and verified Student'),
+          findsOneWidget,
+        );
+        expect(find.text('View plans'), findsOneWidget);
+        expect(find.text('Retry'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        router.dispose();
+      },
+    );
+  }
+
+  test(
+    'offline trends require a finite unexpired permission and do not follow another account',
+    () async {
+      adapter.features = ['trends_dashboard'];
+      final expiry = await PlanAccessService.instance.requireUntil(
+        'trends_dashboard',
+      );
+      expect(expiry, isNotNull);
+      adapter.offline = true;
+      await PlanAccessService.instance.require('trends_dashboard');
+      await local.activateAccount('other-trends-owner');
+      await expectLater(
+        PlanAccessService.instance.require('trends_dashboard'),
+        throwsA(isA<PlanAccessException>()),
+      );
+      await local.activateAccount('plan-owner');
+      final settings = await local.settingsBox();
+      final cached = Map<String, dynamic>.from(
+        settings.get('plan_access_v1') as Map,
+      );
+      cached['data'] = {
+        ...Map<String, dynamic>.from(cached['data'] as Map),
+        'expires_at': '2000-01-01T00:00:00Z',
+      };
+      await settings.put('plan_access_v1', cached);
+      await expectLater(
+        PlanAccessService.instance.require('trends_dashboard'),
+        throwsA(isA<PlanAccessException>()),
+      );
+    },
+  );
+
+  testWidgets(
+    'Standard plan gate stays readable in dark mode at 320px and 200% text',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.dark,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(2)),
+              child: child!,
+            ),
+            home: const PlanFeatureGate(
+              feature: 'trends_dashboard',
+              child: Text('Private trend content'),
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+      expect(find.text('Private trend content'), findsNothing);
+      expect(
+        find.text('Included with Premium and verified Student'),
+        findsOneWidget,
+      );
+      await tester.scrollUntilVisible(find.text('View plans'), 150);
+      expect(find.text('View plans'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets('mounted premium content closes at expiry and on logout', (
+    tester,
+  ) async {
+    adapter.features = ['trends_dashboard'];
+    adapter.expiry = DateTime.now()
+        .add(const Duration(seconds: 2))
+        .toUtc()
+        .toIso8601String();
+    Widget screen() => MaterialApp(
+      theme: AppTheme.light,
+      home: const PlanFeatureGate(
+        feature: 'trends_dashboard',
+        child: Scaffold(body: Text('Private trend content')),
+      ),
+    );
+    await tester.runAsync(() async {
+      await tester.pumpWidget(screen());
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+    });
+    for (var i = 0; i < 4; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 25)),
+      );
+      await tester.pump();
+    }
+    expect(find.text('Private trend content'), findsOneWidget);
+    adapter.expiry = '2000-01-01T00:00:00Z';
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(seconds: 3)),
+    );
+    await tester.pump();
+    for (var i = 0; i < 4; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 25)),
+      );
+      await tester.pump();
+    }
+    expect(find.text('Private trend content'), findsNothing);
+    expect(find.text('View plans'), findsOneWidget);
+    adapter.expiry = DateTime.now()
+        .add(const Duration(days: 1))
+        .toUtc()
+        .toIso8601String();
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Retry'));
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+    });
+    for (var i = 0; i < 4; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 25)),
+      );
+      await tester.pump();
+    }
+    expect(find.text('Private trend content'), findsOneWidget);
+    await tester.runAsync(() => TokenStorage().clearToken());
+    await tester.pump();
+    expect(find.text('Private trend content'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }
