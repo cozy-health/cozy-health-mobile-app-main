@@ -1,3 +1,4 @@
+import '../widgets/protected_signin.dart';
 import '../../../../core/widgets/analytics_opt_in.dart';
 import '../../../../core/services/usage_analytics.dart';
 import '../../../../core/services/legal_documents.dart';
@@ -119,20 +120,32 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
     try {
       await UsageAnalytics.instance.track('signup_started');
-      await _authService.register(
-        firstname: name,
-        lastname: '',
-        email: email,
-        password: password,
-        confirmPassword: _confirmController.text,
+      if (!mounted) return;
+      final completed = await runProtectedSignIn(
+        context,
+        _authService,
+        () => _authService.register(
+          firstname: name,
+          lastname: '',
+          email: email,
+          password: password,
+          confirmPassword: _confirmController.text,
+        ),
+        clearSecrets: () {
+          _passwordController.clear();
+          _confirmController.clear();
+        },
       );
+      if (completed == null) return;
       await UsageAnalytics.instance.track('signup_completed');
       if (!mounted) return;
       showAuthToast(
         context,
         type: AuthToastType.success,
         title: 'Welcome to Cozy Health.',
-        description: "Let's verify your email.",
+        description: completed['challenge_required'] == false
+            ? 'Continue your setup.'
+            : "Let's verify your email.",
       );
       context.go(AppRouter.congratulations);
     } on ApiException catch (e) {

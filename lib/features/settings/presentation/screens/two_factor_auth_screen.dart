@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../auth/presentation/screens/signin_protection_screen.dart';
 
+/// Compatibility screen for existing navigation links; no authenticator app.
 class TwoFactorAuthScreen extends StatelessWidget {
   const TwoFactorAuthScreen({super.key});
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Two-factor authentication')),
-    body: const SafeArea(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text(
-          'Two-factor authentication setup is not available yet. This screen has not enabled additional account protection or generated recovery codes.',
-        ),
-      ),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      const SignInProtectionScreen(settings: true);
 }

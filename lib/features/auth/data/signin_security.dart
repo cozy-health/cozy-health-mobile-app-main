@@ -79,18 +79,20 @@ class PendingSignIn {
     required this.stayLoggedIn,
     required this.newAccount,
     this.expectedAccountId,
+    this.expectedEmail,
     this.identityHint,
   });
   final SignInChallenge challenge;
   final int generation;
   final bool stayLoggedIn, newAccount;
-  final String? expectedAccountId, identityHint;
+  final String? expectedAccountId, expectedEmail, identityHint;
   PendingSignIn withChallenge(SignInChallenge value) => PendingSignIn(
     challenge: value,
     generation: generation,
     stayLoggedIn: stayLoggedIn,
     newAccount: newAccount,
     expectedAccountId: expectedAccountId,
+    expectedEmail: expectedEmail,
     identityHint: identityHint,
   );
 }
@@ -133,7 +135,10 @@ class VerifiedSignIn {
         user['id'] == null ||
         user['email'] is! String ||
         (attempt.expectedAccountId != null &&
-            user['id'].toString() != attempt.expectedAccountId)) {
+            user['id'].toString() != attempt.expectedAccountId) ||
+        (attempt.expectedEmail != null &&
+            (user['email'] as String).trim().toLowerCase() !=
+                attempt.expectedEmail)) {
       throw const FormatException('Invalid verified sign-in identity.');
     }
   }
@@ -168,7 +173,14 @@ class SignInPreferences {
       if (entry.key is! String || entry.value is! String) {
         throw const FormatException('Invalid question catalog.');
       }
-      questions.add(SignInQuestion(entry.key as String, entry.value as String));
+      final id = entry.key as String, prompt = entry.value as String;
+      if (id.isEmpty ||
+          id.length > 100 ||
+          prompt.isEmpty ||
+          prompt.length > 300) {
+        throw const FormatException('Invalid question catalog.');
+      }
+      questions.add(SignInQuestion(id, prompt));
     }
     return SignInPreferences(
       enabled: data['enabled'] as bool,

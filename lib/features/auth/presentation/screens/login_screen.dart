@@ -1,3 +1,4 @@
+import '../widgets/protected_signin.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -100,11 +101,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     try {
-      await _authService.login(
-        email: email,
-        password: password,
-        stayLoggedIn: _stayLoggedIn,
+      final completed = await runProtectedSignIn(
+        context,
+        _authService,
+        () => _authService.login(
+          email: email,
+          password: password,
+          stayLoggedIn: _stayLoggedIn,
+        ),
+        clearSecrets: _passwordController.clear,
       );
+      if (completed == null) return;
       if (!mounted) return;
 
       showAuthToast(

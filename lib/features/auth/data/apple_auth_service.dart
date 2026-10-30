@@ -10,6 +10,7 @@ class AppleSignInOutcome {
   final String? authorizationCode;
   final String? fullName;
   final String? email;
+  final String? identityHint;
   final String? errorMessage;
   const AppleSignInOutcome(
     this.result, {
@@ -17,6 +18,7 @@ class AppleSignInOutcome {
     this.authorizationCode,
     this.fullName,
     this.email,
+    this.identityHint,
     this.errorMessage,
   });
 }
@@ -80,12 +82,14 @@ class AppleAuthService {
           .map((part) => part.trim())
           .where((part) => part.isNotEmpty)
           .join(' ');
+      final identifier = credential.userIdentifier;
       return AppleSignInOutcome(
         AppleSignInResult.success,
         identityToken: token,
         authorizationCode: credential.authorizationCode,
         fullName: name.isEmpty ? null : name,
         email: credential.email,
+        identityHint: identifier == null ? null : 'apple:$identifier',
       );
     } on SignInWithAppleAuthorizationException catch (error) {
       if (error.code == AuthorizationErrorCode.canceled) {

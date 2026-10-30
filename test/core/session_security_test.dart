@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/api/api_exceptions.dart';
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
@@ -240,4 +241,99 @@ void main() {
       expect(first.length, 36);
     },
   );
+  test(
+    'security re-verification clears current credentials without a refresh loop',
+    () async {
+      final tokens = TokenStorage();
+      await tokens.saveSession('account-a', refreshToken: 'refresh-a');
+      var refreshes = 0, expired = 0;
+      final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+      dio.httpClientAdapter = Adapter((request) async {
+        if (request.path == '/auth/refresh') {
+          refreshes++;
+        }
+        return json('{"code":"signin_verification_required"}', 403);
+      });
+      dio.interceptors.add(
+        AuthInterceptor(
+          dio: dio,
+          onSessionExpired: () async {
+            expired++;
+          },
+        ),
+      );
+      await expectLater(dio.get('/me'), throwsA(isA<DioException>()));
+      expect(refreshes, 0);
+      expect(expired, 1);
+      expect(await tokens.getToken(), isNull);
+      expect(await tokens.getRefreshToken(), isNull);
+      dio.close();
+    },
+  );
+  test(
+    'a late security denial cannot clear or redirect the next account',
+    () async {
+      final tokens = TokenStorage();
+      await tokens.saveSession('account-a', refreshToken: 'refresh-a');
+      final entered = Completer<void>();
+      final release = Completer<ResponseBody>();
+      var expired = 0;
+      final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+      dio.httpClientAdapter = Adapter((request) async {
+        entered.complete();
+        return release.future;
+      });
+      dio.interceptors.add(
+        AuthInterceptor(
+          dio: dio,
+          onSessionExpired: () async {
+            expired++;
+          },
+        ),
+      );
+      final rejected = expectLater(
+        dio.get('/me'),
+        throwsA(isA<DioException>()),
+      );
+      await entered.future;
+      await tokens.saveSession('account-b', refreshToken: 'refresh-b');
+      release.complete(json('{"code":"signin_verification_required"}', 403));
+      await rejected;
+      expect(expired, 0);
+      expect(await tokens.getToken(), 'account-b');
+      expect(await tokens.getRefreshToken(), 'refresh-b');
+      dio.close();
+    },
+  );
+  for (final entry in {'120': 120, '-1': 60, '999999': 60}.entries) {
+    test('challenge Retry-After is bounded for header ${entry.key}', () async {
+      final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+      dio.httpClientAdapter = Adapter(
+        (request) async => ResponseBody.fromString(
+          '{}',
+          429,
+          headers: {
+            'content-type': ['application/json'],
+            'retry-after': [entry.key],
+          },
+        ),
+      );
+      dio.interceptors.add(ErrorInterceptor());
+      await expectLater(
+        dio.post('/auth/challenge/verify'),
+        throwsA(
+          isA<DioException>().having(
+            (error) => error.error,
+            'typed cooldown',
+            isA<ApiRateLimitException>().having(
+              (error) => error.retryAfterSeconds,
+              'seconds',
+              entry.value,
+            ),
+          ),
+        ),
+      );
+      dio.close();
+    });
+  }
 }

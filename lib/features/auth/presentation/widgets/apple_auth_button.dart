@@ -1,3 +1,4 @@
+import 'protected_signin.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -70,13 +71,19 @@ class _AppleAuthButtonState extends State<AppleAuthButton> {
         );
         return;
       }
-      await _auth.loginWithApple(
-        identityToken: token,
-        authorizationCode: code,
-        fullName: outcome.fullName,
-        email: outcome.email,
-        stayLoggedIn: widget.stayLoggedIn,
+      final completed = await runProtectedSignIn(
+        context,
+        _auth,
+        () => _auth.loginWithApple(
+          identityToken: token,
+          authorizationCode: code,
+          fullName: outcome.fullName,
+          email: outcome.email,
+          stayLoggedIn: widget.stayLoggedIn,
+          identityHint: outcome.identityHint,
+        ),
       );
+      if (completed == null) return;
       if (!mounted) return;
       if (widget.onSuccess != null) {
         widget.onSuccess!();

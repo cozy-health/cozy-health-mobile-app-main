@@ -51,3 +51,9 @@ class ApiUnknownException extends ApiException {
 class ApiSecureConnectionException extends ApiException {
   ApiSecureConnectionException() : super('Secure connection unavailable');
 }
+
+class ApiRateLimitException extends ApiException {
+  ApiRateLimitException(super.message, this.retryAfterSeconds)
+    : super(statusCode: 429);
+  final int retryAfterSeconds;
+}

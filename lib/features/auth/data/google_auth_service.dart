@@ -7,8 +7,14 @@ enum GoogleSignInResult { success, cancelled, error }
 class GoogleSignInOutcome {
   final GoogleSignInResult result;
   final String? idToken;
+  final String? identityHint;
   final String? errorMessage;
-  const GoogleSignInOutcome(this.result, {this.idToken, this.errorMessage});
+  const GoogleSignInOutcome(
+    this.result, {
+    this.idToken,
+    this.errorMessage,
+    this.identityHint,
+  });
 }
 
 class GoogleAuthService {
@@ -58,7 +64,11 @@ class GoogleAuthService {
           errorMessage: 'Google did not return an ID token. Please try again.',
         );
       }
-      return GoogleSignInOutcome(GoogleSignInResult.success, idToken: token);
+      return GoogleSignInOutcome(
+        GoogleSignInResult.success,
+        idToken: token,
+        identityHint: 'google:${account.id}',
+      );
     } on GoogleSignInException catch (error) {
       if (error.code == GoogleSignInExceptionCode.canceled) {
         return const GoogleSignInOutcome(GoogleSignInResult.cancelled);

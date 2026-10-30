@@ -43,6 +43,8 @@ class FakeGoogle extends Fake implements GoogleSignIn {
 
 class FakeAccount extends Fake implements GoogleSignInAccount {
   FakeAccount(this.token);
+  @override
+  String get id => 'google-fixture-account';
   final String? token;
   @override
   GoogleSignInAuthentication get authentication =>

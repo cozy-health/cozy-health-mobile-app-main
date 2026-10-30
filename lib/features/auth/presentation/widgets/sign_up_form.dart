@@ -1,3 +1,4 @@
+import 'protected_signin.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/app_snackbar.dart';
@@ -222,13 +223,22 @@ class _SignUpFormWidgetState extends State<SignUpFormWidget> {
     });
 
     try {
-      await _authService.register(
-        firstname: username,
-        lastname: '',
-        email: email,
-        password: password,
-        confirmPassword: confirmPassword,
+      final completed = await runProtectedSignIn(
+        context,
+        _authService,
+        () => _authService.register(
+          firstname: username,
+          lastname: '',
+          email: email,
+          password: password,
+          confirmPassword: confirmPassword,
+        ),
+        clearSecrets: () {
+          _passwordController.clear();
+          _confirmPasswordController.clear();
+        },
       );
+      if (completed == null) return;
 
       if (!mounted) return;
 

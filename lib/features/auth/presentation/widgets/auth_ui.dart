@@ -20,6 +20,7 @@ class AuthScaffold extends StatelessWidget {
   final List<Widget> children;
   final bool showBack;
   final Widget? footer;
+  final VoidCallback? onBack;
 
   const AuthScaffold({
     super.key,
@@ -28,6 +29,7 @@ class AuthScaffold extends StatelessWidget {
     required this.children,
     this.showBack = true,
     this.footer,
+    this.onBack,
   });
 
   @override
@@ -44,7 +46,7 @@ class AuthScaffold extends StatelessWidget {
             children: [
               if (showBack)
                 IconButton(
-                  onPressed: () => context.pop(),
+                  onPressed: onBack ?? () => context.pop(),
                   icon: Icon(Icons.arrow_back),
                   color: colorScheme.onSurface,
                   padding: EdgeInsets.zero,
@@ -97,6 +99,7 @@ class AuthTextField extends StatefulWidget {
   final TextEditingController controller;
   final TextInputType? keyboardType;
   final bool obscure;
+  final int? maxLength;
   final bool enabled;
   final ValueChanged<String>? onChanged;
   final Iterable<String>? autofillHints;
@@ -110,6 +113,7 @@ class AuthTextField extends StatefulWidget {
     this.success,
     this.keyboardType,
     this.obscure = false,
+    this.maxLength,
     this.enabled = true,
     this.onChanged,
     this.autofillHints,
@@ -191,6 +195,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
           ),
           child: TextField(
             autofillHints: widget.autofillHints,
+            maxLength: widget.maxLength,
+            autocorrect: !widget.obscure,
+            enableSuggestions: !widget.obscure,
             onTapOutside: (_) => _focusNode.unfocus(),
             scrollPadding: const EdgeInsets.all(48),
             controller: widget.controller,

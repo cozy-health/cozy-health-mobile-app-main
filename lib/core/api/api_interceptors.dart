@@ -11,6 +11,7 @@ import '../services/local_db_service.dart';
 import '../services/age_eligibility_service.dart';
 import '../services/consent_refresh_signal.dart';
 import '../storage/token_storage.dart';
+import '../storage/device_proof_storage.dart';
 
 typedef _RefreshedSession = ({String token, int generation});
 
@@ -29,9 +30,16 @@ class AuthInterceptor extends Interceptor {
     if (refresh == null || dio == null) return null;
     try {
       final previous = await _tokens.getToken();
+      final proof = await DeviceProofStorage().forAccount(
+        LocalDbService().activeUserId,
+      );
+      if (generation != TokenStorage.generation) return null;
       final response = await dio!.post(
         '/auth/refresh',
-        data: {'refresh_token': refresh},
+        data: {
+          'refresh_token': refresh,
+          if (proof != null) 'device_proof': proof,
+        },
         options: Options(extra: {'skipAuth': true}),
       );
       final data = response.data['data'];
@@ -121,11 +129,18 @@ class AuthInterceptor extends Interceptor {
         !currentRotation) {
       return handler.next(err);
     }
-    if (err.response?.statusCode == 401 &&
+    final payload = err.response?.data;
+    final verificationRequired =
+        err.response?.statusCode == 403 &&
+        payload is Map &&
+        payload['code'] == 'signin_verification_required';
+    if ((err.response?.statusCode == 401 || verificationRequired) &&
         err.requestOptions.extra['skipAuth'] != true &&
         !err.requestOptions.path.endsWith('/auth/google') &&
         !err.requestOptions.path.endsWith('/auth/apple')) {
-      if (dio != null && err.requestOptions.extra['refreshed'] != true) {
+      if (!verificationRequired &&
+          dio != null &&
+          err.requestOptions.extra['refreshed'] != true) {
         // Concurrent 401s share one rotation; late 401s use the already updated token.
         final current = await _tokens.getToken();
         final sent = err.requestOptions.headers['Authorization'];
@@ -194,7 +209,11 @@ class AuthInterceptor extends Interceptor {
         AppSnackbar.show(
           context,
           AppSnackbar.fromLegacy(
-            content: Text("Session expired. Please log in again."),
+            content: Text(
+              verificationRequired
+                  ? 'Sign in again to complete your security check.'
+                  : 'Session expired. Please log in again.',
+            ),
           ),
         );
         context.go(AppRouter.login);
@@ -314,6 +333,26 @@ class ErrorInterceptor extends Interceptor {
           retryAfterSeconds: retry != null && retry > 0 && retry <= 86400
               ? retry
               : null,
+        );
+      } else if (statusCode == 429) {
+        final retry = int.tryParse(
+          err.response?.headers.value('retry-after') ?? '',
+        );
+        exception = ApiRateLimitException(
+          'Too many attempts. Please wait before retrying.',
+          retry != null && retry > 0 && retry <= 86400 ? retry : 60,
+        );
+      } else if ((err.requestOptions.path.contains('/auth/challenge/') ||
+              err.requestOptions.path.contains('/auth/security')) &&
+          data is Map &&
+          data['message'] is String) {
+        final message = data['message'] as String;
+        exception = ApiValidationException(
+          const {},
+          message.length <= 300
+              ? message
+              : 'The security check could not be completed.',
+          statusCode: statusCode,
         );
       } else if (statusCode == 403 &&
           data is Map &&

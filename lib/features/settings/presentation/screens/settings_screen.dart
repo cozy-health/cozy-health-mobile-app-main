@@ -211,8 +211,8 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   _SettingsRow(
                     icon: Icons.security,
-                    label: 'Two-Factor Auth',
-                    onTap: () => context.push(AppRouter.twoFactorAuth),
+                    label: 'Sign-in protection',
+                    onTap: () => context.push(AppRouter.signInProtection),
                   ),
                   _SettingsRow(
                     icon: Icons.devices,

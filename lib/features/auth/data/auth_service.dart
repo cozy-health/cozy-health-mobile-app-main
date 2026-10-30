@@ -85,6 +85,7 @@ class AuthService {
       data,
       stayLoggedIn: stayLoggedIn,
       generation: generation,
+      expectedEmail: email.trim().toLowerCase(),
     );
   }
 
@@ -184,6 +185,7 @@ class AuthService {
       data,
       stayLoggedIn: true,
       generation: generation,
+      expectedEmail: email.trim().toLowerCase(),
       registration: true,
     );
   }
@@ -200,6 +202,7 @@ class AuthService {
     required int generation,
     bool registration = false,
     String? identityHint,
+    String? expectedEmail,
   }) async {
     _checkAttempt(generation);
     if (data['challenge_required'] == true) {
@@ -211,6 +214,7 @@ class AuthService {
           stayLoggedIn: stayLoggedIn,
           newAccount: registration || data['is_new_user'] == true,
           expectedAccountId: user is Map ? user['id']?.toString() : null,
+          expectedEmail: expectedEmail,
           identityHint: identityHint,
         ),
       );
@@ -252,11 +256,15 @@ class AuthService {
         if (answers != null) 'answers': answers,
       },
     );
-    _checkAttempt(attempt.generation);
-    return VerifiedSignIn(
+    final verified = VerifiedSignIn(
       data: _payload(responseMap(response)),
       attempt: attempt,
     );
+    if (attempt.generation != TokenStorage.generation) {
+      unawaited(discardVerifiedSignIn(verified));
+      throw const SignInAttemptChanged();
+    }
+    return verified;
   }
 
   Options? _provisionalOptions(VerifiedSignIn? provisional) =>
@@ -281,10 +289,17 @@ class AuthService {
     return SignInPreferences.fromJson(_payload(responseMap(response)));
   }
 
-  Future<SignInChallenge> verifySecuritySettings(String password) async {
-    final generation = TokenStorage.generation;
+  Future<SignInChallenge> verifySecuritySettings(
+    String password, {
+    int? expectedGeneration,
+    VerifiedSignIn? provisional,
+  }) async {
+    final generation = expectedGeneration ?? TokenStorage.generation;
+    _checkAttempt(generation);
     final response = await _apiClient.post(
       '/auth/security/reauthenticate',
+      withAuth: provisional == null,
+      options: _provisionalOptions(provisional),
       body: {'password': password},
     );
     _checkAttempt(generation);
@@ -293,9 +308,11 @@ class AuthService {
 
   Future<String> confirmSecuritySettings(
     SignInChallenge challenge,
-    String code,
-  ) async {
-    final generation = TokenStorage.generation;
+    String code, {
+    int? expectedGeneration,
+  }) async {
+    final generation = expectedGeneration ?? TokenStorage.generation;
+    _checkAttempt(generation);
     final response = await _apiClient.post(
       '/auth/challenge/verify',
       withAuth: false,
@@ -317,9 +334,12 @@ class AuthService {
     required String settingsToken,
     List<Map<String, String>>? questions,
     VerifiedSignIn? provisional,
+    int? expectedGeneration,
   }) async {
     final generation =
-        provisional?.attempt.generation ?? TokenStorage.generation;
+        provisional?.attempt.generation ??
+        expectedGeneration ??
+        TokenStorage.generation;
     _checkAttempt(generation);
     final response = await _apiClient.put(
       '/auth/security',
@@ -368,6 +388,23 @@ class AuthService {
       expectedGeneration: attempt.generation,
     );
     return data;
+  }
+
+  /// Revoke only this uninstalled credential; never clear a newer local account.
+  Future<void> discardVerifiedSignIn(VerifiedSignIn verified) async {
+    try {
+      await _apiClient.post(
+        ApiConstants.logout,
+        withAuth: false,
+        options: Options(
+          headers: {'Authorization': 'Bearer ${verified.data['token']}'},
+          sendTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ),
+      );
+    } catch (_) {
+      // Best effort: no credential is installed locally and the server token expires.
+    }
   }
 
   Future<Map<String, dynamic>> me() async {

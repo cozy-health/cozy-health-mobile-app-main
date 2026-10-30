@@ -133,6 +133,7 @@ class AppRouter {
   static const String accessibilitySettings = '/accessibility-settings';
   static const String emailSettings = '/email-settings';
   static const String phoneSettings = '/phone-settings';
+  static const String signInProtection = '/sign-in-protection';
   static const String twoFactorAuth = '/two-factor-auth';
   static const String connectedApps = '/connected-apps';
   static const String billingHistory = '/billing-history';
@@ -743,10 +744,11 @@ class AppRouter {
         builder: (_, __) => const PhoneSettingsScreen(),
       ),
       GoRoute(
-        path: twoFactorAuth,
-        name: 'twoFactorAuth',
+        path: signInProtection,
+        name: 'signInProtection',
         builder: (_, __) => const TwoFactorAuthScreen(),
       ),
+      GoRoute(path: twoFactorAuth, redirect: (_, __) => signInProtection),
       GoRoute(
         path: connectedApps,
         name: 'connectedApps',
