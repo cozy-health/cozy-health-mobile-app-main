@@ -106,15 +106,15 @@
       "title": "Terms of Use",
       "route": "/terms",
       "audience": "consumer",
-      "version": "1.1",
-      "updated": "2026-10-29",
+      "version": "1.2",
+      "updated": "2026-10-30",
       "published": true,
       "required": true,
       "sections": [
         {
           "heading": "Operator and eligibility",
           "paragraphs": [
-            "Cozy Health Limited (registration number 8215009), Igwe Street, Rumuodara, Rivers State, Nigeria, provides Cozy Health. These Terms govern your personal account and website use. Use accurate account information and protect your credentials. Accounts are for ages 13 and older. Users aged 13–17 require the applicable verified guardian authorization before health-data features are enabled. Additional local restrictions may apply; do not bypass eligibility checks.",
+            "Cozy Health Limited (registration number 8215009), Igwe Street, Rumuodara, Rivers State, Nigeria, provides Cozy Health. These Terms govern your personal account and website use. Use accurate account information and protect your credentials. Accounts are for people aged 13 and older. Store age restrictions and regional availability apply to distribution. Cozy does not operate a custom date-of-birth or guardian-authorization workflow. Store age ratings are not proof of identity or legal eligibility for every feature. Additional local age and consent conditions may apply; do not bypass applicable eligibility restrictions. Separate health-data consent remains required where applicable.",
             "For launch, individuals control their own accounts and choose whether to share selected information with an individual provider. These Terms do not create an organization-managed clinic service or authorize regulated processing on behalf of a healthcare organization. Health-data consent and optional choices are separate from accepting these Terms."
           ]
         },
@@ -162,7 +162,7 @@
         }
       ],
       "editorial_status": "final",
-      "effective_date": "2026-10-29"
+      "effective_date": "2026-10-30"
     },
     {
       "id": "health_data",

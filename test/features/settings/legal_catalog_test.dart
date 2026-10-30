@@ -59,8 +59,9 @@ void main() {
     expect(consumer.length, 8);
     expect(consumer.any((doc) => doc['id'] == 'guardians'), isFalse);
     for (final doc in consumer) {
-      expect(doc['version'], '1.1');
-      expect(doc['effective_date'], '2026-10-29');
+      final isTerms = doc['id'] == 'tos';
+      expect(doc['version'], isTerms ? '1.2' : '1.1');
+      expect(doc['effective_date'], isTerms ? '2026-10-30' : '2026-10-29');
       expect(doc['published'], isTrue);
       final row = find.byKey(ValueKey('legal-document-${doc['id']}'));
       await tester.scrollUntilVisible(
