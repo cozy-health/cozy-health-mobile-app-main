@@ -140,7 +140,17 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
           _state = result;
           _dismissed.addAll(dismissed);
           _session = token;
-          _verified = true;
+          final unavailable =
+              result != null &&
+              (result.enforceBlocking ||
+                  widget.forceBlocking ||
+                  _requiredByServer) &&
+              !result.requiredDocumentsAvailable;
+          _verified = !unavailable;
+          if (unavailable) {
+            _loadError =
+                'Required consent documents are unavailable. Please try again.';
+          }
         });
       }
     } catch (_) {

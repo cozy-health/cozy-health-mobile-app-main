@@ -30,11 +30,17 @@ class ConsentState {
     required this.documents,
     required this.records,
     required this.enforceBlocking,
+    this.documentsReady = true,
   });
   final int ownerId;
   final List<ConsentDocument> documents;
   final List<Map<String, dynamic>> records;
   final bool enforceBlocking;
+  final bool documentsReady;
+  bool get requiredDocumentsAvailable =>
+      documentsReady &&
+      documents.any((doc) => doc.required) &&
+      documents.where((doc) => doc.required).every((doc) => doc.reviewable);
   bool current(ConsentDocument doc) => records.any(
     (record) =>
         record['document_type'] == doc.type &&
@@ -125,6 +131,7 @@ class ConsentService {
           .map((record) => Map<String, dynamic>.from(record))
           .toList(),
       enforceBlocking: config['enforce_blocking'] == true,
+      documentsReady: config['documents_ready'] != false,
     );
     _stateTokens[state] = token;
     _stateGenerations[state] = generation;

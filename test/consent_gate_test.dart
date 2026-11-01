@@ -361,6 +361,119 @@ void main() {
       expect(find.text('Application content'), findsOneWidget);
     },
   );
+  testWidgets(
+    'required draft cannot expose private content and retry recovers',
+    (tester) async {
+      var published = false;
+      final scoped = ConsentService(
+        token: () async => 'fixture-session',
+        get: (path) async => path == '/config'
+            ? {
+                'consent': {
+                  'enforce_blocking': true,
+                  'documents': {
+                    'privacy_policy': {
+                      'title': 'Privacy Policy',
+                      'version': published ? '1.0' : 'draft-0.1',
+                      'published': published,
+                      'required': true,
+                      'content': published ? 'Recovered privacy text.' : null,
+                    },
+                  },
+                },
+              }
+            : {'owner_id': 1, 'data': <Map<String, dynamic>>[]},
+        post: (body) async => {
+          'owner_id': 1,
+          'data': {
+            ...body,
+            'status': body['pre_acceptance'] == true
+                ? 'pre_acceptance'
+                : 'accepted',
+          },
+        },
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ConsentGate(
+            service: scoped,
+            observeRoutes: false,
+            child: const Text('Private content'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Private content'), findsNothing);
+      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text('Accept'), findsNothing);
+      published = true;
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+      expect(find.text('Private content'), findsNothing);
+      expect(find.text('Recovered privacy text.'), findsOneWidget);
+      await tester.tap(find.text('Accept'));
+      await tester.pumpAndSettle();
+      expect(find.text('Private content'), findsOneWidget);
+    },
+  );
+  for (final unavailable in ['empty', 'server-readiness', 'server-denial']) {
+    testWidgets('unavailable required consent stays hidden: $unavailable', (
+      tester,
+    ) async {
+      final scoped = ConsentService(
+        token: () async => 'fixture-session',
+        get: (path) async => path == '/config'
+            ? {
+                'consent': {
+                  'enforce_blocking': unavailable != 'server-denial',
+                  if (unavailable == 'server-readiness')
+                    'documents_ready': false,
+                  'documents': unavailable == 'empty'
+                      ? <String, dynamic>{}
+                      : {
+                          'privacy_policy': {
+                            'title': 'Privacy Policy',
+                            'version': '1.0',
+                            'published': true,
+                            'required': true,
+                            'content': unavailable == 'server-denial'
+                                ? null
+                                : 'Approved text.',
+                          },
+                        },
+                },
+              }
+            : {
+                'owner_id': 1,
+                'data': [
+                  {
+                    'document_type': 'privacy_policy',
+                    'version': '1.0',
+                    'status': 'accepted',
+                  },
+                ],
+              },
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ConsentGate(
+            service: scoped,
+            observeRoutes: false,
+            child: const Text('Private content'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      if (unavailable == 'server-denial') {
+        consentRefreshSignal.value++;
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('Private content'), findsNothing);
+      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text('Accept'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
   testWidgets('draft changes stay silent and never offer fake acceptance', (
     tester,
   ) async {
