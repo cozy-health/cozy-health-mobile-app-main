@@ -7,7 +7,30 @@ import 'local_db_service.dart';
 
 /// Explicit, content-free PostHog events. No SDK autocapture, replay or retry queue.
 class UsageAnalytics {
-  UsageAnalytics._();
+  UsageAnalytics._()
+    : _http = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ),
+      ),
+      _key = key,
+      _host = host,
+      _enabled =
+          const bool.fromEnvironment('INTERNAL_TEST_BUILD') &&
+          const String.fromEnvironment('TELEMETRY_ENVIRONMENT') ==
+              'development';
+
+  @visibleForTesting
+  UsageAnalytics.forTesting({
+    required Dio client,
+    required String apiKey,
+    required String collector,
+    bool enabled = true,
+  }) : _http = client,
+       _key = apiKey,
+       _host = collector,
+       _enabled = enabled;
   static final instance = UsageAnalytics._();
   static const key = String.fromEnvironment('POSTHOG_KEY');
   static const host = String.fromEnvironment(
@@ -30,12 +53,10 @@ class UsageAnalytics {
     'resources',
     'settings',
   };
-  final Dio _http = Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 5),
-    ),
-  );
+  final Dio _http;
+  final String _key;
+  final String _host;
+  final bool _enabled;
   CancelToken _requests = CancelToken();
   StreamSubscription<void>? _accounts;
   String _route = '';
@@ -90,11 +111,12 @@ class UsageAnalytics {
   }
 
   Future<void> track(String event, {String? feature}) async {
-    if (key.isEmpty ||
+    if (!_enabled ||
+        _key.isEmpty ||
         !{
           'https://eu.i.posthog.com',
           'https://us.i.posthog.com',
-        }.contains(host) ||
+        }.contains(_host) ||
         !events.contains(event) ||
         (feature != null && !features.contains(feature))) {
       return;
@@ -143,12 +165,13 @@ class UsageAnalytics {
       final current = box.get('privacy_preferences');
       if (current is! Map || current['analytics'] != true) return;
       await _http.post(
-        '$host/i/v0/e/',
+        '$_host/i/v0/e/',
         cancelToken: cancel,
         data: {
-          'api_key': key,
+          'api_key': _key,
           'event': event,
           'properties': {
+            'environment': 'development',
             'distinct_id': id,
             'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
             'app_version': package.version,

@@ -51,6 +51,33 @@ class PushConfigTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.run_config(json.dumps(options))
 
+    def test_development_telemetry_is_available_without_firebase(self):
+        with patch.dict(os.environ, {'SENTRY_DSN_DEV': 'https://fixture@o4512334056128512.ingest.de.sentry.io/4512362638147664',
+                                     'POSTHOG_KEY_DEV': 'phc_fixture'}):
+            self.run_config('')
+        defines = json.loads(Path('push-defines.json').read_text())
+        self.assertEqual(defines['TELEMETRY_ENVIRONMENT'], 'development')
+        self.assertEqual(defines['POSTHOG_HOST'], 'https://us.i.posthog.com')
+        self.assertEqual(defines['POSTHOG_KEY'], 'phc_fixture')
+        self.assertTrue(defines['SENTRY_DSN'].endswith('/4512362638147664'))
+
+    def test_telemetry_does_not_inherit_generic_or_production_keys(self):
+        with patch.dict(os.environ, {'SENTRY_DSN_DEV': '', 'POSTHOG_KEY_DEV': '',
+                                     'SENTRY_DSN': 'production', 'POSTHOG_KEY': 'production'}):
+            self.run_config('')
+        defines = json.loads(Path('push-defines.json').read_text())
+        self.assertEqual(defines['SENTRY_DSN'], '')
+        self.assertEqual(defines['POSTHOG_KEY'], '')
+        self.assertEqual(defines['TELEMETRY_ENVIRONMENT'], 'disabled')
+
+    def test_wrong_sentry_project_and_invalid_analytics_key_are_rejected(self):
+        for dsn, key in [('https://fixture@o4512334056128512.ingest.de.sentry.io/production', ''),
+                         ('https://fixture@attacker.example/4512362638147664', ''),
+                         ('', 'personal_api_secret')]:
+            with self.subTest(dsn=dsn, key=key), patch.dict(os.environ, {'SENTRY_DSN_DEV': dsn, 'POSTHOG_KEY_DEV': key}):
+                with self.assertRaises(ValueError):
+                    self.run_config('')
+
 
 if __name__ == '__main__':
     unittest.main()

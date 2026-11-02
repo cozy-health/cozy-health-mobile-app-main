@@ -5,6 +5,11 @@ import 'local_db_service.dart';
 /// Telemetry accepts diagnostics, never user-authored text or interaction data.
 class CrashReporting {
   static const dsn = String.fromEnvironment('SENTRY_DSN');
+  static const environment = String.fromEnvironment('TELEMETRY_ENVIRONMENT');
+  static const _internalBuild = bool.fromEnvironment('INTERNAL_TEST_BUILD');
+  static const _buildSha = String.fromEnvironment('BUILD_SHA');
+  static bool get enabled =>
+      _internalBuild && environment == 'development' && dsn.isNotEmpty;
   static String feature = 'app';
   static int _privateOverlays = 0;
   static Future<T> privateOverlay<T>(Future<T> Function() show) async {
@@ -27,7 +32,7 @@ class CrashReporting {
   };
 
   static Future<void> run(Future<void> Function() appRunner) async {
-    if (dsn.isEmpty) {
+    if (!enabled) {
       await appRunner();
       return;
     }
@@ -35,8 +40,10 @@ class CrashReporting {
   }
 
   static void configure(SentryFlutterOptions options) {
-    options.dsn = dsn;
-    options.tracesSampleRate = 0.2;
+    options.dsn = enabled ? dsn : '';
+    options.environment = 'development';
+    options.release = _release;
+    options.tracesSampleRate = 0;
     options.enableAutoSessionTracking = false;
     options.sendDefaultPii = false;
     options.enablePrintBreadcrumbs = false;
@@ -120,6 +127,8 @@ class CrashReporting {
     // Reconstruct rather than copyWith: omitted fields must be removed.
     return SentryEvent(
       eventId: event.eventId,
+      environment: 'development',
+      release: _release,
       timestamp: event.timestamp,
       level: event.level,
       platform: event.platform,
@@ -178,8 +187,12 @@ class CrashReporting {
 
   /// Explicit debug-only probe; never called during normal startup.
   static Future<void> debugProbe() async {
-    if (kDebugMode && dsn.isNotEmpty) {
+    if (kDebugMode && enabled) {
       await Sentry.captureException(Exception('Sentry test'));
     }
   }
+
+  static String? get _release => RegExp(r'^[a-f0-9]{40}$').hasMatch(_buildSha)
+      ? 'cozy-health-mobile@$_buildSha'
+      : null;
 }

@@ -50,6 +50,8 @@ void main() {
       final clean = CrashReporting.sanitize(input)!;
       expect(jsonEncode(clean.toJson()), isNot(contains(secret)));
       expect(clean.tags, {'feature': 'journal'});
+      expect(clean.environment, 'development');
+      expect(clean.release, isNull);
       expect(clean.exceptions!.single.type, 'StateError');
       expect(clean.exceptions!.single.stackTrace!.frames.single.lineNo, 12);
       expect(clean.user, isNull);
@@ -102,6 +104,8 @@ void main() {
     final options = SentryFlutterOptions();
     CrashReporting.configure(options);
     expect(options.sendDefaultPii, isFalse);
+    expect(options.environment, 'development');
+    expect(options.tracesSampleRate, 0);
     expect(options.enableNativeCrashHandling, isFalse);
     expect(options.enableAppHangTracking, isFalse);
     expect(options.anrEnabled, isFalse);
@@ -111,7 +115,7 @@ void main() {
     expect(options.attachViewHierarchy, isFalse);
     expect(options.enablePrintBreadcrumbs, isFalse);
     expect(options.enableUserInteractionBreadcrumbs, isFalse);
-    expect(options.tracesSampleRate, 0.2);
+    expect(options.tracesSampleRate, 0);
     expect(options.beforeSend, isNotNull);
   });
   test('missing DSN runs app without initializing telemetry', () async {

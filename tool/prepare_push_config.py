@@ -4,10 +4,29 @@ import os
 import plistlib
 import subprocess
 import sys
+from urllib.parse import urlparse
 from pathlib import Path
 
 raw = os.environ.get('FIREBASE_OPTIONS_JSON', '')
 defines = {'FIREBASE_OPTIONS': ''}
+# Development telemetry is independent of Firebase. Never inherit production keys.
+defines.update(SENTRY_DSN='', POSTHOG_KEY='', POSTHOG_HOST='https://us.i.posthog.com',
+               TELEMETRY_ENVIRONMENT='disabled')
+dsn = os.environ.get('SENTRY_DSN_DEV', '').strip()
+analytics_key = os.environ.get('POSTHOG_KEY_DEV', '').strip()
+if dsn:
+    parsed = urlparse(dsn)
+    if (parsed.scheme != 'https' or parsed.hostname != 'o4512334056128512.ingest.de.sentry.io'
+            or parsed.path != '/4512362638147664' or not parsed.username
+            or parsed.password or parsed.query or parsed.fragment or parsed.port):
+        raise ValueError('Sentry DSN must identify the approved development mobile project')
+    defines['SENTRY_DSN'] = dsn
+if analytics_key:
+    if not analytics_key.startswith('phc_') or any(c.isspace() for c in analytics_key):
+        raise ValueError('PostHog development project key is invalid')
+    defines['POSTHOG_KEY'] = analytics_key
+if dsn or analytics_key:
+    defines['TELEMETRY_ENVIRONMENT'] = 'development'
 if raw:
     options = json.loads(raw)
     for platform in ('android', 'ios'):
