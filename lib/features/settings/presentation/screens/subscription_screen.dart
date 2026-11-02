@@ -41,7 +41,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       'package_name': 'Student',
       'features': [
         'All Premium features',
-        'Requires verified current student enrolment',
+        'Verify a student-only school email or submit current enrolment documents',
       ],
     },
     {
@@ -153,7 +153,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             child: Padding(
               padding: EdgeInsets.all(20),
               child: Text(
-                'The store shows the applicable price and renewal details before payment. Student and Premium have the same paid benefits. Student purchases require verified current enrolment.',
+                'The store shows the applicable price and renewal details before payment. Student and Premium have the same paid benefits. Verify an approved student-only school email or submit current enrolment documents for review. Eligibility lasts 12 months and does not activate a subscription.',
               ),
             ),
           ),
