@@ -1,6 +1,8 @@
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/widgets/security_blur.dart';
 
 class ReportProblemScreen extends StatefulWidget {
   const ReportProblemScreen({super.key, this.feedback = false});
@@ -11,11 +13,16 @@ class ReportProblemScreen extends StatefulWidget {
 
 class _ReportProblemScreenState extends State<ReportProblemScreen> {
   final _message = TextEditingController();
+  final _owner = LocalDbService().activeUserId;
   bool _busy = false;
   String? _error;
   String _category = 'General';
   Future<void> _submit() async {
-    if (_busy || _message.text.trim().isEmpty) return;
+    if (_owner != LocalDbService().activeUserId ||
+        _busy ||
+        _message.text.trim().isEmpty) {
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -29,7 +36,7 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
           'message': _message.text.trim(),
         },
       );
-      if (!mounted) return;
+      if (!mounted || _owner != LocalDbService().activeUserId) return;
       AppSnackbar.show(
         context,
         const SnackBar(content: Text('Your report was received. Thank you.')),
@@ -54,7 +61,10 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildReport(context));
+
+  Widget _buildReport(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: Text(widget.feedback ? 'Share feedback' : 'Report a problem'),
     ),

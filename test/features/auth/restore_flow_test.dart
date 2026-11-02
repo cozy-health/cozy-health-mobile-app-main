@@ -1014,6 +1014,21 @@ void main() {
     expect(local.moodBox.containsKey('private'), isTrue);
     expect(local.hasPending('mood_entry', 'private'), isTrue);
   });
+  test('a stale restore cancel cannot sign out another account', () async {
+    final restore = controller();
+    await local.activateAccount('2');
+    await (await local.settingsBox()).putAll({
+      'device_user_id': '2',
+      'restore_requested': true,
+    });
+    await TokenStorage().saveToken('second-session');
+    await restore.cancel();
+    expect(await TokenStorage().getToken(), 'second-session');
+    expect(local.activeUserId, '2');
+    expect(await RestoreService.required, isTrue);
+    restore.dispose();
+  });
+
   test('cancel clears login and blocks an in-flight restore write', () async {
     await RestoreService.prepare('1');
     final waiting = Completer<dynamic>();

@@ -103,6 +103,7 @@ class ContentRepository {
   }
 
   Future<void> unsaveArticle(String articleId) async {
+    final operationOwner = _local.activeUserId;
     if (usePlaceholderData) {
       DemoMode.instance.savedArticles.removeWhere(
         (a) => a.articleId == articleId,
@@ -114,8 +115,17 @@ class ContentRepository {
       await ApiClient.instance.delete(
         '/content/articles/${Uri.encodeComponent(articleId)}/bookmark',
       );
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
       await _local.deleteSavedArticle(articleId);
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
       await fetchSavedArticles();
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
     } catch (_) {
       debugPrint('Caught error: details withheld.');
     }
@@ -128,6 +138,7 @@ class ContentRepository {
   }
 
   Future<void> toggleSave(Map<String, dynamic> articleData) async {
+    final operationOwner = _local.activeUserId;
     final articleId = articleData['id'] as String;
     final savedArticles = usePlaceholderData
         ? DemoMode.instance.savedArticles
@@ -153,12 +164,18 @@ class ContentRepository {
     }
     if (isCurrentlySaved) {
       await _local.deleteSavedArticle(articleId);
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
       await _local.enqueueSync(
         type: 'saved_article',
         action: 'delete',
         recordId: articleId,
         payload: null,
       );
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
     } else {
       final article = SavedArticle(
         id: 'saved_$articleId',
@@ -173,12 +190,18 @@ class ContentRepository {
         savedAt: DateTime.now().toUtc(),
       );
       await _local.saveSavedArticle(article);
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
       await _local.enqueueSync(
         type: 'saved_article',
         action: 'upsert',
         recordId: article.articleId,
         payload: article.toJson(),
       );
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
     }
     _local.processSyncQueue();
   }

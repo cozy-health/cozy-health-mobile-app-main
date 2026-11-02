@@ -22,8 +22,11 @@ class ProfileRepository {
 
   Future<UserProfile?> fetchProfile() async {
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
+    bool active() =>
+        scope == _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.get(ApiConstants.me);
+      if (!active()) return null;
       final data = _extractMapData(response.data);
       if (data != null) {
         await UserDataMerge().apply(
@@ -32,11 +35,13 @@ class ProfileRepository {
           isActive: () =>
               scope == _local.boxName(LocalDbService.userSettingsBoxName),
         );
+        if (!active()) return null;
         return _local.getUserProfile();
       }
     } catch (e) {
       debugPrint('Fetch profile failed: details withheld.');
     }
+    if (!active()) return null;
     return _local.getUserProfile();
   }
 
@@ -108,6 +113,7 @@ class ProfileRepository {
   }
 
   Future<void> updateField(String key, dynamic value) async {
+    final operationOwner = _local.activeUserId;
     var profile = _local.getUserProfile();
 
     if (profile == null) {
@@ -118,10 +124,16 @@ class ProfileRepository {
         updatedAt: DateTime.now(),
       );
       await _local.saveUserProfile(profile);
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
     }
 
     final updated = profile.copyWithField(key, value);
     await _local.saveUserProfile(updated);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
 
     await _local.enqueueSync(
       type: 'user_profile',
@@ -129,6 +141,9 @@ class ProfileRepository {
       recordId: profile.id,
       payload: updated.toJson(),
     );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     Future.microtask(() => _local.processSyncQueue());
   }
 }

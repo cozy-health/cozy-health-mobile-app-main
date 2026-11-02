@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/security_blur.dart';
 
 class StudentVerificationScreen extends StatefulWidget {
   const StudentVerificationScreen({super.key});
@@ -144,7 +145,10 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildVerification(context));
+
+  Widget _buildVerification(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Student verification')),
     body: SafeArea(
       child: ListView(

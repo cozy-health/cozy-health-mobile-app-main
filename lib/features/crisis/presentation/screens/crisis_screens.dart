@@ -338,9 +338,9 @@ class CrisisActionCard extends StatelessWidget {
 class CrisisResourcesHubScreen extends StatelessWidget {
   const CrisisResourcesHubScreen({super.key});
 
+  // Public help must remain available when a private account session ends.
   @override
-  Widget build(BuildContext context) =>
-      SecurityBlur(child: _buildProtected(context));
+  Widget build(BuildContext context) => _buildProtected(context);
 
   Widget _buildProtected(BuildContext context) {
     return CrisisShell(

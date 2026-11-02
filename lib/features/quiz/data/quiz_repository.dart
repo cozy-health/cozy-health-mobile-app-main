@@ -53,7 +53,9 @@ class QuizRepository {
   }
 
   Future<List<QuizAttempt>> fetchAttempts() async {
+    final owner = _local.activeUserId;
     await UserDataFetcher().fetchQuizAttempts();
+    if (owner != _local.activeUserId) return [];
     return _local.getAllQuizAttempts();
   }
 
@@ -62,28 +64,45 @@ class QuizRepository {
   }
 
   Future<QuizAttempt> saveAttempt(QuizAttempt attempt) async {
+    final operationOwner = _local.activeUserId;
     final owner = _local.activeUserId;
     await PlanAccessService.instance.require('assessments');
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     if (owner != _local.activeUserId) throw StateError('Account changed');
     await _local.saveQuizAttempt(attempt);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     await _local.enqueueSync(
       type: 'quiz_attempt',
       action: 'upsert',
       recordId: attempt.id,
       payload: attempt.toJson(),
     );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     _local.processSyncQueue();
     return attempt;
   }
 
   Future<void> deleteAttempt(String id) async {
+    final operationOwner = _local.activeUserId;
     await _local.enqueueSync(
       type: 'quiz_attempt',
       action: 'delete',
       recordId: id,
       payload: {'id': id},
     );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     await _local.quizAttemptBox.delete(id);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     _local.processSyncQueue();
   }
 }

@@ -60,8 +60,12 @@ class UserDataMerge {
         'client_updated_at':
             incoming['updated_at'] ?? incoming['last_updated_at'],
     };
-    final settings = await _local.settingsBox();
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
+    final settings = await _local.settingsBox();
+    if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) return;
+    final queue = _local.isBoxOpen(LocalDbService.syncQueueBoxName)
+        ? _local.syncQueueBox
+        : null;
     owner ??= settings.get('device_user_id')?.toString();
     bool active() =>
         (isActive?.call() ?? true) &&
@@ -124,11 +128,13 @@ class UserDataMerge {
 
     if (type == 'quiz_attempt' &&
         (incoming['is_deleted'] == true || incoming['deleted_at'] != null)) {
-      await _local.quizAttemptBox.delete(id);
-      for (final item in _local.pendingItems.where(
-        (item) => item.type == type && item.recordId == id,
-      )) {
-        await _local.syncQueueBox.delete(item.id);
+      final attempts = _local.quizAttemptBox;
+      final removed = _local.pendingItems
+          .where((item) => item.type == type && item.recordId == id)
+          .toList();
+      await attempts.delete(id);
+      for (final item in removed) {
+        await queue?.delete(item.id);
       }
       return;
     }
@@ -150,10 +156,11 @@ class UserDataMerge {
     }
     // A pending delete is a tombstone: background downloads cannot resurrect it.
     if (pending.any((item) => item.action == 'delete')) return;
+    if (!active()) return;
     if (type == 'quiz_attempt' && incoming['validated_at'] != null) {
       await _write(type, incoming);
       for (final item in pending) {
-        await _local.syncQueueBox.delete(item.id);
+        await queue?.delete(item.id);
       }
       return;
     }
@@ -181,7 +188,7 @@ class UserDataMerge {
       // to the canonical profile ID without losing local edits or their intent.
       if (localId != id && type == 'user_profile') {
         for (final item in pending) {
-          await _local.syncQueueBox.delete(item.id);
+          await queue?.delete(item.id);
         }
         if (!active()) return;
         if (alreadyAcknowledged) {
@@ -207,7 +214,7 @@ class UserDataMerge {
       return;
     }
     for (final item in pending) {
-      await _local.syncQueueBox.delete(item.id);
+      await queue?.delete(item.id);
     }
     if (!active()) return;
     // Recheck after asynchronous queue writes so a newly edited local record wins.

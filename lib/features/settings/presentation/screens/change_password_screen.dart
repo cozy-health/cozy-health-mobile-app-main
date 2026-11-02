@@ -5,6 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/widgets/security_blur.dart';
 import '../../../../core/api/api_exceptions.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -19,6 +21,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _newController = TextEditingController();
   final _confirmController = TextEditingController();
 
+  final _owner = LocalDbService().activeUserId;
   double _strength = 0;
   bool _isLoading = false;
 
@@ -37,6 +40,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Future<void> _save() async {
+    if (_owner != LocalDbService().activeUserId) return;
     setState(() => _isLoading = true);
     try {
       await ApiClient().post(
@@ -63,7 +67,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       }
       return;
     }
-    if (!mounted) return;
+    if (!mounted || _owner != LocalDbService().activeUserId) return;
     setState(() => _isLoading = false);
 
     AppSnackbar.show(
@@ -74,7 +78,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildPasswordForm(context));
+
+  Widget _buildPasswordForm(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(

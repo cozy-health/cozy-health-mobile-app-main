@@ -116,19 +116,30 @@ class ChatRepository {
   }
 
   Future<ChatConversation> saveConversation(ChatConversation conv) async {
+    final operationOwner = _local.activeUserId;
     await _local.saveChatConversation(conv);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     await _local.enqueueSync(
       type: 'chat_conversation',
       action: 'upsert',
       recordId: conv.id,
       payload: conv.toJson(),
     );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     _local.processSyncQueue();
     return conv;
   }
 
   Future<void> deleteConversation(String id) async {
+    final operationOwner = _local.activeUserId;
     final settings = await _local.settingsBox();
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     final deleted =
         (settings.get('deleted_conversations', defaultValue: <String>[])
                 as List)
@@ -136,43 +147,67 @@ class ChatRepository {
             .toSet()
           ..add(id);
     await settings.put('deleted_conversations', deleted.toList());
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     for (final message in _local.getMessagesForConversation(id)) {
       await _local.removeFromQueue('chat_message', message.id);
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
     }
     await _local.deleteChatConversation(id);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     await _local.enqueueSync(
       type: 'chat_conversation',
       action: 'delete',
       recordId: id,
       payload: null,
     );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     _local.processSyncQueue();
   }
 
   Future<void> saveMessage(ChatMessage msg) async {
+    final operationOwner = _local.activeUserId;
     await _local.saveChatMessage(msg);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     await _local.enqueueSync(
       type: 'chat_message',
       action: 'upsert',
       recordId: msg.id,
       payload: msg.toJson(),
     );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     _local.processSyncQueue();
   }
 
   Future<void> updateMessageStatus(String msgId, String status) async {
+    final operationOwner = _local.activeUserId;
     // We fetch, update, save
     final msg = _local.getChatMessage(msgId);
     if (msg != null) {
-      await _local.saveChatMessage(
-        msg,
-      ); // core.ChatMessage doesn't have a settable status right now, but it's okay just to save it back.
+      await _local.saveChatMessage(msg);
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
       await _local.enqueueSync(
         type: 'chat_message',
         action: 'upsert',
         recordId: msg.id,
         payload: msg.toJson(),
       );
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
       _local.processSyncQueue();
     }
   }

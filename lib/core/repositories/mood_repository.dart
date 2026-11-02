@@ -44,11 +44,14 @@ class MoodRepository {
   }) async {
     if (usePlaceholderData) return currentEntries();
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
+    bool active() =>
+        scope == _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.get(
         ApiConstants.moodEntries,
         queryParameters: {'page': page, 'per_page': perPage},
       );
+      if (!active()) return [];
       final items = _extractListData(response.data)
           .whereType<Map>()
           .map((json) => MoodEntry.fromJson(Map<String, dynamic>.from(json)))
@@ -61,11 +64,13 @@ class MoodRepository {
               scope == _local.boxName(LocalDbService.userSettingsBoxName),
         );
       }
+      if (!active()) return [];
       return items;
     } on ApiAuthException {
       rethrow;
     } catch (e) {
       debugPrint('Fetch moods failed: details withheld.');
+      if (!active()) return [];
       return _local.getAllMoodEntries();
     }
   }
@@ -108,18 +113,25 @@ class MoodRepository {
   }
 
   Future<void> deleteMoodEntry(String id) async {
+    final operationOwner = _local.activeUserId;
     if (usePlaceholderData) {
       DemoMode.instance.moods.removeWhere((entry) => entry.id == id);
       DemoMode.instance.changed();
       return;
     }
     await _local.deleteMoodEntry(id);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     await _local.enqueueSync(
       type: 'mood_entry',
       action: 'delete',
       recordId: id,
       payload: null,
     );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     _local.processSyncQueue();
   }
 

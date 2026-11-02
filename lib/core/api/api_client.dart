@@ -5,6 +5,7 @@ import 'leaf_pin_policy.dart';
 import 'network_build_policy.dart';
 import '../constants/api_constants.dart';
 import 'api_exceptions.dart';
+import '../storage/token_storage.dart';
 import 'api_interceptors.dart';
 
 class ApiClient {
@@ -153,7 +154,14 @@ class ApiClient {
   }
 
   Options? _options(Options? options, bool withAuth) {
-    if (withAuth) return options;
+    if (withAuth) {
+      final extra = Map<String, dynamic>.from(options?.extra ?? const {});
+      extra.putIfAbsent(
+        'expectedSessionGeneration',
+        () => TokenStorage.generation,
+      );
+      return (options ?? Options()).copyWith(extra: extra);
+    }
 
     final extra = Map<String, dynamic>.from(options?.extra ?? const {});
     extra['skipAuth'] = true;

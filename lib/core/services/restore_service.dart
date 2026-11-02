@@ -68,6 +68,7 @@ class RestoreController extends ChangeNotifier {
         const Duration(days: 90),
       );
   final String userId;
+  final int _sessionGeneration = TokenStorage.generation;
   final RestoreGet _get;
   final DateTime _cutoff;
   final _merge = UserDataMerge();
@@ -105,7 +106,10 @@ class RestoreController extends ChangeNotifier {
   bool get _active => !cancelled && !_disposed;
   Future<bool> _sameOwner() async =>
       _active &&
-      (await LocalDbService().settingsBox()).get('device_user_id') == userId;
+      LocalDbService().activeUserId == userId &&
+      (await LocalDbService().settingsBox()).get('device_user_id') == userId &&
+      LocalDbService().activeUserId == userId &&
+      _active;
 
   Future<void> run({bool retryOnly = false}) async {
     if (busy || cancelled) return;
@@ -165,24 +169,25 @@ class RestoreController extends ChangeNotifier {
           final value = UserPreferences.fromJson(
             Map<String, dynamic>.from(data),
           );
-          final local = await LocalDbService().getUserPreferences();
+          final preferences = await LocalDbService().preferencesBox();
+          if (!await _sameOwner()) return;
+          final settings = await LocalDbService().settingsBox();
+          if (!await _sameOwner()) return;
+          final queue = LocalDbService().syncQueueBox;
+          final local = preferences.get('current');
           final pending = LocalDbService().pendingItems
               .where((item) => item.type == 'user_preferences')
               .toList();
           if (local == null || value.completedAt.isAfter(local.completedAt)) {
             for (final item in pending) {
-              await LocalDbService().syncQueueBox.delete(item.id);
+              await queue.delete(item.id);
             }
-            await (await LocalDbService().preferencesBox()).put(
-              'current',
-              value,
-            );
-            await (await LocalDbService().settingsBox()).put(
-              'onboarding_preferences',
-              value.toJson(),
-            );
+            if (!await _sameOwner()) return;
+            await preferences.put('current', value);
+            await settings.put('onboarding_preferences', value.toJson());
           } else if (local.completedAt.isAfter(value.completedAt) &&
               pending.isEmpty) {
+            if (!await _sameOwner()) return;
             await LocalDbService().saveUserPreferences(local);
           }
           _seen.add('preferences');
@@ -288,6 +293,7 @@ class RestoreController extends ChangeNotifier {
       return;
     }
     final settings = await LocalDbService().settingsBox();
+    if (!await _sameOwner()) return;
     await settings.putAll({
       'has_restored_on_device': failed.isEmpty,
       'restored_user_id': failed.isEmpty ? userId : null,
@@ -304,14 +310,26 @@ class RestoreController extends ChangeNotifier {
   }
 
   Future<void> cancel() async {
+    final sameSession =
+        await _sameOwner() && _sessionGeneration == TokenStorage.generation;
     cancelled = true;
     _changed();
-    await (await LocalDbService().settingsBox()).put(
-      'restore_requested',
-      false,
-    );
+    if (!sameSession) return;
+    final settings = await LocalDbService().settingsBox();
+    if (LocalDbService().activeUserId != userId ||
+        _sessionGeneration != TokenStorage.generation) {
+      return;
+    }
+    await settings.put('restore_requested', false);
+    if (LocalDbService().activeUserId != userId ||
+        _sessionGeneration != TokenStorage.generation) {
+      return;
+    }
     await TokenStorage().clearToken();
-    await LocalDbService().activateGuest();
+    if (await TokenStorage().getToken() == null &&
+        LocalDbService().activeUserId == userId) {
+      await LocalDbService().activateGuestAfterSync();
+    }
   }
 
   void resumeFailures(Iterable<String> stepsToRetry) {

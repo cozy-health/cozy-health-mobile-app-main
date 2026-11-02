@@ -473,12 +473,14 @@ class LocalDbService {
 
   Future<void> saveMoodEntry(MoodEntry entry) async {
     final owner = activeUserId;
-    if (owner != activeUserId)
+    if (owner != activeUserId) {
       throw StateError('Mood recording account changed');
+    }
     final box = moodBox;
     await box.put(entry.id, entry);
-    if (owner != activeUserId)
+    if (owner != activeUserId) {
       throw StateError('Mood recording account changed');
+    }
     await _retainEarnedMilestones();
   }
 
@@ -491,8 +493,9 @@ class LocalDbService {
       _watchScoped(getAllMoodEntries, () => moodBox.watch());
 
   Future<void> deleteMoodEntry(String id) async {
+    final box = moodBox;
     await _retainEarnedMilestones();
-    await moodBox.delete(id);
+    await box.delete(id);
   }
 
   // --- Journals ---
@@ -513,13 +516,16 @@ class LocalDbService {
       _watchScoped(getAllJournalEntries, () => journalBox.watch());
 
   Future<void> deleteJournalEntry(String id) async {
+    final owner = activeUserId;
+    final box = journalBox;
     await _retainEarnedMilestones();
-    final entry = journalBox.get(id);
+    if (owner != activeUserId) throw StateError('Account changed');
+    final entry = box.get(id);
     await VoiceAudio.removeLocal(entry?.localVoicePath);
     if (entry?.voiceUrl?.startsWith('/audio-attachments/') == false) {
       await VoiceAudio.removeLocal(entry?.voiceUrl);
     }
-    await journalBox.delete(id);
+    await box.delete(id);
   }
 
   Future<void> saveJournalDraft(JournalEntry entry) async {
@@ -620,11 +626,12 @@ class LocalDbService {
   List<ChatConversation> getAllChatConversations() => getAllConversations();
 
   Future<void> deleteChatConversation(String id) async {
-    await chatConversationBox.delete(id);
-    // Also delete messages
+    final conversations = chatConversationBox;
+    final messageBox = chatMessageBox;
     final messages = getMessagesForConversation(id);
+    await conversations.delete(id);
     for (var m in messages) {
-      await chatMessageBox.delete(m.id);
+      await messageBox.delete(m.id);
     }
   }
 
@@ -653,9 +660,10 @@ class LocalDbService {
       EncryptedHive.box<SafetyPlan>(boxName(safetyPlanBoxName));
 
   Future<void> saveSafetyPlan(SafetyPlan plan) async {
-    await safetyPlanBox.put(plan.id, plan);
-    for (final key in safetyPlanBox.keys.toList()) {
-      if (key != plan.id) await safetyPlanBox.delete(key);
+    final box = safetyPlanBox;
+    await box.put(plan.id, plan);
+    for (final key in box.keys.toList()) {
+      if (key != plan.id) await box.delete(key);
     }
   }
 
@@ -829,9 +837,14 @@ class LocalDbService {
       (await preferencesBox()).get('current');
 
   Future<void> saveUserPreferences(UserPreferences preferences) async {
-    await (await preferencesBox()).put('current', preferences);
+    final owner = activeUserId;
+    final preferencesStore = await preferencesBox();
     final settings = await settingsBox();
+    if (owner != activeUserId) throw StateError('Account changed');
+    await preferencesStore.put('current', preferences);
+    if (owner != activeUserId) throw StateError('Account changed');
     await settings.put('onboarding_preferences', preferences.toJson());
+    if (owner != activeUserId) throw StateError('Account changed');
     if (!settings.containsKey('has_seen_tour')) {
       await settings.put('has_seen_tour', false);
     }
@@ -839,10 +852,11 @@ class LocalDbService {
     final recordId =
         settings.get('preferences_sync_id') as String? ?? const Uuid().v4();
     await settings.put('preferences_sync_id', recordId);
+    if (owner != activeUserId) throw StateError('Account changed');
     if (!isBoxOpen(syncQueueBoxName)) {
       await EncryptedHive.openBox<String>(boxName(syncQueueBoxName));
     }
-    await removeFromQueue('user_preferences', recordId);
+    if (owner != activeUserId) throw StateError('Account changed');
     await enqueueSync(
       type: 'user_preferences',
       action: 'upsert',
@@ -898,10 +912,11 @@ class LocalDbService {
   }
 
   Future<void> removeFromQueue(String type, String id) async {
-    for (final key in syncQueueBox.keys) {
-      final item = _syncItemFromStoredValue(key, syncQueueBox.get(key));
+    final queue = syncQueueBox;
+    for (final key in queue.keys.toList()) {
+      final item = _syncItemFromStoredValue(key, queue.get(key));
       if (item != null && item.type == type && item.recordId == id) {
-        await syncQueueBox.delete(key);
+        await queue.delete(key);
       }
     }
   }
@@ -1323,31 +1338,27 @@ class LocalDbService {
 
   // --- Scoping / Logout ---
   Future<void> clearAllUserData() async {
+    // Retain the original account boxes before disk/platform operations yield.
+    final boxes = <Box<dynamic>>[
+      moodBox,
+      journalBox,
+      chatMessageBox,
+      chatConversationBox,
+      safetyPlanBox,
+      userProfileBox,
+      quizAttemptBox,
+      savedArticleBox,
+      appNotificationBox,
+      subscriptionStatusBox,
+      syncQueueBox,
+      if (isBoxOpen(userPreferencesBoxName))
+        EncryptedHive.box<UserPreferences>(boxName(userPreferencesBoxName)),
+      if (isBoxOpen(userSettingsBoxName))
+        EncryptedHive.box<dynamic>(boxName(userSettingsBoxName)),
+    ];
     await VoiceAudio.clearAccount();
-    await moodBox.clear();
-    await journalBox.clear();
-    await EncryptedHive.box<ChatMessage>(boxName(chatMessageBoxName)).clear();
-    await EncryptedHive.box<ChatConversation>(
-      boxName(chatConversationBoxName),
-    ).clear();
-    await EncryptedHive.box<SafetyPlan>(boxName(safetyPlanBoxName)).clear();
-    await userProfileBox.clear();
-    await EncryptedHive.box<QuizAttempt>(boxName(quizAttemptBoxName)).clear();
-    await EncryptedHive.box<SavedArticle>(boxName(savedArticleBoxName)).clear();
-    await EncryptedHive.box<AppNotification>(
-      boxName(appNotificationBoxName),
-    ).clear();
-    await EncryptedHive.box<SubscriptionStatus>(
-      boxName(subscriptionStatusBoxName),
-    ).clear();
-    await syncQueueBox.clear();
-    if (isBoxOpen(userPreferencesBoxName)) {
-      await EncryptedHive.box<UserPreferences>(
-        boxName(userPreferencesBoxName),
-      ).clear();
-    }
-    if (isBoxOpen(userSettingsBoxName)) {
-      await EncryptedHive.box<dynamic>(boxName(userSettingsBoxName)).clear();
+    for (final box in boxes) {
+      await box.clear();
     }
   }
 }

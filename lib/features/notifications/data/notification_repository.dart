@@ -32,8 +32,11 @@ class NotificationRepository {
   Future<List<AppNotification>> fetchNotifications() async {
     if (usePlaceholderData) return currentEntries();
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
+    bool active() =>
+        scope == _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.get('/notifications');
+      if (!active()) return [];
       for (final raw in _extractListData(response.data).whereType<Map>()) {
         await UserDataMerge().apply(
           'app_notification',
@@ -42,8 +45,10 @@ class NotificationRepository {
               scope == _local.boxName(LocalDbService.userSettingsBoxName),
         );
       }
+      if (!active()) return [];
       return _local.getAllAppNotifications();
     } catch (e) {
+      if (!active()) return [];
       return _local.getAllAppNotifications();
     }
   }
@@ -57,6 +62,7 @@ class NotificationRepository {
   }
 
   Future<void> markAsRead(String id) async {
+    final operationOwner = _local.activeUserId;
     if (usePlaceholderData) {
       final items = DemoMode.instance.notifications;
       final index = items.indexWhere((item) => item.id == id);
@@ -73,17 +79,29 @@ class NotificationRepository {
     if (item != null) {
       final updated = item.copyWith(read: true, readAt: DateTime.now());
       await _local.saveAppNotification(updated);
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
       await _local.enqueueSync(
         type: 'app_notification',
         action: 'upsert',
         recordId: updated.id,
         payload: updated.toJson(),
       );
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
       await _local.processSyncQueue();
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
       return;
     }
     try {
       await ApiClient.instance.patch('/notifications/$id/read');
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
       fetchNotifications();
     } catch (_) {
       debugPrint('Caught error: details withheld.');
@@ -91,6 +109,7 @@ class NotificationRepository {
   }
 
   Future<void> markAllAsRead() async {
+    final operationOwner = _local.activeUserId;
     if (usePlaceholderData) {
       final items = DemoMode.instance.notifications;
       for (var i = 0; i < items.length; i++) {
@@ -102,29 +121,45 @@ class NotificationRepository {
     for (final item in currentEntries().where((item) => !item.read)) {
       final updated = item.copyWith(read: true, readAt: DateTime.now());
       await _local.saveAppNotification(updated);
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
       await _local.enqueueSync(
         type: 'app_notification',
         action: 'upsert',
         recordId: updated.id,
         payload: updated.toJson(),
       );
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
     }
     await _local.processSyncQueue();
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
   }
 
   Future<void> deleteNotification(String id) async {
+    final operationOwner = _local.activeUserId;
     if (usePlaceholderData) {
       DemoMode.instance.notifications.removeWhere((entry) => entry.id == id);
       DemoMode.instance.changed();
       return;
     }
     await _local.deleteAppNotification(id);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     await _local.enqueueSync(
       type: 'app_notification',
       action: 'delete',
       recordId: id,
       payload: null,
     );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     _local.processSyncQueue();
   }
 }

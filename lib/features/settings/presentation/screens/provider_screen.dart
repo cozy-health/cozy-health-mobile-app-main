@@ -3,6 +3,7 @@ import '../../../../core/widgets/plan_access_prompt.dart';
 import '../../../../core/widgets/wellness_panel.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/services/local_db_service.dart';
+import '../../../../core/widgets/security_blur.dart';
 import '../../../../core/services/network_status.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'dart:async';
@@ -33,6 +34,8 @@ class ProviderScreen extends StatefulWidget {
 class _ProviderScreenState extends State<ProviderScreen>
     with WidgetsBindingObserver {
   late final SettingsService _settingsService;
+  final _owner = LocalDbService().activeUserId;
+  bool get _current => mounted && _owner == LocalDbService().activeUserId;
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
@@ -50,7 +53,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   int _resendSeconds = 0;
   bool get _offline => networkOffline.value == true;
   void _connectionChanged() {
-    if (!mounted) return;
+    if (!mounted || !_current) return;
     setState(() {});
     if (!_offline) _loadProvider();
   }
@@ -115,6 +118,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _loadProvider() async {
+    if (!mounted || !_current) return;
     _retry = _loadProvider;
     setState(() {
       _loading = true;
@@ -124,7 +128,7 @@ class _ProviderScreenState extends State<ProviderScreen>
     try {
       final response = await _settingsService.getProvider();
 
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       _failures = 0;
       final provider = response['provider'];
       if (provider is Map &&
@@ -151,13 +155,13 @@ class _ProviderScreenState extends State<ProviderScreen>
         }
       });
     } on ApiException catch (e) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       _failures++;
       setState(() {
         _error = AppSnackbar.friendly(e.message);
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       _failures++;
       setState(() {
         _error = 'Unable to load provider details.';
@@ -172,7 +176,10 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _requestProvider() async {
-    if (!await ensurePlanAccess(context, 'provider_connect') || !mounted) {
+    if (!mounted || !_current) return;
+    if (!await ensurePlanAccess(context, 'provider_connect') ||
+        !mounted ||
+        !_current) {
       return;
     }
     if (_sending || _removing) return;
@@ -202,7 +209,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         consentFlags: Map<String, bool>.from(_invitationFlags),
       );
 
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       _failures = 0;
       final provider = response['provider'];
 
@@ -212,7 +219,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         _hasProvider = response['has_provider'] == true;
       });
 
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       if (!_hasProvider) {
         _startResendCooldown(60);
       }
@@ -228,10 +235,10 @@ class _ProviderScreenState extends State<ProviderScreen>
         ),
       );
     } on ApiException catch (e) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       if (e.statusCode == 503) {
         await _loadProvider();
-        if (!mounted) return;
+        if (!mounted || !_current) return;
         _retry = _requestProvider;
       }
       _failures++;
@@ -239,7 +246,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         _error = AppSnackbar.friendly(e.message);
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       _failures++;
       setState(() {
         _error = 'Unable to send provider request.';
@@ -254,7 +261,10 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _verifyProvider() async {
-    if (!await ensurePlanAccess(context, 'provider_connect') || !mounted) {
+    if (!mounted || !_current) return;
+    if (!await ensurePlanAccess(context, 'provider_connect') ||
+        !mounted ||
+        !_current) {
       return;
     }
     _retry = _verifyProvider;
@@ -275,7 +285,7 @@ class _ProviderScreenState extends State<ProviderScreen>
     try {
       final response = await _settingsService.verifyProvider(code: code);
 
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       _failures = 0;
       final provider = response['provider'];
 
@@ -285,7 +295,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         _hasProvider = true;
       });
 
-      if (!mounted) return;
+      if (!mounted || !_current) return;
 
       AppSnackbar.show(
         context,
@@ -294,13 +304,13 @@ class _ProviderScreenState extends State<ProviderScreen>
         ),
       );
     } on ApiException catch (e) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       _failures++;
       setState(() {
         _error = AppSnackbar.friendly(e.message);
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       _failures++;
       setState(() {
         _error = 'Unable to verify provider.';
@@ -315,6 +325,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _removeProvider() async {
+    if (!mounted || !_current) return;
     _retry = _removeProvider;
     setState(() {
       _removing = true;
@@ -325,7 +336,7 @@ class _ProviderScreenState extends State<ProviderScreen>
       await _settingsService.removeProvider();
       _resendTimer?.cancel();
       _resendSeconds = 0;
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       _failures = 0;
 
       setState(() {
@@ -339,20 +350,20 @@ class _ProviderScreenState extends State<ProviderScreen>
         }
       });
 
-      if (!mounted) return;
+      if (!mounted || !_current) return;
 
       AppSnackbar.show(
         context,
         AppSnackbar.fromLegacy(content: Text('Provider removed successfully.')),
       );
     } on ApiException catch (e) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       _failures++;
       setState(() {
         _error = AppSnackbar.friendly(e.message);
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       _failures++;
       setState(() {
         _error = 'Unable to remove provider.';
@@ -372,6 +383,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _updateConsent(String type, bool value) async {
+    if (!mounted || !_current) return;
     if (value &&
         (!await ensurePlanAccess(context, 'provider_connect') || !mounted)) {
       return;
@@ -389,7 +401,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         consentType: type,
         value: value,
       );
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       setState(() {
         final flags = Map<String, dynamic>.from(
           _provider?['consent_flags'] as Map? ?? {},
@@ -399,7 +411,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         _failures = 0;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       setState(() {
         _error =
             'Unable to save consent. Your sharing setting has not changed.';
@@ -411,6 +423,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _confirmRevoke() async {
+    if (!mounted || !_current) return;
     final owner = LocalDbService().activeUserId;
     final linkId = _provider?['link_id'] ?? _provider?['id'];
     final confirmed = await confirmWellnessAction(
@@ -428,6 +441,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _revokeAccess() async {
+    if (!mounted || !_current) return;
     final linkId = _provider?['link_id'] ?? _provider?['id'];
     if (linkId == null || _removing || _updatingConsent != null) return;
     _retry = _confirmRevoke;
@@ -437,14 +451,14 @@ class _ProviderScreenState extends State<ProviderScreen>
     });
     try {
       await _settingsService.revokeProviderAccess(linkId.toString());
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       setState(() {
         _provider = null;
         _hasProvider = false;
       });
       context.pop();
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_current) return;
       setState(() {
         _error = 'Unable to revoke access. Please try again.';
         _failures++;
@@ -492,7 +506,10 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildProvider(context));
+
+  Widget _buildProvider(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
@@ -677,6 +694,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _editProviderEmail() async {
+    if (!mounted || !_current) return;
     final original = _provider?['provider_email']?.toString() ?? '';
     var corrected = _correctionEmail ?? original;
     final formKey = GlobalKey<FormState>();
@@ -742,6 +760,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _correctProviderEmail(String email) async {
+    if (!mounted || !_current) return;
     if (_sending || _removing || _hasProvider || _provider == null) return;
     final owner = LocalDbService().activeUserId;
     final linkId = (_provider!['link_id'] ?? _provider!['id']).toString();
@@ -760,7 +779,7 @@ class _ProviderScreenState extends State<ProviderScreen>
       if (!mounted || owner != LocalDbService().activeUserId) return;
       if (e.statusCode == 409) {
         await _loadProvider();
-        if (!mounted) return;
+        if (!mounted || !_current) return;
       }
       setState(() {
         _sending = false;
@@ -816,6 +835,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _copyInvitationCode() async {
+    if (!mounted || !_current) return;
     if (!_canShareInvitation || _sending) return;
     await Clipboard.setData(
       ClipboardData(text: _provider!['invitation_code'].toString()),
@@ -829,6 +849,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   }
 
   Future<void> _shareInvitation() async {
+    if (!mounted || !_current) return;
     if (!_canShareInvitation || _sending) return;
     final box = context.findRenderObject() as RenderBox?;
     try {

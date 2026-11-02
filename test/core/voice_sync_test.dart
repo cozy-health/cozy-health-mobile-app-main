@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:cozy_health/core/audio/voice_player.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:cozy_health/core/api/api_client.dart';
@@ -104,6 +106,43 @@ void main() {
           const MethodChannel('plugins.flutter.io/path_provider'),
           null,
         );
+  });
+
+  testWidgets('logout removes voice playback controls from an open player', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: VoicePlayer(source: 'unused.m4a', duration: 3)),
+      ),
+    );
+    expect(find.byTooltip('Play voice recording'), findsOneWidget);
+    await tester.runAsync(() => TokenStorage().clearToken());
+    await tester.pump();
+    expect(find.byTooltip('Play voice recording'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  test('recordings cannot be played or uploaded by another account', () async {
+    final source = await File(
+      '${folder.path}/private-source.m4a',
+    ).writeAsBytes([4, 5, 6]);
+    final saved = await VoiceAudio.save(
+      RecordedAudio(source.path, 3),
+      'private',
+    );
+    await local.activateAccount('other-voice-owner');
+    await expectLater(
+      VoiceAudio.playable(saved, journal: true),
+      throwsStateError,
+    );
+    await expectLater(
+      VoiceAudio.upload(audio: RecordedAudio(saved, 3), clientId: 'private'),
+      throwsStateError,
+    );
+    expect(adapter.uploads, 0);
+    await local.activateAccount('voice-owner');
+    expect(await VoiceAudio.playable(saved, journal: true), saved);
   });
 
   test(

@@ -1,3 +1,5 @@
+import 'dart:async';
+import '../../../../core/storage/token_storage.dart';
 import 'emergency_email_panel.dart';
 import '../../../../core/widgets/app_button.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
@@ -41,14 +43,37 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
   bool? _failedSms;
   bool _loadFailed = false;
   bool _showEmail = false;
+  StreamSubscription<void>? _clearing, _accounts;
+  bool _sessionEnded = false;
   bool get _active =>
       mounted &&
+      !_sessionEnded &&
       _scope == LocalDbService().boxName(LocalDbService.userSettingsBoxName);
 
   @override
   void initState() {
     super.initState();
+    _clearing = TokenStorage.sessionClearing.listen((_) => _endSession());
+    _accounts = LocalDbService().accountChanges.listen((_) {
+      if (!_active) {
+        _endSession();
+      }
+    });
     _load();
+  }
+
+  void _endSession() {
+    if (!mounted || _sessionEnded) return;
+    setState(() {
+      _sessionEnded = true;
+      _contact = null;
+      _name.clear();
+      _phone.clear();
+      _relationship.clear();
+      _message.clear();
+      _review = false;
+      _editing = false;
+    });
   }
 
   Future<void> _load() async {
@@ -79,6 +104,8 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
 
   @override
   void dispose() {
+    unawaited(_clearing?.cancel());
+    unawaited(_accounts?.cancel());
     for (final controller in [_name, _phone, _relationship, _message]) {
       controller.dispose();
     }
@@ -231,6 +258,17 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_active) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Next of kin')),
+        body: const SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('Your account changed. Reopen this page to continue.'),
+          ),
+        ),
+      );
+    }
     final contact = _contact;
     return Scaffold(
       appBar: AppBar(title: const Text('Next of kin')),

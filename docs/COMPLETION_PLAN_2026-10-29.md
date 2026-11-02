@@ -1,3 +1,5 @@
+**2 November account/offline implementation:** [Repairs and acceptance coverage](ACCOUNT_OFFLINE_RECOVERY_2026-11-02.md). Existing account storage, queue and session checks are reused; account-switch/restore/audio/form failures have regressions. Physical-device and wider streak/multi-device acceptance remain open. Completed build evidence belongs to the exact develop CI run.
+
 # Cozy complete development build plan — 29 October 2026
 
 This is the current complete work order, incorporating the approved full plan and Premium/Student dashboard correction. Historical registers preserve evidence, not instructions to rebuild retired features. Work includes both unfinished implementation and acceptance of existing foundations.

@@ -41,11 +41,14 @@ class JournalRepository {
   }) async {
     if (usePlaceholderData) return currentEntries();
     final scope = _local.boxName(LocalDbService.userSettingsBoxName);
+    bool active() =>
+        scope == _local.boxName(LocalDbService.userSettingsBoxName);
     try {
       final response = await ApiClient.instance.get(
         ApiConstants.journalEntries,
         queryParameters: {'page': page, 'per_page': perPage},
       );
+      if (!active()) return [];
       final items = _extractListData(response.data)
           .whereType<Map>()
           .map((json) => JournalEntry.fromJson(Map<String, dynamic>.from(json)))
@@ -58,8 +61,10 @@ class JournalRepository {
               scope == _local.boxName(LocalDbService.userSettingsBoxName),
         );
       }
+      if (!active()) return [];
       return items;
     } catch (e) {
+      if (!active()) return [];
       return _local.getAllJournalEntries();
     }
   }
@@ -117,18 +122,25 @@ class JournalRepository {
   }
 
   Future<void> deleteJournalEntry(String id) async {
+    final operationOwner = _local.activeUserId;
     if (usePlaceholderData) {
       DemoMode.instance.journals.removeWhere((entry) => entry.id == id);
       DemoMode.instance.changed();
       return;
     }
     await _local.deleteJournalEntry(id);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     await _local.enqueueSync(
       type: 'journal_entry',
       action: 'delete',
       recordId: id,
       payload: null,
     );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
     _local.processSyncQueue();
   }
 
