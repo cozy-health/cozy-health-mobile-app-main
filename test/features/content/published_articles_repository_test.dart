@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:cozy_health/core/api/api_client.dart';
+import 'package:cozy_health/core/api/api_exceptions.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/core/services/network_status.dart';
 import 'package:cozy_health/features/content/data/published_articles_repository.dart';
@@ -12,6 +13,7 @@ class ArticleApi extends Fake implements ApiClient {
   final paths = <String>[];
   final queries = <Map<String, dynamic>?>[];
   bool fail = false;
+  ApiException? apiFailure;
   Map<String, dynamic> article = {
     'id': 'a1',
     'slug': 'mental-health-101',
@@ -30,6 +32,7 @@ class ArticleApi extends Fake implements ApiClient {
     paths.add(path);
     queries.add(queryParameters);
     if (fail) throw StateError('Unavailable');
+    if (apiFailure != null) throw apiFailure!;
     return Response(
       requestOptions: RequestOptions(path: path),
       data: {
@@ -119,6 +122,60 @@ void main() {
         source.browse(query: 'work', category: 'work'),
         throwsStateError,
       );
+    },
+  );
+  test('attribution survives catalogue, detail and offline cache', () async {
+    final api = ArticleApi();
+    api.article = {
+      ...api.article,
+      'license': 'Approved original fixture',
+      'source_url': 'https://example.test/source',
+    };
+    final repository = PublishedArticlesRepository(api: api);
+    final page = await repository.load();
+    expect(page.articles.single.detail['license'], 'Approved original fixture');
+    expect(
+      (await repository.detail(page.articles.single)).detail['source_url'],
+      'https://example.test/source',
+    );
+    networkOffline.value = true;
+    final cached = await repository.load();
+    expect(
+      cached.articles.single.detail['license'],
+      'Approved original fixture',
+    );
+    expect(
+      cached.articles.single.detail['source_url'],
+      'https://example.test/source',
+    );
+  });
+  test(
+    'online refresh replaces cached publication revisions and withdrawal',
+    () async {
+      final api = ArticleApi();
+      final repository = PublishedArticlesRepository(api: api);
+      final first = await repository.load();
+      api.article = {...api.article, 'body': 'Revised published body.'};
+      expect(
+        (await repository.detail(first.articles.single)).body,
+        'Revised published body.',
+      );
+      await repository.load();
+      networkOffline.value = true;
+      expect(
+        (await repository.load()).articles.single.body,
+        'Revised published body.',
+      );
+    },
+  );
+  test(
+    'cached articles cannot bypass an explicit server access denial',
+    () async {
+      final api = ArticleApi();
+      final repository = PublishedArticlesRepository(api: api);
+      await repository.load();
+      api.apiFailure = ApiAuthException(statusCode: 403);
+      await expectLater(repository.load(), throwsA(isA<ApiAuthException>()));
     },
   );
   test(

@@ -102,6 +102,8 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
                       'title': article.title,
                       'slug': article.articleSlug,
                       'body': article.body,
+                      'license': article.license,
+                      'source_url': article.sourceUrl,
                       'excerpt': article.excerpt,
                       'category': article.category,
                       'read_time_minutes': article.readTimeMinutes,

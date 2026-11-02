@@ -27,6 +27,21 @@ class _FlowRepository extends QuizRepository {
   Future<List<QuizAttempt>> fetchAttempts() async => [];
 }
 
+class _PublishedFlowRepository extends _FlowRepository {
+  bool published = false;
+  @override
+  Future<List<ClinicalAssessment>> catalog() async => published
+      ? [
+          ClinicalAssessment.fromDefinition({
+            ...assessmentFixture(ClinicalAssessment.gad7),
+            'slug': 'admin-published-fixture',
+            'title': 'Admin published fixture',
+            'type': 'wellness',
+          }),
+        ]
+      : [];
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final fixture = RepositoryFixture<QuizAttempt>(
@@ -53,6 +68,30 @@ void main() {
   });
   tearDown(resetLocalTestFonts);
   tearDownAll(fixture.close);
+  testWidgets(
+    'refresh discovers newly published admin assessments without reinstall',
+    (tester) async {
+      final repository = _PublishedFlowRepository();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: QuizSelectionScreen(repository: repository),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('No assessments are available yet'), findsOneWidget);
+      repository.published = true;
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+      expect(find.text('Admin published fixture'), findsOneWidget);
+      repository.published = false;
+      await tester.drag(find.byType(ListView), const Offset(0, 400));
+      await tester.pumpAndSettle();
+      expect(find.text('Admin published fixture'), findsNothing);
+      expect(find.text('No assessments are available yet'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
   for (final assessment in ClinicalAssessment.all) {
     testWidgets(
       '${assessment.id} submits every answer with real ID and score',

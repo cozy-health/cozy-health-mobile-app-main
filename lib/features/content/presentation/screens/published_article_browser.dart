@@ -272,7 +272,9 @@ class _PublishedArticleLoaderState extends State<PublishedArticleLoader> {
                     ),
                     WellnessAction(
                       label: 'Retry',
-                      onPressed: () => setState(() => _article = _load()),
+                      onPressed: () => setState(() {
+                        _article = _load();
+                      }),
                     ),
                   ],
                 )

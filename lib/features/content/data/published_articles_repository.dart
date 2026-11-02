@@ -1,4 +1,5 @@
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_exceptions.dart';
 import '../../../core/api/response_data.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/services/network_status.dart';
@@ -10,10 +11,12 @@ class PublishedArticle {
       title = json['title']?.toString() ?? '',
       body = json['body']?.toString() ?? '',
       excerpt = json['excerpt']?.toString() ?? '',
+      license = json['license']?.toString(),
+      sourceUrl = json['source_url']?.toString(),
       category = json['category']?.toString(),
       readMinutes = (json['read_time_minutes'] as num?)?.toInt();
   final String id, title, body, excerpt;
-  final String? slug, category;
+  final String? slug, category, license, sourceUrl;
   final int? readMinutes;
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -21,6 +24,8 @@ class PublishedArticle {
     'title': title,
     'body': body,
     'excerpt': excerpt,
+    'license': license,
+    'source_url': sourceUrl,
     'category': category,
     'read_time_minutes': readMinutes,
   };
@@ -122,8 +127,12 @@ class PublishedArticlesRepository {
       }
       if (!current()) throw StateError('Account changed');
       return PublishedArticlePage(rows, page, last);
-    } catch (_) {
+    } catch (error) {
       if (!current()) rethrow;
+      if (error is ApiAuthException ||
+          (error is ApiException && error.statusCode != null)) {
+        rethrow;
+      }
       final cached = box.get(key);
       if (page == 1 && cached is Map && cached['data'] is List) {
         return PublishedArticlePage(

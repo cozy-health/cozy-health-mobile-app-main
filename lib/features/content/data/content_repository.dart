@@ -187,6 +187,8 @@ class ContentRepository {
         excerpt: articleData['excerpt'] as String? ?? '',
         imageUrl: articleData['image_url'] as String? ?? '',
         body: articleData['body'] as String?,
+        license: articleData['license'] as String?,
+        sourceUrl: articleData['source_url'] as String?,
         savedAt: DateTime.now().toUtc(),
       );
       await _local.saveSavedArticle(article);

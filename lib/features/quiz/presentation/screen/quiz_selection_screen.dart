@@ -59,8 +59,10 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
             subtitle:
                 'Check your connection and try again. Your saved results are still available from Results history.',
             primaryCtaLabel: 'Retry',
-            onPrimaryCta: () =>
-                setState(() => _catalog = _repository.catalog()),
+            onPrimaryCta: () => setState(() {
+              _category = 'All';
+              _catalog = _repository.catalog();
+            }),
           );
         }
         if (!snapshot.hasData) {
@@ -80,8 +82,10 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
             subtitle:
                 'Your care team has not published any approved assessments for this account. You can check again or view your saved results.',
             primaryCtaLabel: 'Retry',
-            onPrimaryCta: () =>
-                setState(() => _catalog = _repository.catalog()),
+            onPrimaryCta: () => setState(() {
+              _category = 'All';
+              _catalog = _repository.catalog();
+            }),
           );
         }
         final types = {
@@ -101,7 +105,10 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                 .toSet();
             return RefreshIndicator(
               onRefresh: () async {
-                setState(() => _catalog = _repository.catalog());
+                setState(() {
+                  _category = 'All';
+                  _catalog = _repository.catalog();
+                });
                 await _catalog;
               },
               child: ListView(
@@ -113,8 +120,10 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                       'No approved assessments are available. Connect to refresh the catalog.',
                     ),
                     TextButton(
-                      onPressed: () =>
-                          setState(() => _catalog = _repository.catalog()),
+                      onPressed: () => setState(() {
+                        _category = 'All';
+                        _catalog = _repository.catalog();
+                      }),
                       child: const Text('Retry'),
                     ),
                   ],

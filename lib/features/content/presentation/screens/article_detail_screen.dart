@@ -65,7 +65,9 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final title = widget.extra['title'] as String? ?? 'Article';
-    final published = widget.extra['publishedArticle'] == true;
+    final published =
+        widget.extra['publishedArticle'] == true ||
+        !ContentRepository().usePlaceholderData;
     final category =
         widget.extra['category'] as String? ?? (published ? '' : 'Anxiety');
     final readTime =
@@ -201,6 +203,28 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                         height: 1.4,
                       ),
                     ),
+                    if (published &&
+                        widget.extra['license'] is String &&
+                        (widget.extra['license'] as String).trim().isNotEmpty)
+                      SelectableText(
+                        'Usage rights: ${widget.extra['license']}',
+                        key: const ValueKey('article-license'),
+                        style: AppTextStyles.body2.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    if (published &&
+                        widget.extra['source_url'] is String &&
+                        (widget.extra['source_url'] as String)
+                            .trim()
+                            .isNotEmpty)
+                      SelectableText(
+                        'Source: ${widget.extra['source_url']}',
+                        key: const ValueKey('article-source'),
+                        style: AppTextStyles.body2.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     SizedBox(height: 24),
 
                     Divider(
@@ -214,6 +238,11 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                         style: serifStyle,
                       ),
                       const SizedBox(height: 24),
+                    ] else if (published) ...[
+                      Text(
+                        'Article content is unavailable. Reconnect and reopen it to try again.',
+                        style: serifStyle,
+                      ),
                     ] else ...[
                       Text(
                         'Anxiety isn\'t weakness. It\'s your nervous system doing its job — just a little too well.\n\nWhen you feel anxious, your body is trying to protect you from something it thinks is a threat. Sometimes that threat is real. Sometimes it isn\'t. Either way, the feeling is valid.',

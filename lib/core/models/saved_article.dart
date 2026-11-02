@@ -28,6 +28,10 @@ class SavedArticle extends HiveObject {
   final int? readTimeMinutes;
   @HiveField(9)
   final String? body;
+  @HiveField(10)
+  final String? license;
+  @HiveField(11)
+  final String? sourceUrl;
 
   SavedArticle({
     required this.id,
@@ -40,6 +44,8 @@ class SavedArticle extends HiveObject {
     this.category,
     this.readTimeMinutes,
     this.body,
+    this.license,
+    this.sourceUrl,
   });
 
   Map<String, dynamic> toJson() {
@@ -55,6 +61,8 @@ class SavedArticle extends HiveObject {
     if (category != null) json['category'] = category;
     if (readTimeMinutes != null) json['read_time_minutes'] = readTimeMinutes;
     if (body != null) json['body'] = body;
+    if (license != null) json['license'] = license;
+    if (sourceUrl != null) json['source_url'] = sourceUrl;
     return json;
   }
 
@@ -67,6 +75,8 @@ class SavedArticle extends HiveObject {
       category: json['category']?.toString(),
       readTimeMinutes: json['read_time_minutes'] as int?,
       body: json['body'] as String?,
+      license: json['license'] as String?,
+      sourceUrl: json['source_url'] as String?,
       excerpt: json['excerpt'] as String? ?? '',
       imageUrl: json['image_url'] as String? ?? '',
       savedAt: json['saved_at'] != null
@@ -97,13 +107,15 @@ class SavedArticleAdapter extends TypeAdapter<SavedArticle> {
       category: fields[7] as String?,
       readTimeMinutes: fields[8] as int?,
       body: fields[9] as String?,
+      license: fields[10] as String?,
+      sourceUrl: fields[11] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, SavedArticle obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -123,6 +135,10 @@ class SavedArticleAdapter extends TypeAdapter<SavedArticle> {
       ..writeByte(8)
       ..write(obj.readTimeMinutes)
       ..writeByte(9)
-      ..write(obj.body);
+      ..write(obj.body)
+      ..writeByte(10)
+      ..write(obj.license)
+      ..writeByte(11)
+      ..write(obj.sourceUrl);
   }
 }
