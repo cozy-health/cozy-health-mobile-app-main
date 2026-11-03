@@ -39,7 +39,7 @@ class _AnalyticsOptInState extends State<AnalyticsOptIn> {
     value: _enabled,
     title: const Text('Help improve Cozy Health (optional)'),
     subtitle: const Text(
-      'Share selected general usage events with PostHog. No health content, crisis activity or session recording. Change this in Privacy settings.',
+      'Help improve Cozy Health by sharing optional usage data. No health content, crisis activity or session recordings. Change this in Privacy settings.',
     ),
     onChanged: _busy
         ? null

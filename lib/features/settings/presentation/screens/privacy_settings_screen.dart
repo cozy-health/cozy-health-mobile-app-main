@@ -234,7 +234,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 title: 'Analytics',
                 children: [
                   _SettingsToggleRow(
-                    label: 'Share selected usage events with PostHog',
+                    label: 'Help improve Cozy Health',
                     value: _shareAnalytics,
                     onChanged: (v) {
                       setState(() => _shareAnalytics = v);
