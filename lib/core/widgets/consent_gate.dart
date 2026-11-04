@@ -337,6 +337,8 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
           AppRouter.ageAuthorization,
           AppRouter.accountDeletion,
           AppRouter.helpSupport,
+          AppRouter.supportInbox,
+          AppRouter.privacyRequests,
           AppRouter.reportProblem,
           AppRouter.feedback,
           AppRouter.legalHub,

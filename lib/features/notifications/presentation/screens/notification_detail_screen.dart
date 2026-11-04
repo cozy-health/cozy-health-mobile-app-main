@@ -43,6 +43,7 @@ class NotificationDetailScreen extends StatelessWidget {
                 }
                 final theme = Theme.of(context);
                 final destination = switch (current.type) {
+                  'support' => AppRouter.supportInbox,
                   'reply' || 'like' => AppRouter.communityHub,
                   'crisis' => AppRouter.crisisContact,
                   'journal' => AppRouter.journal,

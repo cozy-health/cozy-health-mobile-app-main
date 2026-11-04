@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../../../core/widgets/security_blur.dart';
+import 'package:uuid/uuid.dart';
 
 class ReportProblemScreen extends StatefulWidget {
   const ReportProblemScreen({super.key, this.feedback = false});
@@ -17,6 +18,8 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
   bool _busy = false;
   String? _error;
   String _category = 'General';
+  String _requestId = const Uuid().v4();
+  String? _lastPayload;
   Future<void> _submit() async {
     if (_owner != LocalDbService().activeUserId ||
         _busy ||
@@ -27,6 +30,11 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
       _busy = true;
       _error = null;
     });
+    final payload = '$_category:${_message.text.trim()}';
+    if (_lastPayload != payload) {
+      _requestId = const Uuid().v4();
+      _lastPayload = payload;
+    }
     try {
       await ApiClient().post(
         '/support/reports',
@@ -34,6 +42,7 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
           'subject':
               '${widget.feedback ? 'Feedback' : 'Problem report'}: $_category',
           'message': _message.text.trim(),
+          'request_id': _requestId,
         },
       );
       if (!mounted || _owner != LocalDbService().activeUserId) return;

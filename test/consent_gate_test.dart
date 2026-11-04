@@ -251,6 +251,14 @@ void main() {
       AppRouter.router.go(AppRouter.crisisHub);
       await tester.pumpAndSettle();
       expect(find.text('Route content'), findsOneWidget);
+      for (final path in [AppRouter.supportInbox, AppRouter.privacyRequests]) {
+        AppRouter.router.go(path);
+        await tester.pumpAndSettle();
+        expect(find.text('Route content'), findsOneWidget);
+      }
+      AppRouter.router.go(AppRouter.home);
+      await tester.pumpAndSettle();
+      expect(find.text('Route content'), findsNothing);
       await tester.pumpWidget(const SizedBox());
       AppRouter.router.go(AppRouter.home);
       await TokenStorage().clearToken();

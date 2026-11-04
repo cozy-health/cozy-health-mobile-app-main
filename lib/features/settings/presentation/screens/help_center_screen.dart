@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/theme/cozy_colors.dart';
 
 class FaqItem {
   const FaqItem(this.category, this.question, this.answer);
@@ -123,6 +125,24 @@ class HelpCenterScreen extends StatefulWidget {
 
 class _HelpCenterScreenState extends State<HelpCenterScreen> {
   final _search = TextEditingController();
+  Widget _requestLink(String label, IconData icon, String route) =>
+      AppPressable(
+        label: label,
+        onPressed: () => context.push(route),
+        child: Container(
+          constraints: BoxConstraints(
+            minHeight: context.cozyColors.wellness.touch,
+          ),
+          padding: EdgeInsets.all(context.cozyColors.wellness.small),
+          child: Row(
+            children: [
+              Icon(icon),
+              SizedBox(width: context.cozyColors.wellness.small),
+              Expanded(child: Text(label)),
+            ],
+          ),
+        ),
+      );
   @override
   void dispose() {
     _search.dispose();
@@ -206,6 +226,16 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
             onPressed: () => context.push(AppRouter.reportProblem),
             icon: const Icon(Icons.help_outline),
             label: const Text('Report a problem'),
+          ),
+          _requestLink(
+            'My support conversations',
+            Icons.forum_outlined,
+            AppRouter.supportInbox,
+          ),
+          _requestLink(
+            'Privacy requests',
+            Icons.privacy_tip_outlined,
+            AppRouter.privacyRequests,
           ),
           TextButton.icon(
             onPressed: () => context.push(AppRouter.feedback),

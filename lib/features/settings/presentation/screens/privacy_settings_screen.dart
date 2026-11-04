@@ -1,4 +1,6 @@
 import '../../../../core/services/usage_analytics.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/theme/cozy_colors.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import '../../../../core/security_gate.dart';
@@ -182,6 +184,24 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(height: 24),
+
+              AppPressable(
+                label: 'Privacy requests',
+                onPressed: () => context.push(AppRouter.privacyRequests),
+                child: Container(
+                  constraints: BoxConstraints(
+                    minHeight: context.cozyColors.wellness.touch,
+                  ),
+                  padding: EdgeInsets.all(context.cozyColors.wellness.small),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.privacy_tip_outlined),
+                      SizedBox(width: context.cozyColors.wellness.small),
+                      const Expanded(child: Text('Privacy requests')),
+                    ],
+                  ),
+                ),
+              ),
 
               _SettingsSection(
                 title: 'Provider access',

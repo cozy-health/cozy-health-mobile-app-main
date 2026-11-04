@@ -96,6 +96,7 @@ import '../../features/settings/presentation/screens/reminder_times_screen.dart'
 import '../../features/settings/presentation/screens/blocked_users_screen.dart';
 import '../../features/settings/presentation/screens/data_export_status_screen.dart';
 import '../../features/settings/presentation/screens/download_my_data_screen.dart';
+import '../../features/settings/presentation/screens/customer_operations_screens.dart';
 
 class AppRouter {
   static final navigatorKey = GlobalKey<NavigatorState>();
@@ -115,6 +116,8 @@ class AppRouter {
   static const String editProfile = '/edit-profile';
   static const String privacySettings = '/privacy-settings';
   static const String helpSupport = '/help-support';
+  static const String supportInbox = '/support-inbox';
+  static const String privacyRequests = '/privacy-requests';
   static const String digitalWellbeing = '/digital-wellbeing';
   static const String termsPolicies = '/terms-policies';
   static const String reportProblem = '/report-problem';
@@ -652,6 +655,16 @@ class AppRouter {
         path: helpSupport,
         name: 'helpSupport',
         builder: (_, __) => const HelpSupportScreen(),
+      ),
+      GoRoute(
+        path: supportInbox,
+        name: 'supportInbox',
+        builder: (_, __) => const SupportInboxScreen(),
+      ),
+      GoRoute(
+        path: privacyRequests,
+        name: 'privacyRequests',
+        builder: (_, __) => const PrivacyRequestsScreen(),
       ),
       GoRoute(
         path: termsPolicies,

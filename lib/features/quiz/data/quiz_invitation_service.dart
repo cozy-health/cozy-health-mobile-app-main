@@ -7,6 +7,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../settings/data/support_inbox_link.dart';
 
 class QuizInvitationService {
   QuizInvitationService._();
@@ -15,6 +16,7 @@ class QuizInvitationService {
   static const _key = 'cozy_pending_quiz_invitation';
   bool _draining = false;
   bool _presented = false;
+  bool _supportPending = false;
   static String? invitationToken(Uri uri) {
     if (uri.scheme != 'https' ||
         uri.host != Uri.parse(ApiConstants.baseUrl).host ||
@@ -43,6 +45,11 @@ class QuizInvitationService {
   }
 
   Future<void> _capture(Uri uri) async {
+    if (SupportInboxLink.accepts(uri)) {
+      _supportPending = true;
+      drain();
+      return;
+    }
     final token = invitationToken(uri);
     if (token == null) return;
     await _storage.write(
@@ -79,9 +86,7 @@ class QuizInvitationService {
   }
 
   void drain() async {
-    if (_draining ||
-        _presented ||
-        AppRouter.navigatorKey.currentState == null) {
+    if (_draining || AppRouter.navigatorKey.currentState == null) {
       return;
     }
     final path = AppRouter.router.routeInformationProvider.value.uri.path;
@@ -98,6 +103,23 @@ class QuizInvitationService {
     ].contains(path)) {
       return;
     }
+    if (_supportPending) {
+      _draining = true;
+      try {
+        final generation = TokenStorage.generation;
+        if (await TokenStorage().getToken() != null &&
+            generation == TokenStorage.generation) {
+          _supportPending = false;
+          if (path != AppRouter.supportInbox) {
+            AppRouter.router.push(AppRouter.supportInbox);
+          }
+        }
+      } finally {
+        _draining = false;
+      }
+      return;
+    }
+    if (_presented) return;
     _draining = true;
     try {
       final owner = LocalDbService().activeUserId;
