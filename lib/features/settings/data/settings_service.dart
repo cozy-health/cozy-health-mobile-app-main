@@ -100,6 +100,36 @@ class SettingsService {
     return _providerRead(ApiConstants.provider, 'linked_provider_v1');
   }
 
+  Future<Map<String, dynamic>> requestProviderReplacement({
+    required int originalLinkId,
+    required String providerEmail,
+    required String requestId,
+  }) async {
+    _requireOnline();
+    final owner = LocalDbService().activeUserId;
+    final result = responseMap(
+      await _apiClient.post(
+        '/provider/replacements',
+        body: {
+          'original_link_id': originalLinkId,
+          'provider_email': providerEmail,
+          'request_id': requestId,
+        },
+      ),
+    );
+    await _invalidateProviderCache(owner);
+    return result;
+  }
+
+  Future<void> cancelProviderReplacement(String requestId) async {
+    _requireOnline();
+    final owner = LocalDbService().activeUserId;
+    await _apiClient.delete(
+      '/provider/replacements/${Uri.encodeComponent(requestId)}',
+    );
+    await _invalidateProviderCache(owner);
+  }
+
   Future<Map<String, dynamic>> requestProvider({
     required String providerEmail,
     String? providerName,

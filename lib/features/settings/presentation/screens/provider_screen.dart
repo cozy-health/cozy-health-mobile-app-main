@@ -21,6 +21,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../utils/responsive_extensions.dart';
 import '../../data/settings_service.dart';
 import 'provider_resources_screen.dart';
+import '../widgets/provider_replacement_panel.dart';
 
 class ProviderScreen extends StatefulWidget {
   const ProviderScreen({super.key, this.settingsService});
@@ -68,6 +69,7 @@ class _ProviderScreenState extends State<ProviderScreen>
   int _failures = 0;
   VoidCallback? _retry;
   Map<String, dynamic>? _provider;
+  Map<String, dynamic>? _replacement;
   bool _hasProvider = false;
   bool _showResources = false;
   String? _correctionEmail;
@@ -145,6 +147,8 @@ class _ProviderScreenState extends State<ProviderScreen>
 
       setState(() {
         _provider = provider is Map<String, dynamic> ? provider : null;
+        final replacement = response['replacement'];
+        _replacement = replacement is Map<String, dynamic> ? replacement : null;
         _scheduleInvitationExpiry();
         _hasProvider = response['has_provider'] == true;
         if (_provider?['verification_actor'] == 'provider' && !_hasProvider) {
@@ -567,6 +571,19 @@ class _ProviderScreenState extends State<ProviderScreen>
                         _pendingVerification()
                       else
                         _addTherapistForm(),
+
+                      if (_hasProvider &&
+                          _replacement != null &&
+                          _provider?['link_id'] is int)
+                        ProviderReplacementPanel(
+                          key: ValueKey(
+                            'provider-replacement-${_provider!['link_id']}',
+                          ),
+                          originalLinkId: _provider!['link_id'] as int,
+                          state: _replacement!,
+                          service: _settingsService,
+                          onChanged: _loadProvider,
+                        ),
 
                       4.sh,
                     ],
