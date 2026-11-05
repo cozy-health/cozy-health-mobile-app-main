@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
@@ -25,12 +24,15 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
   bool _accountChanged = false;
   bool get _ownsAccount =>
       !_accountChanged && _owner == LocalDbService().activeUserId;
-  PlatformFile? _file;
   Map<String, dynamic>? _application;
   Map<String, dynamic>? _eligibility;
   String? _challengeId;
-  bool _emailRoute = false;
-  bool _enabled = false, _busy = false, _acknowledged = false;
+  final _website = TextEditingController();
+  List<Map<String, dynamic>> _schoolRequests = [];
+  bool _requestSchool = false;
+  int _resendSeconds = 0;
+  Timer? _resendTimer;
+  bool _enabled = false, _busy = false;
   bool _loading = true, _loadFailed = false, _resubmitting = false;
   String? _message;
   bool get _showForm =>
@@ -61,7 +63,6 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
         _application = null;
         _eligibility = null;
         _challengeId = null;
-        _file = null;
         _message = null;
       });
     });
@@ -71,6 +72,8 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
   @override
   void dispose() {
     _accountSubscription?.cancel();
+    _resendTimer?.cancel();
+    _website.dispose();
     _institution.dispose();
     _email.dispose();
     _confirmation.dispose();
@@ -85,9 +88,16 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
     });
     try {
       final response = await ApiClient().get('/student-verification');
+      final schools = await ApiClient().get('/student-school-requests');
       if (!mounted || !_ownsAccount) return;
       final data = response.data as Map;
       setState(() {
+        _schoolRequests = schools.data is Map && schools.data['data'] is List
+            ? (schools.data['data'] as List)
+                  .whereType<Map>()
+                  .map((r) => Map<String, dynamic>.from(r))
+                  .toList()
+            : [];
         _enabled = data['enabled'] == true;
         _application = data['application'] == null
             ? null
@@ -111,70 +121,6 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
     }
   }
 
-  Future<void> _choose() async {
-    final file = await FilePicker.pickFile(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
-    );
-    if (!mounted || file == null || !_ownsAccount) return;
-    final length = await file.length();
-    if (!mounted || !_ownsAccount) return;
-    setState(() {
-      if (length == null || length > 3 * 1024 * 1024) {
-        _message = 'Choose a file no larger than 3 MB.';
-      } else {
-        _file = file;
-        _message = null;
-      }
-    });
-  }
-
-  Future<void> _submit() async {
-    if (_file == null ||
-        !_showForm ||
-        !_enabled ||
-        !_acknowledged ||
-        _institution.text.trim().isEmpty ||
-        _busy) {
-      return;
-    }
-    setState(() => _busy = true);
-    try {
-      final bytes = await _file?.readAsBytes();
-      if (bytes == null || bytes.length > 3 * 1024 * 1024 || !_ownsAccount) {
-        return;
-      }
-      await ApiClient().post(
-        '/student-verification',
-        data: FormData.fromMap({
-          'institution': _institution.text.trim(),
-          if (_email.text.trim().isNotEmpty)
-            'institution_email': _email.text.trim(),
-          'acknowledged': '1',
-          'evidence': MultipartFile.fromBytes(bytes, filename: _file?.name),
-        }),
-        options: Options(contentType: 'multipart/form-data'),
-      );
-      if (mounted && _ownsAccount) {
-        setState(() {
-          _file = null;
-          _message =
-              'Submitted for private admin review of your current enrolment.';
-        });
-        await _load();
-      }
-    } catch (_) {
-      if (mounted && _ownsAccount) {
-        setState(
-          () => _message =
-              'Could not submit. Check for an existing pending application before retrying.',
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
   String _failure(Object error, String fallback) {
     if (error is ApiException) return error.message;
     if (error is DioException && error.response?.data is Map) {
@@ -185,7 +131,11 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
   }
 
   Future<void> _requestEmail() async {
-    if (_busy || !_enabled || _email.text.trim().isEmpty || !_ownsAccount) {
+    if (_busy ||
+        _resendSeconds > 0 ||
+        !_enabled ||
+        _email.text.trim().isEmpty ||
+        !_ownsAccount) {
       return;
     }
     setState(() => _busy = true);
@@ -198,14 +148,24 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
       setState(() {
         _challengeId = (response.data as Map)['challenge_id'] as String?;
         _confirmation.clear();
-        _message = 'Check your school inbox. Enter the code within 15 minutes.';
+        _message = 'Check your school inbox. Enter the code within 10 minutes.';
+        _resendSeconds = 60;
+        _resendTimer?.cancel();
+        _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          if (!mounted || !_ownsAccount || _resendSeconds <= 1) {
+            timer.cancel();
+            if (mounted) setState(() => _resendSeconds = 0);
+          } else {
+            setState(() => _resendSeconds--);
+          }
+        });
       });
     } catch (error) {
       if (mounted && _ownsAccount) {
         setState(
           () => _message = _failure(
             error,
-            'Could not send verification. Retry or submit enrolment documents.',
+            'Could not send verification. Retry or request to add your school.',
           ),
         );
       }
@@ -250,6 +210,49 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
     }
   }
 
+  Future<void> _submitSchool() async {
+    if (_busy || !_ownsAccount) return;
+    final address = _email.text.trim();
+    if (!address.contains('@') ||
+        _institution.text.trim().isEmpty ||
+        _website.text.trim().isEmpty) {
+      setState(
+        () => _message =
+            'Enter your school email, institution name and official website.',
+      );
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await ApiClient().post(
+        '/student-school-requests',
+        data: {
+          'domain': address.split('@').last.toLowerCase(),
+          'institution': _institution.text.trim(),
+          'website': _website.text.trim(),
+        },
+      );
+      if (!mounted || !_ownsAccount) return;
+      setState(() {
+        _requestSchool = false;
+        _message =
+            'School request submitted. Approval still requires you to verify your own mailbox.';
+      });
+      await _load();
+    } catch (error) {
+      if (mounted && _ownsAccount) {
+        setState(
+          () => _message = _failure(
+            error,
+            'Could not submit your school request. Please retry.',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => SecurityBlur(
     child: _ownsAccount
@@ -272,10 +275,10 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
         padding: const EdgeInsets.all(24),
         children: [
           const Text(
-            'Verify a school email on an approved student-only domain, or submit recent documents for admin review. Use your existing account even if you sign in with a different email. Eligibility lasts 12 months; renewal opens 30 days before expiry.',
+            'Verify a Nigerian tertiary school email ending in .edu.ng or an approved institution domain. Use your existing Cozy account. Eligibility lasts 12 months; renewal opens 30 days before expiry.',
           ),
           const Text(
-            'Your submission is locked while it is reviewed. Documents are deleted after approval or rejection, or after 14 days without a decision.',
+            'This checks mailbox ownership, not current enrollment. Staff and alumni with working school mailboxes may qualify. Your school email is private and never shared with providers. It is retained while eligible and for 90 days afterward; a protected email fingerprint prevents duplicate account claims until account deletion.',
           ),
           if (_loading) const Text('Loading your application...'),
           if (_loadFailed)
@@ -305,13 +308,11 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
             AppButton(
               text: _application?['status'] == 'approved'
                   ? 'Renew student eligibility'
-                  : 'Submit new evidence',
+                  : 'Verify school email',
               onPressed: !_enabled || _busy
                   ? null
                   : () => setState(() {
                       _resubmitting = true;
-                      _file = null;
-                      _acknowledged = false;
                       _message = null;
                     }),
             ),
@@ -322,77 +323,60 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
             ),
           ],
           if (_showForm) ...[
-            AppButton(
-              key: const ValueKey('student-email-route'),
-              text: 'Use school email',
-              isOutlined: !_emailRoute,
-              onPressed: _busy
-                  ? null
-                  : () => setState(() => _emailRoute = true),
-            ),
-            AppButton(
-              key: const ValueKey('student-document-route'),
-              text: 'Use enrolment documents',
-              isOutlined: _emailRoute,
-              onPressed: _busy
-                  ? null
-                  : () => setState(() => _emailRoute = false),
-            ),
-            if (!_emailRoute)
-              TextField(
-                controller: _institution,
-                decoration: const InputDecoration(labelText: 'Institution'),
-              ),
             TextField(
+              key: const ValueKey('student-school-email'),
               controller: _email,
-              decoration: InputDecoration(
-                labelText: _emailRoute
-                    ? 'School email'
-                    : 'Institution email (optional)',
-              ),
+              decoration: const InputDecoration(labelText: 'School email'),
               keyboardType: TextInputType.emailAddress,
             ),
-            if (_emailRoute) ...[
-              const Text(
-                'Only approved student-only domains qualify automatically. Verify ownership using the code sent to your school inbox. For other domains, use enrolment documents.',
-              ),
-              AppButton(
-                key: const ValueKey('student-email-request'),
-                text: 'Send verification email',
-                isLoading: _busy,
-                onPressed: !_enabled || _busy ? null : _requestEmail,
-              ),
-            ],
-            if (!_emailRoute) ...[
-              const Text(
-                'Upload a current-term enrolment letter, registration record or student ID showing current validity, your name and institution. Cover unrelated details.',
-              ),
-              const SizedBox(height: 16),
-              AppButton(
-                key: const ValueKey('student-evidence'),
-                text: _file?.name ?? 'Choose enrolment evidence · PDF or image',
-                isOutlined: true,
-                onPressed: !_enabled || _busy ? null : _choose,
-              ),
-              CheckboxListTile(
-                value: _acknowledged,
-                onChanged: !_enabled || _busy
-                    ? null
-                    : (value) => setState(() => _acknowledged = value == true),
-                title: const Text(
-                  'I authorize private review of this evidence for Student eligibility.',
+            const Text(
+              'We send a single-use six-digit code, valid for 10 minutes with three attempts. Verification enables Student pricing; paid access starts only after Apple or Google confirms your purchase.',
+            ),
+            AppButton(
+              key: const ValueKey('student-email-request'),
+              text: _resendSeconds > 0
+                  ? 'Resend in $_resendSeconds seconds'
+                  : 'Send verification email',
+              isLoading: _busy,
+              onPressed: !_enabled || _busy || _resendSeconds > 0
+                  ? null
+                  : _requestEmail,
+            ),
+            AppButton(
+              key: const ValueKey('student-school-request-toggle'),
+              text: 'Request to add my school',
+              isOutlined: true,
+              onPressed: _busy
+                  ? null
+                  : () => setState(() => _requestSchool = !_requestSchool),
+            ),
+            if (_requestSchool) ...[
+              TextField(
+                key: const ValueKey('student-school-institution'),
+                controller: _institution,
+                decoration: const InputDecoration(
+                  labelText: 'Institution name',
                 ),
               ),
+              TextField(
+                key: const ValueKey('student-school-website'),
+                controller: _website,
+                decoration: const InputDecoration(
+                  labelText: 'Official school website',
+                ),
+                keyboardType: TextInputType.url,
+              ),
               AppButton(
-                key: const ValueKey('student-submit'),
-                text: 'Submit for review',
-                isLoading: _busy,
-                onPressed: !_enabled || !_acknowledged || _file == null
-                    ? null
-                    : _submit,
+                key: const ValueKey('student-school-request-submit'),
+                text: 'Submit school request',
+                onPressed: !_enabled || _busy ? null : _submitSchool,
               ),
             ],
           ],
+          for (final school in _schoolRequests)
+            Text(
+              'School request: ${school['institution']} - ${school['status']}',
+            ),
           if (_challengeId != null && !_loading && !_loadFailed) ...[
             TextField(
               key: const ValueKey('student-email-code'),
@@ -411,31 +395,6 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
               onPressed: !_enabled || _busy ? null : _confirmEmail,
             ),
           ],
-          if (_application?['id'] is String &&
-              _application?['status'] == 'pending' &&
-              _application?['institution_email'] != null)
-            AppButton(
-              text: 'Verify institution email',
-              isOutlined: true,
-              onPressed: () async {
-                if (!_ownsAccount || _busy) return;
-                try {
-                  await ApiClient().post(
-                    '/student-verification/${_application?['id']}/verify-email',
-                  );
-                  if (mounted && _ownsAccount) {
-                    setState(() => _message = 'Check your institution inbox.');
-                  }
-                } catch (_) {
-                  if (mounted && _ownsAccount) {
-                    setState(
-                      () => _message =
-                          'Could not send verification. Manual review remains available.',
-                    );
-                  }
-                }
-              },
-            ),
           if (_message != null) Text(_message!),
           const Text(
             'Questions or appeals: Team@cozyhealth.org. Student eligibility does not activate a paid plan; a separate store purchase is required.',

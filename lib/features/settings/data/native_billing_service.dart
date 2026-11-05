@@ -17,6 +17,7 @@ class NativeBillingService extends ChangeNotifier {
   List<ProductDetails> products = [];
   Map<String, dynamic> catalog = {};
   bool enabled = false, studentEligible = false, busy = false;
+  bool studentReverificationRequired = false;
   String? message;
   Future<void> load() async {
     _accountChanges ??= LocalDbService().accountChanges.listen((_) {
@@ -27,6 +28,7 @@ class NativeBillingService extends ChangeNotifier {
       catalog = {};
       enabled = false;
       studentEligible = false;
+      studentReverificationRequired = false;
       busy = false;
       message = null;
       notifyListeners();
@@ -62,8 +64,19 @@ class NativeBillingService extends ChangeNotifier {
     _owner = owner;
     _token = token;
     _accountToken = data['account_token'] as String?;
-    enabled = data['enabled'] == true;
+    final platformKey = defaultTargetPlatform == TargetPlatform.iOS
+        ? 'apple'
+        : 'google';
+    final readiness = data['platform_ready'];
+    enabled =
+        data['enabled'] == true &&
+        (readiness is! Map || readiness[platformKey] == true);
     studentEligible = data['student_eligible'] == true;
+    final eligibility = data['student_eligibility'];
+    studentReverificationRequired =
+        eligibility is Map &&
+        eligibility['status'] != 'none' &&
+        eligibility['renewal_available'] == true;
     catalog = Map<String, dynamic>.from(data['products'] as Map? ?? {});
     if (!enabled || !await _store.isAvailable()) {
       enabled = false;
@@ -121,6 +134,20 @@ class NativeBillingService extends ChangeNotifier {
     message = null;
     notifyListeners();
     try {
+      await ApiClient().post(
+        '/store/purchase-check',
+        data: {
+          'platform': defaultTargetPlatform == TargetPlatform.iOS
+              ? 'apple'
+              : 'google',
+          'product_id': product.id,
+        },
+      );
+      if (_owner != LocalDbService().activeUserId ||
+          _token != await TokenStorage().getToken()) {
+        busy = false;
+        return;
+      }
       await _store.buyNonConsumable(
         purchaseParam: PurchaseParam(
           productDetails: product,

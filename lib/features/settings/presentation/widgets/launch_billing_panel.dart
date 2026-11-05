@@ -43,16 +43,30 @@ class _LaunchBillingPanelState extends State<LaunchBillingPanel> {
           ),
         if (_billing.message != null)
           Text(_billing.message!, semanticsLabel: _billing.message),
+        if (_billing.studentReverificationRequired)
+          const Text(
+            'Verify your school email again to continue Student purchase eligibility. Your store-confirmed paid access and successful renewals remain valid. Manage automatic renewal through Apple or Google.',
+          ),
         const SizedBox(height: 16),
         AppButton(
           key: const ValueKey('student-verification'),
-          text: 'Apply for Student pricing',
+          text: _billing.studentReverificationRequired
+              ? 'Verify school email again'
+              : 'Get student pricing',
           isOutlined: true,
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const StudentVerificationScreen(),
-            ),
-          ),
+          onPressed: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const StudentVerificationScreen(),
+              ),
+            );
+            if (!mounted) return;
+            try {
+              await _billing.load();
+            } catch (_) {
+              if (mounted) setState(() {});
+            }
+          },
         ),
         const SizedBox(height: 8),
         AppButton(

@@ -39,10 +39,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     },
     {
       'package_name': 'Student',
-      'features': [
-        'All Premium features',
-        'Verify a student-only school email or submit current enrolment documents',
-      ],
+      'features': ['All Premium features', 'Verify a Nigerian academic email'],
     },
     {
       'package_name': 'Premium',
@@ -138,7 +135,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Choose Standard, Student, or Premium. Student includes all Premium features with verified current enrolment.',
+            'Choose Standard, Student, or Premium. Student includes all Premium features with verified Nigerian academic email eligibility.',
           ),
           const SizedBox(height: 20),
           for (final row in _packages) _plan(row),
@@ -153,7 +150,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             child: Padding(
               padding: EdgeInsets.all(20),
               child: Text(
-                'The store shows the applicable price and renewal details before payment. Student and Premium have the same paid benefits. Verify an approved student-only school email or submit current enrolment documents for review. Eligibility lasts 12 months and does not activate a subscription.',
+                'The store shows the applicable price and renewal details before payment. Student and Premium have the same paid benefits. Verify a Nigerian academic email ending in .edu.ng or an approved school domain. Eligibility lasts 12 months and does not activate a subscription.',
               ),
             ),
           ),

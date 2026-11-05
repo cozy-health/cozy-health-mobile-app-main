@@ -6,6 +6,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cozy_health/core/api/api_client.dart';
 import 'package:cozy_health/features/settings/presentation/screens/student_verification_screen.dart';
+import 'package:cozy_health/features/settings/presentation/widgets/launch_billing_panel.dart';
+import 'package:cozy_health/features/settings/data/native_billing_service.dart';
 import 'package:cozy_health/utils/screen_util.dart';
 import 'support/local_fonts.dart';
 
@@ -13,6 +15,7 @@ class StudentReviewTransport implements HttpClientAdapter {
   String status = 'pending';
   bool fail = false;
   bool empty = false, renewal = false, emailVerified = false, failEmail = false;
+  Map<String, dynamic>? schoolRequest;
   String? challengeId;
   Map<String, dynamic>? confirmation;
   @override
@@ -21,6 +24,27 @@ class StudentReviewTransport implements HttpClientAdapter {
     Stream<List<int>>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    if (options.path == '/student-school-requests') {
+      if (options.method == 'POST') {
+        schoolRequest = Map<String, dynamic>.from(options.data as Map);
+      }
+      return ResponseBody.fromString(
+        jsonEncode({
+          'data': schoolRequest == null
+              ? []
+              : [
+                  {
+                    'institution': schoolRequest!['institution'],
+                    'status': 'pending',
+                  },
+                ],
+        }),
+        options.method == 'POST' ? 201 : 200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    }
     if (options.method == 'POST' &&
         options.path == '/student-verification/email') {
       challengeId = 'fixture-email-challenge';
@@ -29,7 +53,7 @@ class StudentReviewTransport implements HttpClientAdapter {
           failEmail
               ? {
                   'message':
-                      'This domain is not approved. Submit documents instead.',
+                      'This school domain is not supported. Request to add your Nigerian institution.',
                 }
               : {'challenge_id': challengeId},
         ),
@@ -153,7 +177,7 @@ void main() {
     expect(find.text('Refresh application status'), findsOneWidget);
   });
   testWidgets(
-    'rejection shows its reason and opens a fresh evidence form explicitly',
+    'rejection shows its reason and opens school email verification explicitly',
     (tester) async {
       transport.status = 'rejected';
       await show(tester);
@@ -165,12 +189,15 @@ void main() {
       );
       expect(find.byType(TextField), findsNothing);
       expect(find.text('Choose another plan'), findsOneWidget);
-      await tester.ensureVisible(find.text('Submit new evidence'));
-      await tester.tap(find.text('Submit new evidence'));
+      await tester.ensureVisible(find.text('Verify school email'));
+      await tester.tap(find.text('Verify school email'));
       await tester.pumpAndSettle();
-      expect(find.byType(TextField), findsNWidgets(2));
-      await reveal(tester, find.byKey(const ValueKey('student-evidence')));
-      expect(find.byKey(const ValueKey('student-evidence')), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byKey(const ValueKey('student-evidence')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('student-email-request')),
+        findsOneWidget,
+      );
     },
   );
   testWidgets('active eligibility cannot be replaced with a new application', (
@@ -203,11 +230,6 @@ void main() {
     (tester) async {
       transport.empty = true;
       await show(tester);
-      await tester.ensureVisible(
-        find.byKey(const ValueKey('student-email-route')),
-      );
-      await tester.tap(find.byKey(const ValueKey('student-email-route')));
-      await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('student-evidence')), findsNothing);
       await tester.enterText(
         find.byType(TextField).first,
@@ -241,17 +263,12 @@ void main() {
       expect(find.byKey(const ValueKey('student-email-code')), findsNothing);
     },
   );
-  testWidgets('unapproved school emails retain the document route', (
+  testWidgets('unsupported school emails offer a school request without uploads', (
     tester,
   ) async {
     transport.empty = true;
     transport.failEmail = true;
     await show(tester);
-    await tester.ensureVisible(
-      find.byKey(const ValueKey('student-email-route')),
-    );
-    await tester.tap(find.byKey(const ValueKey('student-email-route')));
-    await tester.pumpAndSettle();
     await tester.enterText(
       find.byType(TextField).first,
       'learner@unknown.example',
@@ -263,21 +280,34 @@ void main() {
     await tester.pumpAndSettle();
     await reveal(
       tester,
-      find.text('This domain is not approved. Submit documents instead.'),
+      find.text(
+        'This school domain is not supported. Request to add your Nigerian institution.',
+      ),
     );
     expect(
-      find.text('This domain is not approved. Submit documents instead.'),
+      find.text(
+        'This school domain is not supported. Request to add your Nigerian institution.',
+      ),
       findsOneWidget,
     );
     await reveal(
       tester,
-      find.byKey(const ValueKey('student-document-route')),
+      find.byKey(const ValueKey('student-school-request-toggle')),
       step: -200,
     );
-    await tester.tap(find.byKey(const ValueKey('student-document-route')));
+    await tester.tap(
+      find.byKey(const ValueKey('student-school-request-toggle')),
+    );
     await tester.pumpAndSettle();
-    await reveal(tester, find.byKey(const ValueKey('student-evidence')));
-    expect(find.byKey(const ValueKey('student-evidence')), findsOneWidget);
+    expect(find.byKey(const ValueKey('student-evidence')), findsNothing);
+    await reveal(
+      tester,
+      find.byKey(const ValueKey('student-school-request-submit')),
+    );
+    expect(
+      find.byKey(const ValueKey('student-school-request-submit')),
+      findsOneWidget,
+    );
   });
   testWidgets(
     'renewal opens early while active eligibility stays visible at large text',
@@ -304,8 +334,11 @@ void main() {
       await reveal(tester, find.text('Renew student eligibility'));
       await tester.tap(find.text('Renew student eligibility'));
       await tester.pumpAndSettle();
-      await reveal(tester, find.byKey(const ValueKey('student-email-route')));
-      expect(find.byKey(const ValueKey('student-email-route')), findsOneWidget);
+      await reveal(tester, find.byKey(const ValueKey('student-email-request')));
+      expect(
+        find.byKey(const ValueKey('student-email-request')),
+        findsOneWidget,
+      );
       await reveal(
         tester,
         find.textContaining('Current eligibility ends:'),
@@ -313,6 +346,97 @@ void main() {
       );
       expect(find.textContaining('Current eligibility ends:'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets('school requests submit the domain and retain visible status', (
+    tester,
+  ) async {
+    transport.empty = true;
+    await show(tester);
+    await tester.enterText(
+      find.byKey(const ValueKey('student-school-email')),
+      'learner@school.org',
+    );
+    await reveal(
+      tester,
+      find.byKey(const ValueKey('student-school-request-toggle')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('student-school-request-toggle')),
+    );
+    await tester.pumpAndSettle();
+    await reveal(
+      tester,
+      find.byKey(const ValueKey('student-school-institution')),
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('student-school-institution')),
+      'Nigerian School',
+    );
+    await reveal(tester, find.byKey(const ValueKey('student-school-website')));
+    await tester.enterText(
+      find.byKey(const ValueKey('student-school-website')),
+      'https://school.org',
+    );
+    await reveal(
+      tester,
+      find.byKey(const ValueKey('student-school-request-submit')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('student-school-request-submit')),
+    );
+    await tester.pumpAndSettle();
+    expect(transport.schoolRequest, {
+      'domain': 'school.org',
+      'institution': 'Nigerian School',
+      'website': 'https://school.org',
+    });
+    await reveal(
+      tester,
+      find.text('School request: Nigerian School - pending'),
+    );
+    expect(
+      find.text('School request: Nigerian School - pending'),
+      findsOneWidget,
+    );
+    expect(transport.emailVerified, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'plans prompt for email renewal without claiming to cancel paid access',
+    (tester) async {
+      final billing = NativeBillingService.instance;
+      billing.studentReverificationRequired = true;
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) {
+              ScreenUtil.init(context);
+              return child!;
+            },
+            home: const Scaffold(
+              body: SingleChildScrollView(child: LaunchBillingPanel()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.textContaining(
+            'Your store-confirmed paid access and successful renewals remain valid.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Verify school email again'), findsOneWidget);
+        await tester.ensureVisible(find.text('Verify school email again'));
+        await tester.tap(find.text('Verify school email again'));
+        await tester.pumpAndSettle();
+        expect(find.byType(StudentVerificationScreen), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      } finally {
+        billing.studentReverificationRequired = false;
+      }
     },
   );
 }
