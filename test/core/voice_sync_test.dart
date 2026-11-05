@@ -69,6 +69,34 @@ extension on List<MapEntry<String, String>> {
   Map<String, String> toMap() => Map.fromEntries(this);
 }
 
+class _PlaybackAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? stream,
+    Future<void>? cancelFuture,
+  ) async => ResponseBody.fromBytes([1, 2, 3], 200);
+  @override
+  void close({bool force = false}) {}
+}
+
+class _DeniedPlaybackAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? stream,
+    Future<void>? cancelFuture,
+  ) async => ResponseBody.fromString(
+    '{}',
+    404,
+    headers: {
+      Headers.contentTypeHeader: ['application/json'],
+    },
+  );
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final local = LocalDbService();
@@ -144,6 +172,90 @@ void main() {
     await local.activateAccount('voice-owner');
     expect(await VoiceAudio.playable(saved, journal: true), saved);
   });
+
+  test(
+    'recorder preview is scoped to its file and ends when invalidated',
+    () async {
+      final file = await File(
+        '${folder.path}/preview.m4a',
+      ).writeAsBytes([1, 2]);
+      final preview = VoicePreview.create(file.path);
+      expect(await VoiceAudio.playable(file.path, preview: preview), file.path);
+      final other = await File(
+        '${folder.path}/different-preview.m4a',
+      ).writeAsBytes([3]);
+      await expectLater(
+        VoiceAudio.playable(other.path, preview: preview),
+        throwsStateError,
+      );
+      await expectLater(VoiceAudio.playable(file.path), throwsStateError);
+      preview.invalidate();
+      await expectLater(
+        VoiceAudio.playable(file.path, preview: preview),
+        throwsStateError,
+      );
+    },
+  );
+
+  test('preview authorization ends on session replacement', () async {
+    final file = await File(
+      '${folder.path}/session-preview.m4a',
+    ).writeAsBytes([1]);
+    final preview = VoicePreview.create(file.path);
+    await TokenStorage().saveToken('replacement-session');
+    await expectLater(
+      VoiceAudio.playable(file.path, preview: preview),
+      throwsStateError,
+    );
+  });
+
+  test(
+    'shared audio rechecks authorization and avoids durable journal cache',
+    () async {
+      final dio = ApiClient();
+      dio.transportForTesting = _PlaybackAdapter();
+      const source =
+          '/provider-conversations/7/journal-shares/11111111-2222-4333-8444-555555555555/audio';
+      final first = await VoiceAudio.playable(
+        source,
+        onlineOnly: true,
+        api: dio,
+      );
+      expect(await File(first).readAsBytes(), [1, 2, 3]);
+      expect(first.contains('/voice/'), isFalse);
+      dio.transportForTesting = _DeniedPlaybackAdapter();
+      await expectLater(
+        VoiceAudio.playable(source, onlineOnly: true, api: dio),
+        throwsA(isA<Exception>()),
+      );
+      await File(first).delete();
+    },
+  );
+
+  test(
+    'missing local journal audio falls back to authenticated remote audio',
+    () async {
+      final saved = await VoiceAudio.save(
+        RecordedAudio(
+          await File(
+            '${folder.path}/fallback.m4a',
+          ).writeAsBytes([1]).then((f) => f.path),
+          3,
+        ),
+        'fallback',
+      );
+      await File(saved).delete();
+      final dio = ApiClient();
+      dio.transportForTesting = _PlaybackAdapter();
+      final result = await VoiceAudio.playable(
+        '/audio-attachments/11111111-2222-4333-8444-555555555555',
+        localPath: saved,
+        journal: true,
+        api: dio,
+      );
+      expect(await File(result).readAsBytes(), [1, 2, 3]);
+    },
+  );
 
   test(
     'durable journal audio uploads before metadata and retries reuse attachment without device paths',

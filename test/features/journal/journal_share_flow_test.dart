@@ -1,5 +1,6 @@
 import '../../support/local_fonts.dart';
 import 'package:cozy_health/core/api/api_client.dart';
+import 'package:cozy_health/core/audio/voice_player.dart';
 import 'package:cozy_health/core/api/api_exceptions.dart';
 import 'package:cozy_health/core/models/journal_entry.dart';
 import 'package:cozy_health/core/storage/token_storage.dart';
@@ -18,6 +19,7 @@ class ShareApi extends Fake implements ApiClient {
       fail = false,
       conflict = false,
       changed = false;
+  bool voice = false;
   final sent = <Map<String, dynamic>>[];
   Response<dynamic> response(dynamic value) => Response(
     requestOptions: RequestOptions(path: ''),
@@ -58,7 +60,18 @@ class ShareApi extends Fake implements ApiClient {
       'revision': 'a' * 64,
       'entry': {
         'title': 'Reflection',
-        'body': changed ? 'Old server copy' : 'Private written entry',
+        'body': voice
+            ? ''
+            : changed
+            ? 'Old server copy'
+            : 'Private written entry',
+        if (voice) 'kind': 'voice',
+        if (voice)
+          'audio': {
+            'id': 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+            'duration': 12,
+            'media_type': 'audio/mp4',
+          },
       },
     });
   }
@@ -142,6 +155,7 @@ void main() {
     WidgetTester tester, {
     bool dark = false,
     bool narrow = false,
+    JournalEntry? selected,
   }) async {
     tester.view.physicalSize = narrow
         ? const Size(320, 568)
@@ -163,7 +177,7 @@ void main() {
             builder: (context) => TextButton(
               onPressed: () => showJournalShareFlow(
                 context,
-                entry,
+                selected ?? entry,
                 apiClient: api,
                 sync: () async {},
               ),
@@ -182,6 +196,52 @@ void main() {
     await tester.tap(find.text('Provider One'));
     await tester.pumpAndSettle();
   }
+
+  testWidgets(
+    'voice journal review names the provider and confirms only selected audio',
+    (tester) async {
+      api.voice = true;
+      final voice = JournalEntry.fromJson({
+        ...entry.toJson(),
+        'type': 'voice',
+        'body': '',
+        'voice_url': '/audio-attachments/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+        'voice_duration': 12,
+      });
+      await open(tester, selected: voice, narrow: true);
+      await choose(tester);
+      expect(find.text('Share with Provider One'), findsOneWidget);
+      final player = tester.widget<VoicePlayer>(find.byType(VoicePlayer));
+      expect(player.source, voice.voiceUrl);
+      expect(player.duration, 12);
+      expect(api.sent, isEmpty);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('confirm-journal-share')),
+      );
+      await tester.tap(find.byKey(const ValueKey('confirm-journal-share')));
+      await tester.pumpAndSettle();
+      expect(api.sent.single['journal_id'], voice.id);
+      expect(api.sent.single['confirmed'], isTrue);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('unsynced voice cannot confirm an older server recording', (
+    tester,
+  ) async {
+    api.voice = true;
+    final voice = JournalEntry.fromJson({
+      ...entry.toJson(),
+      'type': 'voice',
+      'body': '',
+      'voice_url': '/audio-attachments/bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+    });
+    await open(tester, selected: voice);
+    await choose(tester);
+    expect(find.byKey(const ValueKey('confirm-journal-share')), findsNothing);
+    expect(api.sent, isEmpty);
+    expect(find.textContaining('Save and sync the entry'), findsOneWidget);
+  });
 
   for (final dark in [false, true]) {
     testWidgets(

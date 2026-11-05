@@ -63,6 +63,7 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
   bool _recording = false, _busy = false;
   int _seconds = 0;
   String? _path, _error;
+  VoicePreview? _preview;
   @override
   void initState() {
     super.initState();
@@ -114,6 +115,7 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
   void _endSession() {
     if (!mounted || _sessionEnded) return;
     _sessionEnded = true;
+    _preview?.invalidate();
     _timer?.cancel();
     _watch.stop();
     unawaited(_recorder.cancel().catchError((Object _) {}));
@@ -163,6 +165,8 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
   }
 
   Future<void> _delete() async {
+    _preview?.invalidate();
+    _preview = null;
     final path = _path;
     _path = null;
     if (path != null) {
@@ -281,9 +285,15 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
         }
         throw StateError('Invalid recording');
       }
+      final preview = VoicePreview.create(path);
+      if (!mounted || _sessionEnded) {
+        preview.invalidate();
+        return;
+      }
       setState(() {
         _recording = false;
         _path = path;
+        _preview = preview;
         _seconds = math
             .max(1, (_watch.elapsedMilliseconds / 1000).ceil())
             .clamp(1, 300);
@@ -433,6 +443,7 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
                 : VoicePlayer(
                     key: ValueKey(_path),
                     source: _path!,
+                    preview: _preview,
                     duration: _seconds,
                     waveform: List.of(_samples),
                   ),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import '../services/local_db_service.dart';
 import '../storage/token_storage.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,8 @@ class VoicePlayer extends StatefulWidget {
     this.api,
     this.journal = false,
     this.waveform,
+    this.preview,
+    this.onlineOnly = false,
   });
   final String source;
   final String? localPath;
@@ -23,6 +26,8 @@ class VoicePlayer extends StatefulWidget {
   final ApiClient? api;
   final bool journal;
   final List<double>? waveform;
+  final VoicePreview? preview;
+  final bool onlineOnly;
   @override
   State<VoicePlayer> createState() => _VoicePlayerState();
 }
@@ -49,22 +54,52 @@ class _VoicePlayerState extends State<VoicePlayer> {
       _ended = true;
       _ready = false;
     });
-    unawaited(_player.stop().catchError((Object _) {}));
+    unawaited(
+      _player.stop().catchError((Object _) {}).whenComplete(_deleteTemporary),
+    );
   }
 
   bool _loading = false;
   String? _error;
   bool _ready = false;
+  String? _temporaryPath;
+  Future<void> _deleteTemporary() async {
+    final path = _temporaryPath;
+    _temporaryPath = null;
+    if (path != null) {
+      try {
+        await File(path).delete();
+      } catch (_) {
+        /* Already removed. */
+      }
+    }
+  }
+
   Future<void> _prepare() async {
     if (!_current) throw StateError('Account changed');
-    if (_ready) return;
+    if (_ready && !widget.onlineOnly) return;
+    final position = _player.processingState == ProcessingState.completed
+        ? Duration.zero
+        : _player.position;
     final path = await VoiceAudio.playable(
-      widget.localPath?.isNotEmpty == true ? widget.localPath! : widget.source,
+      widget.source,
       api: widget.api,
       journal: widget.journal,
+      localPath: widget.localPath,
+      preview: widget.preview,
+      onlineOnly: widget.onlineOnly,
     );
-    if (!_current) return;
+    if (!_current) {
+      if (widget.onlineOnly) await File(path).delete();
+      return;
+    }
+    if (widget.onlineOnly) {
+      await _player.stop();
+      await _deleteTemporary();
+      _temporaryPath = path;
+    }
     await _player.setFilePath(path);
+    if (widget.onlineOnly) await _player.seek(position);
     if (!_current) {
       await _player.stop();
       return;
@@ -86,6 +121,11 @@ class _VoicePlayerState extends State<VoicePlayer> {
         Duration(milliseconds: (total.inMilliseconds * fraction).round()),
       );
     } catch (_) {
+      if (widget.onlineOnly) {
+        await _player.stop();
+        _ready = false;
+        await _deleteTemporary();
+      }
       if (mounted) setState(() => _error = 'Could not seek. Tap to retry.');
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -96,7 +136,7 @@ class _VoicePlayerState extends State<VoicePlayer> {
   void dispose() {
     unawaited(_clearing?.cancel());
     unawaited(_accounts?.cancel());
-    _player.dispose();
+    unawaited(_player.dispose().whenComplete(_deleteTemporary));
     super.dispose();
   }
 
@@ -120,6 +160,11 @@ class _VoicePlayerState extends State<VoicePlayer> {
       setState(() => _loading = false);
       await _player.play();
     } catch (_) {
+      if (widget.onlineOnly) {
+        await _player.stop();
+        _ready = false;
+        await _deleteTemporary();
+      }
       if (mounted) setState(() => _error = 'Could not play. Tap to retry.');
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -181,9 +226,7 @@ class _VoicePlayerState extends State<VoicePlayer> {
                             .toDouble(),
                         max: total,
                         onChanged: _ready
-                            ? (value) => _player.seek(
-                                Duration(milliseconds: value.round()),
-                              )
+                            ? (value) => _seek(value / total)
                             : null,
                       );
                     },

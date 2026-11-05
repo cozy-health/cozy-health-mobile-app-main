@@ -1,4 +1,5 @@
 import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/audio/voice_player.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -155,6 +156,16 @@ class _JournalShareFlowState extends State<JournalShareFlow>
           (entry['title'] ?? '') != (widget.entry.title ?? '')) {
         throw StateError('Entry has not synced');
       }
+      if (widget.entry.type == 'voice') {
+        final original = widget.entry.voiceUrl;
+        final remote = original?.startsWith('/audio-attachments/') == true
+            ? original
+            : LocalDbService.instance.journalBox.get(widget.entry.id)?.voiceUrl;
+        if (entry['kind'] != 'voice' ||
+            remote != '/audio-attachments/${(entry['audio'] as Map?)?['id']}') {
+          throw StateError('Audio has not synced');
+        }
+      }
       setState(() {
         _preview = data;
         _clientId = const Uuid().v4();
@@ -165,7 +176,7 @@ class _JournalShareFlowState extends State<JournalShareFlow>
           _off = e is ApiException && e.statusCode == 403;
           _error = _off
               ? null
-              : 'Could not review this entry. Save and sync the written entry, then retry. No entry has been shared by this action.';
+              : 'Could not review this entry. Save and sync the entry, then retry. No entry has been shared by this action.';
         });
       }
     } finally {
@@ -221,12 +232,14 @@ class _JournalShareFlowState extends State<JournalShareFlow>
   Widget build(BuildContext context) {
     final invalid =
         widget.entry.isDraft ||
-        widget.entry.type == 'voice' ||
-        widget.entry.voiceUrl != null ||
-        widget.entry.localVoicePath != null ||
-        widget.entry.body.trim().isEmpty;
+        (widget.entry.type == 'voice'
+            ? widget.entry.voiceUrl?.isNotEmpty != true &&
+                  widget.entry.localVoicePath?.isNotEmpty != true
+            : widget.entry.voiceUrl?.isNotEmpty == true ||
+                  widget.entry.localVoicePath?.isNotEmpty == true ||
+                  widget.entry.body.trim().isEmpty);
     final title = invalid
-        ? 'Save a written entry first'
+        ? 'Save an entry first'
         : _share != null
         ? 'Entry shared'
         : _off
@@ -243,11 +256,11 @@ class _JournalShareFlowState extends State<JournalShareFlow>
         ),
       if (invalid)
         const Text(
-          'Only saved written entries can be shared. Audio stays private.',
+          'Save your entry before sharing. Voice recordings must finish syncing first.',
         )
       else if (_share != null) ...[
         Text(
-          'A written copy was shared with ${_provider!['name']}. Later edits stay private.',
+          'A copy was shared with ${_provider!['name']}. Later edits stay private.',
         ),
         WellnessAction(
           label: 'View shared copy',
@@ -285,9 +298,22 @@ class _JournalShareFlowState extends State<JournalShareFlow>
           (_preview!['entry'] as Map)['title']?.toString() ?? '',
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        SelectableText((_preview!['entry'] as Map)['body'].toString()),
-        const Text(
-          'Only this written copy will be shared. Audio is excluded. Later edits stay private.',
+        if ((_preview!['entry'] as Map)['kind'] == 'voice')
+          VoicePlayer(
+            source:
+                '/audio-attachments/${((_preview!['entry'] as Map)['audio'] as Map)['id']}',
+            duration:
+                (((_preview!['entry'] as Map)['audio'] as Map)['duration']
+                        as num)
+                    .toInt(),
+            api: _api,
+          )
+        else
+          SelectableText((_preview!['entry'] as Map)['body'].toString()),
+        Text(
+          (_preview!['entry'] as Map)['kind'] == 'voice'
+              ? 'Only this voice recording and title will be shared. Later edits stay private. You can stop sharing this copy.'
+              : 'Only this written copy will be shared. Later edits stay private.',
         ),
         WellnessAction(
           key: const ValueKey('confirm-journal-share'),
@@ -297,7 +323,7 @@ class _JournalShareFlowState extends State<JournalShareFlow>
         ),
       ] else if (!_busy) ...[
         const Text(
-          'Choose who should receive this written copy. Nothing is sent until you confirm.',
+          'Choose who should receive this copy. Nothing is sent until you confirm.',
         ),
         for (final p in _providers)
           WellnessSheetOption(
@@ -425,7 +451,10 @@ class _SharedJournalCopyViewState extends State<SharedJournalCopyView>
   }
 
   Future<void> _load() async {
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _copy = null;
+    });
     try {
       final r = responseMap(await _api.get(_path));
       if (_active) {
@@ -487,13 +516,23 @@ class _SharedJournalCopyViewState extends State<SharedJournalCopyView>
 
   @override
   Widget build(BuildContext context) => WellnessSheet(
-    title: _unavailable ? 'Shared copy unavailable' : 'Shared written copy',
+    title: _unavailable ? 'Shared copy unavailable' : 'Shared journal copy',
     busy: _busy,
     children: [
       if (_busy) const LinearProgressIndicator(),
       if (_copy != null) ...[
         Text(((_copy!['entry'] as Map)['title'] ?? '').toString()),
-        SelectableText((_copy!['entry'] as Map)['body'].toString()),
+        if ((_copy!['entry'] as Map)['kind'] == 'voice')
+          VoicePlayer(
+            source: '$_path/audio',
+            onlineOnly: true,
+            api: _api,
+            duration:
+                (((_copy!['entry'] as Map)['audio'] as Map)['duration'] as num)
+                    .toInt(),
+          )
+        else
+          SelectableText((_copy!['entry'] as Map)['body'].toString()),
         const Text('Later edits to your journal are private.'),
       ],
       if (_unavailable)

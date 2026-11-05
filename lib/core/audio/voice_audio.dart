@@ -3,6 +3,55 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import '../api/api_client.dart';
 import '../services/local_db_service.dart';
+import '../storage/token_storage.dart';
+
+/// A revocable capability for one temporary recording in the current session.
+class VoicePreview {
+  VoicePreview._(this.path, this._owner, this._generation);
+  final String path;
+  final String? _owner;
+  final int _generation;
+  bool _active = true;
+
+  static VoicePreview create(String path) {
+    return VoicePreview._(
+      path,
+      LocalDbService().activeUserId,
+      TokenStorage.generation,
+    );
+  }
+
+  Future<void> _check(String source) async {
+    if (!_allows(source)) throw StateError('Preview has ended.');
+    final owner = LocalDbService().activeUserId;
+    final generation = TokenStorage.generation;
+    final temporary = await getTemporaryDirectory();
+    final root = Directory(
+      await temporary.resolveSymbolicLinks(),
+    ).uri.normalizePath().path;
+    final resolved = File(
+      await File(path).resolveSymbolicLinks(),
+    ).uri.normalizePath().path;
+    if (owner == null ||
+        owner != LocalDbService().activeUserId ||
+        generation != TokenStorage.generation ||
+        !resolved.startsWith(root)) {
+      throw StateError('Preview is unavailable.');
+    }
+    // A durable file must still pass account ownership checks.
+    await VoiceAudio._checkFileOwner(path, temporaryAllowed: true);
+    if (!_allows(source)) throw StateError('Preview has ended.');
+  }
+
+  void invalidate() => _active = false;
+
+  bool _allows(String source) =>
+      _active &&
+      _owner != null &&
+      source == path &&
+      _owner == LocalDbService().activeUserId &&
+      _generation == TokenStorage.generation;
+}
 
 class RecordedAudio {
   const RecordedAudio(this.path, this.duration);
@@ -98,7 +147,9 @@ class VoiceAudio {
     ).absolute.uri.normalizePath().path;
     final file = File(source);
     final resolved = File(
-      await file.resolveSymbolicLinks(),
+      await file.exists()
+          ? await file.resolveSymbolicLinks()
+          : file.absolute.path,
     ).absolute.uri.normalizePath().path;
     if (owner != LocalDbService().activeUserId ||
         (!resolved.startsWith(folder) &&
@@ -139,8 +190,46 @@ class VoiceAudio {
     String source, {
     ApiClient? api,
     bool journal = false,
+    String? localPath,
+    VoicePreview? preview,
+    bool onlineOnly = false,
   }) async {
     final owner = LocalDbService().activeUserId;
+    if (preview != null && !onlineOnly) {
+      await preview._check(source);
+      return source;
+    }
+    if (!onlineOnly && localPath != null && localPath.isNotEmpty) {
+      await _checkFileOwner(localPath);
+      final exists = await File(localPath).exists();
+      if (owner != LocalDbService().activeUserId) {
+        throw StateError('Account changed.');
+      }
+      if (exists) return localPath;
+    }
+    if (onlineOnly) {
+      if (!RegExp(
+        r'^/provider-conversations/\d+/journal-shares/[a-f0-9-]{36}/audio$',
+      ).hasMatch(source)) {
+        throw StateError('Invalid shared recording.');
+      }
+      final response = await (api ?? ApiClient.instance).get(
+        source,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      if (owner == null || owner != LocalDbService().activeUserId) {
+        throw StateError('Account changed.');
+      }
+      final temporary = await getTemporaryDirectory();
+      final file = await File(
+        '${temporary.path}/cozy_shared_${DateTime.now().microsecondsSinceEpoch}.m4a',
+      ).writeAsBytes((response.data as List).cast<int>(), flush: true);
+      if (owner != LocalDbService().activeUserId) {
+        await file.delete();
+        throw StateError('Account changed.');
+      }
+      return file.path;
+    }
     if (!source.startsWith('/audio-attachments/')) {
       await _checkFileOwner(source);
       if (!await File(source).exists()) {
