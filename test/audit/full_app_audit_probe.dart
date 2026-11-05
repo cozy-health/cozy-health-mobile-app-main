@@ -376,8 +376,11 @@ void main() {
           addTearDown(tester.view.resetDevicePixelRatio);
           final errors = <String>[];
           final oldHandler = FlutterError.onError;
-          FlutterError.onError = (details) =>
-              errors.add(details.exceptionAsString());
+          FlutterError.onError = (details) => errors.add(
+            const bool.fromEnvironment('SURFACE_DIAGNOSTICS')
+                ? details.toString()
+                : details.exceptionAsString(),
+          );
           try {
             final router = GoRouter(
               routes: [GoRoute(path: '/', builder: (_, _) => entry.value())],

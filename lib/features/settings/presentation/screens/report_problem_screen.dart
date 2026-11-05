@@ -81,6 +81,7 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
       padding: const EdgeInsets.all(24),
       children: [
         DropdownButtonFormField<String>(
+          isExpanded: true,
           initialValue: _category,
           decoration: const InputDecoration(labelText: 'Category'),
           items: [

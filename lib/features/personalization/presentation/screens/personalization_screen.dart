@@ -191,9 +191,6 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
                   return Padding(
                     padding: EdgeInsets.symmetric(horizontal: 6.w),
                     child: AppScrollBody(
-                      minimumContentHeight: MediaQuery.textScalerOf(
-                        context,
-                      ).scale(450),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -223,19 +220,16 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
                           4.sh,
 
                           // Question widget
-                          Expanded(
-                            child:
-                                question.type ==
-                                    PersonalizationQuestionType.challenges
-                                ? _buildQuestionWidget(
-                                    question,
-                                  ) // Do not scroll bubbles
-                                : SingleChildScrollView(
-                                    child: _buildQuestionWidget(
-                                      question,
-                                    ), // Lists can scroll
-                                  ),
-                          ),
+                          if (question.type ==
+                              PersonalizationQuestionType.challenges)
+                            SizedBox(
+                              height: MediaQuery.textScalerOf(
+                                context,
+                              ).scale(450),
+                              child: _buildQuestionWidget(question),
+                            )
+                          else
+                            _buildQuestionWidget(question),
                         ],
                       ),
                     ),

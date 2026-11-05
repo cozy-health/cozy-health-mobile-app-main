@@ -1,3 +1,4 @@
+import '../widgets/chart_date_axis.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/utils/motion.dart';
@@ -186,6 +187,7 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
 
   Widget _buildLegendItem(String label, Color color, bool isDashed) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 16,
@@ -202,12 +204,14 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
               : null,
         ),
         SizedBox(width: 8),
-        Text(
-          label,
-          style: AppTextStyles.body2.copyWith(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? AppColors.textMutedDark
-                : AppColors.textMutedLight,
+        Flexible(
+          child: Text(
+            label,
+            style: AppTextStyles.body2.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
           ),
         ),
       ],
@@ -230,21 +234,9 @@ class _ActivityMoodScreenState extends State<ActivityMoodScreen>
           ),
         ),
         SizedBox(height: 8),
-        Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          children: _daily
+        ChartDateAxis(
+          days: _daily
               .map((row) => (row['day'] as String).substring(5))
-              .map((day) {
-                return Text(
-                  day,
-                  style: AppTextStyles.body2.copyWith(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.textSubtleDark
-                        : AppColors.textSubtleLight,
-                    fontSize: 12,
-                  ),
-                );
-              })
               .toList(),
         ),
       ],

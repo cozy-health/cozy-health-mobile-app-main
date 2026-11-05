@@ -98,12 +98,15 @@ class _QuizSharedScreenState extends State<QuizSharedScreen>
           ? const Center(child: CircularProgressIndicator())
           : _error != null
           ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(_error!),
-                  TextButton(onPressed: _load, child: const Text('Retry')),
-                ],
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_error!),
+                    TextButton(onPressed: _load, child: const Text('Retry')),
+                  ],
+                ),
               ),
             )
           : _data == null

@@ -2111,10 +2111,12 @@ class _EditorFooter extends StatelessWidget {
           SizedBox(height: 8),
           _WarmPanel(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 12,
+              runSpacing: 8,
               children: [
                 Text('$wordCount words', style: _captionStyle(context)),
-                Spacer(),
                 Text(status, style: _captionStyle(context)),
               ],
             ),

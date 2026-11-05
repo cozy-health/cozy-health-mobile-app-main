@@ -1,0 +1,41 @@
+# Workstreams 04–06: development acceptance
+
+Updated 5 November 2026. Development only. Mobile `develop` delivery based on `fced96efe820962d70942faeb1ce33c5f9f3474c`; commit/push identities and hosted validation are recorded in the workspace handoff. Physical-device acceptance belongs to the owner and remains open. No production changes.
+
+## Implemented and verified
+
+- **04 — Account separation/offline recovery:** mood and journal fetches now return the accepted local/server merge instead of the raw server response. New regressions reproduce and prevent stale offline edits appearing, pending deletions reappearing, and omitted journal fields being lost. Explicit server null still clears a field. Durable retry IDs remain unchanged. Existing account recovery, session lifecycle and queue-diagnosis coverage passed in the initial focused run.
+- **05 — Screens/accessibility:** repaired reproduced large-text overflows in journal status, login, Welcome, community headers/follow controls, crisis headers/dividers, insights charts/legends/trigger titles, personalization, shared-quiz errors, appearance preview and feedback/report dropdowns. Text can wrap or scroll without disabling scaling. Interrupted onboarding safely restarts without falsely completing; enlarged-text onboarding now verifies completion, not just intermediate screens.
+- **06 — Wellbeing journeys:** reused existing mood/journal, breathing lifecycle, streak/DST, achievements, insights and affirmation implementations. Fetch results now agree with stored edits/deletes. Chart dates use evenly spaced ticks that fit available width; the table retains every record. New tests cover dense month axes and empty/single-day cases. Existing breathing pause/background/resume, Home/detail convergence and 24-hour affirmation cache tests passed in the initial focused run. No server business rules, schemas or crisis semantics changed.
+
+## Validation
+
+- Initial focused acceptance: **182 passed**, `output/rows04-06-focused.log` in the workspace.
+- New repository failures reproduced before repair: **5 failed / 6 passed**; repaired suite **11 passed**, `output/rows04-06-reproduction.log` and `output/rows04-06-repository-fixed.log`.
+- Final focused repository/onboarding/chart acceptance: **27 passed**, `output/rows04-06-final-focused.log`.
+- Strict surface audit: **430 passed**, small portrait/landscape, text scale 2, reduced animations, light/dark high-contrast themes; `output/rows04-06-screens-final.log`. This is rendering coverage, not proof of every interaction, device performance or native screen-reader behavior.
+- Complete analyzer: **exit 0**, existing CI flags `--no-fatal-infos --no-fatal-warnings`; 15 pre-existing nonfatal findings in unchanged journal statements and generated/local review harnesses. `output/rows04-06-analyze.log`.
+- Complete Flutter suite: **1,262 passed**, exit 0, `--dart-define=INTERNAL_TEST_BUILD=true`; one existing opt-in network smoke skipped by default and then explicitly run: **1 passed**, `COZY_ENVIRONMENT=development`, actual endpoint `api-dev.cozyhealth.org` despite the historical test title. Logs: `output/rows04-06-full-tests.log` and `output/rows04-06-api-smoke.log`.
+- Android debug compilation **passed** with explicit development/internal-test defines: `build/app/outputs/flutter-apk/app-debug.apk`; `output/rows04-06-android-build.log`. Existing Gradle 8.13 future-support and Android SDK XML-version warnings remain. No local Firebase configuration was supplied; this APK does not establish configured push delivery. iOS compilation and physical-device checks have not run locally for this batch; hosted outcomes belong in the handoff.
+- Diff whitespace check passed. Existing unrelated source/documentation/artwork changes remain untouched. No sync queue was cleared on a real device or account.
+
+## Owner phone checklist
+
+Use a development build containing these changes and development accounts. An older installed build cannot validate this batch. Record platform and build/version; for failures include the step, expected/actual result, network state and a screenshot without private text. Do not uninstall an app that still has unsynced data.
+
+| Check | What to do | Expected result |
+| --- | --- | --- |
+| 04: offline recovery | In account A, turn on airplane mode, save a mood and written journal, then close the app from the app switcher and reopen. Turn networking back on. | Saved entries survive reopening; pending/offline status is honest, then clears after successful sync. Each entry appears once. A confirmed save is the recovery checkpoint. |
+| 04: account separation | While A has pending data, log out offline. Reconnect and sign into a separate development account B, then return to A. | B never shows A's private entries or drafts. Returning to A recovers its saved data and pending work. Old forms/audio must not remain usable in B. |
+| 04: second device | On another device, sign into A. Confirm the saved records, edit one there, refresh the first device, then delete it and refresh both. | Edits agree after sync. Deleted records stay deleted after refresh/reopening; no duplicates or endless pending state. If only one device is available, leave this check open. |
+| 05: onboarding/upgrade | On a spare clean development installation, leave onboarding halfway and reopen; finish it. Separately update an existing synced development installation. | Interrupted onboarding does not pretend it finished. Completion routes correctly. Updating preserves saved data and does not unexpectedly restart onboarding. |
+| 05: screen usability | Enable large system text and reduced motion; try light/dark themes and portrait/landscape. Open main tabs, mood flow, journal editor, insights, settings and feedback; show the keyboard, scroll, open/dismiss popups and go back. Try VoiceOver/TalkBack. | No clipped/overlapping text or unreachable actions. Keyboard does not trap controls. Back/dismiss works. Screen-reader focus reaches controls with understandable names. No visibly excessive motion or persistent sluggishness. |
+| 06: mood/journal journey | Start and resume a draft; use Back/Cancel; finish a save, edit it, find it through search and delete it. Reopen the app. | Draft behavior is truthful, cancelled work is not presented as committed, saved changes persist and deleted records stay gone. Existing legacy drafts, if available, still open. |
+| 06: audio/breathing | Save/reopen/play a voice journal; interrupt recording/playback with a call or another audio app. Start breathing, pause/resume, background/return and complete once. | No lost confirmed recording or invented transcription. Audio stops safely on logout. Breathing pauses in background, resumes from preserved progress on request and completes once. Unsaved recordings are not promised to survive termination. |
+| 06: progress/affirmations | Compare streaks on Home/detail and insights after a confirmed check-in. Repeat a check-in/edit the same day. Compare the affirmation on Home/detail, reopen, then check after its 24-hour assignment expires. | Views agree after refresh; edits/retries do not earn extra days. Pending/estimated progress is identified. A protected rest day does not count as a completed day. The same affirmation persists until assignment expiry, not merely midnight; native reminders arrive according to enabled settings/permissions. |
+
+Timezone/day-boundary and DST behavior has automated coverage; real multi-device/timezone journeys, measured device performance, native notification delivery, audio interruptions, screen readers and installation/update continuity remain unverified until owner results. Reinstall/new-device recovery must use already-synced data and a spare installation, never destruction of the only pending copy.
+
+## Next action
+
+Verify the exact pushed development SHAs and hosted checks, then use the development artifact for owner acceptance. Owner runs the checklist; record results before checking workstreams 04–06 fully complete. Android compilation alone does not establish iOS acceptance, configured push delivery or device acceptance. Build-plan row count/checkoff separation, checklist target and diff whitespace checks passed.

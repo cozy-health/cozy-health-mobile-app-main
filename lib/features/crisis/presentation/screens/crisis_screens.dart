@@ -68,6 +68,7 @@ class CrisisShell extends StatelessWidget {
                 children: [
                   if (showBack)
                     IconButton(
+                      tooltip: 'Back',
                       onPressed: () => context.pop(),
                       icon: Icon(Icons.arrow_back),
                       color: Theme.of(context).colorScheme.onSurface,
@@ -79,7 +80,7 @@ class CrisisShell extends StatelessWidget {
                   else
                     const SizedBox(width: 48, height: 48),
                   const Spacer(),
-                  if (trailing != null) trailing!,
+                  if (trailing != null) Flexible(flex: 2, child: trailing!),
                 ],
               ),
               const SizedBox(height: 32),
@@ -444,12 +445,16 @@ class _DividerLabel extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: Divider(color: Theme.of(context).colorScheme.outline)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            label,
-            style: CrisisText.caption.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+        Flexible(
+          flex: 4,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: CrisisText.caption.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ),

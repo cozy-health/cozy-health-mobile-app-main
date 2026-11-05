@@ -136,20 +136,22 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                             ],
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _selectedAccent,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Text(
-                            'Button',
-                            style: AppTextStyles.body2.copyWith(
-                              color: colorScheme.onPrimary,
-                              fontWeight: FontWeight.w600,
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _selectedAccent,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              'Button',
+                              style: AppTextStyles.body2.copyWith(
+                                color: colorScheme.onPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),

@@ -1,3 +1,4 @@
+import '../widgets/chart_date_axis.dart';
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/utils/motion.dart';
@@ -266,21 +267,9 @@ class _MoodTrendScreenState extends State<MoodTrendScreen>
           ),
         ),
         SizedBox(height: 8),
-        Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          children: _daily
+        ChartDateAxis(
+          days: _daily
               .map((row) => (row['day'] as String).substring(5))
-              .map((day) {
-                return Text(
-                  day,
-                  style: AppTextStyles.body2.copyWith(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.textSubtleDark
-                        : AppColors.textSubtleLight,
-                    fontSize: 12,
-                  ),
-                );
-              })
               .toList(),
         ),
       ],

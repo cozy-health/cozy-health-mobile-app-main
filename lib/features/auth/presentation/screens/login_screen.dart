@@ -280,10 +280,12 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(width: 10),
-            Text(
-              'Stay logged in',
-              style: AppTextStyles.body2.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
+            Expanded(
+              child: Text(
+                'Stay logged in',
+                style: AppTextStyles.body2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
           ],

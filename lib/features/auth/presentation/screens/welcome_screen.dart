@@ -1,4 +1,3 @@
-import 'package:cozy_health/core/widgets/app_scroll_body.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,11 +16,10 @@ class WelcomeScreen extends StatelessWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 47, 24, 24),
-          child: AppScrollBody(
-            minimumContentHeight: MediaQuery.textScalerOf(context).scale(600),
+          child: SingleChildScrollView(
             child: Column(
               children: [
-                const Spacer(),
+                const SizedBox(height: 24),
                 const AuthLogoMark(),
                 const SizedBox(height: 48),
                 Text(
@@ -46,7 +44,7 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 48),
                 AuthPrimaryButton(
                   text: 'Sign Up',
                   onPressed: () => context.push(AppRouter.createAccount),

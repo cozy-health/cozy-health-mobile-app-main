@@ -133,13 +133,16 @@ class _TriggersAnalysisScreenState extends State<TriggersAnalysisScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.body1.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: AppTextStyles.body1.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     '${frequency}x',
                     style: AppTextStyles.body2.copyWith(

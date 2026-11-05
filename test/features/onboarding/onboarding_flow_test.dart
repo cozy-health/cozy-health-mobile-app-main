@@ -196,6 +196,22 @@ void main() {
     expect(saved.skipped, isTrue);
   });
 
+  testWidgets('interrupted onboarding stays incomplete and safely restarts', (
+    tester,
+  ) async {
+    await mount(tester);
+    await tap(tester, 'Next');
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(await OnboardingService().hasCompletedOnboarding(), isFalse);
+    expect(local.syncQueueBox.values, isEmpty);
+    await mount(tester);
+    expect(find.text(OnboardingData.pages.first.title), findsOneWidget);
+    await toAccount(tester);
+    await finish(tester, 'Skip');
+    expect(await OnboardingService().hasCompletedOnboarding(), isTrue);
+    expect(find.text('destination:${AppRouter.welcome}'), findsOneWidget);
+  });
+
   testWidgets('Multiple selections, deselection and back preserve answers', (
     tester,
   ) async {
@@ -320,6 +336,9 @@ void main() {
         await tap(tester, 'Continue');
         await tap(tester, 'Continue');
         expect(find.text('Continue'), findsOneWidget);
+        await finish(tester, 'Continue');
+        expect(find.text('destination:${AppRouter.welcome}'), findsOneWidget);
+        expect(await OnboardingService().hasCompletedOnboarding(), isTrue);
         expect(tester.takeException(), isNull);
       },
     );

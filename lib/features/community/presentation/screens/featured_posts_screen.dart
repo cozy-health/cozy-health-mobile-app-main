@@ -106,11 +106,13 @@ class FeaturedPostsScreen extends StatelessWidget {
                   size: 20,
                 ),
                 SizedBox(width: 8),
-                Text(
-                  'Featured',
-                  style: context.communityBody2.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Text(
+                    'Featured',
+                    style: context.communityBody2.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],

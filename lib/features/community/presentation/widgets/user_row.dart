@@ -69,27 +69,37 @@ class UserRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            GestureDetector(
-              onTap: onFollowToggle,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: isFollowing
-                      ? Colors.transparent
-                      : Theme.of(context).colorScheme.primary,
-                  border: isFollowing
-                      ? Border.all(color: context.communityBorder)
-                      : null,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  isFollowing ? 'Following' : 'Follow',
-                  style: context.communityBody2.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: isFollowing ? context.communityText : Colors.white,
+            Flexible(
+              child: Semantics(
+                button: true,
+                label: isFollowing
+                    ? 'Unfollow @$username'
+                    : 'Follow @$username',
+                child: GestureDetector(
+                  onTap: onFollowToggle,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isFollowing
+                          ? Colors.transparent
+                          : Theme.of(context).colorScheme.primary,
+                      border: isFollowing
+                          ? Border.all(color: context.communityBorder)
+                          : null,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      isFollowing ? 'Following' : 'Follow',
+                      style: context.communityBody2.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isFollowing
+                            ? context.communityText
+                            : Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ),

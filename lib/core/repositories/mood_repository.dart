@@ -52,11 +52,8 @@ class MoodRepository {
         queryParameters: {'page': page, 'per_page': perPage},
       );
       if (!active()) return [];
-      final items = _extractListData(response.data)
-          .whereType<Map>()
-          .map((json) => MoodEntry.fromJson(Map<String, dynamic>.from(json)))
-          .toList();
-      for (final raw in _extractListData(response.data).whereType<Map>()) {
+      final rows = _extractListData(response.data).whereType<Map>().toList();
+      for (final raw in rows) {
         await UserDataMerge().apply(
           'mood_entry',
           Map<String, dynamic>.from(raw),
@@ -65,7 +62,17 @@ class MoodRepository {
         );
       }
       if (!active()) return [];
-      return items;
+      // Return the accepted merge, including local edits and pending tombstones.
+      final deleted = _local.pendingItems
+          .where((item) => item.type == 'mood_entry' && item.action == 'delete')
+          .map((item) => item.recordId)
+          .toSet();
+      return [
+        for (final row in rows)
+          if (!deleted.contains(row['id']?.toString()))
+            if (_local.moodBox.get(row['id']?.toString()) case final entry?)
+              entry,
+      ];
     } on ApiAuthException {
       rethrow;
     } catch (e) {
