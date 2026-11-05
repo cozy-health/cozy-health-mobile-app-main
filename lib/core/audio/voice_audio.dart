@@ -131,6 +131,32 @@ class VoiceAudio {
 
   // Keep temporary recorder previews supported, but never accept another
   // account's durable recording (including a symlink to one).
+  static Future<String> _canonicalFilePath(File file) async {
+    if (await file.exists()) return file.resolveSymbolicLinks();
+
+    // A removed file cannot resolve its own links. Resolve its nearest existing
+    // directory instead, so aliases such as macOS /var and /private/var agree.
+    var ancestor = file.parent;
+    final missing = <String>[file.uri.pathSegments.last];
+    while (!await ancestor.exists()) {
+      final parent = ancestor.parent;
+      if (parent.path == ancestor.path) {
+        throw FileSystemException(
+          'Recording directory is unavailable.',
+          file.path,
+        );
+      }
+      missing.insert(
+        0,
+        ancestor.uri.pathSegments.where((part) => part.isNotEmpty).last,
+      );
+      ancestor = parent;
+    }
+    return File(
+      '${await ancestor.resolveSymbolicLinks()}/${missing.join('/')}',
+    ).path;
+  }
+
   static Future<void> _checkFileOwner(
     String source, {
     bool temporaryAllowed = false,
@@ -145,11 +171,9 @@ class VoiceAudio {
     final folder = Directory(
       '$canonicalRoot/voice/${Uri.encodeComponent(owner)}',
     ).absolute.uri.normalizePath().path;
-    final file = File(source);
+    final file = File(source).absolute;
     final resolved = File(
-      await file.exists()
-          ? await file.resolveSymbolicLinks()
-          : file.absolute.path,
+      await _canonicalFilePath(file),
     ).absolute.uri.normalizePath().path;
     if (owner != LocalDbService().activeUserId ||
         (!resolved.startsWith(folder) &&

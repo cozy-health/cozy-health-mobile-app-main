@@ -258,6 +258,53 @@ void main() {
   );
 
   test(
+    'missing audio resolves directory aliases without accepting another owner',
+    () async {
+      await VoiceAudio.directory();
+      Link? alias;
+      final String aliasRoot;
+      if (Platform.isWindows) {
+        aliasRoot = folder.path.toUpperCase();
+      } else {
+        alias = Link('${folder.path}/support-alias');
+        await alias.create(folder.path);
+        aliasRoot = alias.path;
+      }
+      try {
+        final dio = ApiClient();
+        dio.transportForTesting = _PlaybackAdapter();
+        for (final nested in [false, true]) {
+          final result = await VoiceAudio.playable(
+            '/audio-attachments/11111111-2222-4333-8444-55555555555${nested ? 7 : 6}',
+            localPath:
+                '$aliasRoot/voice/voice-owner/${nested ? 'removed/nested/' : ''}missing.m4a',
+            journal: true,
+            api: dio,
+          );
+          expect(await File(result).readAsBytes(), [1, 2, 3]);
+        }
+        await expectLater(
+          VoiceAudio.playable(
+            '/audio-attachments/11111111-2222-4333-8444-555555555558',
+            localPath: '$aliasRoot/voice/another-owner/missing.m4a',
+            journal: true,
+            api: dio,
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (error) => error.message,
+              'message',
+              'Recording belongs to another account.',
+            ),
+          ),
+        );
+      } finally {
+        await alias?.delete();
+      }
+    },
+  );
+
+  test(
     'durable journal audio uploads before metadata and retries reuse attachment without device paths',
     () async {
       const id = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
