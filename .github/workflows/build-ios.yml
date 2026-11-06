@@ -123,6 +123,9 @@ jobs:
           ls -lh Runner-unsigned.ipa
           file Runner-unsigned.ipa
 
+      - name: Record unsigned IPA checksum and app identity
+        run: python3 tool/record_artifact.py --platform ios --artifact Runner-unsigned.ipa
+
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
