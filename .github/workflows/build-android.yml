@@ -78,11 +78,19 @@ jobs:
       - name: Run tests
         run: flutter test --dart-define=INTERNAL_TEST_BUILD=true
 
+      - name: Restore approved development signing identity
+        env:
+          ANDROID_DEVELOPMENT_KEYSTORE_BASE64: ${{ secrets.ANDROID_DEVELOPMENT_KEYSTORE_BASE64 }}
+          ANDROID_DEVELOPMENT_CERT_SHA256: ${{ vars.ANDROID_DEVELOPMENT_CERT_SHA256 }}
+        run: python3 tool/restore_development_signing.py
+
       - name: Build debug APK
         run: flutter build apk --debug --build-number="$GITHUB_RUN_NUMBER" --dart-define-from-file=push-defines.json --dart-define=INTERNAL_TEST_BUILD=true --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
 
       - name: Record APK checksum and certificate
-        run: python3 tool/record_artifact.py --platform android --artifact build/app/outputs/flutter-apk/app-debug.apk --apksigner "$ANDROID_HOME/build-tools/35.0.0/apksigner"
+        env:
+          ANDROID_DEVELOPMENT_CERT_SHA256: ${{ vars.ANDROID_DEVELOPMENT_CERT_SHA256 }}
+        run: python3 tool/record_artifact.py --platform android --artifact build/app/outputs/flutter-apk/app-debug.apk --apksigner "$ANDROID_HOME/build-tools/35.0.0/apksigner" --expected-certificate "$ANDROID_DEVELOPMENT_CERT_SHA256"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
