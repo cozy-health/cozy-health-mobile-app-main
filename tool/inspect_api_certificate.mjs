@@ -1,7 +1,11 @@
 import tls from 'node:tls'
 import { createHash } from 'node:crypto'
 
-const host = process.argv[2] || 'cozy-health-api-production.up.railway.app'
+// Routine inspection must never fall back to a legacy production hostname.
+const host = process.argv[2] || 'api-dev.cozyhealth.org'
+if (host !== 'api-dev.cozyhealth.org') {
+  throw new Error('Certificate inspection is restricted to api-dev.cozyhealth.org.')
+}
 const socket = tls.connect({ host, port: 443, servername: host, minVersion: 'TLSv1.2', rejectUnauthorized: true }, () => {
   const cert = socket.getPeerCertificate()
   console.log(JSON.stringify({ host, leafSha256: createHash('sha256').update(cert.raw).digest('hex'),
