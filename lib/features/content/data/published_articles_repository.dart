@@ -1,4 +1,5 @@
 import '../../../core/api/api_client.dart';
+import '../../../core/artwork/content_artwork.dart';
 import '../../../core/api/api_exceptions.dart';
 import '../../../core/api/response_data.dart';
 import '../../../core/services/local_db_service.dart';
@@ -35,21 +36,8 @@ class PublishedArticle {
     if (readMinutes != null) 'readTime': '$readMinutes min read',
     'publishedArticle': true,
   };
-  String get artwork {
-    final text = '$title ${category ?? ''}'.toLowerCase();
-    final name = text.contains('gratitude')
-        ? 'gratitude'
-        : text.contains('burnout') ||
-              text.contains('productiv') ||
-              category == 'work'
-        ? 'burnout'
-        : text.contains('anxiety') ||
-              text.contains('depression') ||
-              text.contains('stress')
-        ? 'anxiety'
-        : 'wellbeing';
-    return 'assets/png/recommended_$name.png';
-  }
+  String get artwork =>
+      ContentArtwork.article(slug: slug, title: title, category: category);
 }
 
 class PublishedArticlePage {

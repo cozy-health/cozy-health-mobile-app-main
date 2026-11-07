@@ -2,6 +2,8 @@ import 'package:cozy_health/core/models/saved_article.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/core/storage/encrypted_hive.dart';
 import 'package:cozy_health/core/theme/app_theme.dart';
+import 'package:cozy_health/core/widgets/illustration_plate.dart';
+import 'package:cozy_health/features/content/data/published_articles_repository.dart';
 import 'package:cozy_health/features/content/presentation/screens/article_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,6 +23,37 @@ void main() {
   });
   tearDown(resetLocalTestFonts);
   tearDownAll(fixture.close);
+
+  testWidgets('article detail refreshes stale cached artwork in both themes', (
+    tester,
+  ) async {
+    final article = PublishedArticle.fromJson({
+      'id': 'published-support',
+      'slug': 'asking-for-the-kind-of-support-you-want',
+      'title': 'An edited published title',
+      'body': 'The approved body stays unchanged.',
+    });
+    for (final theme in [AppTheme.light, AppTheme.dark]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: ArticleDetailScreen(
+            extra: {
+              ...article.detail,
+              'artwork': 'assets/png/recommended_wellbeing.png',
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final plate = tester.widget<IllustrationPlate>(
+        find.byType(IllustrationPlate),
+      );
+      expect(plate.asset, article.artwork);
+      expect(find.text('The approved body stays unchanged.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+  });
 
   testWidgets(
     'published article shows its body and attribution at large text',

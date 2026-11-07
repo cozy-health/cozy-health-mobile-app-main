@@ -1,4 +1,6 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
+import 'package:cozy_health/core/artwork/content_artwork.dart';
+import 'package:cozy_health/core/widgets/illustration_plate.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
@@ -142,12 +144,14 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (published && widget.extra['artwork'] is String) ...[
-                      Image.asset(
-                        widget.extra['artwork'] as String,
+                    if (published) ...[
+                      IllustrationPlate(
+                        asset: ContentArtwork.article(
+                          slug: widget.extra['slug'] as String?,
+                          title: title,
+                          category: widget.extra['category'] as String?,
+                        ),
                         height: 96,
-                        fit: BoxFit.contain,
-                        excludeFromSemantics: true,
                       ),
                       const SizedBox(height: 16),
                     ],

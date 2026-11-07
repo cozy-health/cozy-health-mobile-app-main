@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/widgets/illustration_plate.dart';
 import '../../../../core/widgets/wellness_panel.dart';
 import '../../data/published_articles_repository.dart';
 import '../screens/article_detail_screen.dart';
@@ -203,9 +204,9 @@ class ArticleRecommendationGrid extends StatelessWidget {
           runSpacing: w.contentGap,
           children: [
             for (final article in articles)
-              SizedBox(
+              Container(
                 width: width,
-                height: height,
+                constraints: BoxConstraints(minHeight: height),
                 child: AppPressable(
                   key: ValueKey('article-${article.id}'),
                   label: 'Read ${article.title}',
@@ -218,20 +219,13 @@ class ArticleRecommendationGrid extends StatelessWidget {
                       border: Border.all(color: c.outlineVariant),
                     ),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
+                        IllustrationPlate(
+                          asset: article.artwork,
                           width: 64,
                           height: 64,
-                          decoration: BoxDecoration(
-                            color: w.artworkSurface,
-                            borderRadius: BorderRadius.circular(w.small),
-                          ),
-                          child: Image.asset(
-                            article.artwork,
-                            fit: BoxFit.contain,
-                            excludeFromSemantics: true,
-                          ),
                         ),
                         SizedBox(height: w.contentGap),
                         Text(
@@ -242,7 +236,6 @@ class ArticleRecommendationGrid extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const Spacer(),
                         SizedBox(height: w.contentGap),
                         Row(
                           children: [

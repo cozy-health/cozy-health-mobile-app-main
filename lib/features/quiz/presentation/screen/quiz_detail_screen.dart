@@ -1,10 +1,9 @@
-import 'package:cozy_health/core/theme/app_surface.dart';
+import 'package:cozy_health/core/artwork/content_artwork.dart';
+import 'package:cozy_health/core/widgets/illustration_plate.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/widgets/app_snackbar.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../gen/assets.gen.dart';
 import '../../domain/clinical_assessment.dart';
 
 class QuizDetailScreen extends StatelessWidget {
@@ -13,7 +12,8 @@ class QuizDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final assessment = ClinicalAssessment.fromExtra(extra);
-    final title = assessment?.title ?? extra['title'] as String? ?? 'Assessment';
+    final title =
+        assessment?.title ?? extra['title'] as String? ?? 'Assessment';
     return Scaffold(
       appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
       body: SafeArea(
@@ -52,22 +52,9 @@ class QuizDetailScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            Container(
+            IllustrationPlate(
               height: 239,
-              decoration: BoxDecoration(
-                border: AppSurface.border(context),
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.accentSkyDark
-                    : AppColors.accentSky,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.all(24),
-              child: Image.asset(
-                assessment?.id == 'gad-7'
-                    ? Assets.png.stressandanxiety.path
-                    : Assets.png.emotionalWellbeing.path,
-                fit: BoxFit.contain,
-              ),
+              asset: ContentArtwork.assessment(assessment?.id),
             ),
             const SizedBox(height: 20),
             Text(
