@@ -1,4 +1,4 @@
-# Sync recovery — 2026-10-10
+# Sync recovery: 2026-10-10
 
 The sync queue now drains edits made during an upload, replaces obsolete queued edits and recovers legacy id-only queue entries from their typed cache. Session expiry no longer waits on its own upload; account changes are serialized, drafts remain account-scoped, and login/session resume explicitly retries uploads. Initial online state also triggers retry.
 

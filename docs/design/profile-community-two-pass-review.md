@@ -1,4 +1,4 @@
-# Profile and Community review — development proposal
+# Profile and Community review: development proposal
 
 Reviewed 2026-10-23. Activity/Provider design approval does not approve these
 new layouts. Production Profile and Community files are unchanged.

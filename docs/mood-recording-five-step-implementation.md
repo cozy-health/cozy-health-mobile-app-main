@@ -74,7 +74,7 @@ To propose new visual baselines, run the mood screen test with
 changed image before accepting it. Ordinary tests without the font flag do not
 compare mood golden files.
 
-## Verification results — 2026-10-22
+## Verification results: 2026-10-22
 
 - Focused controller, flow and pressable checks: **39 passed**, including all
   twelve real-font light/dark image comparisons without updating baselines.

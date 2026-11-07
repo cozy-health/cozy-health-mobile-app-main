@@ -1,4 +1,4 @@
-# Phase 12.2 — mobile crypto
+# Phase 12.2: mobile crypto
 
 Status: source push authorized by owner. Release distribution requires two actual API leaf pins and build wiring. Missing pins block profile/release health API requests; debug uses normal TLS validation. Current/next production rotation is not verified. See CERT_ROTATION.md.
 
@@ -104,6 +104,6 @@ iOS and Android compilation already passed GitHub CI on 2026-10-09.
 No existing tests removed; no production rotation/migration performed.
 
 
-## Owner-approved rollout update — 2026-10-09
+## Owner-approved rollout update: 2026-10-09
 
 Source push is authorized. Native debug builds skip leaf pinning while retaining normal TLS chain/hostname validation, HTTPS destination restrictions and redirect rejection. Profile and release builds still require two valid pins and fail closed. Release distribution remains blocked pending real next-pin provisioning in Phase 24. Native Dart debug transport reached production `/up` with HTTP 200; physical-device API reachability remains unverified. Ten pinning regression tests passed after this change.

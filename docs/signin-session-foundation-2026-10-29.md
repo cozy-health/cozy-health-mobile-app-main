@@ -1,4 +1,4 @@
-# Sign-in session foundation — 29 October 2026
+# Sign-in session foundation: 29 October 2026
 
 This is development-only groundwork. It does not complete or enable staged sign-in protection.
 

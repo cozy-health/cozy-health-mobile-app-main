@@ -42,7 +42,7 @@ Runner image source: https://github.com/actions/runner-images/blob/macos-14-arm6
 
 ## Root cause
 
-**B — Sentry Cocoa SDK API mismatch with the Flutter wrapper under Swift Package Manager.**
+**B - Sentry Cocoa SDK API mismatch with the Flutter wrapper under Swift Package Manager.**
 
 The CI log shows automatic SwiftPM migration before the failure. Flutter 3.44 enables SwiftPM by default. Sentry Flutter 8.14.2's Package.swift uses an open 8.x Cocoa version range, while its podspec pins the matching Cocoa version to 8.46.0.
 
@@ -76,9 +76,9 @@ Sentry stays installed. No Dart code, privacy filters, DSN, deployment target or
 
 ## Files changed
 
-- `pubspec.yaml` — per-project native dependency manager setting, with reason.
-- `.github/workflows/build-ios.yml` — compiler version diagnostics and native SDK version verification.
-- `docs/SENTRY_IOS_FIX_REPORT.md` — this report.
+- `pubspec.yaml` - per-project native dependency manager setting, with reason.
+- `.github/workflows/build-ios.yml` - compiler version diagnostics and native SDK version verification.
+- `docs/SENTRY_IOS_FIX_REPORT.md` - this report.
 
 ## Verification
 

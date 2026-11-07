@@ -1,4 +1,4 @@
-# Phase 12.1 — screen capture and logging protection
+# Phase 12.1: screen capture and logging protection
 
 ## Implementation
 

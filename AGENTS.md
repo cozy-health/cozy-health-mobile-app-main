@@ -1,4 +1,4 @@
-# AGENTS.md — Flutter Project Rules
+# AGENTS.md: Flutter Project Rules
 
 ## Flutter and Dart Command Execution
 

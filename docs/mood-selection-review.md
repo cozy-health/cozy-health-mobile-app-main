@@ -64,7 +64,7 @@ remains intentionally represented by one catalog option.
 
 No API or database changes are required.
 
-## Design and UX refinement — 2026-10-18
+## Design and UX refinement: 2026-10-18
 
 - Kept the supplied artwork, compact chip surfaces, category colors, and reference
   row composition while increasing touch areas to at least 48px.

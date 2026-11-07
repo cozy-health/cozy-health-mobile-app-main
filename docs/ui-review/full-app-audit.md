@@ -1,4 +1,4 @@
-# Full mobile app audit — 2026-10-10
+# Full mobile app audit: 2026-10-10
 
 The mobile app still has material functional, privacy, safety-flow, accessibility, and layout gaps. The earlier appearance report correctly did not claim full compliance. Passing the existing tests does not demonstrate that every advertised action works.
 
@@ -25,9 +25,9 @@ This is a broad source audit with additional targeted runtime evidence, **not a 
 - [Existing suite output](full-app-test-output.txt)
 - [Diagnostic run output](full-app-probe-output.txt)
 - [Diagnostic observations, including exact overflow amounts](full-app-probe-results.json)
-- [Diagnostic Dart analysis](full-app-probe-analysis.txt) — no issues found after placing the test-only probe in the test directory.
-- [Concurrent workspace diff captured for review](concurrent-workspace-diff.txt) — other in-progress edits, not changes made by this audit.
-- [Re-runnable diagnostic probe](../../test/audit/full_app_audit_probe.dart) — run `flutter test test/audit/full_app_audit_probe.dart --reporter expanded`; this intentionally records findings rather than claiming compliance.
+- [Diagnostic Dart analysis](full-app-probe-analysis.txt) - no issues found after placing the test-only probe in the test directory.
+- [Concurrent workspace diff captured for review](concurrent-workspace-diff.txt) - other in-progress edits, not changes made by this audit.
+- [Re-runnable diagnostic probe](../../test/audit/full_app_audit_probe.dart) - run `flutter test test/audit/full_app_audit_probe.dart --reporter expanded`; this intentionally records findings rather than claiming compliance.
 - [Inventory generator](../../tool/build_full_app_audit_inventory.ps1)
 
 Paths in findings are relative to this mobile project. Line numbers refer to the audited source. **P0** means a misleading safety/security workflow that should block exposing that workflow as complete; **P1** means major advertised functionality or privacy behavior is missing; **P2** means a functional/accessibility defect; **P3** means cleanup or lower-impact polish. Source-confirmed findings are distinguished from risks that still require runtime reproduction.

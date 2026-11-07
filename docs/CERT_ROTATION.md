@@ -1,6 +1,6 @@
 # API leaf certificate pinning and rotation
 
-## Internal iPhone sideload builds — 2026-10-10
+## Internal iPhone sideload builds: 2026-10-10
 
 The develop-only iOS workflow explicitly supplies
 `--dart-define=INTERNAL_TEST_BUILD=true` when testing and packaging the unsigned

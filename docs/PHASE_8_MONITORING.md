@@ -1,4 +1,4 @@
-# Phase 8.2 — private crash reporting
+# Phase 8.2: private crash reporting
 
 Sentry Flutter is installed using the version selected by the project's dependency resolver (8.14.2). No DSN is committed. Supply `--dart-define=SENTRY_DSN=<project DSN>` to enable reporting; builds without a DSN start normally without telemetry.
 

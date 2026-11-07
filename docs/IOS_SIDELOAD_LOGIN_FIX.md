@@ -1,4 +1,4 @@
-# iPhone sideload login fix — 2026-10-10
+# iPhone sideload login fix: 2026-10-10
 
 Affected build: develop commit `272e62eba6acf36f59ed2ee59acd3dd681d2711b`, GitHub run `38049470891`, build 107.
 

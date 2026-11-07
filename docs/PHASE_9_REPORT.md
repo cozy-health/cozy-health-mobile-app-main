@@ -1,4 +1,4 @@
-# Phase 9 — Offline UX and new-device restore
+# Phase 9: Offline UX and new-device restore
 
 ## Result and commit grouping
 
@@ -9,19 +9,19 @@ Phase 9 is committed locally and is not pushed. The backend is unchanged. DEFERR
 
 Pushed mobile develop through `f6c74a7` (all four Phase 8 commits).
 
-- Android Debug APK: passed — https://github.com/cozy-health/cozy-health-mobile-app-main/actions/runs/37777289043
-- iOS unsigned IPA: failed — https://github.com/cozy-health/cozy-health-mobile-app-main/actions/runs/37777288760
+- Android Debug APK: passed - https://github.com/cozy-health/cozy-health-mobile-app-main/actions/runs/37777289043
+- iOS unsigned IPA: failed - https://github.com/cozy-health/cozy-health-mobile-app-main/actions/runs/37777288760
 - iOS compiler diagnostic: `Value of type 'SentryBinaryImageCache' has no member 'image'`, in `sentry_flutter-8.14.2/.../SentryFlutterPlugin.swift:265`. This native build failure remains unresolved; Flutter analyzer and widget/unit tests do not validate an Xcode build.
 
 The root tracker `C:/projects/cozyhealth/docs/DEFERRED.md` now includes Sentry DSN, user_settings backend sync, and real-device biometric verification.
 
-## 9.1 — Offline UX
+## 9.1: Offline UX
 
 - Persistent 40px cloud-off banner below the status bar, with the requested copy. A 300ms easeOutCubic transition becomes instant under reduce motion/accessibility navigation.
 - One reconnect notification after three stable seconds online. Rapid connection flips cancel the pending notification. Reconnect requests an immediate queue retry.
 - Optional reconnect sound uses existing just_audio and connectivity_plus. audio_session is now a direct dependency for iOS ambient/Android notification audio policy. It respects the app mute preference, guards missing/invalid/long assets, and avoids changing an existing journal audio session.
 - Home shows an account-scoped `N pending` badge. Its sheet lists data types without exposing record IDs, notes or journal/chat contents, and offers Retry sync with an inline loading state.
-- Mood, journal and profile save notices read the actual pending queue: `Saved` after acknowledgement, otherwise `Saved locally — will sync when online`.
+- Mood, journal and profile save notices read the actual pending queue: `Saved` after acknowledgement, otherwise `Saved locally - will sync when online`.
 - Queue results count explicit acknowledgements. Success, partial failure and total failure have separate notices; failed notices offer retry. Malformed responses retain queued changes. Repeated failures no longer delete queued work after ten attempts.
 - Home, mood history, journal, notifications, quiz history and saved articles render Hive records immediately and refresh in the background. Offline empty list states provide a retry. Existing API-derived dashboard/insights cache handling is preserved.
 - Background downloads use the same conflict merge as restore instead of overwriting pending local edits.
@@ -54,7 +54,7 @@ The root tracker `C:/projects/cozyhealth/docs/DEFERRED.md` now includes Sentry D
 - `lib/features/content/presentation/screens/saved_articles_screen.dart`
 - `lib/features/settings/presentation/screens/edit_profile_screen.dart`
 
-## 9.2 — New-device restore
+## 9.2: New-device restore
 
 - Email, Google, Apple, biometric and stored-session startup check the current account's local history before Home. Existing local history or a completed per-account restore skips the blocking restore screen. New registration has no older backup to restore.
 - The restore screen shows progress, distinct item count, cancellation, failures with Retry, and an option to continue with the successfully restored data. Partial continuation retains an incomplete marker so a later login can retry.

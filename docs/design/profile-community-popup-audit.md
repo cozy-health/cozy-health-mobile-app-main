@@ -35,7 +35,7 @@ Recommended extensions, **not implemented without a separately agreed catalog an
 
 Keep achievements private and optional. Do not reward particular moods, disclosure of health records, crisis use, higher assessment scores or public posting frequency. No public leaderboards, punitive lost-streak copy or automatic celebration pop-ups are added. Existing notification preferences remain unchanged.
 
-## Pop-up audit — pass 1: inventory and interaction
+## Pop-up audit: pass 1: inventory and interaction
 
 “Four pages” is treated as Activity, Provider, Profile and Community. Related Home quick actions/streaks are included as a cross-check. This is not an audit of every unrelated Settings screen.
 
@@ -59,7 +59,7 @@ Keep achievements private and optional. Do not reward particular moods, disclosu
 
 The demo-only direct-messages action menu is outside the normal member-profile flow. This phase does not enable unsupported community DMs or follower visibility. The Home introductory tour is onboarding, not a recurring progress pop-up; no new achievement alert is introduced.
 
-## Pop-up audit — pass 2: visual and state requirements
+## Pop-up audit: pass 2: visual and state requirements
 
 Review images include light and dark treatments and narrow, 200% text/high-contrast scenarios. Existing report and visibility widgets also receive large-text render checks; Provider picker, avatar and voice retain their existing focused regression checks. Source review covers the remaining dialogs. These checks do **not** establish physical-device VoiceOver/TalkBack, native keyboard or live development API behavior.
 
