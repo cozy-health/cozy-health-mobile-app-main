@@ -38,8 +38,15 @@ def restore_keystore(encoded, expected, target, keytool='keytool'):
             temporary.unlink(missing_ok=True)
 
 
-if __name__ == '__main__':
+def main():
+    location = os.environ.get('COZY_ANDROID_DEVELOPMENT_KEYSTORE', '')
+    if not location or not Path(location).is_absolute():
+        raise ValueError('An absolute development keystore path shared with Gradle is required')
     restore_keystore(os.environ.get('ANDROID_DEVELOPMENT_KEYSTORE_BASE64', ''),
                      os.environ.get('ANDROID_DEVELOPMENT_CERT_SHA256', ''),
-                     Path.home() / '.android/debug.keystore')
+                     Path(location))
     print('Approved development signing identity restored; no key material logged.')
+
+
+if __name__ == '__main__':
+    main()

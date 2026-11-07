@@ -1,3 +1,4 @@
+import java.io.File
 import java.util.Base64
 import java.util.Properties
 
@@ -20,6 +21,14 @@ val dartDefines = providers.gradleProperty("dart-defines").orNull
         entry.substring(0, separator) to entry.substring(separator + 1)
     } ?: emptyMap()
 val productionBuild = dartDefines["COZY_ENVIRONMENT"] == "production"
+val developmentKeystore = if (productionBuild) null else providers.environmentVariable("COZY_ANDROID_DEVELOPMENT_KEYSTORE").orNull
+    ?.let { path ->
+        file(path).also { key ->
+            check(File(path).isAbsolute && key.isFile) {
+                "COZY_ANDROID_DEVELOPMENT_KEYSTORE must identify an existing absolute keystore file."
+            }
+        }
+    }
 val releaseApplicationId = providers.environmentVariable("COZY_ANDROID_APPLICATION_ID").orNull
     ?: "com.example.cozy_health"
 val signingKeys = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
@@ -55,6 +64,14 @@ android {
     }
 
     signingConfigs {
+        if (!productionBuild && developmentKeystore != null) {
+            getByName("debug") {
+                storeFile = developmentKeystore
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
         if (releaseSigningReady) {
             create("release") {
                 storeFile = rootProject.file(releaseProperties.getProperty("storeFile"))

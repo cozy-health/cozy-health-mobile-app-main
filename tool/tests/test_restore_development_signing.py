@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import importlib.util
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -29,6 +30,20 @@ class DevelopmentSigningTest(unittest.TestCase):
         self.assertEqual(self.target.read_bytes(), b'fixture-keystore')
         self.assertTrue(run.call_args.kwargs['check'])
         self.assertIn('androiddebugkey', run.call_args.args[0])
+
+    def test_entrypoint_uses_the_explicit_gradle_key_location(self):
+        with patch.dict(os.environ, {'COZY_ANDROID_DEVELOPMENT_KEYSTORE': str(self.target),
+                                    'ANDROID_DEVELOPMENT_KEYSTORE_BASE64': self.encoded,
+                                    'ANDROID_DEVELOPMENT_CERT_SHA256': self.expected}), patch.object(module, 'restore_keystore') as restore:
+            module.main()
+        restore.assert_called_once_with(self.encoded, self.expected, self.target)
+
+    def test_entrypoint_rejects_missing_or_relative_locations(self):
+        for path in ['', 'debug.keystore']:
+            with self.subTest(path=path), patch.dict(os.environ, {'COZY_ANDROID_DEVELOPMENT_KEYSTORE': path}), patch.object(module, 'restore_keystore') as restore:
+                with self.assertRaises(ValueError):
+                    module.main()
+                restore.assert_not_called()
 
     def test_missing_or_invalid_configuration_preserves_existing_key(self):
         for encoded, expected in [('', self.expected), (self.encoded, ''), ('invalid!', self.expected)]:

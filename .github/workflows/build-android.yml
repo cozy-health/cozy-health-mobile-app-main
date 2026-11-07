@@ -80,9 +80,12 @@ jobs:
 
       - name: Restore approved development signing identity
         env:
+          COZY_ANDROID_DEVELOPMENT_KEYSTORE: ${{ runner.temp }}/cozy-development.keystore
           ANDROID_DEVELOPMENT_KEYSTORE_BASE64: ${{ secrets.ANDROID_DEVELOPMENT_KEYSTORE_BASE64 }}
           ANDROID_DEVELOPMENT_CERT_SHA256: ${{ vars.ANDROID_DEVELOPMENT_CERT_SHA256 }}
-        run: python3 tool/restore_development_signing.py
+        run: |
+          python3 tool/restore_development_signing.py
+          echo "COZY_ANDROID_DEVELOPMENT_KEYSTORE=$COZY_ANDROID_DEVELOPMENT_KEYSTORE" >> "$GITHUB_ENV"
 
       - name: Build debug APK
         run: flutter build apk --debug --build-number="$GITHUB_RUN_NUMBER" --dart-define-from-file=push-defines.json --dart-define=INTERNAL_TEST_BUILD=true --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
