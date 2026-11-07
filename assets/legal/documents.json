@@ -19,8 +19,8 @@
       "title": "Privacy Policy",
       "route": "/privacy",
       "audience": "consumer",
-      "version": "1.1",
-      "updated": "2026-10-29",
+      "version": "1.2",
+      "updated": "2026-11-07",
       "published": true,
       "required": true,
       "sections": [
@@ -49,7 +49,8 @@
         {
           "heading": "Provider sharing is your choice",
           "paragraphs": [
-            "A linked provider can see your first name, identifier, sharing choices and assigned-resource status. Optional categories start off: mood entries, journal summaries, assessment results and provider notes. Journal summaries include metadata such as titles, type, word count and dates. Separately, after enabling journal sharing, you can preview and explicitly confirm a written entry snapshot containing its title and body for that provider. This does not automatically share other entries, later edits, recordings or transcripts. Specific assessment-result sharing also requires the applicable permission.",
+            "A linked provider can see your first name, identifier, sharing choices and assigned-resource status. Optional categories start off: mood entries, journal summaries, assessment results and provider notes. Journal summaries include metadata such as titles, type, word count and dates. Separately, after enabling journal sharing, you can preview and explicitly confirm a written entry snapshot containing its title and body for that provider. A written-entry share does not automatically share other entries, later edits, recordings or transcripts. Specific assessment-result sharing also requires the applicable permission.",
+            "Separately, after enabling journal sharing, you can preview and explicitly confirm a voice-journal share with your connected provider. This allows online playback of that selected recording while the connection, journal permission and individual share remain active. It does not share other recordings or create a transcript. Revoking access stops subsequent authorized playback; it cannot erase audio already received or copied by the provider.",
             "Providers may view or export authorized information. You can turn categories off or disconnect in My Provider. New requests respect changes; already viewed, copied or downloaded information cannot be recalled. Reconnecting starts with optional categories off."
           ]
         },
@@ -99,7 +100,7 @@
         }
       ],
       "editorial_status": "final",
-      "effective_date": "2026-10-29"
+      "effective_date": "2026-11-07"
     },
     {
       "id": "tos",
@@ -418,8 +419,8 @@
       "title": "Provider Terms of Use",
       "route": "/providers/terms",
       "audience": "provider",
-      "version": "1.1",
-      "updated": "2026-10-29",
+      "version": "1.2",
+      "updated": "2026-11-07",
       "published": true,
       "required": true,
       "sections": [
@@ -445,7 +446,8 @@
         {
           "heading": "Data you may access",
           "paragraphs": [
-            "Patient identity/link status and assignment progress may remain visible while connected. Optional sharing covers mood entries, journal summaries, assessment results and provider notes as authorized. A separate, explicitly confirmed written-entry share can include a snapshot of its title and body. This does not automatically include later edits, recordings, transcripts or other entries. Titles and summaries can also be sensitive."
+            "Patient identity/link status and assignment progress may remain visible while connected. Optional sharing covers mood entries, journal summaries, assessment results and provider notes as authorized. A separate, explicitly confirmed written-entry share can include a snapshot of its title and body. This does not automatically include later edits, recordings, transcripts or other entries. Titles and summaries can also be sensitive.",
+            "A patient can separately preview and explicitly confirm a voice-journal share. You may play that selected recording online only while the connection, journal permission and individual share remain active. A written-entry share does not itself include audio, and voice sharing does not create a transcript. Respect withdrawal and the restrictions on retained copies described below."
           ]
         },
         {
@@ -479,15 +481,15 @@
         }
       ],
       "editorial_status": "final",
-      "effective_date": "2026-10-29"
+      "effective_date": "2026-11-07"
     },
     {
       "id": "privacy_policy",
       "title": "Provider Privacy Notice",
       "route": "/providers/privacy",
       "audience": "provider",
-      "version": "1.1",
-      "updated": "2026-10-29",
+      "version": "1.2",
+      "updated": "2026-11-07",
       "published": true,
       "required": true,
       "sections": [
@@ -507,7 +509,8 @@
         {
           "heading": "Patient workflows",
           "paragraphs": [
-            "We process patient links and sharing choices, assigned-resource status, provider notes, direct provider messages, authorized assessment results and generated reports. Access is scoped to the active relationship and relevant permissions. Journal summaries exclude full text. A separately confirmed written-entry share can expose its title and body snapshot to the chosen provider; it does not include recordings or transcripts."
+            "We process patient links and sharing choices, assigned-resource status, provider notes, direct provider messages, authorized assessment results and generated reports. Access is scoped to the active relationship and relevant permissions. Journal summaries exclude full text. A separately confirmed written-entry share can expose its title and body snapshot to the chosen provider; it does not include recordings or transcripts.",
+            "A patient can separately preview and explicitly confirm sharing a selected voice-journal recording for online playback. Access requires an active connection, journal-sharing permission and an active individual share. It does not include other recordings or transcripts. Withdrawal prevents subsequent authorized playback but cannot recall bytes already received or copied."
           ]
         },
         {
@@ -547,7 +550,7 @@
         }
       ],
       "editorial_status": "final",
-      "effective_date": "2026-10-29"
+      "effective_date": "2026-11-07"
     }
   ]
 }

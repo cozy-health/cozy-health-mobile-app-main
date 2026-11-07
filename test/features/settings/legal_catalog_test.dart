@@ -60,8 +60,16 @@ void main() {
     expect(consumer.any((doc) => doc['id'] == 'guardians'), isFalse);
     for (final doc in consumer) {
       final isTerms = doc['id'] == 'tos';
-      expect(doc['version'], isTerms ? '1.2' : '1.1');
-      expect(doc['effective_date'], isTerms ? '2026-10-30' : '2026-10-29');
+      final isPrivacy = doc['id'] == 'privacy_policy';
+      expect(doc['version'], isTerms || isPrivacy ? '1.2' : '1.1');
+      expect(
+        doc['effective_date'],
+        isPrivacy
+            ? '2026-11-07'
+            : isTerms
+            ? '2026-10-30'
+            : '2026-10-29',
+      );
       expect(doc['published'], isTrue);
       final row = find.byKey(ValueKey('legal-document-${doc['id']}'));
       await tester.scrollUntilVisible(
@@ -88,7 +96,7 @@ void main() {
     await tester.tap(privacy);
     await tester.pumpAndSettle();
     expect(
-      find.textContaining('Version 1.1 · Effective 29 October 2026'),
+      find.textContaining('Version 1.2 · Effective 7 November 2026'),
       findsOneWidget,
     );
     expect(
