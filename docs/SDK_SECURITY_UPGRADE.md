@@ -15,3 +15,8 @@ Use the pinned SDK for analysis, the full internal-build test suite and native
 development builds. Keep normal certificate verification and the existing
 production pin/release gates. No production or mobile store release is authorized
 by this development upgrade.
+
+The SDK requires lockfile updates to matcher 0.12.20, meta 1.19.0,
+test_api 0.7.12 and vector_math 2.4.4. A separate OSV query of those four
+versions on 9 November 2026 returned no findings. Existing analyzer rules and
+coverage are preserved; automatic SDK migration exclusions were not adopted.
