@@ -20,3 +20,9 @@ The SDK requires lockfile updates to matcher 0.12.20, meta 1.19.0,
 test_api 0.7.12 and vector_math 2.4.4. A separate OSV query of those four
 versions on 9 November 2026 returned no findings. Existing analyzer rules and
 coverage are preserved; automatic SDK migration exclusions were not adopted.
+
+The first hosted Android native build reproduced the SDK's minimum-Gradle check:
+Gradle 8.13 was below the required 8.14 baseline. The wrapper now uses the
+official Gradle 8.14.6 patch distribution with its published SHA256 checksum.
+The compatibility check remains enabled. Existing Android plugin and Kotlin
+versions are preserved.
