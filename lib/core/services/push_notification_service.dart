@@ -420,6 +420,7 @@ class PushNotificationService extends ChangeNotifier
     'affirmation' => AppRouter.dailyAffirmation,
     'quiz_share' => '/quiz-shared',
     'reply' || 'like' => AppRouter.communityHub,
+    'community_moderation' => '/community/moderation',
     _ => AppRouter.notifications,
   };
 

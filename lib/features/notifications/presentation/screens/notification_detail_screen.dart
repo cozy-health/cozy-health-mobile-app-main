@@ -45,6 +45,7 @@ class NotificationDetailScreen extends StatelessWidget {
                 final destination = switch (current.type) {
                   'support' => AppRouter.supportInbox,
                   'reply' || 'like' => AppRouter.communityHub,
+                  'community_moderation' => '/community/moderation',
                   'crisis' => AppRouter.crisisContact,
                   'journal' => AppRouter.journal,
                   _ => AppRouter.moodHistory,

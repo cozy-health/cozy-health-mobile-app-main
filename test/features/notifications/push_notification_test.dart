@@ -80,6 +80,7 @@ void main() {
   });
 
   test('only supported categories select destinations', () {
+    expect(PushNotificationService.destination('community_moderation'), '/community/moderation');
     expect(PushNotificationService.destination('mood'), '/mood-feeling');
     expect(PushNotificationService.destination('journal'), '/journal-compose');
     expect(PushNotificationService.destination('streak'), '/home?focus=streak');
