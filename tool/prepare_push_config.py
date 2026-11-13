@@ -37,12 +37,25 @@ if raw:
     if options['android']['projectId'] != options['ios']['projectId']:
         raise ValueError('Android and iOS Firebase projects must match for this build')
     android = options['android']
+    # Public OAuth identifiers from the owner-supplied development Firebase file.
+    # Keep other projects and configuration-free builds unconfigured.
+    google_clients = []
+    if android['projectId'] == 'cozy-health-dev-2026':
+        server_client = '412988470560-uitjnofphvuedeoag59u2dpm8ef0cepr.apps.googleusercontent.com'
+        android_client = '412988470560-hi8gd9r1r5teb2q56k75nbvseqdv9omt.apps.googleusercontent.com'
+        defines.update(GOOGLE_CLIENT_ID=server_client, GOOGLE_ANDROID_CLIENT_ID=android_client)
+        google_clients = [
+            {'client_id': android_client, 'client_type': 1, 'android_info': {
+                'package_name': 'com.example.cozy_health',
+                'certificate_hash': '00218bc875065a936cb8c151e172b25b00fcbdbc'}},
+            {'client_id': server_client, 'client_type': 3},
+        ]
     android_config = {
         'project_info': {'project_number': android['messagingSenderId'], 'project_id': android['projectId']},
         'client': [{
             'client_info': {'mobilesdk_app_id': android['appId'], 'android_client_info': {'package_name': 'com.example.cozy_health'}},
             'api_key': [{'current_key': android['apiKey']}],
-            'oauth_client': [],
+            'oauth_client': google_clients,
             'services': {'appinvite_service': {'other_platform_oauth_client': []}},
         }],
         'configuration_version': '1',

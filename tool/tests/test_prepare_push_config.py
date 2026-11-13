@@ -51,6 +51,26 @@ class PushConfigTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.run_config(json.dumps(options))
 
+    def test_google_development_ids_survive_native_config_regeneration(self):
+        options = self.options()
+        for platform in ('android', 'ios'):
+            options[platform]['projectId'] = 'cozy-health-dev-2026'
+        self.run_config(json.dumps(options))
+        defines = json.loads(Path('push-defines.json').read_text())
+        clients = json.loads(Path('android/app/google-services.json').read_text())['client'][0]['oauth_client']
+        server = next(client for client in clients if client['client_type'] == 3)
+        android = next(client for client in clients if client['client_type'] == 1)
+        self.assertEqual(defines['GOOGLE_CLIENT_ID'], server['client_id'])
+        self.assertNotEqual(defines['GOOGLE_CLIENT_ID'], android['client_id'])
+        self.assertEqual(android['android_info']['certificate_hash'], '00218bc875065a936cb8c151e172b25b00fcbdbc')
+        self.assertNotIn('GOOGLE_IOS_CLIENT_ID', defines)
+        # Switching away must not retain development OAuth configuration.
+        for raw in (json.dumps(self.options()), ''):
+            self.run_config(raw)
+            defines = json.loads(Path('push-defines.json').read_text())
+            self.assertNotIn('GOOGLE_CLIENT_ID', defines)
+            self.assertNotIn('GOOGLE_ANDROID_CLIENT_ID', defines)
+
     def test_development_telemetry_is_available_without_firebase(self):
         with patch.dict(os.environ, {'SENTRY_DSN_DEV': 'https://fixture@o4512334056128512.ingest.de.sentry.io/4512362638147664',
                                      'POSTHOG_KEY_DEV': 'phc_fixture'}):
