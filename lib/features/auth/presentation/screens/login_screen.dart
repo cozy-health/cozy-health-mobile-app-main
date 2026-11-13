@@ -1,5 +1,4 @@
 import '../widgets/protected_signin.dart';
-import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
@@ -257,38 +256,20 @@ class _LoginScreenState extends State<LoginScreen> {
           controller: _passwordController,
           obscure: true,
           autofillHints: const [AutofillHints.password],
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            if (!_busy) _login();
+          },
           enabled: !_busy,
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: Checkbox(
-                value: _stayLoggedIn,
-                activeColor: Theme.of(context).colorScheme.primary,
-                side: BorderSide(
-                  color: Theme.of(context).colorScheme.outline,
-                  width: 1.5,
-                ),
-                fillColor: WidgetStateProperty.all(Colors.transparent),
-                shape: AppSurface.shape(context, BorderRadius.circular(6)),
-                onChanged: _busy
-                    ? null
-                    : (value) => setState(() => _stayLoggedIn = value ?? false),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Stay logged in',
-                style: AppTextStyles.body2.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ),
-          ],
+        AuthSelectionRow(
+          key: const ValueKey('auth-stay-logged-in'),
+          label: 'Stay logged in',
+          value: _stayLoggedIn,
+          onChanged: _busy
+              ? null
+              : (value) => setState(() => _stayLoggedIn = value),
         ),
         const SizedBox(height: 8),
         Align(

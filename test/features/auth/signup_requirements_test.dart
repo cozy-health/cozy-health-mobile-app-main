@@ -66,7 +66,7 @@ void main() {
         await enter('Password', 'Synthetic-pass123');
         await enter('Confirm Password', 'Synthetic-pass123');
         expect(tester.widget<AuthPrimaryButton>(button).onPressed, isNull);
-        final terms = find.byType(Checkbox).first;
+        final terms = find.byKey(const ValueKey('auth-terms-consent'));
         await tester.ensureVisible(terms);
         await tester.tap(terms);
         await tester.pumpAndSettle();

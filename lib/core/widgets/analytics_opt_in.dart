@@ -36,6 +36,9 @@ class _AnalyticsOptInState extends State<AnalyticsOptIn> {
 
   @override
   Widget build(BuildContext context) => CheckboxListTile(
+    contentPadding: EdgeInsets.zero,
+    controlAffinity: ListTileControlAffinity.leading,
+    isThreeLine: true,
     value: _enabled,
     title: const Text('Help improve Cozy Health (optional)'),
     subtitle: const Text(

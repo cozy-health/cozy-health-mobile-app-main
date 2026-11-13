@@ -1,3 +1,5 @@
+import 'dart:async';
+import '../../../../core/utils/motion.dart';
 import 'package:cozy_health/core/widgets/app_scroll_body.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import '../../../../core/services/personalization_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/challenge_selection_widget.dart';
 import '../../../../core/widgets/option_selection_widget.dart';
 import '../../../../utils/responsive_extensions.dart';
@@ -29,22 +32,45 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
   final List<String> _selectedGoals = [];
   String? _selectedAge;
   String? _selectedGender;
+  Timer? _advanceTimer;
+  bool _finishing = false;
 
   @override
   void dispose() {
+    _advanceTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
 
   Future<void> _finishPersonalization() async {
-    await PersonalizationService().markComplete();
-    if (mounted) context.go(AppRouter.preparingCozy);
+    if (_finishing) return;
+    _advanceTimer?.cancel();
+    setState(() => _finishing = true);
+    try {
+      await PersonalizationService().markComplete();
+      if (mounted) context.go(AppRouter.preparingCozy);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _finishing = false);
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            'Could not finish setup. Please try again.',
+            onRetry: _finishPersonalization,
+          ),
+        );
+      }
+    }
   }
 
   void _nextPage() {
+    if (_finishing) return;
+    _advanceTimer?.cancel();
     if (_currentPage < _questions.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
+        duration: shouldReduceMotion(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     } else {
@@ -78,9 +104,15 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
       _selectedAge = age;
     });
     // Auto-advance with a slight delay to allow the user to see their selection
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) _nextPage();
-    });
+    _advanceTimer?.cancel();
+    _advanceTimer = Timer(
+      shouldReduceMotion(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 300),
+      () {
+        if (mounted) _nextPage();
+      },
+    );
   }
 
   void _onGenderSelect(String gender) {
@@ -88,9 +120,15 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
       _selectedGender = gender;
     });
     // Auto-advance with a slight delay to allow the user to see their selection
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) _nextPage();
-    });
+    _advanceTimer?.cancel();
+    _advanceTimer = Timer(
+      shouldReduceMotion(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 300),
+      () {
+        if (mounted) _nextPage();
+      },
+    );
   }
 
   Widget _buildQuestionWidget(PersonalizationQuestion question) {
@@ -135,8 +173,11 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
         leading: _currentPage > 0
             ? IconButton(
                 onPressed: () {
+                  _advanceTimer?.cancel();
                   _pageController.previousPage(
-                    duration: const Duration(milliseconds: 300),
+                    duration: shouldReduceMotion(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
                   );
                 },
@@ -148,7 +189,7 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
             : null,
         actions: [
           TextButton(
-            onPressed: _finishPersonalization,
+            onPressed: _finishing ? null : _finishPersonalization,
             child: Text(
               'Skip',
               style: AppTextStyles.linkText.copyWith(
@@ -252,7 +293,7 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
                 padding: EdgeInsets.all(6.w),
                 child: AppButton(
                   text: 'Next',
-                  onPressed: _nextPage,
+                  onPressed: _finishing ? null : _nextPage,
                   isOutlined: false,
                 ),
               ),

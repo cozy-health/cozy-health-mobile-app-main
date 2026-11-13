@@ -10,8 +10,6 @@ import '../../data/onboarding_data.dart';
 import 'steps/focus_areas_step.dart';
 import 'steps/challenges_step.dart';
 
-const _blue = Color(0xFF0066FF);
-
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
   @override
@@ -116,11 +114,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       children: List.generate(
         count,
         (i) => Container(
-          width: count == 3 ? 78 : 100,
+          width: ((MediaQuery.sizeOf(context).width - 64) / count - 6).clamp(
+            20.0,
+            100.0,
+          ),
           height: 4,
           margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
-            color: i == index ? _blue : const Color(0xFFCEDFF9),
+            color: i == index
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outlineVariant,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -132,9 +135,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          foregroundColor: _blue,
+          foregroundColor: Theme.of(context).colorScheme.primary,
           minimumSize: const Size(double.infinity, 48),
-          side: const BorderSide(color: _blue),
+          side: BorderSide(color: Theme.of(context).colorScheme.primary),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
             fontSize: 16,

@@ -76,13 +76,14 @@ void main() {
         expect(find.text('Check your\ninbox.'), findsOneWidget);
         final before = transport.paths.length;
         await tester.enterText(find.byType(EditableText).first, '000000');
-        final verify = find.text('Verify Code');
+        final verify = find.text('Continue');
         expect(verify, findsOneWidget);
         await tester.ensureVisible(verify);
         await tester.tap(verify);
         await tester.pumpAndSettle();
         expect(find.text('Set a new\npassword.'), findsOneWidget);
         expect(transport.paths.length, before);
+        expect(find.text('Code verified'), findsNothing);
         // Confirms observed defects; a green diagnostic does not mean this flow is correct.
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pumpAndSettle();

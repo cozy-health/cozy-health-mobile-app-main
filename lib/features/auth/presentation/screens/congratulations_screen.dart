@@ -26,7 +26,7 @@ class _CongratulationsScreenState extends State<CongratulationsScreen> {
       dismissible: false,
       builder: (context) => WellnessSheet(
         title: 'You are ready to begin',
-        busy: true,
+        onClose: () => Navigator.pop(context),
         children: [
           const Icon(Icons.check_circle_outline),
           const Text('Your account has been created.'),
@@ -46,5 +46,17 @@ class _CongratulationsScreenState extends State<CongratulationsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => const Scaffold(body: SizedBox.expand());
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Welcome to Cozy',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+        ),
+      ),
+    ),
+  );
 }

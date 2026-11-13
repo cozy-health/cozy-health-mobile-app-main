@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../../utils/responsive_extensions.dart';
+import 'wellness_sheet.dart';
 
 class BubbleTheme {
   final Color background;
@@ -79,6 +80,22 @@ class ChallengeSelectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.textScalerOf(context).scale(13) > 18) {
+      return SingleChildScrollView(
+        child: Column(
+          children: [
+            for (final challenge in challenges)
+              WellnessSheetOption(
+                key: ValueKey('challenge-$challenge'),
+                label: challenge,
+                icon: Icons.check_circle_outline,
+                selected: selectedChallenges.contains(challenge),
+                onPressed: () => onChallengeToggle(challenge),
+              ),
+          ],
+        ),
+      );
+    }
     return SizedBox.expand(
       child: Stack(
         clipBehavior: Clip.none,

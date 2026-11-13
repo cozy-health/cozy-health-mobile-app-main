@@ -1,3 +1,4 @@
+import '../../../../core/widgets/app_scroll_body.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinput/pinput.dart';
@@ -87,7 +88,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       showAuthToast(
         context,
         type: AuthToastType.error,
-        onRetry: _resetPassword,
+        onRetry: _sendCode,
         title: "Can't reach the server. Retry?",
       );
     } finally {
@@ -101,7 +102,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       setState(() => _otpError = "That code doesn't look complete yet.");
       return;
     }
-    showAuthToast(context, type: AuthToastType.success, title: 'Code verified');
     setState(() {
       _clearErrors();
       _step = 2;
@@ -194,6 +194,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         if (_step == 0) ...[
           AuthTextField(
             label: 'Email',
+            autofillHints: const [AutofillHints.email],
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) {
+              if (!_isLoading) _sendCode();
+            },
             error: _emailError,
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
@@ -230,7 +235,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          AuthPrimaryButton(text: 'Verify Code', onPressed: _verifyCode),
+          AuthPrimaryButton(text: 'Continue', onPressed: _verifyCode),
           const SizedBox(height: 24),
           AuthFooterLink(
             text: 'Wrong email?',
@@ -241,6 +246,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         if (_step == 2) ...[
           AuthTextField(
             label: 'New Password',
+            autofillHints: const [AutofillHints.newPassword],
             error: _passwordError,
             controller: _passwordController,
             obscure: true,
@@ -251,6 +257,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           const SizedBox(height: 24),
           AuthTextField(
             label: 'Confirm New Password',
+            autofillHints: const [AutofillHints.newPassword],
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) {
+              if (!_isLoading) _resetPassword();
+            },
             error: _confirmError,
             controller: _confirmController,
             obscure: true,
@@ -297,24 +308,29 @@ class _OtpInput extends StatelessWidget {
       );
     }
 
-    return Pinput(
-      controller: controller,
-      length: 6,
-      separatorBuilder: (_) => const SizedBox(width: 8),
-      defaultPinTheme: theme(
-        hasError
-            ? AppColors.danger
-            : Theme.of(context).brightness == Brightness.dark
-            ? AppColors.borderDark
-            : AppColors.borderLight,
-        1,
-      ),
-      focusedPinTheme: theme(
-        hasError ? AppColors.danger : Theme.of(context).colorScheme.primary,
-        2,
-      ),
-      errorPinTheme: theme(AppColors.danger, 2),
-      onCompleted: (_) {},
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cellWidth = ((constraints.maxWidth - 40) / 6).clamp(24.0, 48.0);
+        return Pinput(
+          controller: controller,
+          length: 6,
+          separatorBuilder: (_) => const SizedBox(width: 8),
+          defaultPinTheme: theme(
+            hasError
+                ? AppColors.danger
+                : Theme.of(context).brightness == Brightness.dark
+                ? AppColors.borderDark
+                : AppColors.borderLight,
+            1,
+          ).copyWith(width: cellWidth),
+          focusedPinTheme: theme(
+            hasError ? AppColors.danger : Theme.of(context).colorScheme.primary,
+            2,
+          ).copyWith(width: cellWidth),
+          errorPinTheme: theme(AppColors.danger, 2).copyWith(width: cellWidth),
+          onCompleted: (_) {},
+        );
+      },
     );
   }
 }
@@ -330,41 +346,43 @@ class _Success extends StatelessWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 96, 24, 24),
-          child: Column(
-            children: [
-              const Spacer(),
-              Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
+          padding: const EdgeInsets.all(24),
+          child: AppScrollBody(
+            child: Column(
+              children: [
+                const Spacer(),
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.check, color: AppColors.success, size: 44),
                 ),
-                child: Icon(Icons.check, color: AppColors.success, size: 44),
-              ),
-              const SizedBox(height: 40),
-              Text(
-                "You're all set.",
-                textAlign: TextAlign.center,
-                style: AppTextStyles.heading1.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 40),
+                Text(
+                  "You're all set.",
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.heading1.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Your password has been reset. Log in with your new one.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.body1.copyWith(
-                  color: Theme.of(context).textTheme.bodyMedium?.color,
-                  height: 1.5,
+                const SizedBox(height: 16),
+                Text(
+                  'Your password has been reset. Log in with your new one.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                    height: 1.5,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              AuthPrimaryButton(text: 'Log In', onPressed: onLogin),
-            ],
+                const Spacer(),
+                AuthPrimaryButton(text: 'Log In', onPressed: onLogin),
+              ],
+            ),
           ),
         ),
       ),

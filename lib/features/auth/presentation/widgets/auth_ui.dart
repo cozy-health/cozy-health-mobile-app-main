@@ -9,6 +9,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../gen/assets.gen.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/utils/motion.dart';
 
 enum AuthMessageType { hint, error, success, warning }
 
@@ -103,6 +106,8 @@ class AuthTextField extends StatefulWidget {
   final bool enabled;
   final ValueChanged<String>? onChanged;
   final Iterable<String>? autofillHints;
+  final TextInputAction textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
   const AuthTextField({
     super.key,
@@ -117,6 +122,8 @@ class AuthTextField extends StatefulWidget {
     this.enabled = true,
     this.onChanged,
     this.autofillHints,
+    this.textInputAction = TextInputAction.next,
+    this.onSubmitted,
   });
 
   @override
@@ -161,7 +168,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 200),
+          duration: shouldReduceMotion(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 200),
           style: AppTextStyles.body2.copyWith(
             color: _focusNode.hasFocus
                 ? colorScheme.onSurface
@@ -172,7 +181,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
         ),
         const SizedBox(height: 8),
         AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: shouldReduceMotion(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 200),
           constraints: const BoxConstraints(minHeight: 56),
           decoration: BoxDecoration(
             color: isDark ? AppColors.surfaceElevatedDark : colorScheme.surface,
@@ -196,8 +207,22 @@ class _AuthTextFieldState extends State<AuthTextField> {
           child: TextField(
             autofillHints: widget.autofillHints,
             maxLength: widget.maxLength,
-            autocorrect: !widget.obscure,
-            enableSuggestions: !widget.obscure,
+            autocorrect:
+                !widget.obscure &&
+                widget.keyboardType != TextInputType.emailAddress,
+            enableSuggestions:
+                !widget.obscure &&
+                widget.keyboardType != TextInputType.emailAddress,
+            textInputAction: widget.textInputAction,
+            onSubmitted:
+                widget.onSubmitted ??
+                (_) {
+                  if (widget.textInputAction == TextInputAction.next) {
+                    FocusScope.of(context).nextFocus();
+                  } else {
+                    _focusNode.unfocus();
+                  }
+                },
             onTapOutside: (_) => _focusNode.unfocus(),
             scrollPadding: const EdgeInsets.all(48),
             controller: widget.controller,
@@ -210,13 +235,20 @@ class _AuthTextFieldState extends State<AuthTextField> {
               color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
+              hintText: widget.label,
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 16,
               ),
               suffixIcon: widget.obscure
                   ? IconButton(
+                      tooltip: _obscure ? 'Show password' : 'Hide password',
                       onPressed: () => setState(() => _obscure = !_obscure),
                       icon: Icon(
                         _obscure ? Icons.visibility_off : Icons.visibility,
@@ -235,13 +267,18 @@ class _AuthTextFieldState extends State<AuthTextField> {
           ),
         ),
         AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
+          duration: shouldReduceMotion(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 250),
           child: message == null
               ? const SizedBox(height: 0)
               : Padding(
                   key: ValueKey(message),
-                  padding: const EdgeInsets.only(top: 8, left: 12),
-                  child: InlineMessage(type: messageType, text: message),
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Semantics(
+                    liveRegion: hasError,
+                    child: InlineMessage(type: messageType, text: message),
+                  ),
                 ),
         ),
       ],
@@ -308,6 +345,12 @@ class PasswordStrengthBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (password.isEmpty) {
+      return Text(
+        'Use 8+ characters with a mix of letters and numbers.',
+        style: Theme.of(context).textTheme.bodySmall,
+      );
+    }
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final labels = ['Weak', 'Weak', 'Fair', 'Good', 'Strong'];
     final colors = [
@@ -336,7 +379,9 @@ class PasswordStrengthBar extends StatelessWidget {
                           : AppColors.lightGrey,
                     ),
                     AnimatedFractionallySizedBox(
-                      duration: const Duration(milliseconds: 300),
+                      duration: shouldReduceMotion(context)
+                          ? Duration.zero
+                          : const Duration(milliseconds: 300),
                       curve: Curves.easeOutCubic,
                       widthFactor: fill,
                       child: Container(height: 4, color: colors[score]),
@@ -347,7 +392,9 @@ class PasswordStrengthBar extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
+              duration: shouldReduceMotion(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 200),
               child: Text(
                 labels[score],
                 key: ValueKey(score),
@@ -553,6 +600,59 @@ class AuthPrimaryButton extends StatelessWidget {
         isLoading: isLoading,
         isOutlined: isOutlined,
         padding: EdgeInsets.zero,
+      ),
+    );
+  }
+}
+
+class AuthSelectionRow extends StatelessWidget {
+  const AuthSelectionRow({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+  final String label;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  @override
+  Widget build(BuildContext context) {
+    final w = context.cozyColors.wellness;
+    final c = Theme.of(context).colorScheme;
+    return Semantics(
+      checked: value,
+      child: AppPressable(
+        label: label,
+        onPressed: onChanged == null ? null : () => onChanged!(!value),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: w.touch),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: w.actionIcon,
+                height: w.actionIcon,
+                decoration: BoxDecoration(
+                  color: value ? c.primary : c.surface,
+                  border: Border.all(
+                    color: onChanged == null ? c.outlineVariant : c.outline,
+                  ),
+                  borderRadius: BorderRadius.circular(w.tight),
+                ),
+                child: value
+                    ? Icon(Icons.check, size: w.actionIcon, color: c.onPrimary)
+                    : null,
+              ),
+              SizedBox(width: w.contentGap),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

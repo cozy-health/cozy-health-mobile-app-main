@@ -2,7 +2,6 @@ import '../widgets/protected_signin.dart';
 import '../../../../core/widgets/analytics_opt_in.dart';
 import '../../../../core/services/usage_analytics.dart';
 import '../../../../core/services/legal_documents.dart';
-import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -195,6 +194,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       children: [
         AuthTextField(
           label: 'Full Name',
+          autofillHints: const [AutofillHints.name],
           error: _nameError,
           controller: _nameController,
           enabled: !_busy,
@@ -204,7 +204,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           label: 'Email',
           helper: 'For account and security messages.',
           error: _emailError,
-          success: _emailController.text.contains('@') ? 'Email entered' : null,
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
           autofillHints: const [AutofillHints.email],
@@ -224,6 +223,10 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         const SizedBox(height: 24),
         AuthTextField(
           label: 'Confirm Password',
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            if (!_busy && _isFormValid) _submit();
+          },
           error: _confirmError,
           controller: _confirmController,
           autofillHints: const [AutofillHints.newPassword],
@@ -231,32 +234,16 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           enabled: !_busy,
         ),
         const SizedBox(height: 24),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: Checkbox(
-                value: _agreeToTerms,
-                activeColor: Theme.of(context).colorScheme.primary,
-                shape: AppSurface.shape(context, BorderRadius.circular(6)),
-                onChanged: _busy
-                    ? null
-                    : (value) => setState(() {
-                        _agreeToTerms = value ?? false;
-                        _termsError = null;
-                      }),
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: InlineMessage(
-                type: AuthMessageType.hint,
-                text: 'I agree to the Terms and Privacy Policy.',
-              ),
-            ),
-          ],
+        AuthSelectionRow(
+          key: const ValueKey('auth-terms-consent'),
+          label: 'I agree to the Terms and Privacy Policy.',
+          value: _agreeToTerms,
+          onChanged: _busy
+              ? null
+              : (value) => setState(() {
+                  _agreeToTerms = value;
+                  _termsError = null;
+                }),
         ),
         Wrap(
           spacing: 12,

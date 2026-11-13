@@ -19,7 +19,7 @@ class _PreparingCozyScreenState extends State<PreparingCozyScreen> {
   }
 
   _navigateToHome() async {
-    await Future.delayed(const Duration(seconds: 4));
+    await WidgetsBinding.instance.endOfFrame;
     if (mounted) {
       context.go('/home');
     }
@@ -50,7 +50,7 @@ class _PreparingCozyScreenState extends State<PreparingCozyScreen> {
 
                   // Main title
                   Text(
-                    'Give us a few seconds while\nwe prepare cozy for you',
+                    'Opening your space',
                     style: AppTextStyles.heading1.copyWith(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -62,7 +62,7 @@ class _PreparingCozyScreenState extends State<PreparingCozyScreen> {
 
                   // Subtitle
                   Text(
-                    'This will help cozy understand you better',
+                    'Your Cozy space is ready.',
                     style: AppTextStyles.body1.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
