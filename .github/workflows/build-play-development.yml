@@ -8,6 +8,9 @@ on:
       - '.github/workflows/build-play-development.yml'
       - 'tool/prepare_play_development.py'
       - 'tool/tests/test_prepare_play_development.py'
+      - 'third_party/flutter_jailbreak_detection/android/build.gradle'
+      - 'tool/verify_native_pages.py'
+      - 'tool/tests/test_verify_native_pages.py'
 
 permissions:
   contents: read
@@ -71,6 +74,7 @@ jobs:
         env:
           EXPECTED_CERT: ${{ vars.PLAY_DEVELOPMENT_UPLOAD_SHA256 }}
         run: |
+          python3 tool/verify_native_pages.py build/app/outputs/bundle/release/app-release.aab
           jarsigner -verify build/app/outputs/bundle/release/app-release.aab
           python3 - <<'PY'
           import hashlib, json, os, re, subprocess, zipfile

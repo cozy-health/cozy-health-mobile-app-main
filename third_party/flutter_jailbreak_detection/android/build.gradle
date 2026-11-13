@@ -47,5 +47,6 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'com.github.scottyab:rootbeer:0.1.0'
+    // 0.1.2 preserves RootBeer API and supplies 16 KB-aligned native libraries.
+    implementation 'com.scottyab:rootbeer-lib:0.1.2'
 }
