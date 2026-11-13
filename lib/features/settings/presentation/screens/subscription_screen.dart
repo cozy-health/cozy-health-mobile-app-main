@@ -7,6 +7,7 @@ import '../../../../core/routing/app_router.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/subscription_repository.dart';
 import '../../../../core/widgets/app_pressable.dart';
+import '../../data/native_billing_service.dart';
 import '../../../../core/widgets/wellness_sheet.dart';
 import '../../../../core/widgets/wellness_panel.dart';
 import '../../../../core/theme/cozy_colors.dart';
@@ -27,7 +28,7 @@ class SubscriptionScreen extends StatefulWidget {
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // Plan benefits are independent of country. Only native store product
   // metadata may supply checkout prices; legacy regional caches are ignored.
-  static const _packages = [
+  static const List<Map<String, Object>> _packages = [
     {
       'package_name': 'Standard',
       'features': [
@@ -81,12 +82,34 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(context.cozyColors.wellness.page),
         children: [
           FutureBuilder<SubscriptionStatus?>(
             future: _subscription,
             builder: (context, snapshot) {
               final subscription = snapshot.data;
+              if (snapshot.hasError) {
+                return WellnessPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Your current plan could not be loaded. Refresh to check your access.',
+                      ),
+                      WellnessAction(
+                        key: const ValueKey('retry-current-plan'),
+                        label: 'Refresh plan status',
+                        onPressed: () => setState(
+                          () => _subscription = _repo.fetchSubscription(),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Text('Checking your current plan…');
+              }
               if (_owner == LocalDbService().activeUserId &&
                   subscription != null &&
                   subscription.isStoreManaged) {
@@ -141,17 +164,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           for (final row in _packages) _plan(row),
           if (widget.deferBilling)
             const Text(
-              'Billing is on hold until Apple and Google store setup is complete. No purchase is available here.',
+              'Store purchases are currently unavailable. No purchase can be started here.',
             )
           else
-            const LaunchBillingPanel(),
+            const WellnessPanel(
+              child: LaunchBillingPanel(showStudentVerification: false),
+            ),
           const SizedBox(height: 20),
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Text(
-                'The store shows the applicable price and renewal details before payment. Student and Premium have the same paid benefits. Verify a Nigerian academic email ending in .edu.ng or an approved school domain. Eligibility lasts 12 months and does not activate a subscription.',
-              ),
+          const WellnessPanel(
+            child: Text(
+              'The store shows the applicable price and renewal details before payment. Student and Premium have the same paid benefits. Verify a Nigerian academic email ending in .edu.ng or an approved school domain. Eligibility lasts 12 months and does not activate a subscription.',
             ),
           ),
           if (!widget.deferBilling)
@@ -159,58 +181,97 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               onPressed: () => context.push(AppRouter.billingHistory),
               child: const Text('Billing history'),
             ),
-          if (!widget.deferBilling)
-            TextButton(
-              onPressed: () => context.push(AppRouter.restorePurchases),
-              child: const Text('Restore purchases'),
-            ),
         ],
       ),
     );
   }
 
-  Widget _plan(Map row) {
-    return AppPressable(
-      label: 'View ${row['package_name']} package',
-      onPressed: () => showWellnessSheet<void>(
-        context: context,
-        builder: (context) => WellnessSheet(
-          title: row['package_name']?.toString() ?? 'Package details',
+  Widget _plan(Map<String, Object> row) {
+    final w = context.cozyColors.wellness;
+    final name = row['package_name'] as String;
+    final features = row['features'] as List<String>;
+    final student = name == 'Student';
+    return Padding(
+      padding: EdgeInsets.only(bottom: w.gap),
+      child: WellnessPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (row['description'] != null) Text(row['description'].toString()),
-
-            for (final feature in row['features'] as List? ?? [])
-              Text(feature.toString()),
-            const Text(
-              'Billing is on hold until Apple and Google store setup is complete.',
+            Text(name, style: Theme.of(context).textTheme.titleLarge),
+            SizedBox(height: w.small),
+            FutureBuilder<SubscriptionStatus?>(
+              future: _subscription,
+              builder: (context, snapshot) {
+                final current = snapshot.data;
+                return _owner == LocalDbService().activeUserId &&
+                        current != null &&
+                        current.isActive &&
+                        current.tier.toLowerCase() == name.toLowerCase()
+                    ? const Text('Current plan')
+                    : const SizedBox.shrink();
+              },
             ),
-            const WellnessAction(label: 'Billing unavailable', onPressed: null),
-          ],
-        ),
-      ),
-      child: Card(
-        margin: const EdgeInsets.symmetric(vertical: 10),
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${row['package_name']}',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              for (final feature in row['features'] as List? ?? [])
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text('✓ $feature'),
+            Text(
+              student
+                  ? 'Premium benefits with verified academic email eligibility.'
+                  : name == 'Premium'
+                  ? 'More ways to reflect, connect and understand your wellbeing.'
+                  : 'Everyday tools for your wellbeing.',
+            ),
+            SizedBox(height: w.contentGap),
+            for (final feature in features)
+              Padding(
+                padding: EdgeInsets.only(bottom: w.small),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.check_rounded,
+                      size: w.actionIcon,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    SizedBox(width: w.small),
+                    Expanded(child: Text(feature)),
+                  ],
                 ),
-              Text(
-                'Paid activation coming later',
-                style: Theme.of(context).textTheme.labelLarge,
               ),
+            if (student && !widget.deferBilling) ...[
+              SizedBox(height: w.small),
+              const StudentPricingAction(),
             ],
-          ),
+            SizedBox(height: w.contentGap),
+            WellnessAction(
+              key: ValueKey('plan-details-${name.toLowerCase()}'),
+              label: 'View $name details',
+              onPressed: () => showWellnessSheet<void>(
+                context: context,
+                builder: (context) => ListenableBuilder(
+                  listenable: NativeBillingService.instance,
+                  builder: (context, _) => WellnessSheet(
+                    title: name,
+                    children: [
+                      for (final feature in features)
+                        Padding(
+                          padding: EdgeInsets.only(bottom: w.small),
+                          child: Text(feature),
+                        ),
+                      SizedBox(height: w.contentGap),
+                      Text(
+                        widget.deferBilling ||
+                                !NativeBillingService.instance.enabled
+                            ? 'Store purchases are currently unavailable. No purchase can be started here.'
+                            : 'Available prices and purchase options are shown in Store purchases on the plans page. Your store confirms the price and renewal details before payment.',
+                      ),
+                      if (student)
+                        const Text(
+                          'Student eligibility lasts 12 months. Verification enables Student pricing; it does not activate paid access.',
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -11,6 +11,7 @@ import 'package:cozy_health/core/data/placeholder_data.dart';
 import 'package:cozy_health/core/models/user_profile.dart';
 import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/core/widgets/mood_artwork.dart';
+import 'package:cozy_health/core/widgets/wellness_sheet.dart';
 import 'package:cozy_health/core/models/journal_entry.dart';
 import 'package:cozy_health/core/models/app_notification.dart';
 import 'package:cozy_health/core/models/saved_article.dart';
@@ -476,11 +477,11 @@ void main() {
         tester,
         'reminder_permission_${dark ? 'dark' : 'light'}',
       );
-      final choice = find.widgetWithText(CheckboxListTile, 'Affirmations');
+      final choice = find.byKey(const ValueKey('reminder-affirmation'));
       await tester.ensureVisible(choice);
       await tester.tap(choice);
       await tester.pumpAndSettle();
-      expect(tester.widget<CheckboxListTile>(choice).value, isTrue);
+      expect(tester.widget<WellnessSheetOption>(choice).selected, isTrue);
       expect(tester.takeException(), isNull);
     });
     testWidgets('Community groups have a separate readable view, dark=$dark', (

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/models/subscription_status.dart';
-import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/wellness_panel.dart';
 import '../../../../core/widgets/wellness_sheet.dart';
 import '../../data/store_subscription_links.dart';
@@ -87,10 +86,13 @@ class StorePlanPanel extends StatelessWidget {
         children: [
           Text(
             'Your ${subscription.tier} plan',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
-          Text(status),
+          Semantics(
+            liveRegion: true,
+            child: Text(status, style: Theme.of(context).textTheme.titleMedium),
+          ),
           Text('Managed through ${subscription.storeName}'),
           if (subscription.expiresAt != null)
             Text(
@@ -101,27 +103,28 @@ class StorePlanPanel extends StatelessWidget {
             'Your store provides payment receipts and tax details. Deleting your Cozy account does not cancel store billing.',
           ),
           const SizedBox(height: 16),
-          AppButton(
-            text: 'Manage subscription',
-            isOutlined: true,
+          WellnessAction(
+            key: const ValueKey('manage-store-subscription'),
+            label: 'Manage subscription',
+            filled: true,
             onPressed: () => _open(
               context,
               StoreSubscriptionLinks.manage(subscription.storePlatform),
             ),
           ),
           const SizedBox(height: 8),
-          AppButton(
-            text: 'View store purchase history',
-            isOutlined: true,
+          WellnessAction(
+            key: const ValueKey('store-purchase-history'),
+            label: 'View store purchase history',
             onPressed: () => _open(
               context,
               StoreSubscriptionLinks.history(subscription.storePlatform),
             ),
           ),
           const SizedBox(height: 8),
-          AppButton(
-            text: 'Refresh plan status',
-            isOutlined: true,
+          WellnessAction(
+            key: const ValueKey('refresh-plan-status'),
+            label: 'Refresh plan status',
             onPressed: onRefresh,
           ),
         ],

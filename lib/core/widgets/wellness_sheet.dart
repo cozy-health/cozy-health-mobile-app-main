@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../theme/cozy_colors.dart';
 import 'app_pressable.dart';
 import 'wellness_panel.dart';
+import '../utils/motion.dart';
 
 Future<T?> showWellnessSheet<T>({
   required BuildContext context,
@@ -12,6 +13,9 @@ Future<T?> showWellnessSheet<T>({
   bool dismissible = true,
 }) => showModalBottomSheet<T>(
   context: context,
+  sheetAnimationStyle: shouldReduceMotion(context)
+      ? AnimationStyle.noAnimation
+      : null,
   isScrollControlled: true,
   useSafeArea: true,
   isDismissible: dismissible,

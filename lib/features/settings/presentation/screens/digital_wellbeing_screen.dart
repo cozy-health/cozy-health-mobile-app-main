@@ -5,6 +5,8 @@ import '../../../../core/services/digital_wellbeing_service.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/friendly_error.dart';
 import '../../../../core/widgets/skeleton_loader.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/wellness_panel.dart';
 
 class DigitalWellbeingScreen extends StatefulWidget {
   const DigitalWellbeingScreen({super.key, this.service});
@@ -59,9 +61,16 @@ class _DigitalWellbeingScreenState extends State<DigitalWellbeingScreen> {
     }
   }
 
+  Widget _settingsPanel({required Widget child, bool tinted = false}) =>
+      WellnessPanel(
+        tinted: tinted,
+        child: Material(type: MaterialType.transparency, child: child),
+      );
+
   @override
   Widget build(BuildContext context) {
     final preferences = _preferences;
+    final w = context.cozyColors.wellness;
     return Scaffold(
       appBar: AppBar(title: const Text('Digital Wellbeing')),
       body: preferences == null
@@ -75,51 +84,91 @@ class _DigitalWellbeingScreenState extends State<DigitalWellbeingScreen> {
                     ),
                   ))
           : ListView(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(w.page),
               children: [
-                const Text(
-                  'Choose what feels comfortable. These preferences do not turn on reminders or enforce time limits yet.',
+                _settingsPanel(
+                  tinted: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Your wellbeing preferences',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      SizedBox(height: w.small),
+                      const Text(
+                        'Choose what feels comfortable. These preferences do not turn on reminders or enforce time limits yet.',
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 24),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Gentle reminders'),
-                  value: preferences.gentleReminders,
-                  onChanged: _saving
-                      ? null
-                      : (value) =>
-                            _save(preferences.copyWith(gentleReminders: value)),
-                ),
-                const SizedBox(height: 24),
-                AppDropdown<int>(
-                  value: preferences.dailyLimitMinutes,
-                  label: const Text('Suggested daily usage limit'),
-                  entries: const [
-                    DropdownMenuEntry(value: 15, label: '15 min'),
-                    DropdownMenuEntry(value: 30, label: '30 min'),
-                    DropdownMenuEntry(value: 60, label: '1 hour'),
-                    DropdownMenuEntry(value: 0, label: 'No limit'),
-                  ],
-                  onChanged: _saving
-                      ? null
-                      : (value) {
-                          if (value != null) {
-                            _save(
-                              preferences.copyWith(dailyLimitMinutes: value),
-                            );
-                          }
-                        },
-                ),
-                const SizedBox(height: 24),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Show usage summary at close'),
-                  value: preferences.showUsageSummary,
-                  onChanged: _saving
-                      ? null
-                      : (value) => _save(
-                          preferences.copyWith(showUsageSummary: value),
+                SizedBox(height: w.gap),
+                _settingsPanel(
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Gentle reminders'),
+                        subtitle: const Text(
+                          'A wellbeing preference only. Set up phone reminders in Notifications.',
                         ),
+                        value: preferences.gentleReminders,
+                        onChanged: _saving
+                            ? null
+                            : (value) => _save(
+                                preferences.copyWith(gentleReminders: value),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: w.gap),
+                _settingsPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Time and reflection',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      SizedBox(height: w.contentGap),
+                      AppDropdown<int>(
+                        value: preferences.dailyLimitMinutes,
+                        label: const Text('Suggested daily usage limit'),
+                        entries: const [
+                          DropdownMenuEntry(value: 15, label: '15 min'),
+                          DropdownMenuEntry(value: 30, label: '30 min'),
+                          DropdownMenuEntry(value: 60, label: '1 hour'),
+                          DropdownMenuEntry(value: 0, label: 'No limit'),
+                        ],
+                        onChanged: _saving
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  _save(
+                                    preferences.copyWith(
+                                      dailyLimitMinutes: value,
+                                    ),
+                                  );
+                                }
+                              },
+                      ),
+                      const SizedBox(height: 24),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Show usage summary at close'),
+                        subtitle: const Text(
+                          'Saved preference; usage summaries are not active yet.',
+                        ),
+                        value: preferences.showUsageSummary,
+                        onChanged: _saving
+                            ? null
+                            : (value) => _save(
+                                preferences.copyWith(showUsageSummary: value),
+                              ),
+                      ),
+                    ],
+                  ),
                 ),
                 if (_saving)
                   const Center(

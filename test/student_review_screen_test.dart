@@ -393,10 +393,10 @@ void main() {
     });
     await reveal(
       tester,
-      find.text('School request: Nigerian School - pending'),
+      find.text('School request: Nigerian School - Awaiting review'),
     );
     expect(
-      find.text('School request: Nigerian School - pending'),
+      find.text('School request: Nigerian School - Awaiting review'),
       findsOneWidget,
     );
     expect(transport.emailVerified, isFalse);

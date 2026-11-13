@@ -5,6 +5,7 @@ import 'package:cozy_health/core/models/mood_entry.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/core/storage/token_storage.dart';
 import 'package:cozy_health/core/theme/app_theme.dart';
+import 'package:cozy_health/core/widgets/wellness_sheet.dart';
 import 'package:cozy_health/features/settings/presentation/screens/profile_view_screen.dart';
 import 'package:cozy_health/features/settings/presentation/screens/subscription_screen.dart';
 import 'package:cozy_health/features/insights/presentation/screens/monthly_report_screen.dart';
@@ -199,15 +200,40 @@ void main() {
     expect(find.text('Confirm country and load prices'), findsNothing);
     expect(find.byType(TextField), findsNothing);
     expect(find.textContaining('NGN '), findsNothing);
-    expect(find.text('Standard'), findsOneWidget);
-    expect(find.text('Student'), findsOneWidget);
-    expect(find.text('Premium'), findsOneWidget);
+    for (final name in ['Standard', 'Student', 'Premium']) {
+      await tester.scrollUntilVisible(
+        find.text(name),
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text(name), findsOneWidget);
+    }
     expect(find.text('Start Free Trial'), findsNothing);
     expect(find.byKey(const ValueKey('restore-store-purchases')), findsNothing);
-    await tester.ensureVisible(find.text('Student'));
-    await tester.tap(find.text('Student'));
+    final studentDetails = find.byKey(const ValueKey('plan-details-student'));
+    await tester.scrollUntilVisible(
+      studentDetails,
+      -180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(studentDetails);
     await tester.pumpAndSettle();
-    expect(find.text('Billing unavailable'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(WellnessSheet),
+        matching: find.text(
+          'Store purchases are currently unavailable. No purchase can be started here.',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate((widget) {
+        final key = widget.key;
+        return key is ValueKey<String> && key.value.startsWith('purchase-');
+      }),
+      findsNothing,
+    );
     await tester.tap(find.byKey(const ValueKey('wellness-sheet-close')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);

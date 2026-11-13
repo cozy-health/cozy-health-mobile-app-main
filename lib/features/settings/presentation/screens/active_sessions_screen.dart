@@ -6,6 +6,9 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../data/session_repository.dart';
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import '../../../../core/theme/cozy_colors.dart';
 
 class ActiveSessionsScreen extends StatefulWidget {
   const ActiveSessionsScreen({super.key, this.repository});
@@ -19,6 +22,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
   List<Map<String, dynamic>> _sessions = [];
   bool _loading = true;
   bool _busy = false;
+  bool _confirming = false;
   String? _error;
   @override
   void initState() {
@@ -79,26 +83,15 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
   }
 
   Future<void> _all() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        scrollable: true,
-        title: const Text('Log out all devices?'),
-        content: const Text(
-          'This includes this device. You will need to sign in again.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Log out all'),
-          ),
-        ],
-      ),
+    if (_busy || _confirming) return;
+    setState(() => _confirming = true);
+    final confirmed = await confirmWellnessAction(
+      context,
+      title: 'Log out all devices?',
+      message: 'This includes this device. You will need to sign in again.',
+      action: 'Log out all',
     );
+    if (mounted) setState(() => _confirming = false);
     if (confirmed != true || !mounted) return;
     setState(() => _busy = true);
     try {
@@ -163,10 +156,11 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                 if (_sessions.isEmpty)
                   const ListTile(title: Text('No active sessions.')),
                 Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: FilledButton(
-                    onPressed: _busy ? null : _all,
-                    child: const Text('Log out all devices'),
+                  padding: EdgeInsets.all(context.cozyColors.wellness.page),
+                  child: WellnessAction(
+                    key: const ValueKey('logout-all-devices'),
+                    onPressed: _busy || _confirming ? null : _all,
+                    label: 'Log out all devices',
                   ),
                 ),
               ],
