@@ -21,6 +21,10 @@ val dartDefines = providers.gradleProperty("dart-defines").orNull
         entry.substring(0, separator) to entry.substring(separator + 1)
     } ?: emptyMap()
 val productionBuild = dartDefines["COZY_ENVIRONMENT"] == "production"
+val playDevelopmentBuild = dartDefines["PLAY_DEVELOPMENT_BUILD"] == "true"
+check(!playDevelopmentBuild || (!productionBuild && dartDefines["COZY_ENVIRONMENT"] == "development" && dartDefines["INTERNAL_TEST_BUILD"] == "true")) {
+    "Play development builds require the development environment and internal testing."
+}
 val developmentKeystore = if (productionBuild) null else providers.environmentVariable("COZY_ANDROID_DEVELOPMENT_KEYSTORE").orNull
     ?.let { path ->
         file(path).also { key ->
@@ -54,7 +58,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = if (productionBuild) releaseApplicationId else "com.example.cozy_health"
+        applicationId = if (playDevelopmentBuild) "org.cozyhealth.app.dev" else if (productionBuild) releaseApplicationId else "com.example.cozy_health"
+        manifestPlaceholders["appLabel"] = if (playDevelopmentBuild) "Cozy Health Development" else "cozy_health"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -64,6 +69,16 @@ android {
     }
 
     signingConfigs {
+        if (playDevelopmentBuild) {
+            create("playDevelopment") {
+                val keyPath = providers.environmentVariable("PLAY_DEVELOPMENT_KEYSTORE").get()
+                check(File(keyPath).isAbsolute && File(keyPath).isFile) { "Play development upload keystore is required." }
+                storeFile = file(keyPath)
+                storePassword = providers.environmentVariable("PLAY_DEVELOPMENT_STORE_PASSWORD").get()
+                keyAlias = "play-development-upload"
+                keyPassword = providers.environmentVariable("PLAY_DEVELOPMENT_STORE_PASSWORD").get()
+            }
+        }
         if (!productionBuild && developmentKeystore != null) {
             getByName("debug") {
                 storeFile = developmentKeystore
@@ -87,7 +102,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = if (productionBuild) signingConfigs.findByName("release")
+            signingConfig = if (playDevelopmentBuild) signingConfigs.getByName("playDevelopment") else if (productionBuild) signingConfigs.findByName("release")
                 else signingConfigs.getByName("debug")
         }
     }
