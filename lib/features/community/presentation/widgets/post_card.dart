@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../data/community_moderation_state.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/app_pressable.dart';
@@ -151,7 +152,7 @@ class PostCard extends StatelessWidget {
                   icon: post['isLiked'] == true
                       ? Icons.favorite_rounded
                       : Icons.favorite_border_rounded,
-                  onPressed: () =>
+                  onPressed: CommunityModerationState.instance.restricted ? null : () =>
                       CommunityLocalState.instance.toggleLike(post),
                 ),
                 WellnessAction(

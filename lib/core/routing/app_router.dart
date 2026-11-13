@@ -23,6 +23,7 @@ import 'package:cozy_health/features/content/presentation/screens/content_search
 import 'package:cozy_health/features/content/presentation/screens/daily_affirmation_screen.dart';
 
 import 'package:cozy_health/features/community/presentation/screens/community_hub_screen.dart';
+import 'package:cozy_health/features/community/presentation/screens/community_moderation_screen.dart';
 import 'package:cozy_health/features/community/presentation/screens/create_post_screen.dart';
 import 'package:cozy_health/features/community/presentation/screens/post_detail_screen.dart';
 import 'package:cozy_health/features/community/presentation/screens/user_profile_screen.dart';
@@ -517,6 +518,7 @@ class AppRouter {
         name: 'communityHub',
         builder: (_, __) => const CommunityHubScreen(),
       ),
+      GoRoute(path: '/community/moderation', builder: (_, __) => const CommunityModerationScreen()),
       GoRoute(
         path: wellnessChallenges,
         builder: (_, __) => const WellnessScreen(),

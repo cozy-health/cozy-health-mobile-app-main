@@ -12,6 +12,7 @@ import '../widgets/post_actions.dart';
 import '../../../../core/data/demo_mode.dart';
 import '../../../../core/api/api_client.dart';
 import '../../data/community_repository.dart';
+import '../../data/community_moderation_state.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../../../core/routing/app_router.dart';
 
@@ -56,6 +57,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _sendComment() async {
+    if (CommunityModerationState.instance.restricted) return;
     if (!await ensurePlanAccess(context, 'community_participate') || !mounted) {
       return;
     }
@@ -459,7 +461,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       Icons.arrow_upward,
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    onPressed: () {
+                    onPressed: CommunityModerationState.instance.restricted ? null : () {
                       if (!DemoMode.instance.enabled) {
                         _sendComment();
                         return;

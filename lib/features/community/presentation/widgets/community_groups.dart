@@ -8,6 +8,7 @@ import '../../../../core/widgets/app_dropdown.dart';
 import '../../../../core/widgets/chip.dart' as design;
 import '../community_local_state.dart';
 import '../../data/community_repository.dart';
+import '../../data/community_moderation_state.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/data/demo_mode.dart';
 import '../../../../core/services/local_db_service.dart';
@@ -166,7 +167,7 @@ class _CommunityGroupsState extends State<CommunityGroups> {
               padding: const EdgeInsets.only(bottom: 10),
               child: CommunityGroupCard(
                 group: group,
-                onJoin: _busy.contains(group.id) ? null : () => _toggle(group),
+                onJoin: _busy.contains(group.id) || (!group.joined && CommunityModerationState.instance.restricted) ? null : () => _toggle(group),
               ),
             ),
           const SizedBox(height: 12),

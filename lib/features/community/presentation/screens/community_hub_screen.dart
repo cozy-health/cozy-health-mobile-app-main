@@ -5,6 +5,7 @@ import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/app_pressable.dart';
 import '../../../../core/widgets/wellness_panel.dart';
 import '../../data/community_repository.dart';
+import '../../data/community_moderation_state.dart';
 import '../community_local_state.dart';
 import '../widgets/community_groups.dart';
 import '../widgets/post_actions.dart';
@@ -38,6 +39,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> {
   @override
   void initState() {
     super.initState();
+    CommunityModerationState.instance.addListener(_refresh);
     _repository = CommunityRepository(
       usePlaceholderData: widget.posts != null ? true : null,
     )..addListener(_refresh);
@@ -49,6 +51,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> {
 
   @override
   void dispose() {
+    CommunityModerationState.instance.removeListener(_refresh);
     _repository.removeListener(_refresh);
     _repository.dispose();
     super.dispose();
@@ -97,6 +100,10 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> {
               ),
               SizedBox(height: w.small),
               const Text('Share at your own pace.'),
+              SizedBox(height: w.small),
+              if (CommunityModerationState.instance.restricted)
+                const Text('Community participation is restricted. You can still read, report, block and appeal.'),
+              WellnessAction(label: 'Moderation decisions and appeals', onPressed: () => context.push('/community/moderation')),
               SizedBox(height: w.gap),
               AppPressable(
                 label: 'Search community',
@@ -126,7 +133,7 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> {
                   label: 'Create a post',
                   icon: Icons.add_rounded,
                   filled: true,
-                  onPressed: () => context.push(AppRouter.createPost),
+                  onPressed: CommunityModerationState.instance.restricted ? null : () => context.push(AppRouter.createPost),
                 ),
                 SizedBox(height: w.gap),
                 SingleChildScrollView(

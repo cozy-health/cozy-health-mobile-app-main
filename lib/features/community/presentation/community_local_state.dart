@@ -1,6 +1,7 @@
 // TODO: wire to backend when endpoint exists
 import 'package:flutter/foundation.dart';
 import '../../../core/data/demo_mode.dart';
+import '../data/community_moderation_state.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/services/local_db_service.dart';
 import '../../../core/routing/app_router.dart';
@@ -195,6 +196,7 @@ class CommunityLocalState extends ChangeNotifier {
   }
 
   Future<void> toggleLike(Map<String, dynamic> item) async {
+    if (CommunityModerationState.instance.restricted) return;
     final liked = item['isLiked'] as bool? ?? false;
     if (!DemoMode.instance.enabled) {
       final context = AppRouter.navigatorKey.currentContext;

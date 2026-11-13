@@ -1,5 +1,6 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
+import '../../data/community_moderation_state.dart';
 import '../community_local_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../community_theme.dart';
@@ -114,7 +115,7 @@ class CommentCard extends StatelessWidget {
             Row(
               children: [
                 InkWell(
-                  onTap: () => CommunityLocalState.instance.toggleLike(comment),
+                  onTap: CommunityModerationState.instance.restricted ? null : () => CommunityLocalState.instance.toggleLike(comment),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Row(
@@ -142,7 +143,7 @@ class CommentCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 24),
                 GestureDetector(
-                  onTap: onReplyTap,
+                  onTap: CommunityModerationState.instance.restricted ? null : onReplyTap,
                   child: Text(
                     'Reply',
                     style: context.communityBody2.copyWith(

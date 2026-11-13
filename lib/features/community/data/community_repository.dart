@@ -5,6 +5,7 @@ import '../../../core/services/local_db_service.dart';
 import '../../../core/data/demo_mode.dart';
 import '../presentation/community_local_state.dart';
 import '../../../core/storage/token_storage.dart';
+import 'community_moderation_state.dart';
 
 /// Live API data in normal mode; sample activity is confined to demo mode.
 class CommunityRepository extends ChangeNotifier {
@@ -82,6 +83,7 @@ class CommunityRepository extends ChangeNotifier {
     final epoch = _epoch;
     error = null;
     try {
+      await CommunityModerationState.instance.refresh();
       final rows = await pages('/community/posts');
       if (_disposed || epoch != _epoch) return;
       CommunityLocalState.instance.posts

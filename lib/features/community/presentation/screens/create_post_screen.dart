@@ -17,6 +17,7 @@ import '../community_local_state.dart';
 import '../../../../core/data/demo_mode.dart';
 import '../../../../core/api/api_client.dart';
 import '../../data/community_repository.dart';
+import '../../data/community_moderation_state.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -79,6 +80,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   bool get _canPost {
+    if (CommunityModerationState.instance.restricted) return false;
     final length = _textController.text.trim().length;
     return length > 0 && length <= _maxLength && !_isPublishing;
   }
