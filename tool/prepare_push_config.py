@@ -9,6 +9,8 @@ from pathlib import Path
 
 raw = os.environ.get('FIREBASE_OPTIONS_JSON', '')
 defines = {'FIREBASE_OPTIONS': ''}
+google_xcconfig = Path('ios/Flutter/GoogleDevelopment.generated.xcconfig')
+google_xcconfig.unlink(missing_ok=True)
 # Development telemetry is independent of Firebase. Never inherit production keys.
 defines.update(SENTRY_DSN='', POSTHOG_KEY='', POSTHOG_HOST='https://us.i.posthog.com',
                TELEMETRY_ENVIRONMENT='disabled')
@@ -40,10 +42,15 @@ if raw:
     # Public OAuth identifiers from the owner-supplied development Firebase file.
     # Keep other projects and configuration-free builds unconfigured.
     google_clients = []
+    ios_google = {}
     if android['projectId'] == 'cozy-health-dev-2026':
         server_client = '412988470560-uitjnofphvuedeoag59u2dpm8ef0cepr.apps.googleusercontent.com'
         android_client = '412988470560-hi8gd9r1r5teb2q56k75nbvseqdv9omt.apps.googleusercontent.com'
         defines.update(GOOGLE_CLIENT_ID=server_client, GOOGLE_ANDROID_CLIENT_ID=android_client)
+        ios_client = '412988470560-slgb2nk4q2qkqaguesoqvfd6o97rrba2.apps.googleusercontent.com'
+        reversed_client = '.'.join(reversed(ios_client.split('.')))
+        defines['GOOGLE_IOS_CLIENT_ID'] = ios_client
+        ios_google = {'CLIENT_ID': ios_client, 'REVERSED_CLIENT_ID': reversed_client}
         google_clients = [
             {'client_id': android_client, 'client_type': 1, 'android_info': {
                 'package_name': 'com.example.cozy_health',
@@ -66,10 +73,14 @@ if raw:
         raise ValueError('Missing Firebase iosBundleId')
     if ios['iosBundleId'] != 'com.example.cozyHealth':
         raise ValueError('Firebase iOS bundle ID must match the existing app')
+    if ios_google:
+        google_xcconfig.parent.mkdir(parents=True, exist_ok=True)
+        google_xcconfig.write_text('GOOGLE_REVERSED_CLIENT_ID = ' + reversed_client + '\n')
     plist = {'API_KEY': ios['apiKey'], 'GOOGLE_APP_ID': ios['appId'],
              'GCM_SENDER_ID': ios['messagingSenderId'], 'PROJECT_ID': ios['projectId'],
              'BUNDLE_ID': ios['iosBundleId'], 'PLIST_VERSION': '1',
              'IS_GCM_ENABLED': True, 'IS_ANALYTICS_ENABLED': False}
+    plist.update(ios_google)
     Path('ios/Runner/GoogleService-Info.plist').write_bytes(plistlib.dumps(plist))
     if sys.platform == 'darwin':
         subprocess.run(['ruby', '-rxcodeproj', '-e', '''

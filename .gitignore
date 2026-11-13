@@ -78,5 +78,6 @@ Thumbs.db
 scratch/
 push-defines.json
 ios/Runner/GoogleService-Info.plist
+ios/Flutter/GoogleDevelopment.generated.xcconfig
 android/app/google-services.json
 tmp/

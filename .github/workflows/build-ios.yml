@@ -89,6 +89,17 @@ jobs:
           app = Path('build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app')
           with (app / 'Info.plist').open('rb') as stream:
               info = plistlib.load(stream)
+          import json
+          defines = json.loads(Path('push-defines.json').read_text())
+          ios_client = defines['GOOGLE_IOS_CLIENT_ID']
+          callback = '.'.join(reversed(ios_client.split('.')))
+          schemes = [scheme for entry in info.get('CFBundleURLTypes', []) for scheme in entry.get('CFBundleURLSchemes', [])]
+          assert info['CFBundleIdentifier'] == 'com.example.cozyHealth', 'Unexpected Google iOS bundle ID'
+          assert callback in schemes, 'Missing packaged Google callback scheme'
+          native_google = plistlib.loads((app / 'GoogleService-Info.plist').read_bytes())
+          assert native_google['CLIENT_ID'] == ios_client, 'Packaged Google client mismatch'
+          assert native_google['REVERSED_CLIENT_ID'] == callback, 'Packaged Google callback mismatch'
+          print('Verified development Google iOS client, bundle ID and callback scheme.')
           for key in ('NSCameraUsageDescription', 'NSPhotoLibraryUsageDescription'):
               assert info.get(key), f'Missing {key}'
           assets = app / 'Frameworks/App.framework/flutter_assets/assets/avatars/open_peeps'

@@ -1,5 +1,6 @@
 import json
 import os
+import plistlib
 from pathlib import Path
 import runpy
 import tempfile
@@ -63,13 +64,27 @@ class PushConfigTest(unittest.TestCase):
         self.assertEqual(defines['GOOGLE_CLIENT_ID'], server['client_id'])
         self.assertNotEqual(defines['GOOGLE_CLIENT_ID'], android['client_id'])
         self.assertEqual(android['android_info']['certificate_hash'], '00218bc875065a936cb8c151e172b25b00fcbdbc')
-        self.assertNotIn('GOOGLE_IOS_CLIENT_ID', defines)
+        ios = plistlib.loads(Path('ios/Runner/GoogleService-Info.plist').read_bytes())
+        expected_ios = '412988470560-slgb2nk4q2qkqaguesoqvfd6o97rrba2.apps.googleusercontent.com'
+        expected_callback = 'com.googleusercontent.apps.412988470560-slgb2nk4q2qkqaguesoqvfd6o97rrba2'
+        self.assertEqual(defines['GOOGLE_IOS_CLIENT_ID'], expected_ios)
+        self.assertEqual(ios['CLIENT_ID'], expected_ios)
+        self.assertEqual(ios['REVERSED_CLIENT_ID'], expected_callback)
+        self.assertEqual(ios['BUNDLE_ID'], 'com.example.cozyHealth')
+        self.assertIn('GOOGLE_REVERSED_CLIENT_ID = ' + expected_callback,
+                      Path('ios/Flutter/GoogleDevelopment.generated.xcconfig').read_text())
         # Switching away must not retain development OAuth configuration.
         for raw in (json.dumps(self.options()), ''):
             self.run_config(raw)
             defines = json.loads(Path('push-defines.json').read_text())
             self.assertNotIn('GOOGLE_CLIENT_ID', defines)
             self.assertNotIn('GOOGLE_ANDROID_CLIENT_ID', defines)
+            self.assertNotIn('GOOGLE_IOS_CLIENT_ID', defines)
+            self.assertFalse(Path('ios/Flutter/GoogleDevelopment.generated.xcconfig').exists())
+            if raw:
+                other_ios = plistlib.loads(Path('ios/Runner/GoogleService-Info.plist').read_bytes())
+                self.assertNotIn('CLIENT_ID', other_ios)
+                self.assertNotIn('REVERSED_CLIENT_ID', other_ios)
 
     def test_development_telemetry_is_available_without_firebase(self):
         with patch.dict(os.environ, {'SENTRY_DSN_DEV': 'https://fixture@o4512334056128512.ingest.de.sentry.io/4512362638147664',
