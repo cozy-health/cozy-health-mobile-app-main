@@ -1,3 +1,6 @@
+import 'about_screen.dart' show InstalledBuildLabel;
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/wellness_panel.dart';
 import '../../../../core/widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_surface.dart';
@@ -333,104 +336,30 @@ class SettingsScreen extends StatelessWidget {
               ),
               SizedBox(height: 48),
 
-              // Logout button
-              Material(
-                color: colorScheme.surface,
-                shape: AppSurface.shape(context, BorderRadius.circular(16)),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext dialogContext) {
-                        return AlertDialog(
-                          scrollable: true,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).dialogTheme.backgroundColor,
-                          shape: AppSurface.shape(
-                            context,
-                            BorderRadius.circular(16),
-                          ),
-                          title: Text(
-                            'Log out?',
-                            style: AppTextStyles.heading2.copyWith(
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          content: Text(
-                            LocalDbService().pendingItems.isEmpty
-                                ? 'You\'ll need to log in again.'
-                                : '${LocalDbService().pendingItems.length} changes are saved securely on this device. They will upload only when you sign in to this account again.',
-                            style: AppTextStyles.body1.copyWith(
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.of(dialogContext).pop(),
-                              child: Text(
-                                'Cancel',
-                                style: AppTextStyles.body1.copyWith(
-                                  color: colorScheme.onSurface,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                Navigator.of(dialogContext).pop();
-                                try {
-                                  await AuthService().logout();
-                                } catch (e) {
-                                  debugPrint('Logout error: details withheld.');
-                                }
-                                if (!context.mounted) return;
-                                context.go(AppRouter.welcome);
-                              },
-                              child: Text(
-                                'Log out',
-                                style: AppTextStyles.body1.copyWith(
-                                  color: AppColors.danger,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    height: 56,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      border: AppSurface.border(context),
-                    ),
-                    child: Text(
-                      'Log out',
-                      style: AppTextStyles.body1.copyWith(
-                        color: AppColors.danger,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
+              WellnessAction(
+                key: const ValueKey('settings-logout'),
+                label: 'Log out',
+                onPressed: () async {
+                  final pending = LocalDbService().pendingItems.length;
+                  final confirmed = await confirmWellnessAction(
+                    context,
+                    title: 'Log out?',
+                    message: pending == 0
+                        ? "You'll need to log in again."
+                        : '$pending changes are saved securely on this device. They will upload only when you sign in to this account again.',
+                    action: 'Log out',
+                  );
+                  if (!confirmed || !context.mounted) return;
+                  try {
+                    await AuthService().logout();
+                  } catch (_) {
+                    debugPrint('Logout error: details withheld.');
+                  }
+                  if (context.mounted) context.go(AppRouter.welcome);
+                },
               ),
-              SizedBox(height: 16),
-
-              Text(
-                'Version 1.0.0 (build 42)',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.body2.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textMutedDark
-                      : AppColors.textMutedLight,
-                ),
-              ),
+              const SizedBox(height: 16),
+              const InstalledBuildLabel(),
               SizedBox(height: 48),
             ],
           ),
@@ -468,7 +397,12 @@ class _SettingsSection extends StatelessWidget {
         ),
         Material(
           color: colorScheme.surface,
-          shape: AppSurface.shape(context, BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: MediaQuery.highContrastOf(context)
+                ? BorderSide(color: colorScheme.outline)
+                : BorderSide.none,
+          ),
           clipBehavior: Clip.antiAlias,
           borderOnForeground: true,
           child: Column(

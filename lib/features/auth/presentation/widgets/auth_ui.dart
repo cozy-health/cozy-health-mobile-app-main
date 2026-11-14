@@ -186,23 +186,22 @@ class _AuthTextFieldState extends State<AuthTextField> {
               : const Duration(milliseconds: 200),
           constraints: const BoxConstraints(minHeight: 56),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceElevatedDark : colorScheme.surface,
+            color: isDark
+                ? AppColors.surfaceElevatedDark
+                : Color.alphaBlend(
+                    colorScheme.onSurface.withValues(alpha: .08),
+                    colorScheme.surface,
+                  ),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: borderColor,
-              width: hasError || _focusNode.hasFocus ? 2 : 1,
+              color:
+                  hasError ||
+                      _focusNode.hasFocus ||
+                      MediaQuery.highContrastOf(context)
+                  ? borderColor
+                  : Colors.transparent,
+              width: 1,
             ),
-            boxShadow: _focusNode.hasFocus
-                ? [
-                    BoxShadow(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.08),
-                      blurRadius: 0,
-                      spreadRadius: 2,
-                    ),
-                  ]
-                : null,
           ),
           child: TextField(
             autofillHints: widget.autofillHints,
@@ -235,7 +234,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
               color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
-              hintText: widget.label,
+              filled: false,
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,

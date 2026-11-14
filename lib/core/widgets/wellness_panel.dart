@@ -48,9 +48,12 @@ class WellnessPanel extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(w.gap),
       decoration: BoxDecoration(
-        color: tinted ? w.accentPanel(c) : c.surface,
+        color: tinted ? w.accentPanel(c)
+            : Color.alphaBlend(c.onSurface.withValues(alpha: .03), c.surface),
         borderRadius: BorderRadius.circular(w.radius),
-        border: Border.all(color: c.outlineVariant),
+        border: MediaQuery.highContrastOf(context)
+            ? Border.all(color: c.outline)
+            : null,
       ),
       child: child,
     );
@@ -90,10 +93,10 @@ class WellnessAction extends StatelessWidget {
           vertical: w.small,
         ),
         decoration: BoxDecoration(
-          color: filled && onPressed != null ? c.primary : c.surface,
-          border: Border.all(
-            color: filled && onPressed != null ? c.primary : c.outlineVariant,
-          ),
+          color: filled && onPressed != null ? c.primary : Colors.transparent,
+          border: MediaQuery.highContrastOf(context)
+              ? Border.all(color: c.outline)
+              : null,
           borderRadius: BorderRadius.circular(w.tileRadius),
         ),
         child: Row(

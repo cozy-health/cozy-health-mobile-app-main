@@ -8,14 +8,14 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
-class _InstalledBuildLabel extends StatefulWidget {
-  const _InstalledBuildLabel();
+class InstalledBuildLabel extends StatefulWidget {
+  const InstalledBuildLabel({super.key});
 
   @override
-  State<_InstalledBuildLabel> createState() => _InstalledBuildLabelState();
+  State<InstalledBuildLabel> createState() => InstalledBuildLabelState();
 }
 
-class _InstalledBuildLabelState extends State<_InstalledBuildLabel> {
+class InstalledBuildLabelState extends State<InstalledBuildLabel> {
   late final Future<PackageInfo> _info = PackageInfo.fromPlatform();
   static const _sha = String.fromEnvironment('BUILD_SHA');
   static const _run = String.fromEnvironment('BUILD_RUN_ID');
@@ -108,7 +108,7 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 4),
-              const _InstalledBuildLabel(),
+              const InstalledBuildLabel(),
               SizedBox(height: 16),
               Center(
                 child: SizedBox(

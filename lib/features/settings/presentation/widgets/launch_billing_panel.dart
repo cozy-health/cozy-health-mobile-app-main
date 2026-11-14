@@ -90,6 +90,7 @@ class _LaunchBillingPanelState extends State<LaunchBillingPanel> {
         WellnessAction(
           key: const ValueKey('restore-store-purchases'),
           label: 'Restore purchases',
+          filled: true,
           onPressed: _billing.busy || _refreshing ? null : _billing.restore,
         ),
         const SizedBox(height: 8),

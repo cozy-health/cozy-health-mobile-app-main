@@ -97,7 +97,7 @@ class _DigitalWellbeingScreenState extends State<DigitalWellbeingScreen> {
                       ),
                       SizedBox(height: w.small),
                       const Text(
-                        'Choose what feels comfortable. These preferences do not turn on reminders or enforce time limits yet.',
+                        'Saved preferences only. Phone reminders are managed in Notifications; limits and usage summaries are not active.',
                       ),
                     ],
                   ),

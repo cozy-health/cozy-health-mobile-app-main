@@ -9,6 +9,7 @@ import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_exceptions.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../auth/presentation/widgets/auth_ui.dart';
 import '../../../../core/widgets/security_blur.dart';
 
 class StudentVerificationScreen extends StatefulWidget {
@@ -370,9 +371,8 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
                   const Text(
                     'Your application is awaiting review and cannot be edited.',
                   ),
-                  AppButton(
-                    text: 'Refresh application status',
-                    isOutlined: true,
+                  WellnessAction(
+                    label: 'Refresh application status',
                     onPressed: _busy || _loading ? null : _load,
                   ),
                 ],
@@ -400,9 +400,8 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
                           _message = null;
                         }),
                 ),
-                AppButton(
-                  text: 'Choose another plan',
-                  isOutlined: true,
+                WellnessAction(
+                  label: 'Choose another plan',
                   onPressed: () => context.push('/wellness/packages'),
                 ),
               ]),
@@ -414,11 +413,11 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
                       ? '1. Enter your school email'
                       : '1. Verification email sent',
                 ),
-                TextField(
+                AuthTextField(
                   key: const ValueKey('student-school-email'),
                   controller: _email,
                   enabled: !_busy && _enabled,
-                  decoration: const InputDecoration(labelText: 'School email'),
+                  label: 'School email',
                   keyboardType: TextInputType.emailAddress,
                   autofillHints: const [AutofillHints.email],
                 ),
@@ -444,16 +443,12 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
                 const Text(
                   'Open your school inbox and enter the code or paste the verification link.',
                 ),
-                TextField(
+                AuthTextField(
                   key: const ValueKey('student-email-code'),
                   controller: _confirmation,
                   enabled: !_busy && _enabled,
-                  decoration: const InputDecoration(
-                    labelText: 'Verification code or link',
-                  ),
+                  label: 'Verification code or link',
                   autofillHints: const [AutofillHints.oneTimeCode],
-                  enableSuggestions: false,
-                  autocorrect: false,
                 ),
                 AppButton(
                   key: const ValueKey('student-email-confirm'),
@@ -470,10 +465,9 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
               _section(context, [
                 _heading(context, 'School not supported?'),
                 if (_showForm)
-                  AppButton(
+                  WellnessAction(
                     key: const ValueKey('student-school-request-toggle'),
-                    text: 'Request to add my school',
-                    isOutlined: true,
+                    label: 'Request to add my school',
                     onPressed: _busy
                         ? null
                         : () =>
@@ -483,21 +477,17 @@ class _StudentVerificationScreenState extends State<StudentVerificationScreen> {
                   const Text(
                     'Use the school email above, then add your institution details. Adding a school does not verify your mailbox.',
                   ),
-                  TextField(
+                  AuthTextField(
                     key: const ValueKey('student-school-institution'),
                     controller: _institution,
                     enabled: !_busy,
-                    decoration: const InputDecoration(
-                      labelText: 'Institution name',
-                    ),
+                    label: 'Institution name',
                   ),
-                  TextField(
+                  AuthTextField(
                     key: const ValueKey('student-school-website'),
                     controller: _website,
                     enabled: !_busy,
-                    decoration: const InputDecoration(
-                      labelText: 'Official school website',
-                    ),
+                    label: 'Official school website',
                     keyboardType: TextInputType.url,
                   ),
                   AppButton(
