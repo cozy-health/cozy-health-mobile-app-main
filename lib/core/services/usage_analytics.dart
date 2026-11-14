@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'local_db_service.dart';
+import 'telemetry_policy.dart';
 
 /// Explicit, content-free PostHog events. No SDK autocapture, replay or retry queue.
 class UsageAnalytics {
@@ -16,10 +17,8 @@ class UsageAnalytics {
       ),
       _key = key,
       _host = host,
-      _enabled =
-          const bool.fromEnvironment('INTERNAL_TEST_BUILD') &&
-          const String.fromEnvironment('TELEMETRY_ENVIRONMENT') ==
-              'development';
+      _enabled = TelemetryPolicy.enabled,
+      _environment = TelemetryPolicy.environment;
 
   @visibleForTesting
   UsageAnalytics.forTesting({
@@ -27,10 +26,12 @@ class UsageAnalytics {
     required String apiKey,
     required String collector,
     bool enabled = true,
+    String environment = 'development',
   }) : _http = client,
        _key = apiKey,
        _host = collector,
-       _enabled = enabled;
+       _enabled = enabled,
+       _environment = environment;
   static final instance = UsageAnalytics._();
   static const key = String.fromEnvironment('POSTHOG_KEY');
   static const host = String.fromEnvironment(
@@ -57,6 +58,7 @@ class UsageAnalytics {
   final String _key;
   final String _host;
   final bool _enabled;
+  final String _environment;
   CancelToken _requests = CancelToken();
   StreamSubscription<void>? _accounts;
   String _route = '';
@@ -171,7 +173,7 @@ class UsageAnalytics {
           'api_key': _key,
           'event': event,
           'properties': {
-            'environment': 'development',
+            'environment': _environment,
             'distinct_id': id,
             'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
             'app_version': package.version,

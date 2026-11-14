@@ -119,6 +119,34 @@ void main() {
     },
   );
 
+  test(
+    'production event labeling preserves consent and private-route checks',
+    () async {
+      final production = UsageAnalytics.forTesting(
+        client: client,
+        apiKey: 'phc_fixture',
+        collector: 'https://us.i.posthog.com',
+        environment: 'production',
+      );
+      production.routeChanged('/settings');
+      await production.track('feature_opened', feature: 'settings');
+      expect(requests, isEmpty);
+      await (await local.settingsBox()).put('privacy_preferences', {
+        'analytics': true,
+      });
+      await production.track('feature_opened', feature: 'settings');
+      expect(requests, hasLength(1));
+      expect(
+        ((requests.single.data as Map)['properties'] as Map)['environment'],
+        'production',
+      );
+      production.routeChanged('/safety-plan');
+      await production.track('feature_opened', feature: 'settings');
+      expect(requests, hasLength(1));
+      production.reset();
+    },
+  );
+
   test('analytics network failure is swallowed without retry', () async {
     await (await local.settingsBox()).put('privacy_preferences', {
       'analytics': true,

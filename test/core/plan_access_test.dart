@@ -1,4 +1,5 @@
 import '../support/local_fonts.dart';
+import '../support/widget_io.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cozy_health/core/routing/app_router.dart';
@@ -214,14 +215,11 @@ void main() {
           await tester.pumpWidget(
             MaterialApp.router(theme: AppTheme.light, routerConfig: router),
           );
-          await Future<void>.delayed(const Duration(milliseconds: 40));
         });
-        for (var i = 0; i < 5; i++) {
-          await tester.runAsync(
-            () => Future<void>.delayed(const Duration(milliseconds: 25)),
-          );
-          await tester.pump();
-        }
+        await pumpUntilVisible(
+          tester,
+          find.text('Included with Premium and verified Student'),
+        );
         expect(
           find.text('Included with Premium and verified Student'),
           findsOneWidget,
@@ -310,7 +308,7 @@ void main() {
   ) async {
     adapter.features = ['trends_dashboard'];
     adapter.expiry = DateTime.now()
-        .add(const Duration(seconds: 2))
+        .add(const Duration(seconds: 10))
         .toUtc()
         .toIso8601String();
     Widget screen() => MaterialApp(
@@ -322,26 +320,15 @@ void main() {
     );
     await tester.runAsync(() async {
       await tester.pumpWidget(screen());
-      await Future<void>.delayed(const Duration(milliseconds: 40));
     });
-    for (var i = 0; i < 4; i++) {
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 25)),
-      );
-      await tester.pump();
-    }
+    await pumpUntilVisible(tester, find.text('Private trend content'));
     expect(find.text('Private trend content'), findsOneWidget);
     adapter.expiry = '2000-01-01T00:00:00Z';
     await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 3)),
+      () => Future<void>.delayed(const Duration(seconds: 11)),
     );
     await tester.pump();
-    for (var i = 0; i < 4; i++) {
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 25)),
-      );
-      await tester.pump();
-    }
+    await pumpUntilVisible(tester, find.text('View plans'));
     expect(find.text('Private trend content'), findsNothing);
     expect(find.text('View plans'), findsOneWidget);
     adapter.expiry = DateTime.now()
@@ -350,14 +337,8 @@ void main() {
         .toIso8601String();
     await tester.runAsync(() async {
       await tester.tap(find.text('Retry'));
-      await Future<void>.delayed(const Duration(milliseconds: 40));
     });
-    for (var i = 0; i < 4; i++) {
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 25)),
-      );
-      await tester.pump();
-    }
+    await pumpUntilVisible(tester, find.text('Private trend content'));
     expect(find.text('Private trend content'), findsOneWidget);
     await tester.runAsync(() => TokenStorage().clearToken());
     await tester.pump();

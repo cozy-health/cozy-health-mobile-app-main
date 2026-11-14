@@ -11,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:record/record.dart';
 import '../support/local_fonts.dart';
+import '../support/widget_io.dart';
 
 class _VisualRecorder extends Fake implements AudioRecorderService {
   _VisualRecorder(this.path);
@@ -136,8 +137,8 @@ void main() {
         await tester.pump(const Duration(milliseconds: 400));
         await tester.runAsync(() async {
           await tester.tap(find.byTooltip('Stop'));
-          await Future<void>.delayed(const Duration(milliseconds: 100));
         });
+        await pumpUntilVisible(tester, find.text('Preview recording'));
         await tester.pumpAndSettle();
         expect(find.text('Preview recording'), findsOneWidget);
         await capture('preview');

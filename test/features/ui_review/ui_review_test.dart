@@ -540,50 +540,60 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     });
-    testWidgets(
-      'Settings group borders survive child rows and scrolling, dark=$dark',
-      (tester) async {
-        await mount(
-          tester,
-          const SettingsScreen(),
-          dark: dark,
-          size: const Size(390, 844),
-        );
-        final theme = dark ? AppTheme.dark : AppTheme.light;
-        for (final label in [
-          'Next of kin',
-          'Digital Wellbeing',
-          'Change Password',
-          'Connected Apps',
-          'Cozy Challenges',
-          'Delete Account',
-        ]) {
-          final row = find.text(label);
-          await tester.ensureVisible(row);
-          await tester.pump(const Duration(milliseconds: 300));
-          final materials = tester
-              .widgetList<Material>(
-                find.ancestor(of: row, matching: find.byType(Material)),
-              )
-              .toList();
-          expect(materials.first.color, Colors.transparent);
-          final group = materials.firstWhere(
-            (m) => m.shape is RoundedRectangleBorder,
-          );
-          expect(group.clipBehavior, Clip.antiAlias);
-          expect(group.borderOnForeground, isTrue);
-          expect(
-            (group.shape! as RoundedRectangleBorder).side.color,
-            theme.colorScheme.outline,
-          );
-          await captureSurface(
+    for (final contrast in [false, true]) {
+      testWidgets(
+        'Settings group surfaces and contrast borders survive scrolling, dark=$dark contrast=$contrast',
+        (tester) async {
+          await mount(
             tester,
-            'settings_${dark ? 'dark' : 'light'}_$label',
+            const SettingsScreen(),
+            dark: dark,
+            contrast: contrast,
+            size: const Size(390, 844),
           );
-        }
-        expect(tester.takeException(), isNull);
-      },
-    );
+          final theme = dark ? AppTheme.dark : AppTheme.light;
+          for (final label in [
+            'Next of kin',
+            'Digital Wellbeing',
+            'Change Password',
+            'Connected Apps',
+            'Cozy Challenges',
+            'Delete Account',
+          ]) {
+            final row = find.text(label);
+            await tester.ensureVisible(row);
+            await tester.pump(const Duration(milliseconds: 300));
+            final materials = tester
+                .widgetList<Material>(
+                  find.ancestor(of: row, matching: find.byType(Material)),
+                )
+                .toList();
+            expect(materials.first.color, Colors.transparent);
+            final group = materials.firstWhere(
+              (m) => m.shape is RoundedRectangleBorder,
+            );
+            expect(group.clipBehavior, Clip.antiAlias);
+            expect(group.borderOnForeground, isTrue);
+            final border = (group.shape! as RoundedRectangleBorder).side;
+            if (contrast) {
+              expect(border.style, BorderStyle.solid);
+              expect(border.width, greaterThan(0));
+              expect(
+                border.color,
+                AppTheme.highContrast(theme).colorScheme.outline,
+              );
+            } else {
+              expect(border, BorderSide.none);
+            }
+            await captureSurface(
+              tester,
+              'settings_${dark ? 'dark' : 'light'}_$label',
+            );
+          }
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
     testWidgets('Quiz History headings have readable contrast, dark=$dark', (
       tester,
     ) async {

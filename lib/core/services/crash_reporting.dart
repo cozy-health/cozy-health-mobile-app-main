@@ -1,15 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'local_db_service.dart';
+import 'telemetry_policy.dart';
 
 /// Telemetry accepts diagnostics, never user-authored text or interaction data.
 class CrashReporting {
   static const dsn = String.fromEnvironment('SENTRY_DSN');
-  static const environment = String.fromEnvironment('TELEMETRY_ENVIRONMENT');
-  static const _internalBuild = bool.fromEnvironment('INTERNAL_TEST_BUILD');
+  static const environment = TelemetryPolicy.environment;
   static const _buildSha = String.fromEnvironment('BUILD_SHA');
-  static bool get enabled =>
-      _internalBuild && environment == 'development' && dsn.isNotEmpty;
+  static bool get enabled => TelemetryPolicy.enabled && dsn.isNotEmpty;
   static String feature = 'app';
   static int _privateOverlays = 0;
   static Future<T> privateOverlay<T>(Future<T> Function() show) async {
@@ -41,7 +40,7 @@ class CrashReporting {
 
   static void configure(SentryFlutterOptions options) {
     options.dsn = enabled ? dsn : '';
-    options.environment = 'development';
+    options.environment = environment;
     options.release = _release;
     options.tracesSampleRate = 0;
     options.enableAutoSessionTracking = false;
@@ -127,7 +126,7 @@ class CrashReporting {
     // Reconstruct rather than copyWith: omitted fields must be removed.
     return SentryEvent(
       eventId: event.eventId,
-      environment: 'development',
+      environment: environment,
       release: _release,
       timestamp: event.timestamp,
       level: event.level,
