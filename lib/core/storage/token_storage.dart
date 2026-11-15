@@ -119,6 +119,22 @@ class TokenStorage {
     await saveSession(token, stayLoggedIn: stayLoggedIn);
   }
 
+  Future<void> setSessionPersistence(
+    bool stayLoggedIn, {
+    required int expectedGeneration,
+  }) async {
+    final token = await getToken();
+    final refreshToken = await getRefreshToken();
+    if (expectedGeneration != _generation || token == null || _signedOut) {
+      return;
+    }
+    await saveSession(
+      token,
+      refreshToken: refreshToken,
+      stayLoggedIn: stayLoggedIn,
+    );
+  }
+
   /// Access and refresh credentials belong to one generation. Callers must not
   /// install the refresh credential in a separate, later account's session.
   Future<int> saveSession(

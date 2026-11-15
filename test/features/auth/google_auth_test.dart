@@ -405,6 +405,32 @@ void main() {
         await storage.clearToken();
       },
     );
+    test('persistent Google login writes credentials to secure storage', () async {
+      final api = FakeApi()
+        ..response = {
+          'success': true,
+          'data': {
+            'token': 'persistent-access',
+            'refresh_token': 'persistent-refresh',
+            'user': user,
+          },
+        };
+      final storage = TokenStorage();
+      await storage.clearToken();
+      await AuthService(apiClient: api, tokenStorage: storage)
+          .loginWithGoogle('fake-id-token', stayLoggedIn: true);
+      const keychain = FlutterSecureStorage();
+      expect(storage.isSessionOnly, false);
+      expect(await keychain.read(key: 'cozy_health_access_token'),
+          'persistent-access');
+      expect(await keychain.read(key: 'cozy_health_refresh_token'),
+          'persistent-refresh');
+      expect(await TokenStorage().getToken(), 'persistent-access');
+      expect(await TokenStorage().getRefreshToken(), 'persistent-refresh');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await storage.clearToken();
+    });
+
     test('missing backend token never establishes session', () async {
       final api = FakeApi()
         ..response = {

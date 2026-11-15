@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  bool _stayLoggedIn = false;
+  bool _stayLoggedIn = true;
   bool _isLoading = false;
   bool _googleLoading = false;
   bool _appleLoading = false;
@@ -211,7 +211,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       await _authService.resumeStoredSession();
-      await TokenStorage().saveToken(token, stayLoggedIn: _stayLoggedIn);
+      await TokenStorage().setSessionPersistence(
+        _stayLoggedIn,
+        expectedGeneration: TokenStorage.generation,
+      );
       await GuestSessionService().exitGuestSession();
       if (mounted) {
         context.go(AppRouter.home);

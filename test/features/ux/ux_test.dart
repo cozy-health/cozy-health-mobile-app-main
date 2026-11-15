@@ -156,6 +156,18 @@ void main() {
     expect(find.text('Log in with Face ID'), findsNothing);
     expect(find.text('Log in with fingerprint'), findsNothing);
   });
+  testWidgets('login remembers sessions by default and permits opting out', (
+    tester,
+  ) async {
+    await mount(tester, const LoginScreen());
+    await tester.pumpAndSettle();
+    final selection = find.byKey(const ValueKey('auth-stay-logged-in'));
+    expect(tester.widget<AuthSelectionRow>(selection).value, isTrue);
+    await tester.ensureVisible(selection);
+    await tester.tap(selection);
+    await tester.pumpAndSettle();
+    expect(tester.widget<AuthSelectionRow>(selection).value, isFalse);
+  });
   testWidgets(
     'three consecutive failures offer support and retry remains functional',
     (tester) async {

@@ -34,6 +34,50 @@ void main() {
     FlutterSecureStorage.setMockInitialValues({});
     await TokenStorage().clearToken();
   });
+  test(
+    'changing persistence preserves current access and refresh credentials',
+    () async {
+      final tokens = TokenStorage();
+      await tokens.saveSession(
+        'rotated-access',
+        refreshToken: 'rotated-refresh',
+      );
+      await tokens.setSessionPersistence(
+        false,
+        expectedGeneration: TokenStorage.generation,
+      );
+      expect(tokens.isSessionOnly, isTrue);
+      expect(await tokens.getToken(), 'rotated-access');
+      expect(await tokens.getRefreshToken(), 'rotated-refresh');
+      const storage = FlutterSecureStorage();
+      expect(await storage.read(key: 'cozy_health_access_token'), isNull);
+      expect(await storage.read(key: 'cozy_health_refresh_token'), isNull);
+      await tokens.setSessionPersistence(
+        true,
+        expectedGeneration: TokenStorage.generation,
+      );
+      expect(
+        await storage.read(key: 'cozy_health_access_token'),
+        'rotated-access',
+      );
+      expect(
+        await storage.read(key: 'cozy_health_refresh_token'),
+        'rotated-refresh',
+      );
+    },
+  );
+
+  test('a stale persistence choice cannot change the next account', () async {
+    final tokens = TokenStorage();
+    await tokens.saveSession('account-a', refreshToken: 'refresh-a');
+    final previous = TokenStorage.generation;
+    await tokens.saveSession('account-b', refreshToken: 'refresh-b');
+    await tokens.setSessionPersistence(false, expectedGeneration: previous);
+    expect(tokens.isSessionOnly, isFalse);
+    expect(await tokens.getToken(), 'account-b');
+    expect(await tokens.getRefreshToken(), 'refresh-b');
+  });
+
   test('an old failed refresh cannot sign out the next account', () async {
     final tokens = TokenStorage();
     await tokens.saveSession('account-a', refreshToken: 'refresh-a');
