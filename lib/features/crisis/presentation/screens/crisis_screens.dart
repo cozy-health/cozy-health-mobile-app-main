@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/wellness_panel.dart';
 import '../widgets/next_of_kin_panel.dart';
@@ -1208,7 +1209,7 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
       return Scaffold(
         backgroundColor: _crisisBg(context),
         body: const Center(
-          child: CircularProgressIndicator(color: AppColors.crisisPrimary),
+          child: ScreenSkeleton(),
         ),
       );
     }
@@ -1402,7 +1403,7 @@ class PersistedSafetyPlanViewScreen extends StatelessWidget {
           return Scaffold(
             backgroundColor: _crisisBg(context),
             body: const Center(
-              child: CircularProgressIndicator(color: AppColors.crisisPrimary),
+              child: ScreenSkeleton(),
             ),
           );
         }

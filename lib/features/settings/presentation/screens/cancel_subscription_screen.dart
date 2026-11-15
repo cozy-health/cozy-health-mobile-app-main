@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -63,7 +64,7 @@ class _CancelSubscriptionScreenState extends State<CancelSubscriptionScreen> {
                 return const SizedBox.shrink();
               }
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const ScreenSkeleton();
               }
               final subscription = snapshot.data;
               if (subscription != null && subscription.isStoreManaged) {

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -138,7 +139,7 @@ class _TermsPoliciesScreenState extends State<TermsPoliciesScreen> {
                 );
               }
               if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
+                return const ScreenSkeleton();
               }
               final docs = (snapshot.data ?? <Map<String, dynamic>>[])
                   .where(

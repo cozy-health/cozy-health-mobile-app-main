@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -128,7 +129,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                   if (loading)
                     const Padding(
                       padding: EdgeInsets.all(24),
-                      child: Center(child: CircularProgressIndicator()),
+                      child: ScreenSkeleton(),
                     ),
                   if (moods.hasError || journals.hasError) ...[
                     WellnessPanel(

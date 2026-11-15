@@ -99,6 +99,10 @@ void main() {
   Future<void> mount(WidgetTester tester, {bool compact = false}) async {
     await tester.pumpWidget(
       MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child!,
+        ),
         home: Scaffold(
           body: AffirmationPanel(controller: controller, compact: compact),
         ),

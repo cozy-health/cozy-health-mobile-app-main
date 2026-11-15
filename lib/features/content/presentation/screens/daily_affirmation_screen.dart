@@ -6,6 +6,7 @@ import '../../../../core/widgets/affirmation_panel.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_scroll_body.dart';
 import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../core/theme/cozy_colors.dart';
 
 class DailyAffirmationScreen extends StatelessWidget {
   const DailyAffirmationScreen({super.key, this.controller});
@@ -41,27 +42,32 @@ class DailyAffirmationScreen extends StatelessWidget {
     body: SafeArea(
       child: AppScrollBody(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(context.cozyColors.wellness.page),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Spacer(),
-              Icon(
-                Icons.favorite_outline,
-                size: 56,
-                color: Theme.of(context).colorScheme.primary,
+              Container(
+                padding: EdgeInsets.all(context.cozyColors.wellness.section),
+                decoration: BoxDecoration(
+                  color: context.cozyColors.wellness.accentPanel(
+                    Theme.of(context).colorScheme,
+                  ),
+                  borderRadius: BorderRadius.circular(
+                    context.cozyColors.wellness.radius,
+                  ),
+                ),
+                child: AffirmationPanel(
+                  controller: controller,
+                  showReflection: true,
+                ),
               ),
-              const SizedBox(height: 24),
-              AffirmationPanel(controller: controller, showReflection: true),
-              const SizedBox(height: 32),
-              const Spacer(),
+              SizedBox(height: context.cozyColors.wellness.section),
               AppButton(
                 text: 'Copy affirmation',
                 isOutlined: true,
                 onPressed: () => _copy(context),
               ),
-              const SizedBox(height: 12),
-              const SizedBox(height: 8),
+              SizedBox(height: context.cozyColors.wellness.section),
             ],
           ),
         ),

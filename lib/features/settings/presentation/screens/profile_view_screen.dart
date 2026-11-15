@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/models/user_profile.dart';
@@ -84,7 +85,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                 }
                 if (snapshot.connectionState == ConnectionState.waiting &&
                     !snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const ScreenSkeleton();
                 }
                 final p = snapshot.data;
                 return ListView(

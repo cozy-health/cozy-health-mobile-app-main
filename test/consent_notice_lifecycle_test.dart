@@ -130,7 +130,8 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.bySemanticsLabel('Loading'), findsWidgets);
     expect(find.text('Get urgent support'), findsNothing);
     expect(find.text('Private content'), findsNothing);
     config.completeError(StateError('Offline'));

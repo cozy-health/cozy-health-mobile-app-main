@@ -7,6 +7,7 @@ import '../services/consent_refresh_signal.dart';
 import '../services/feature_flags_service.dart';
 import '../services/legal_notice_preferences.dart';
 import '../storage/token_storage.dart';
+import 'skeleton_loader.dart';
 import '../../features/auth/data/auth_service.dart';
 
 class ConsentGate extends StatefulWidget {
@@ -355,6 +356,7 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
       return widget.child;
     }
     if (!_verified) {
+      if (_loading) return const Scaffold(body: ScreenSkeleton());
       return Scaffold(
         body: SafeArea(
           child: Center(
@@ -363,11 +365,6 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (_loading) ...[
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    const Text('Opening Cozy…'),
-                  ],
                   if (_loadError != null) Text(_loadError!),
                   if (!_loading)
                     FilledButton(

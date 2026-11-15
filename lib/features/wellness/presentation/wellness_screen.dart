@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import '../../../core/widgets/plan_access_prompt.dart';
@@ -95,7 +96,7 @@ class _WellnessScreenState extends State<WellnessScreen> {
             ),
           )
         : rows == null
-        ? const Center(child: CircularProgressIndicator())
+        ? const ScreenSkeleton()
         : rows!.isEmpty
         ? Center(
             child: Text(

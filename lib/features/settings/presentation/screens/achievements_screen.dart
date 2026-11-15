@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/services/local_db_service.dart';
@@ -76,7 +77,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                   );
                 }
                 if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const ScreenSkeleton();
                 }
                 return AchievementContent(
                   snapshot: snapshot.data!,

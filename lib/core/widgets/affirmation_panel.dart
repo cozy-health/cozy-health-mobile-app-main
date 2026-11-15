@@ -7,6 +7,7 @@ import '../services/affirmation_controller.dart';
 import '../repositories/affirmation_repository.dart';
 import '../theme/cozy_colors.dart';
 import 'app_pressable.dart';
+import 'skeleton_loader.dart';
 
 class AffirmationPanel extends StatefulWidget {
   const AffirmationPanel({
@@ -93,31 +94,35 @@ class _AffirmationPanelState extends State<AffirmationPanel>
   Widget build(BuildContext context) {
     final state = _live ? _controller.state : const AffirmationState();
     final label = _live ? _controller.label : 'General encouragement';
+    if (state.status == AffirmationStatus.loading && state.assignment == null) {
+      return const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SkeletonLoader(height: 24),
+          SizedBox(height: 16),
+          SkeletonLoader(height: 96),
+        ],
+      );
+    }
     final content = Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: widget.compact
-          ? CrossAxisAlignment.start
-          : CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!widget.compact)
-          Icon(
-            Icons.auto_awesome_outlined,
-            size: widget.compact ? 28 : 36,
-            color: Theme.of(context).colorScheme.primary,
+        if (widget.compact || label != 'Your affirmation') ...[
+          Text(
+            widget.compact ? 'A REMINDER FOR TODAY' : label,
+            style: widget.compact
+                ? Theme.of(context).textTheme.labelMedium
+                : Theme.of(context).textTheme.labelLarge,
+            textAlign: TextAlign.start,
           ),
-        if (!widget.compact) const SizedBox(height: 12),
-        Text(
-          widget.compact ? 'A REMINDER FOR TODAY' : label,
-          style: widget.compact
-              ? Theme.of(context).textTheme.labelMedium
-              : Theme.of(context).textTheme.labelLarge,
-          textAlign: widget.compact ? TextAlign.start : TextAlign.center,
-        ),
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
+        ],
         Text(
           state.text,
           key: const Key('affirmation-body'),
-          textAlign: widget.compact ? TextAlign.start : TextAlign.center,
+          textAlign: TextAlign.start,
           style: widget.compact
               ? Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,

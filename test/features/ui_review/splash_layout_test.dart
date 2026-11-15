@@ -50,7 +50,7 @@ void main() {
             ),
           );
           await tester.pump(const Duration(milliseconds: 300));
-          expect(find.byType(CircularProgressIndicator), findsOneWidget);
+          expect(find.byType(CircularProgressIndicator), findsNothing);
           expect(tester.takeException(), isNull);
           await tester.pump(const Duration(milliseconds: 1600));
           await tester.pump();

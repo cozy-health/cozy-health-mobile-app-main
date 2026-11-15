@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
@@ -84,7 +85,7 @@ class _SupportInboxScreenState extends State<SupportInboxScreen> {
           if (_error != null) Semantics(liveRegion: true, child: Text(_error!)),
           _Action('Refresh conversations', _refresh),
           if (_items == null && _error == null)
-            const Center(child: CircularProgressIndicator()),
+            const ScreenSkeleton(),
           if (_items?.items.isEmpty == true)
             const Text(
               'No conversations yet. Send a problem report from Help & Support.',

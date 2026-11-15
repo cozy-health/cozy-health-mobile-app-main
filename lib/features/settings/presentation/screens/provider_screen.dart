@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import '../../../../core/widgets/wellness_sheet.dart';
 import '../../../../core/widgets/plan_access_prompt.dart';
 import '../../../../core/widgets/wellness_panel.dart';
@@ -520,7 +521,7 @@ class _ProviderScreenState extends State<ProviderScreen>
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 5.w),
           child: _loading
-              ? Center(child: CircularProgressIndicator())
+              ? ScreenSkeleton()
               : SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

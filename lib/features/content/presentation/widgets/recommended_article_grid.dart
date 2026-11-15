@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/theme/cozy_colors.dart';
@@ -103,7 +104,7 @@ class _RecommendedArticlesState extends State<RecommendedArticles> {
           SizedBox(height: w.contentGap),
         ],
         if (_loading && _articles.isEmpty)
-          const Center(child: CircularProgressIndicator()),
+          const ScreenSkeleton(),
         if (!_loading && _error == null && _articles.isEmpty)
           WellnessPanel(
             child: Text(

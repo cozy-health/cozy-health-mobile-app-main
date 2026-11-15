@@ -86,3 +86,28 @@ class ListSkeleton extends StatelessWidget {
     separatorBuilder: (_, _) => const SizedBox(height: 16),
   );
 }
+
+class ScreenSkeleton extends StatelessWidget {
+  const ScreenSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: ListView(
+      shrinkWrap: true,
+      primary: false,
+      padding: const EdgeInsets.all(24),
+      children: const [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: SkeletonLoader(height: 32, width: 180),
+        ),
+        SizedBox(height: 24),
+        SkeletonLoader(height: 120),
+        SizedBox(height: 24),
+        SkeletonLoader(height: 72),
+        SizedBox(height: 16),
+        SkeletonLoader(height: 72),
+      ],
+    ),
+  );
+}

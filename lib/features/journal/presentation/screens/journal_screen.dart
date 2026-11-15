@@ -1,4 +1,5 @@
 import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/plan_access_prompt.dart';
 import '../../../../core/widgets/wellness_panel.dart';
 import '../widgets/journal_share_flow.dart';
@@ -178,8 +179,7 @@ class _JournalScreenState extends State<JournalScreen>
               );
             }
             return RefreshIndicator(
-              onRefresh: () async =>
-                  Future<void>.delayed(const Duration(milliseconds: 450)),
+              onRefresh: () async => _repo.fetchJournalEntries(),
               child: ListView(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 28),
                 children: [
@@ -206,12 +206,18 @@ class _JournalScreenState extends State<JournalScreen>
                           .toList(),
                     ),
                   ],
+                  WellnessAction(
+                    label: 'New entry',
+                    icon: Icons.add_rounded,
+                    filled: true,
+                    onPressed: _showEntryTypePicker,
+                  ),
                   SizedBox(height: 32),
                   if (entries.isEmpty)
                     _NoMatches(filter: _filter)
                   else ...[
                     _EntrySection(
-                      title: 'This week',
+                      title: 'Recent entries',
                       entries: entries.take(3).toList(),
                       controller: _entranceController,
                       start: .45,
@@ -434,26 +440,21 @@ class _JournalScreenState extends State<JournalScreen>
   }
 
   void _showEntryTypePicker() {
-    showModalBottomSheet<void>(
+    showWellnessSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor,
-      barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: .32),
-      builder: (context) => SingleChildScrollView(
-        child: _EntryTypePicker(
-          onFree: () {
-            Navigator.pop(context);
-            _openEditor(type: 'free');
-          },
-          onGuided: () {
-            Navigator.pop(context);
-            _openPromptLibrary();
-          },
-          onVoice: () {
-            Navigator.pop(context);
-            _openVoiceRecording();
-          },
-        ),
+      builder: (context) => _EntryTypePicker(
+        onFree: () {
+          Navigator.pop(context);
+          _openEditor(type: 'free');
+        },
+        onGuided: () {
+          Navigator.pop(context);
+          _openPromptLibrary();
+        },
+        onVoice: () {
+          Navigator.pop(context);
+          _openVoiceRecording();
+        },
       ),
     );
   }
@@ -1374,7 +1375,9 @@ class _EntrySection extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             border: AppSurface.border(context),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(
+              context.cozyColors.wellness.tileRadius,
+            ),
             color: Theme.of(context).brightness == Brightness.dark
                 ? AppColors.surfaceSubtleDark
                 : AppColors.surfaceSubtle,
@@ -1445,8 +1448,14 @@ class _JournalEntryCard extends StatelessWidget {
         onLongPress: onMore,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 69),
-          padding: const EdgeInsets.only(left: 16, top: 10, bottom: 10),
+          constraints: BoxConstraints(
+            minHeight: context.cozyColors.wellness.tileHeight,
+          ),
+          padding: EdgeInsets.only(
+            left: context.cozyColors.wellness.gap,
+            top: context.cozyColors.wellness.gap,
+            bottom: context.cozyColors.wellness.gap,
+          ),
           child: Row(
             children: [
               Expanded(
@@ -1455,17 +1464,25 @@ class _JournalEntryCard extends StatelessWidget {
                   children: [
                     Text(
                       entry.cardTitle,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${_shortDate(entry.createdAt)} · ${entry.body}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      _shortDate(entry.createdAt),
+                      style: Theme.of(context).textTheme.labelMedium,
                     ),
+                    if ((entry.title?.isNotEmpty ?? false) &&
+                        entry.body != entry.cardTitle) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        entry.body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1595,7 +1612,11 @@ class _EntryTypePicker extends StatelessWidget {
   Widget build(BuildContext context) => WellnessSheet(
     title: 'Start a journal entry',
     children: [
-      const Text('Choose how you want to capture your thoughts.'),
+      Text(
+        'Choose how you want to capture your thoughts.',
+        style: Theme.of(context).textTheme.bodyLarge,
+      ),
+      SizedBox(height: context.cozyColors.wellness.section),
       WellnessSheetOption(
         label: 'Write freely',
         subtitle: 'Start a blank entry and write your thoughts.',

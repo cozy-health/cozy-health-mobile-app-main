@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import '../../../../core/services/network_status.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -212,7 +213,7 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
         ),
       ],
       if (_loading && _items.isEmpty)
-        const Center(child: CircularProgressIndicator()),
+        const ScreenSkeleton(),
       if (!_loading && _error == null && _items.isEmpty)
         const Padding(
           padding: EdgeInsets.all(24),

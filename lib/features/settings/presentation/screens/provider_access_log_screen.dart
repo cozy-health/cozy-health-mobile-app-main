@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/security_blur.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -121,7 +122,7 @@ class _ProviderAccessLogScreenState extends State<ProviderAccessLogScreen> {
               if (_loading && _events.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(40),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: ScreenSkeleton(),
                 ),
               if (_error != null)
                 Padding(

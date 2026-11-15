@@ -43,6 +43,8 @@ Future<T?> showWellnessDialog<T>({
   context: context,
   barrierDismissible: dismissible,
   builder: (context) => Dialog(
+    insetPadding: EdgeInsets.all(context.cozyColors.wellness.gap),
+    constraints: const BoxConstraints(maxWidth: 560),
     backgroundColor: Theme.of(context).colorScheme.surface,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(context.cozyColors.wellness.radius),
@@ -232,7 +234,7 @@ class WellnessSheetOption extends StatelessWidget {
         onPressed: onPressed,
         child: Container(
           constraints: BoxConstraints(minHeight: w.touch),
-          padding: EdgeInsets.all(w.contentGap),
+          padding: EdgeInsets.all(w.gap),
           decoration: BoxDecoration(
             color: selected == true ? w.accentPanel(c) : c.surface,
             border: Border.all(
@@ -250,13 +252,13 @@ class WellnessSheetOption extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: t.textTheme.titleSmall?.copyWith(
+                      style: t.textTheme.titleMedium?.copyWith(
                         color: destructive ? ink : c.onSurface,
                       ),
                     ),
                     if (subtitle != null) ...[
                       SizedBox(height: w.tight),
-                      Text(subtitle!, style: t.textTheme.bodySmall),
+                      Text(subtitle!, style: t.textTheme.bodyMedium),
                     ],
                   ],
                 ),

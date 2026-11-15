@@ -183,6 +183,41 @@ void main() {
   }
 
   for (final dark in [false, true]) {
+    testWidgets('Journal layout and entry picker remain readable dark=$dark', (
+      tester,
+    ) async {
+      final entry = PlaceholderData.journals().first;
+      await tester.runAsync(
+        () => LocalDbService().journalBox.put(entry.id, entry),
+      );
+      addTearDown(
+        () =>
+            tester.runAsync(() => LocalDbService().journalBox.delete(entry.id)),
+      );
+      await mount(tester, const JournalScreen(), dark: dark, textScale: 1);
+      expect(find.text('Recent entries'), findsOneWidget);
+      await captureSurface(
+        tester,
+        'journal-redesign-${dark ? 'dark' : 'light'}',
+      );
+      await tester.tap(find.byTooltip('New journal entry'));
+      await tester.pumpAndSettle();
+      expect(find.text('Start a journal entry'), findsOneWidget);
+      await captureSurface(tester, 'journal-picker-${dark ? 'dark' : 'light'}');
+      await tester.ensureVisible(find.text('Record a voice note'));
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byKey(const ValueKey('wellness-sheet-close')));
+      await tester.pumpAndSettle();
+      await mount(tester, const JournalScreen(), dark: dark, textScale: 2);
+      await tester.tap(find.byTooltip('New journal entry'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Record a voice note'));
+      expect(tester.takeException(), isNull);
+      await captureSurface(
+        tester,
+        'journal-picker-large-${dark ? 'dark' : 'light'}',
+      );
+    });
     for (final scale in [1.0, 2.0]) {
       testWidgets(
         'mood artwork across saved surfaces dark=$dark scale=$scale',

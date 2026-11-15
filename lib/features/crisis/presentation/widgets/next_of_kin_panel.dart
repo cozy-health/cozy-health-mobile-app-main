@@ -2,6 +2,8 @@ import 'dart:async';
 import '../../../../core/storage/token_storage.dart';
 import 'emergency_email_panel.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/skeleton_loader.dart';
+import '../../../../core/theme/cozy_colors.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -274,7 +276,7 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
       appBar: AppBar(title: const Text('Next of kin')),
       body: SafeArea(
         child: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? const ScreenSkeleton()
             : _loadFailed
             ? Center(
                 child: Padding(
@@ -298,10 +300,14 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('Reach someone you trust'),
+                    Text(
+                      'Reach someone you trust',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       'This feature contacts your next of kin. It does not dispatch emergency assistance.',
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 24),
                     if (_editing || contact == null) ...[
@@ -354,9 +360,9 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      FilledButton(
+                      AppButton(
                         onPressed: _busy ? null : _save,
-                        child: Text(_busy ? 'Saving…' : 'Save next of kin'),
+                        text: _busy ? 'Saving…' : 'Save next of kin',
                       ),
                       if (contact != null)
                         TextButton(
@@ -371,7 +377,9 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
                           context,
                           BorderRadius.circular(16),
                         ),
-                        color: Theme.of(context).colorScheme.surface,
+                        color: context.cozyColors.wellness.accentPanel(
+                          Theme.of(context).colorScheme,
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(20),
                           child: Column(
@@ -405,9 +413,9 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
                           'This opens your messaging app. You must press Send there. Cozy Health cannot confirm sending or delivery.',
                         ),
                         const SizedBox(height: 12),
-                        FilledButton(
+                        AppButton(
                           onPressed: _busy ? null : () => _launch(true),
-                          child: const Text('Open Messages'),
+                          text: 'Open Messages',
                         ),
                         TextButton(
                           onPressed: _busy
@@ -420,7 +428,7 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
                           child: const Text('Cancel'),
                         ),
                       ] else ...[
-                        FilledButton(
+                        AppButton(
                           onPressed: _busy
                               ? null
                               : () => setState(() {
@@ -428,11 +436,13 @@ class _NextOfKinPanelState extends State<NextOfKinPanel> {
                                   _error = null;
                                   _failedSms = null;
                                 }),
-                          child: const Text('Prepare help message'),
+                          text: 'Prepare help message',
                         ),
-                        OutlinedButton(
+                        const SizedBox(height: 12),
+                        AppButton(
+                          isOutlined: true,
                           onPressed: _busy ? null : () => _launch(false),
-                          child: const Text('Call next of kin'),
+                          text: 'Call next of kin',
                         ),
                         TextButton(
                           onPressed: _busy ? null : _edit,

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/services/local_db_service.dart';
@@ -102,7 +103,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Blocked users')),
     body: _busy
-        ? const Center(child: CircularProgressIndicator())
+        ? const ScreenSkeleton()
         : ListView(
             padding: const EdgeInsets.all(24),
             children: [

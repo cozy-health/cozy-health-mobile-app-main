@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:cozy_health/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -115,7 +116,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Active Sessions')),
     body: _loading
-        ? const Center(child: CircularProgressIndicator())
+        ? const ScreenSkeleton()
         : _error != null
         ? Center(
             child: TextButton(onPressed: _load, child: Text(_error!)),

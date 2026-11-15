@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import '../../../../core/widgets/wellness_sheet.dart';
 import '../../../../core/theme/cozy_colors.dart';
 import '../../../../core/widgets/wellness_panel.dart';
@@ -155,7 +156,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
           SizedBox(height: w.contentGap),
           if (_loading)
-            const Center(child: CircularProgressIndicator())
+            const ScreenSkeleton()
           else if (_error != null) ...[
             Text(_error!),
             TextButton(onPressed: _load, child: const Text('Retry')),

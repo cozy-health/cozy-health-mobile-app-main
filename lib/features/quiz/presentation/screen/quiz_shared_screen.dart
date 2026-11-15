@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
@@ -95,7 +96,7 @@ class _QuizSharedScreenState extends State<QuizSharedScreen>
     ),
     body: SafeArea(
       child: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ScreenSkeleton()
           : _error != null
           ? Center(
               child: SingleChildScrollView(

@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
 import '../../../journal/presentation/widgets/journal_share_flow.dart';
 import '../../../../core/widgets/wellness_sheet.dart';
 import '../../../../core/widgets/plan_access_prompt.dart';
@@ -540,7 +541,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen>
                   ),
                 Expanded(
                   child: _loading && _threads.isEmpty
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const ScreenSkeleton()
                       : _thread == null
                       ? _connectionState()
                       : _tab == 1
