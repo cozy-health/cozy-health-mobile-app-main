@@ -42,7 +42,10 @@ class AppButton extends StatelessWidget {
                 ? c.surface
                 : enabled || isLoading
                 ? c.primary
-                : c.surfaceContainerHighest,
+                : Color.alphaBlend(
+                    c.onSurface.withValues(alpha: .06),
+                    c.surface,
+                  ),
             borderRadius: BorderRadius.circular(w.tileRadius),
             border: isOutlined || MediaQuery.highContrastOf(context)
                 ? Border.all(color: enabled ? c.primary : c.outline)
