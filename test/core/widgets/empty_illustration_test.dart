@@ -72,7 +72,7 @@ void main() {
       ),
     );
     expect(
-      tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+      tester.widget<AppButton>(find.byType(AppButton)).onPressed,
       isNull,
     );
   });

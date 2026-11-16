@@ -1,5 +1,6 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_pressable.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class InlineCTA extends StatelessWidget {
@@ -10,11 +11,11 @@ class InlineCTA extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    return AppPressable(
+      onPressed: onTap,
       child: Container(
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        constraints: const BoxConstraints(minHeight: 56),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           color: AppSurface.tint(
             context,
@@ -26,13 +27,16 @@ class InlineCTA extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              text,
-              style: AppTextStyles.body1.copyWith(
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.primary,
+            Expanded(
+              child: Text(
+                text,
+                style: AppTextStyles.body1.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
             ),
+            const SizedBox(width: 12),
             Icon(
               Icons.arrow_forward_ios,
               size: 16,

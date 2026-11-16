@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'startup_cover.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -268,6 +269,7 @@ class _AppAvailabilityGateState extends State<AppAvailabilityGate>
   Widget build(BuildContext context) {
     final availability = _availability;
     final blocked = availability != _AvailabilityState.available;
+    if (blocked) StartupCover.ready(context);
     return Stack(
       fit: StackFit.expand,
       children: [

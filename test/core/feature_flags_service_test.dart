@@ -230,4 +230,36 @@ void main() {
     await tester.tap(find.text('Settings'));
     expect(selected, 4);
   });
+
+  testWidgets('all five navigation actions fit a narrow phone', (tester) async {
+    tester.view.physicalSize = const Size(320, 667);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    int? selected;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          bottomNavigationBar: CustomBottomNavigationBar(
+            currentIndex: 0,
+            onTap: (index) => selected = index,
+          ),
+        ),
+      ),
+    );
+    for (final label in [
+      'Home',
+      'Activity',
+      'Provider',
+      'Community',
+      'Settings',
+    ]) {
+      final bounds = tester.getRect(find.text(label));
+      expect(bounds.left, greaterThanOrEqualTo(0));
+      expect(bounds.right, lessThanOrEqualTo(320));
+    }
+    await tester.tap(find.text('Settings'));
+    expect(selected, 4);
+    expect(tester.takeException(), isNull);
+  });
 }

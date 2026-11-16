@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/motion.dart';
 
 class SkeletonLoader extends StatefulWidget {
   const SkeletonLoader({
@@ -15,7 +16,7 @@ class SkeletonLoader extends StatefulWidget {
 }
 
 class _SkeletonLoaderState extends State<SkeletonLoader>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1500),
@@ -36,11 +37,24 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
       weight: 1,
     ),
   ]).animate(_controller);
+  bool _foreground = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final media = MediaQuery.of(context);
-    if (media.disableAnimations || media.accessibleNavigation) {
+    _syncMotion();
+  }
+
+  void _syncMotion() {
+    if (shouldReduceMotion(context) ||
+        !_foreground ||
+        !TickerMode.valuesOf(context).enabled) {
       _controller.stop();
       _controller.value = 0;
     } else {
@@ -49,7 +63,14 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _syncMotion();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
   }

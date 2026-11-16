@@ -37,11 +37,21 @@ class MoodCategoryGrid extends StatelessWidget {
     );
     return LayoutBuilder(
       builder: (context, box) {
-        final columns =
-            box.maxWidth < t.breakpoint ||
-                MediaQuery.textScalerOf(context).scale(t.label) > 20
-            ? 2
-            : 3;
+        final labelStyle = theme.textTheme.bodyMedium?.copyWith(
+          fontSize: t.label,
+          fontWeight: FontWeight.w600,
+          color: scheme.onSurface,
+        );
+        final label = TextPainter(
+          text: TextSpan(text: 'Spectacular', style: labelStyle),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        final minimumWidth = label.width + t.small * 2;
+        label.dispose();
+        final columns = ((box.maxWidth + t.small) / (minimumWidth + t.small))
+            .floor()
+            .clamp(1, 3);
         final width = (box.maxWidth - t.small * (columns - 1)) / columns;
         return Wrap(
           spacing: t.small,
@@ -92,11 +102,7 @@ class MoodCategoryGrid extends StatelessWidget {
                         Text(
                           '${mood[0].toUpperCase()}${mood.substring(1)}',
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontSize: t.label,
-                            fontWeight: FontWeight.w600,
-                            color: scheme.onSurface,
-                          ),
+                          style: labelStyle,
                         ),
                       ],
                     ),

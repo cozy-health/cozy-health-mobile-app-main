@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/cozy_colors.dart';
+import 'app_pressable.dart';
 
 class AppButton extends StatelessWidget {
-  final String text;
-  final VoidCallback? onPressed;
-  final bool isOutlined;
-  final bool isLoading;
-  final double? width;
-  final EdgeInsetsGeometry? padding;
-  final IconData? trailingIcon;
-
   const AppButton({
     super.key,
     required this.text,
@@ -21,115 +15,69 @@ class AppButton extends StatelessWidget {
     this.trailingIcon,
   });
 
-  Widget _loading(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: isOutlined
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onPrimary,
-        ),
-      ),
-      const SizedBox(width: 12),
-      const Flexible(child: Text('Loading...')),
-    ],
-  );
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isOutlined, isLoading;
+  final double? width;
+  final EdgeInsetsGeometry? padding;
+  final IconData? trailingIcon;
+
   @override
   Widget build(BuildContext context) {
+    final c = Theme.of(context).colorScheme;
+    final w = context.cozyColors.wellness;
+    final enabled = onPressed != null && !isLoading;
+    final foreground = enabled || isLoading
+        ? (isOutlined ? c.primary : c.onPrimary)
+        : c.onSurfaceVariant;
     return SizedBox(
       width: width ?? double.infinity,
-      child: isOutlined
-          ? OutlinedButton(
-              onPressed: isLoading ? null : onPressed,
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: Theme.of(context).colorScheme.primary,
-                  width: 1.5,
+      child: AppPressable(
+        label: isLoading ? '$text. Loading' : text,
+        onPressed: enabled ? onPressed : null,
+        child: Container(
+          padding: padding ?? EdgeInsets.all(w.gap),
+          decoration: BoxDecoration(
+            color: isOutlined
+                ? c.surface
+                : enabled || isLoading
+                ? c.primary
+                : c.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(w.tileRadius),
+            border: isOutlined || MediaQuery.highContrastOf(context)
+                ? Border.all(color: enabled ? c.primary : c.outline)
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isLoading) ...[
+                SizedBox(
+                  width: w.sectionSpacing,
+                  height: w.sectionSpacing,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: foreground,
+                  ),
                 ),
-                padding: padding ?? const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                SizedBox(width: w.contentGap),
+              ],
+              Flexible(
+                child: Text(
+                  isLoading ? 'Loading...' : text,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.buttonText.copyWith(color: foreground),
                 ),
               ),
-              child: isLoading
-                  ? _loading(context)
-                  : trailingIcon != null
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            text,
-                            style: AppTextStyles.buttonText.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          trailingIcon,
-                          size: 18,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ],
-                    )
-                  : Text(
-                      text,
-                      style: AppTextStyles.buttonText.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-            )
-          : ElevatedButton(
-              onPressed: isLoading ? null : onPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                disabledBackgroundColor: Theme.of(
-                  context,
-                ).disabledColor.withValues(alpha: 0.2),
-                disabledForegroundColor: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.4),
-                padding: padding ?? const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: isLoading
-                  ? _loading(context)
-                  : trailingIcon != null
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            text,
-                            style: AppTextStyles.buttonText.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          trailingIcon,
-                          size: 18,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ],
-                    )
-                  : Text(
-                      text,
-                      style: AppTextStyles.buttonText.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ),
-            ),
+              if (!isLoading && trailingIcon != null) ...[
+                SizedBox(width: w.small),
+                Icon(trailingIcon, size: w.actionIcon, color: foreground),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import '../../../../core/widgets/wellness_panel.dart';
+import '../../../../core/widgets/startup_cover.dart';
 import 'dart:async';
 import '../../../../core/repositories/streak_repository.dart';
 import '../../../../core/services/streak_controller.dart';
@@ -137,6 +138,12 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    StartupCover.retryWith(context, () => _loadDashboard());
+  }
+
   void _streakChanged() {
     if (mounted) setState(() {});
   }
@@ -157,13 +164,19 @@ class _HomeScreenState extends State<HomeScreen>
           _loadingDashboard = false;
         });
       }
+      StartupCover.ready(context);
       return;
     }
     final cached = await _homeRepo.getCachedDashboard();
     final offline =
         cached ?? await _homeRepo.getCachedDashboard(allowStale: true);
     if (!mounted || revision != _dashboardRevision) return;
-    if (offline != null) setState(() => _dashboard = offline);
+    setState(() {
+      _dashboard = offline;
+      _loadingDashboard = false;
+    });
+    StartupCover.retryWith(context, () => _loadDashboard());
+    StartupCover.ready(context);
     if (!await AuthTokenService.hasToken()) {
       if (mounted && revision == _dashboardRevision) {
         setState(() => _loadingDashboard = false);

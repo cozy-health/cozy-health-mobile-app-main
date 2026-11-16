@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cozy_health/utils/screen_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -119,16 +120,22 @@ void main() {
     double textScale = 1.6,
     bool contrast = false,
     int accent = 0,
+    GoRoute? route,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final router = GoRouter(
-      initialLocation: '/test',
+      initialLocation:
+          route?.path.replaceAll(RegExp(r':[^/]+'), 'review-fixture') ??
+          '/test',
       routes: [
-        GoRoute(path: '/test', builder: (_, _) => screen),
-        for (final route in {
+        if (route == null)
+          GoRoute(path: '/test', builder: (_, _) => screen)
+        else
+          GoRoute(path: route.path, builder: route.builder),
+        for (final destination in {
           AppRouter.moodFeeling,
           AppRouter.moodHistory,
           AppRouter.moodDetail,
@@ -145,11 +152,12 @@ void main() {
           AppRouter.breathing,
           AppRouter.grounding,
         })
-          GoRoute(
-            path: route,
-            builder: (_, state) =>
-                Scaffold(body: Text('destination:${state.uri}')),
-          ),
+          if (route?.path != destination)
+            GoRoute(
+              path: destination,
+              builder: (_, state) =>
+                  Scaffold(body: Text('destination:${state.uri}')),
+            ),
       ],
     );
     addTearDown(router.dispose);
@@ -161,15 +169,18 @@ void main() {
     await tester.pumpWidget(
       MaterialApp.router(
         theme: theme,
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(textScale),
-            highContrast: contrast,
-            boldText: contrast,
-            disableAnimations: true,
-          ),
-          child: RepaintBoundary(key: surfaceCaptureKey, child: child!),
-        ),
+        builder: (context, child) {
+          ScreenUtil.init(context);
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(textScale),
+              highContrast: contrast,
+              boldText: contrast,
+              disableAnimations: true,
+            ),
+            child: RepaintBoundary(key: surfaceCaptureKey, child: child!),
+          );
+        },
         routerConfig: router,
       ),
     );
@@ -474,6 +485,32 @@ void main() {
     expect(find.text('destination:${AppRouter.grounding}'), findsOneWidget);
     expect(find.text('I need a moment.'), findsNothing);
   });
+
+  for (final route
+      in AppRouter.router.configuration.routes.whereType<GoRoute>()) {
+    if (route.builder == null ||
+        {AppRouter.splash, AppRouter.preparingCozy}.contains(route.path)) {
+      continue;
+    }
+    for (final variant in ['standard', 'large-dark', 'landscape']) {
+      testWidgets('Route review ${route.path} $variant', (tester) async {
+        await mount(
+          tester,
+          const SizedBox.shrink(),
+          route: route,
+          dark: variant == 'large-dark',
+          size: variant == 'landscape'
+              ? const Size(667, 375)
+              : const Size(320, 667),
+          textScale: variant == 'standard' ? 1 : 2,
+        );
+        expect(find.byType(ErrorWidget), findsNothing, reason: route.path);
+        expect(tester.takeException(), isNull, reason: route.path);
+        await captureSurface(tester, 'route-${route.path}-$variant');
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+    }
+  }
 
   final screens = <String, Widget Function()>{
     'Settings': () => const SettingsScreen(),

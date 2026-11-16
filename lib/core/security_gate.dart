@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets/startup_cover.dart';
 import 'package:flutter/services.dart';
 import 'services/security_service.dart';
 import 'storage/token_storage.dart';
@@ -179,6 +180,7 @@ class _SecurityGateState extends State<SecurityGate>
   @override
   Widget build(BuildContext context) {
     final covered = _locked || _obscured;
+    if (_ready && _locked) StartupCover.ready(context);
     return Stack(
       children: [
         if (_ready)

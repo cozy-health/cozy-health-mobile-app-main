@@ -14,6 +14,7 @@ import 'core/services/install_marker_service.dart';
 import 'core/storage/token_storage.dart';
 import 'core/widgets/device_integrity_notice.dart';
 import 'core/widgets/consent_gate.dart';
+import 'core/widgets/startup_cover.dart';
 import 'package:flutter/material.dart';
 import 'core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
@@ -31,32 +32,12 @@ Future<void> main() => CrashReporting.run(_startApp);
 
 Future<void> _startApp() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await LocalDbService().init();
-    await FeatureFlagsService.instance.initialize();
-  } catch (_) {
-    // Never erase unsynced PHI or expose key/path details after a storage failure.
-    runApp(
-      const MaterialApp(
-        home: Scaffold(
-          body: SafeArea(
-            child: Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'We couldn’t open your saved information securely. Your local files have '
-                  'been kept. Please restart the app. If this continues, contact support '
-                  'before reinstalling.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    return;
-  }
+  runApp(const _AppBootstrap());
+}
+
+Future<void> _prepareApp() async {
+  await LocalDbService().init();
+  await FeatureFlagsService.instance.initialize();
   await InstallMarkerService().clearLingeringSessionOnFreshInstall();
   UsageAnalytics.instance.initialize();
   AppRouter.router.routeInformationProvider.addListener(() {
@@ -70,11 +51,92 @@ Future<void> _startApp() async {
   CrashReporting.tagRoute(
     AppRouter.router.routeInformationProvider.value.uri.path,
   );
-  runApp(const CozyHealthApp());
   BackgroundRestoreService.instance.initialize();
   unawaited(PushNotificationService.instance.initialize());
   unawaited(QuizInvitationService.instance.initialize());
   unawaited(cleanupQuizExports());
+}
+
+class _AppBootstrap extends StatefulWidget {
+  const _AppBootstrap();
+  @override
+  State<_AppBootstrap> createState() => _AppBootstrapState();
+}
+
+class _AppBootstrapState extends State<_AppBootstrap> {
+  bool _ready = false, _working = false, _failed = false;
+  Timer? _timeout;
+
+  @override
+  void initState() {
+    super.initState();
+    _start();
+  }
+
+  void _start() {
+    _timeout?.cancel();
+    _timeout = Timer(const Duration(seconds: 8), () {
+      if (mounted && !_ready) setState(() => _failed = true);
+    });
+    if (_working) {
+      setState(() => _failed = false);
+      return;
+    }
+    _working = true;
+    if (_failed) setState(() => _failed = false);
+    _prepareApp()
+        .then((_) {
+          if (mounted) setState(() => _ready = true);
+        })
+        .catchError((Object _) {
+          if (mounted) setState(() => _failed = true);
+        })
+        .whenComplete(() {
+          _working = false;
+          _timeout?.cancel();
+        });
+  }
+
+  @override
+  void dispose() {
+    _timeout?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => _ready
+      ? const CozyHealthApp()
+      : MaterialApp(
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          home: Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const StartupIcon(),
+                      if (_failed) ...[
+                        const SizedBox(height: 24),
+                        const Text(
+                          'We couldn’t open your saved information securely. '
+                          'Your files have been kept. Try again or contact support.',
+                          textAlign: TextAlign.center,
+                        ),
+                        TextButton(
+                          onPressed: _start,
+                          child: const Text('Try again'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
 }
 
 class CozyHealthApp extends StatefulWidget {
@@ -179,14 +241,36 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
                             }
                             return false;
                           },
-                          child: NetworkObserver(
-                            child: AppAvailabilityGate(
-                              child: SecurityCaptureOverlay(
-                                child: SecurityGate(
-                                  child: ConsentGate(
-                                    child: PushNotificationHost(
-                                      child: DeviceIntegrityNotice(
-                                        child: child!,
+                          child: StartupCover(
+                            child: NetworkObserver(
+                              child: AppAvailabilityGate(
+                                child: SecurityCaptureOverlay(
+                                  child: SecurityGate(
+                                    child: ConsentGate(
+                                      child: PushNotificationHost(
+                                        child: DeviceIntegrityNotice(
+                                          child: ListenableBuilder(
+                                            listenable: AppRouter
+                                                .router
+                                                .routeInformationProvider,
+                                            builder: (context, _) =>
+                                                StartupDestination(
+                                                  ready:
+                                                      !{
+                                                        AppRouter.splash,
+                                                        AppRouter.home,
+                                                      }.contains(
+                                                        AppRouter
+                                                            .router
+                                                            .routeInformationProvider
+                                                            .value
+                                                            .uri
+                                                            .path,
+                                                      ),
+                                                  child: child!,
+                                                ),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),

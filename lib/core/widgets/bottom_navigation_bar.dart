@@ -56,6 +56,7 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
   Widget build(BuildContext context) {
     final navTheme = Theme.of(context).bottomNavigationBarTheme;
     final dividerColor = Theme.of(context).dividerTheme.color;
+    final compactLabels = MediaQuery.textScalerOf(context).scale(11) <= 13.2;
 
     return Container(
       decoration: BoxDecoration(
@@ -71,7 +72,7 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
         bottom: true,
         child: SizedBox(
           height:
-              72 +
+              (compactLabels ? 84 : 72) +
               (MediaQuery.textScalerOf(context).scale(11) - 11).clamp(
                     0,
                     double.infinity,
@@ -120,7 +121,9 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
                   children: [
                     for (var i = 0; i < labels.length; i++)
                       SizedBox(
-                        width: widths[i] + extra,
+                        width: compactLabels
+                            ? box.maxWidth / labels.length
+                            : widths[i] + extra,
                         key: indices[i] == widget.currentIndex
                             ? _selectedKey
                             : null,
@@ -209,7 +212,10 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
-              maxLines: 1,
+              textAlign: TextAlign.center,
+              maxLines: MediaQuery.textScalerOf(context).scale(11) <= 13.2
+                  ? 2
+                  : 1,
             ),
           ],
         ),

@@ -8,6 +8,7 @@ import '../services/feature_flags_service.dart';
 import '../services/legal_notice_preferences.dart';
 import '../storage/token_storage.dart';
 import 'skeleton_loader.dart';
+import 'startup_cover.dart';
 import '../../features/auth/data/auth_service.dart';
 
 class ConsentGate extends StatefulWidget {
@@ -356,7 +357,9 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
       return widget.child;
     }
     if (!_verified) {
+      StartupCover.retryWith(context, _refresh);
       if (_loading) return const Scaffold(body: ScreenSkeleton());
+      StartupCover.ready(context);
       return Scaffold(
         body: SafeArea(
           child: Center(
@@ -402,6 +405,7 @@ class _ConsentGateState extends State<ConsentGate> with WidgetsBindingObserver {
         )
         .toList();
     if (required.isNotEmpty) {
+      StartupCover.ready(context);
       final doc = required.first;
       return Scaffold(
         body: SafeArea(

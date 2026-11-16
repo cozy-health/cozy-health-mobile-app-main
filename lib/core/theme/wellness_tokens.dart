@@ -32,6 +32,12 @@ class WellnessTokens {
   // Artwork colours stay unchanged across user themes.
   Color get artworkSurface => Colors.white;
   Duration get transition => const Duration(milliseconds: 180);
+  Duration get launchMinimum => const Duration(milliseconds: 250);
+  Duration get launchExit => const Duration(milliseconds: 280);
+  Duration get launchTimeout => const Duration(seconds: 8);
+  double get launchIcon => 96;
+  double get launchEndScale => .92;
+  Curve get exitCurve => Curves.easeOutCubic;
   Color canvas(Brightness brightness, bool contrast) => contrast
       ? brightness == Brightness.dark
             ? Colors.black

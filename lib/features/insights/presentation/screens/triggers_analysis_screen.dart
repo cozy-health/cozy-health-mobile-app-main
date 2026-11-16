@@ -176,7 +176,7 @@ class _TriggersAnalysisScreenState extends State<TriggersAnalysisScreen> {
               ),
               SizedBox(height: 16),
               Text(
-                'Average mood: $avgMood',
+                'Average mood: ${avgMood.toStringAsFixed(1)}',
                 style: AppTextStyles.body2.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),

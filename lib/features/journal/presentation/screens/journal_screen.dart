@@ -1408,6 +1408,7 @@ class _EntrySection extends StatelessWidget {
                     ),
                     child: _JournalEntryCard(
                       entry: entries[i],
+                      grouped: true,
                       onTap: () => onTap(entries[i]),
                       onMore: () => onMore(entries[i]),
                     ),
@@ -1429,10 +1430,12 @@ class _JournalEntryCard extends StatelessWidget {
     required this.entry,
     required this.onTap,
     required this.onMore,
+    this.grouped = false,
   });
   final JournalEntry entry;
   final VoidCallback onTap;
   final VoidCallback onMore;
+  final bool grouped;
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
@@ -1441,7 +1444,9 @@ class _JournalEntryCard extends StatelessWidget {
       color: Theme.of(context).brightness == Brightness.dark
           ? AppColors.surfaceSubtleDark
           : AppColors.surfaceSubtle,
-      shape: AppSurface.shape(context, BorderRadius.circular(8)),
+      shape: grouped
+          ? const RoundedRectangleBorder()
+          : AppSurface.shape(context, BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,

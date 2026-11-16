@@ -23,8 +23,28 @@ class AppPressable extends StatefulWidget {
   State<AppPressable> createState() => _AppPressableState();
 }
 
-class _AppPressableState extends State<AppPressable> {
+class _AppPressableState extends State<AppPressable>
+    with WidgetsBindingObserver {
   bool _pressed = false, _focused = false;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed && _pressed) {
+      setState(() => _pressed = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.cozyColors.recording;

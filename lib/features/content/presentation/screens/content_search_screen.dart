@@ -21,6 +21,7 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
   @override
   void initState() {
     super.initState();
+    _focusNode.addListener(_focusChanged);
     // Auto-focus on load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
@@ -38,6 +39,10 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
     setState(() {
       _query = value;
     });
+  }
+
+  void _focusChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -68,7 +73,12 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
-                  border: AppSurface.border(context),
+                  border: _focusNode.hasFocus
+                      ? Border.all(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 2,
+                        )
+                      : AppSurface.border(context),
                 ),
                 child: Row(
                   children: [
@@ -91,6 +101,8 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
                             ).colorScheme.onSurfaceVariant,
                           ),
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
@@ -98,12 +110,13 @@ class _ContentSearchScreenState extends State<ContentSearchScreen> {
                       ),
                     ),
                     if (_query.isNotEmpty)
-                      GestureDetector(
-                        onTap: () {
+                      IconButton(
+                        tooltip: 'Clear search',
+                        onPressed: () {
                           _searchController.clear();
                           _onSearchChanged('');
                         },
-                        child: Icon(
+                        icon: Icon(
                           Icons.close,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           size: 20,

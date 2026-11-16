@@ -15,7 +15,10 @@ Future<T?> showWellnessSheet<T>({
   context: context,
   sheetAnimationStyle: shouldReduceMotion(context)
       ? AnimationStyle.noAnimation
-      : null,
+      : AnimationStyle(
+          duration: context.cozyColors.wellness.transition,
+          reverseDuration: context.cozyColors.wellness.transition,
+        ),
   isScrollControlled: true,
   useSafeArea: true,
   isDismissible: dismissible,
@@ -42,6 +45,12 @@ Future<T?> showWellnessDialog<T>({
 }) => showDialog<T>(
   context: context,
   barrierDismissible: dismissible,
+  animationStyle: shouldReduceMotion(context)
+      ? AnimationStyle.noAnimation
+      : AnimationStyle(
+          duration: context.cozyColors.wellness.transition,
+          reverseDuration: context.cozyColors.wellness.transition,
+        ),
   builder: (context) => Dialog(
     insetPadding: EdgeInsets.all(context.cozyColors.wellness.gap),
     constraints: const BoxConstraints(maxWidth: 560),

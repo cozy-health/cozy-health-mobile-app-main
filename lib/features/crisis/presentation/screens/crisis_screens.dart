@@ -316,18 +316,12 @@ class CrisisActionCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Text(
-                action,
-                style: CrisisText.caption
-                    .copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    )
-                    .copyWith(
-                      color: primary
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : AppColors.crisisPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
+              const SizedBox(width: 12),
+              Icon(
+                Icons.chevron_right,
+                color: primary
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : AppColors.crisisPrimary,
               ),
             ],
           ),
@@ -1208,9 +1202,7 @@ class _SafetyPlanScreenState extends State<SafetyPlanScreen>
     if (!_loaded) {
       return Scaffold(
         backgroundColor: _crisisBg(context),
-        body: const Center(
-          child: ScreenSkeleton(),
-        ),
+        body: const Center(child: ScreenSkeleton()),
       );
     }
 
@@ -1402,9 +1394,7 @@ class PersistedSafetyPlanViewScreen extends StatelessWidget {
         if (snapshot.connectionState != ConnectionState.done) {
           return Scaffold(
             backgroundColor: _crisisBg(context),
-            body: const Center(
-              child: ScreenSkeleton(),
-            ),
+            body: const Center(child: ScreenSkeleton()),
           );
         }
 
