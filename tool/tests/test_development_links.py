@@ -9,11 +9,11 @@ ANDROID = '{http://schemas.android.com/apk/res/android}'
 
 
 class DevelopmentLinksTest(unittest.TestCase):
-    def test_android_registers_development_quiz_invitation_origin(self):
+    def test_android_quiz_invitation_origin_uses_the_build_environment(self):
         manifest = ET.parse(ROOT / 'android/app/src/main/AndroidManifest.xml')
         hosts = [node.get(ANDROID + 'host') for node in manifest.findall('.//intent-filter/data')
                  if node.get(ANDROID + 'pathPrefix') == '/quiz-invite/']
-        self.assertIn('api-dev.cozyhealth.org', hosts)
+        self.assertEqual(hosts, ['${apiHost}'])
 
     def test_ios_registers_development_associated_domain(self):
         with (ROOT / 'ios/Runner/Runner.entitlements').open('rb') as stream:

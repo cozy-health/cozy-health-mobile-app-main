@@ -96,6 +96,8 @@ jobs:
               assert root.attrib['package'] == 'org.cozyhealth.app'
               assert root.attrib['{http://schemas.android.com/apk/res/android}versionCode'] == os.environ['VERSION_CODE']
               assert root.find('application').attrib.get('{http://schemas.android.com/apk/res/android}debuggable', 'false') == 'false'
+              invitation_hosts = [node.attrib.get('{http://schemas.android.com/apk/res/android}host') for node in root.findall('.//intent-filter/data') if node.attrib.get('{http://schemas.android.com/apk/res/android}pathPrefix') == '/quiz-invite/']
+              assert invitation_hosts == ['api.cozyhealth.org'], 'Invitation links must use the production API'
           defines = json.loads(Path('push-defines.json').read_text())
           assert defines['COZY_ENVIRONMENT'] == 'production' and defines['INTERNAL_TEST_BUILD'] == 'false'
           identity = dict(commit=os.environ['GITHUB_SHA'], run=os.environ['GITHUB_RUN_ID'], version_code=os.environ['VERSION_CODE'], package='org.cozyhealth.app', environment='production', upload_certificate_sha256=digest, sha256=hashlib.sha256(bundle.read_bytes()).hexdigest(), play_install_acceptance='pending')
