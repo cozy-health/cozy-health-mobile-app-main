@@ -9,8 +9,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 import '../api/api_client.dart';
 import '../api/api_transport.dart';
-import '../api/leaf_pin_policy.dart';
-import '../api/network_build_policy.dart';
+import '../api/api_destination_policy.dart';
 import '../constants/api_constants.dart';
 import '../data/demo_mode.dart';
 import '../models/app_notification.dart';
@@ -385,12 +384,7 @@ class PushNotificationService extends ChangeNotifier
       ),
     );
     dio.httpClientAdapter = createApiTransport(
-      LeafPinPolicy(
-        host: Uri.parse(ApiConstants.baseUrl).host,
-        current: ApiConstants.currentLeafPin,
-        next: ApiConstants.nextLeafPin,
-      ),
-      requirePins: const NetworkBuildPolicy().requirePins,
+      ApiDestinationPolicy(host: Uri.parse(ApiConstants.baseUrl).host),
     );
     try {
       for (final row in pending) {

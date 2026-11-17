@@ -3,11 +3,13 @@ name: Build Android Debug APK
 on:
   push:
     branches: [develop]
+  pull_request:
+    branches: [develop, main]
   workflow_dispatch:
 
 jobs:
   build-android:
-    if: github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/develop' || github.event_name == 'pull_request'
     runs-on: ubuntu-22.04
     timeout-minutes: 30
 

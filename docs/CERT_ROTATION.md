@@ -1,98 +1,28 @@
-# API leaf certificate pinning and rotation
+# Mobile API TLS and certificate renewal
 
-## Internal iPhone sideload builds: 2026-10-10
+The owner selected platform certificate-authority, hostname and expiry verification for production. Native requests use the shared `ApiDestinationPolicy` and `VerifiedApiAdapter`. The configured public API is `https://api.cozyhealth.org`.
 
-The develop-only iOS workflow explicitly supplies
-`--dart-define=INTERNAL_TEST_BUILD=true` when testing and packaging the unsigned
-release-mode IPA. iPhone sideload testing needs release-mode packaging, but the
-previous workflow supplied no pins and therefore blocked every API request.
-These internal artifacts use normal platform TLS chain, hostname and expiry
-validation, the existing HTTPS destination restriction and redirect prohibition.
-They do not enforce leaf pins and must not be distributed as production builds.
-The artifact name, build-info.json and workflow summary identify this mode.
-The workflow now probes health and empty login validation through the actual
-native internal-release transport before packaging, without account credentials.
+## Transport rules
 
-Without this explicit build define, profile/release still requires both pins.
-The production rollout prerequisites and rotation plan below remain open.
-This internal build policy supersedes the earlier statement that every release
-mode artifact always requires pins; it does not change production defaults.
+- Require HTTPS, the configured API hostname and its exact port.
+- Reject destinations containing user information.
+- Verify the certificate chain, hostname and expiry during the TLS handshake before sending HTTP headers or bodies.
+- Disable redirects and HTTP proxy routing through this API adapter.
+- Use the same transport for authentication, content requests and push-token cleanup.
+- Keep the native transport requirement for health API requests. The existing web transport remains unavailable.
 
-**Rollout blocked:** two real independently verified leaf pins and a named
-rotation owner are required. The next certificate and owner have not been
-supplied. No backup certificate has been invented.
+Production builds use the platform trust store. The optional adapter SecurityContext is used by isolated loopback tests. Production callers use the default context. The previous leaf-fingerprint build defines and two-pin release gate have been removed under the approved production plan.
 
-## Policy and current observation
+## Renewal acceptance
 
-Pin SHA-256 of the complete leaf certificate's DER bytes, not an intermediate,
-root, PEM text or SPKI public-key digest. The API host is
-`cozy-health-api-production.up.railway.app`, TCP 443.
+Railway manages public certificate renewal. Before release, verify the configured public hostname through a normally verified TLS connection and run the native API smoke test. Record the source revision, hostname and observed certificate validity in release evidence.
 
-Observed on 2026-10-09 over a normally verified TLS 1.3 connection:
+The focused loopback suite accepts two trusted certificates and changes the server certificate while retaining the same client transport. It also rejects expired, wrong-host and untrusted certificates before the server receives a request, rejects invalid destinations and prevents redirect following. The checked-in CA and private keys are synthetic fixtures confined to these tests.
 
-- SHA-256: `fb370ca26842da2b2ff8e3182e0e8cfc6fb8eac32cdb5718f45a4b39b9e140af`.
-- Subject: `*.up.railway.app`; issuer: Let's Encrypt YE2.
-- Validity: 2026-09-27 03:01:43 UTC to 2026-12-26 03:01:42 UTC.
+## Incident handling
 
-Railway controls wildcard renewal. This observation does not establish a future
-pin or consistency across every edge. The project must obtain advance rotation
-certificates, or resolve the hosting/domain arrangement before shipping.
+Investigate chain failures, expiry, hostname mismatch and edge configuration through independent provider access. Preserve saved records and queued writes while connectivity is unavailable. Correct the server certificate or hostname configuration and verify normal TLS acceptance before resuming affected checks. Cordelia Ebo is incident primary, with team@cozyhealth.org for escalation.
 
-`API_CURRENT_LEAF_SHA256` and `API_NEXT_LEAF_SHA256` are public Dart build defines.
-The defaults are empty. Missing, duplicate or malformed pins fail closed. Normal
-chain, hostname and expiry verification remains enabled. A native connection
-factory checks the leaf before handing the TLS socket to HttpClient, so a
-mismatch blocks credentials and health data before transmission. Dio's response
-callback adds a second check. HTTPS API host/port checks are mandatory; redirects
-and HTTP proxies are disabled. Release has no unpinned retry, remote pin fetch or fail-open
-switch exists. Web health requests are blocked because browsers do not expose
-the peer certificate to this implementation.
+## References
 
-## Release prerequisites
-
-1. Assign the certificate/incident owner. Obtain the actual future certificate
-   and verify its DER fingerprint, chain, hostname and validity independently.
-   A duplicate current pin or synthetic certificate is not a backup.
-2. Configure both public fingerprints in the build system. Pass
-   `--dart-define=API_CURRENT_LEAF_SHA256=<verified current>` and
-   `--dart-define=API_NEXT_LEAF_SHA256=<verified next>` to APK and IPA builds.
-3. Existing CI is unchanged and passes neither define. **Default artifacts have
-   health API access blocked. Do not distribute release artifacts until
-   real pins and build wiring are ready.**
-4. Recheck the live leaf with `node tool/inspect_api_certificate.mjs`, across
-   relevant edges, immediately before release. Run tests/analysis and device
-   acceptance/rejection checks with the real pins.
-
-## Planned rotation
-
-1. Verify the future leaf before activating it at the edge.
-2. Release clients with overlapping current + next pins. Verify supported-client
-   adoption, including offline users, and an emergency distribution path before
-   switching the server. A minimum-version API cannot repair broken TLS.
-3. Test valid current/next certificates, untrusted/expired/wrong-host/unpinned
-   certificates and trusted-proxy interception. Confirm rejected requests send
-   no credentials. Device/proxy and signed iOS checks remain in Phase 24.
-4. Activate the next leaf only after supported clients accept it. Probe edges
-   and monitor failure rates independently of the pinned API.
-5. Publish a new overlapping set before the next renewal. Remove an old pin only
-   when supported clients no longer need it.
-6. Record owner, fingerprints, validity, app versions, adoption evidence, switch
-   time and verification results in an appended rotation record.
-
-## Incident recovery
-
-On mismatch, preserve local drafts and queued writes; do not disable verification.
-Investigate expiry, hostname, edge inconsistency and interception. Restore the
-previous approved leaf only if it remains valid and uncompromised. Otherwise
-distribute a verified app update through a channel independent of the API. A
-compromised private key must be revoked, never restored as an outage workaround.
-
-Loopback TLS tests cover two synthetic leaves, pre-request pin rejection,
-untrusted chain, HTTP/alternate host, redirects and invalid rotation configuration.
-Those localhost test keys are not production pins. Real rotation is unverified.
-
-References: [Dio certificate validation](https://pub.dev/documentation/dio/latest/io/IOHttpClientAdapter-class.html),
-[Dart connection factory](https://api.dart.dev/dart-io/HttpClient/connectionFactory.html).
-
-
-Owner-approved source rollout: debug builds now use normal TLS validation without leaf pins. Profile/release remain fail-closed and must not be distributed without both real pins. The next pin is deferred to Phase 24; source push is authorized independently of release distribution.
+[Android TLS guidance](https://developer.android.com/privacy-and-security/security-ssl), [Dart SecureSocket](https://api.dart.dev/dart-io/SecureSocket/startConnect.html), [Railway public networking](https://docs.railway.com/networking/public-networking/specs-and-limits).

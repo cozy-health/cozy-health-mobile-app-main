@@ -122,12 +122,6 @@ val validateProductionRelease by tasks.registering {
             check(rootProject.file(releaseProperties.getProperty("storeFile")).isFile) {
                 "The production upload keystore does not exist."
             }
-            val currentPin = dartDefines["API_CURRENT_LEAF_SHA256"]?.lowercase().orEmpty()
-            val nextPin = dartDefines["API_NEXT_LEAF_SHA256"]?.lowercase().orEmpty()
-            check(Regex("[a-f0-9]{64}").matches(currentPin) &&
-                Regex("[a-f0-9]{64}").matches(nextPin) && currentPin != nextPin) {
-                "Supply two distinct, independently verified production certificate fingerprints."
-            }
         }
     }
 }

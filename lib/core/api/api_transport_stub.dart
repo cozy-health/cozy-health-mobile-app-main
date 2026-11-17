@@ -1,13 +1,11 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
-import 'leaf_pin_policy.dart';
+import 'api_destination_policy.dart';
 
-HttpClientAdapter createApiTransport(
-  LeafPinPolicy policy, {
-  bool requirePins = true,
-}) => _UnsupportedTransport();
+HttpClientAdapter createApiTransport(ApiDestinationPolicy policy) =>
+    _UnsupportedTransport();
 
-// Browsers cannot expose the peer leaf certificate to Dio. Do not claim pinning.
+// The mobile health client uses the native API transport.
 class _UnsupportedTransport implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
@@ -16,7 +14,7 @@ class _UnsupportedTransport implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async => throw DioException.badCertificate(
     requestOptions: options,
-    error: 'Pinned health API requires a native client.',
+    error: 'The health app API requires a native client.',
   );
   @override
   void close({bool force = false}) {}
