@@ -59,7 +59,7 @@ android {
 
     defaultConfig {
         applicationId = if (playDevelopmentBuild) "org.cozyhealth.app.dev" else if (productionBuild) releaseApplicationId else "com.example.cozy_health"
-        manifestPlaceholders["appLabel"] = if (playDevelopmentBuild) "Cozy Health Development" else "cozy_health"
+        manifestPlaceholders["appLabel"] = if (playDevelopmentBuild) "Cozy Health Development" else if (productionBuild) "Cozy Health" else "cozy_health"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

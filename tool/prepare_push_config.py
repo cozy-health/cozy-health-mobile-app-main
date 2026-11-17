@@ -7,6 +7,58 @@ import sys
 from urllib.parse import urlparse
 from pathlib import Path
 
+
+def prepare_production_android():
+    config = json.loads(os.environ['PRODUCTION_ANDROID_FIREBASE_JSON'])
+    info = config.get('project_info', {})
+    if info.get('project_id') != 'cozy-health-prod-2026' or str(info.get('project_number')) != '398026710363':
+        raise ValueError('Expected the approved production Firebase project')
+    clients = [client for client in config.get('client', [])
+               if client.get('client_info', {}).get('android_client_info', {}).get('package_name') == 'org.cozyhealth.app']
+    if len(clients) != 1:
+        raise ValueError('Expected exactly one production Android registration')
+    client = clients[0]
+    if client['client_info'].get('mobilesdk_app_id') != '1:398026710363:android:1da10014dbd344477d4e7e':
+        raise ValueError('Production Firebase app identity differs from the registered app')
+    server_clients = {oauth.get('client_id') for oauth in client.get('oauth_client', [])
+                      if oauth.get('client_type') == 3}
+    if len(server_clients) != 1:
+        raise ValueError('Production Google sign-in requires one configured server OAuth client')
+    server_client = server_clients.pop()
+    if not isinstance(server_client, str) or not server_client.startswith('398026710363-') or not server_client.endswith('.apps.googleusercontent.com'):
+        raise ValueError('Server OAuth client must belong to the production project')
+    api_key = client.get('api_key', [{}])[0].get('current_key')
+    if not isinstance(api_key, str) or not api_key:
+        raise ValueError('Production Firebase API key is missing')
+    dsn = os.environ.get('SENTRY_DSN_PRODUCTION', '').strip()
+    parsed = urlparse(dsn)
+    if (parsed.scheme != 'https' or parsed.hostname != 'o4512334056128512.ingest.de.sentry.io'
+            or parsed.path != '/4512362638147664' or not parsed.username
+            or parsed.password or parsed.query or parsed.fragment or parsed.port):
+        raise ValueError('Expected the existing converted production mobile Sentry project')
+    analytics_key = os.environ.get('POSTHOG_KEY_PRODUCTION', '').strip()
+    if analytics_key and (not analytics_key.startswith('phc_') or any(c.isspace() for c in analytics_key)):
+        raise ValueError('Production analytics project key is invalid')
+    android = {'apiKey': api_key, 'appId': client['client_info']['mobilesdk_app_id'],
+               'messagingSenderId': str(info['project_number']), 'projectId': info['project_id']}
+    defines = {'COZY_ENVIRONMENT': 'production', 'INTERNAL_TEST_BUILD': 'false', 'COZY_DEMO': 'false',
+               'PLAY_DEVELOPMENT_BUILD': 'false', 'FIREBASE_OPTIONS': json.dumps({'android': android}),
+               'GOOGLE_CLIENT_ID': server_client, 'SENTRY_DSN': dsn, 'TELEMETRY_ENVIRONMENT': 'production',
+               'PRODUCTION_TELEMETRY_ENABLED': 'true', 'POSTHOG_KEY': analytics_key,
+               'POSTHOG_HOST': 'https://us.i.posthog.com'}
+    config['client'] = [client]
+    Path('android/app/google-services.json').write_text(json.dumps(config))
+    Path('push-defines.json').write_text(json.dumps(defines))
+    print('Production Android registration, OAuth and reporting configuration verified.')
+
+
+target = os.environ.get('COZY_BUILD_TARGET', 'development')
+if target == 'production-android':
+    prepare_production_android()
+    sys.exit(0)
+if target != 'development':
+    raise ValueError('Unsupported build configuration target')
+
 raw = os.environ.get('FIREBASE_OPTIONS_JSON', '')
 defines = {'FIREBASE_OPTIONS': ''}
 google_xcconfig = Path('ios/Flutter/GoogleDevelopment.generated.xcconfig')
