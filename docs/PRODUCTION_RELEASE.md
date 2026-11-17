@@ -16,8 +16,10 @@ installed app: the signed binary must be released through its store.
    configuration after adding the upload certificate and Play App Signing
    certificate. Configure the API's Google token audience from the actual
    production web/server OAuth client. Record actual sign-in and push receipt.
-4. Run `Build Android Production Candidate` with an unused positive Android
-   version code. Its shared configuration tool selects the registered Firebase
+4. The release PR runs `Build Android Production Candidate` for branches in this
+   repository, using the workflow run number as its Android version code. After
+   merge, manual dispatch accepts an unused positive version code for later
+   releases. Its shared configuration tool selects the registered Firebase
    app, requires its server OAuth client and uses the converted production
    Sentry project. Credentials come from repository secrets. The workflow runs
    tooling tests, analyzer and full widget tests, then verifies the upload key,

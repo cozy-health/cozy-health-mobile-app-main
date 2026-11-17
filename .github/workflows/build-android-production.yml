@@ -1,6 +1,8 @@
 name: Build Android Production Candidate
 
 on:
+  pull_request:
+    branches: [main]
   workflow_dispatch:
     inputs:
       build_number:
@@ -13,6 +15,7 @@ permissions:
 
 jobs:
   production-android:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     env:
@@ -36,7 +39,7 @@ jobs:
           PRODUCTION_ANDROID_FIREBASE_JSON: ${{ secrets.PRODUCTION_ANDROID_FIREBASE_JSON }}
           SENTRY_DSN_PRODUCTION: ${{ secrets.SENTRY_DSN_PRODUCTION }}
           POSTHOG_KEY_PRODUCTION: ${{ secrets.POSTHOG_KEY_PRODUCTION }}
-          VERSION_CODE: ${{ inputs.build_number }}
+          VERSION_CODE: ${{ inputs.build_number || github.run_number }}
         run: |
           python3 -m unittest discover -s tool/tests
           python3 - <<'PY'
@@ -70,12 +73,12 @@ jobs:
           PY
       - name: Build signed production bundle
         env:
-          VERSION_CODE: ${{ inputs.build_number }}
+          VERSION_CODE: ${{ inputs.build_number || github.run_number }}
         run: flutter build appbundle --release --build-number="$VERSION_CODE" --dart-define-from-file=push-defines.json --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
       - name: Verify bundle signature, package and recorded identity
         env:
           EXPECTED_CERT: ${{ vars.PRODUCTION_ANDROID_UPLOAD_SHA256 }}
-          VERSION_CODE: ${{ inputs.build_number }}
+          VERSION_CODE: ${{ inputs.build_number || github.run_number }}
         run: |
           python3 tool/verify_native_pages.py build/app/outputs/bundle/release/app-release.aab
           jarsigner -verify build/app/outputs/bundle/release/app-release.aab
