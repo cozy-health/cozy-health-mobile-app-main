@@ -1,0 +1,257 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
+import '../../data/content_repository.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../widgets/article_card_compact.dart';
+
+class ContentSearchScreen extends StatefulWidget {
+  const ContentSearchScreen({super.key});
+
+  @override
+  State<ContentSearchScreen> createState() => _ContentSearchScreenState();
+}
+
+class _ContentSearchScreenState extends State<ContentSearchScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_focusChanged);
+    // Auto-focus on load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() {
+      _query = value;
+    });
+  }
+
+  void _focusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Search Bar
+              Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(24),
+                  border: _focusNode.hasFocus
+                      ? Border.all(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 2,
+                        )
+                      : AppSurface.border(context),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.search,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _focusNode,
+                        onChanged: _onSearchChanged,
+                        decoration: InputDecoration(
+                          hintText: 'Search library...',
+                          hintStyle: AppTextStyles.body1.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                    if (_query.isNotEmpty)
+                      IconButton(
+                        tooltip: 'Clear search',
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged('');
+                        },
+                        icon: Icon(
+                          Icons.close,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          size: 20,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              Expanded(
+                child: _query.isEmpty ? _buildSuggestions() : _buildResults(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestions() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Recent searches',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildChip('anxiety'),
+              _buildChip('sleep'),
+              _buildChip('breathe'),
+            ],
+          ),
+          const SizedBox(height: 32),
+          Text('Popular', style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildChip('self'),
+              _buildChip('rest'),
+              _buildChip('work'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChip(String label) {
+    return GestureDetector(
+      onTap: () {
+        _searchController.text = label;
+        _onSearchChanged(label);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: AppSurface.border(context),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.body1.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResults() {
+    final queryLower = _query.toLowerCase();
+
+    // Very basic mock search
+    final allArticles = ContentRepository().usePlaceholderData
+        ? ContentRepository().catalog
+              .map((a) => {...a, 'meta': "${a['category']} ? ${a['readTime']}"})
+              .toList()
+        : [
+            {
+              'title': 'What Anxiety Actually Is',
+              'meta': 'Anxiety · 5 min read',
+            },
+            {
+              'title': 'The 5-4-3-2-1 Grounding Technique',
+              'meta': 'Anxiety · 4 min read',
+            },
+            {'title': 'Why Sleep Affects Mood', 'meta': 'Sleep · 4 min read'},
+            {
+              'title': 'It\'s Okay to Rest',
+              'meta': 'Self-compassion · 3 min read',
+            },
+          ];
+
+    final results = allArticles
+        .where(
+          (a) =>
+              a['title']!.toLowerCase().contains(queryLower) ||
+              a['meta']!.toLowerCase().contains(queryLower),
+        )
+        .toList();
+
+    if (results.isEmpty) {
+      return Center(
+        child: Text(
+          'No articles match "$_query"',
+          style: AppTextStyles.body1.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: results.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final article = results[index];
+        return ArticleCardCompact(
+          title: article['title']!,
+          metadata: article['meta']!,
+          onTap: () {
+            context.push(AppRouter.articleDetail, extra: article);
+          },
+        );
+      },
+    );
+  }
+}

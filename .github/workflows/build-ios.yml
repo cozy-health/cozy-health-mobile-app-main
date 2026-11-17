@@ -1,0 +1,153 @@
+name: Build iOS Internal Test IPA
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    if: github.ref == 'refs/heads/develop' || github.event_name == 'pull_request'
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Firebase-compatible Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+
+      - name: Record build identity
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          identity = {key: os.environ[key] for key in (
+              'GITHUB_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_NUMBER', 'GITHUB_REF_NAME')}
+          identity['INTERNAL_TEST_BUILD'] = True
+          Path('build-info.json').write_text(json.dumps(identity, indent=2) + '\n')
+          PY
+          echo "Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Build number: $GITHUB_RUN_NUMBER" >> "$GITHUB_STEP_SUMMARY"
+          echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "Internal sideload build: standard HTTPS certificate validation; not a production release." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.47.8'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Prepare development Firebase configuration
+        env:
+          FIREBASE_OPTIONS_JSON: ${{ secrets.FIREBASE_OPTIONS_DEV_JSON }}
+          SENTRY_DSN_DEV: ${{ secrets.SENTRY_DSN_DEV }}
+          POSTHOG_KEY_DEV: ${{ secrets.POSTHOG_KEY_DEV }}
+          # cozy-health-dev-2026; never inherit the old backend's production sender.
+          EXPECTED_FIREBASE_PROJECT_SHA256: 64526e360071c454724b58a1a9aedaba5b001bf49948fcb1da84bc4a6302ec8b
+        run: |
+          python3 -m unittest discover -s tool/tests
+          python3 - <<'PY'
+          import hashlib, json, os
+          raw = os.environ.get('FIREBASE_OPTIONS_JSON', '')
+          if not raw.strip():
+              raise RuntimeError('Development Firebase configuration is required')
+          options = json.loads(raw)
+          for platform in ('android', 'ios'):
+              project = options[platform]['projectId']
+              if hashlib.sha256(project.encode()).hexdigest() != os.environ['EXPECTED_FIREBASE_PROJECT_SHA256']:
+                  raise RuntimeError('Firebase client does not match the approved development project')
+          print('Development Firebase project verified; no credential values logged.')
+          PY
+          python3 tool/prepare_push_config.py
+
+      - name: Run analyzer
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run tests
+        run: flutter test --dart-define=INTERNAL_TEST_BUILD=true
+
+      - name: Verify internal release API connection
+        run: flutter test test/core/internal_build_api_smoke_test.dart --dart-define=INTERNAL_TEST_BUILD=true --dart-define=API_SMOKE_TEST=true
+
+      - name: Build iOS (no codesign)
+        run: |
+          xcodebuild -version
+          flutter build ipa --release --no-codesign --build-number="$GITHUB_RUN_NUMBER" --dart-define-from-file=push-defines.json --dart-define=IOS_PUSH_ENABLED=false --dart-define=INTERNAL_TEST_BUILD=true --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
+
+      - name: Verify avatar assets and iOS plugin setup
+        run: |
+          python3 - <<'PY'
+          import plistlib
+          from pathlib import Path
+          app = Path('build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app')
+          with (app / 'Info.plist').open('rb') as stream:
+              info = plistlib.load(stream)
+          import json
+          defines = json.loads(Path('push-defines.json').read_text())
+          ios_client = defines['GOOGLE_IOS_CLIENT_ID']
+          callback = '.'.join(reversed(ios_client.split('.')))
+          schemes = [scheme for entry in info.get('CFBundleURLTypes', []) for scheme in entry.get('CFBundleURLSchemes', [])]
+          assert info['CFBundleIdentifier'] == 'com.example.cozyHealth', 'Unexpected Google iOS bundle ID'
+          assert callback in schemes, 'Missing packaged Google callback scheme'
+          native_google = plistlib.loads((app / 'GoogleService-Info.plist').read_bytes())
+          assert native_google['CLIENT_ID'] == ios_client, 'Packaged Google client mismatch'
+          assert native_google['REVERSED_CLIENT_ID'] == callback, 'Packaged Google callback mismatch'
+          print('Verified development Google iOS client, bundle ID and callback scheme.')
+          for key in ('NSCameraUsageDescription', 'NSPhotoLibraryUsageDescription'):
+              assert info.get(key), f'Missing {key}'
+          assets = app / 'Frameworks/App.framework/flutter_assets/assets/avatars/open_peeps'
+          for index in range(1, 25):
+              avatar = assets / f'open-peeps-{index:02d}.svg'
+              assert avatar.is_file() and avatar.stat().st_size > 0, f'Missing avatar: {avatar.name}'
+          lock = Path('ios/Podfile.lock').read_text()
+          registration = Path('ios/Runner/GeneratedPluginRegistrant.m').read_text()
+          for plugin, symbol in (('image_cropper', 'FLTImageCropperPlugin'), ('image_picker_ios', 'FLTImagePickerPlugin'), ('shared_preferences_foundation', 'SharedPreferencesPlugin')):
+              assert plugin in lock and f'[{symbol} registerWithRegistrar:' in registration, f'Missing plugin: {plugin}'
+          print('Verified 24 avatars, iOS permission descriptions, and native plugin setup.')
+          PY
+      - name: Verify Sentry native SDK version
+        run: |
+          ruby -ryaml -e '
+            pods = YAML.load_file("ios/Podfile.lock").fetch("PODS")
+            names = pods.flat_map { |pod| pod.is_a?(Hash) ? pod.keys : [pod] }
+            expected = "Sentry/HybridSDK (8.46.0)"
+            abort("Expected #{expected}; got #{names.grep(/Sentry/).inspect}") unless names.include?(expected)
+            puts "Verified #{expected}"
+          '
+
+      - name: Package unsigned IPA
+        run: |
+          test -s build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app/cozy_notification.wav
+          mkdir -p Payload
+          cp -R build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app Payload/
+          ditto -c -k --sequesterRsrc --keepParent Payload Runner-unsigned.ipa
+
+      - name: Verify IPA exists
+        run: |
+          ls -lh Runner-unsigned.ipa
+          file Runner-unsigned.ipa
+
+      - name: Record unsigned IPA checksum and app identity
+        run: python3 tool/record_artifact.py --platform ios --artifact Runner-unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-internal-test-ipa-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            Runner-unsigned.ipa
+            build-info.json
+          retention-days: 30
+          if-no-files-found: error

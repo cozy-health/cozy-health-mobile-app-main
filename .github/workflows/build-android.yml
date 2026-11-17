@@ -1,0 +1,111 @@
+name: Build Android Debug APK
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    if: github.ref == 'refs/heads/develop' || github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Record build identity
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          identity = {key: os.environ[key] for key in (
+              'GITHUB_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_NUMBER', 'GITHUB_REF_NAME')}
+          Path('build-info.json').write_text(json.dumps(identity, indent=2) + '\n')
+          PY
+          echo "Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Build number: $GITHUB_RUN_NUMBER" >> "$GITHUB_STEP_SUMMARY"
+          echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.47.8'
+          cache: true
+
+      - name: Install Android SDK components
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Prepare development Firebase configuration
+        env:
+          FIREBASE_OPTIONS_JSON: ${{ secrets.FIREBASE_OPTIONS_DEV_JSON }}
+          SENTRY_DSN_DEV: ${{ secrets.SENTRY_DSN_DEV }}
+          POSTHOG_KEY_DEV: ${{ secrets.POSTHOG_KEY_DEV }}
+          # cozy-health-dev-2026; never inherit the old backend's production sender.
+          EXPECTED_FIREBASE_PROJECT_SHA256: 64526e360071c454724b58a1a9aedaba5b001bf49948fcb1da84bc4a6302ec8b
+        run: |
+          python3 -m unittest discover -s tool/tests
+          python3 - <<'PY'
+          import hashlib, json, os
+          raw = os.environ.get('FIREBASE_OPTIONS_JSON', '')
+          if not raw.strip():
+              raise RuntimeError('Development Firebase configuration is required')
+          options = json.loads(raw)
+          for platform in ('android', 'ios'):
+              project = options[platform]['projectId']
+              if hashlib.sha256(project.encode()).hexdigest() != os.environ['EXPECTED_FIREBASE_PROJECT_SHA256']:
+                  raise RuntimeError('Firebase client does not match the approved development project')
+          print('Development Firebase project verified; no credential values logged.')
+          PY
+          python3 tool/prepare_push_config.py
+
+      - name: Run analyzer
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run tests
+        run: flutter test --dart-define=INTERNAL_TEST_BUILD=true
+
+      - name: Restore approved development signing identity
+        env:
+          COZY_ANDROID_DEVELOPMENT_KEYSTORE: ${{ runner.temp }}/cozy-development.keystore
+          ANDROID_DEVELOPMENT_KEYSTORE_BASE64: ${{ secrets.ANDROID_DEVELOPMENT_KEYSTORE_BASE64 }}
+          ANDROID_DEVELOPMENT_CERT_SHA256: ${{ vars.ANDROID_DEVELOPMENT_CERT_SHA256 }}
+        run: |
+          python3 tool/restore_development_signing.py
+          echo "COZY_ANDROID_DEVELOPMENT_KEYSTORE=$COZY_ANDROID_DEVELOPMENT_KEYSTORE" >> "$GITHUB_ENV"
+
+      - name: Build debug APK
+        run: flutter build apk --debug --build-number="$GITHUB_RUN_NUMBER" --dart-define-from-file=push-defines.json --dart-define=INTERNAL_TEST_BUILD=true --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
+
+      - name: Record APK checksum and certificate
+        env:
+          ANDROID_DEVELOPMENT_CERT_SHA256: ${{ vars.ANDROID_DEVELOPMENT_CERT_SHA256 }}
+        run: python3 tool/record_artifact.py --platform android --artifact build/app/outputs/flutter-apk/app-debug.apk --apksigner "$ANDROID_HOME/build-tools/35.0.0/apksigner" --expected-certificate "$ANDROID_DEVELOPMENT_CERT_SHA256"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            build-info.json
+          if-no-files-found: error
+          retention-days: 30

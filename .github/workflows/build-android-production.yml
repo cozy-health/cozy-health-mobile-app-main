@@ -1,0 +1,119 @@
+name: Build Android Production Candidate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: Android version code for this production candidate
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  production-android:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      COZY_ANDROID_APPLICATION_ID: org.cozyhealth.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.8'
+          cache: true
+      - name: Install Android SDK components
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;35.0.0"
+      - run: flutter pub get
+      - name: Validate tooling and prepare production configuration
+        env:
+          PRODUCTION_ANDROID_FIREBASE_JSON: ${{ secrets.PRODUCTION_ANDROID_FIREBASE_JSON }}
+          SENTRY_DSN_PRODUCTION: ${{ secrets.SENTRY_DSN_PRODUCTION }}
+          POSTHOG_KEY_PRODUCTION: ${{ secrets.POSTHOG_KEY_PRODUCTION }}
+          VERSION_CODE: ${{ inputs.build_number || github.run_number }}
+        run: |
+          python3 -m unittest discover -s tool/tests
+          python3 - <<'PY'
+          import os
+          value = os.environ['VERSION_CODE']
+          assert value.isascii() and value.isdecimal() and 1 <= int(value) <= 2100000000, 'Invalid Android version code'
+          PY
+          COZY_BUILD_TARGET=production-android python3 tool/prepare_push_config.py
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: flutter test --dart-define=INTERNAL_TEST_BUILD=true
+      - name: Restore and verify dedicated production upload key
+        env:
+          UPLOAD_KEY: ${{ secrets.PRODUCTION_ANDROID_KEYSTORE_BASE64 }}
+          UPLOAD_PASSWORD: ${{ secrets.PRODUCTION_ANDROID_STORE_PASSWORD }}
+          EXPECTED_CERT: ${{ vars.PRODUCTION_ANDROID_UPLOAD_SHA256 }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, os, re, subprocess
+          from pathlib import Path
+          key = Path(os.environ['RUNNER_TEMP']) / 'cozy-production-upload.p12'
+          key.write_bytes(base64.b64decode(os.environ['UPLOAD_KEY'], validate=True))
+          key.chmod(0o600)
+          certificate = subprocess.run(['keytool', '-exportcert', '-keystore', str(key), '-alias', 'cozy-production-upload', '-storepass:env', 'UPLOAD_PASSWORD'], check=True, capture_output=True).stdout
+          expected = os.environ['EXPECTED_CERT'].lower()
+          assert re.fullmatch('[a-f0-9]{64}', expected) and hashlib.sha256(certificate).hexdigest() == expected, 'Upload certificate mismatch'
+          password = os.environ['UPLOAD_PASSWORD']
+          assert password and re.fullmatch('[A-Za-z0-9_-]+', password), 'Invalid upload password encoding'
+          properties = Path('android/key.properties')
+          properties.write_text(f'storeFile={key}\nstorePassword={password}\nkeyAlias=cozy-production-upload\nkeyPassword={password}\n')
+          properties.chmod(0o600)
+          PY
+      - name: Build signed production bundle
+        env:
+          VERSION_CODE: ${{ inputs.build_number || github.run_number }}
+        run: flutter build appbundle --release --build-number="$VERSION_CODE" --dart-define-from-file=push-defines.json --dart-define="BUILD_SHA=$GITHUB_SHA" --dart-define="BUILD_RUN_ID=$GITHUB_RUN_ID"
+      - name: Verify bundle signature, package and recorded identity
+        env:
+          EXPECTED_CERT: ${{ vars.PRODUCTION_ANDROID_UPLOAD_SHA256 }}
+          VERSION_CODE: ${{ inputs.build_number || github.run_number }}
+        run: |
+          python3 tool/verify_native_pages.py build/app/outputs/bundle/release/app-release.aab
+          jarsigner -verify build/app/outputs/bundle/release/app-release.aab
+          python3 - <<'PY'
+          import base64, hashlib, json, os, re, subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          bundle = Path('build/app/outputs/bundle/release/app-release.aab')
+          certificate = subprocess.run(['keytool', '-printcert', '-jarfile', str(bundle), '-rfc'], check=True, capture_output=True, text=True).stdout
+          matches = re.findall(r'-----BEGIN CERTIFICATE-----\s*(.*?)\s*-----END CERTIFICATE-----', certificate, re.S)
+          assert len(matches) == 1, 'Expected exactly one upload certificate'
+          digest = hashlib.sha256(base64.b64decode(re.sub(r'\s', '', matches[0]))).hexdigest()
+          assert digest == os.environ['EXPECTED_CERT'].lower(), 'Signed bundle certificate mismatch'
+          manifests = list(Path('build/app/intermediates').glob('merged_manifests/release/**/AndroidManifest.xml'))
+          assert manifests, 'Missing merged release manifest'
+          for manifest in manifests:
+              root = ET.parse(manifest).getroot()
+              assert root.attrib['package'] == 'org.cozyhealth.app'
+              assert root.attrib['{http://schemas.android.com/apk/res/android}versionCode'] == os.environ['VERSION_CODE']
+              assert root.find('application').attrib.get('{http://schemas.android.com/apk/res/android}debuggable', 'false') == 'false'
+              invitation_hosts = [node.attrib.get('{http://schemas.android.com/apk/res/android}host') for node in root.findall('.//intent-filter/data') if node.attrib.get('{http://schemas.android.com/apk/res/android}pathPrefix') == '/quiz-invite/']
+              assert invitation_hosts == ['api.cozyhealth.org'], 'Invitation links must use the production API'
+          defines = json.loads(Path('push-defines.json').read_text())
+          assert defines['COZY_ENVIRONMENT'] == 'production' and defines['INTERNAL_TEST_BUILD'] == 'false'
+          identity = dict(commit=os.environ['GITHUB_SHA'], run=os.environ['GITHUB_RUN_ID'], version_code=os.environ['VERSION_CODE'], package='org.cozyhealth.app', environment='production', upload_certificate_sha256=digest, sha256=hashlib.sha256(bundle.read_bytes()).hexdigest(), play_install_acceptance='pending')
+          Path('production-build-info.json').write_text(json.dumps(identity, indent=2) + '\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-production-aab-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            build/app/outputs/bundle/release/app-release.aab
+            production-build-info.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove restored signing material
+        if: always()
+        run: rm -f "$RUNNER_TEMP/cozy-production-upload.p12" android/key.properties

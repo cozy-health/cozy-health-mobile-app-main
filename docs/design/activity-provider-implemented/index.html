@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CozyHealth — implementation & next designs</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f1f0ed;color:#242424;font:16px/1.5 system-ui,sans-serif}main{max-width:1240px;margin:auto;padding:32px 24px 80px}h1{font-size:32px;line-height:1.15;letter-spacing:-1px;margin:8px 0 12px}h2{font-size:24px;letter-spacing:-.5px}p{max-width:850px}a{color:#0756aa;text-underline-offset:3px}small{color:#555}nav{display:flex;gap:16px;flex-wrap:wrap;margin:24px 0}section{padding:24px 0;border-top:1px solid #ccc}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;align-items:start}figure{margin:0;max-width:390px}figcaption{margin:0 0 12px;font-weight:600}img{width:100%;height:auto;display:block;border:1px solid #bbb;border-radius:20px;background:#fff}.note{padding:16px 20px;border:1px solid #ccc;border-radius:16px;background:#fff}.controls{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0 24px}label{display:grid;gap:6px;font-size:14px}select{font:inherit;padding:12px;border:1px solid #777;border-radius:10px;background:#fff;color:#242424;min-width:140px}@media(max-width:600px){main{padding:24px 16px}h1{font-size:28px}.grid{grid-template-columns:1fr}figure{max-width:100%}}
+</style>
+<main>
+<small>COZYHEALTH · DEVELOPMENT REVIEW · 23 OCTOBER 2026</small>
+<h1>Activity & Provider, then Profile & Community</h1>
+<p class="note"><strong>Implemented:</strong> Activity and Provider, using the approved layouts and your original article illustrations.<br><strong>For approval:</strong> Profile, Community Posts, Groups and public member profile. Their production screens have not been restyled.</p>
+<p>All images are Flutter renders with real Outfit fonts. The screenshots use synthetic data and local API doubles. Article cards in development load published content; these sample titles do not publish or create new articles. Click an image for the full-resolution PNG.</p>
+<nav><a href="#implemented">Implemented screens</a><a href="#proposals">Profile & Community proposals</a><a href="#more">Groups & public profile</a><a href="#themes">All themes</a><a href="#large">Large text</a><a href="README.md">Implementation notes</a><a href="../profile-community-two-pass-review.md">Next-phase review</a></nav>
+<section id="implemented"><h2>Implemented Activity & Provider</h2><div class="grid" id="implemented-grid"></div></section>
+<section><h2>Your original recommended illustrations</h2><p>The four distinct illustrations below were exported from your SVG without changing their colours. The complete Activity screenshots above show them in the actual cards. Small light illustration plates keep the original clock hands and lettering readable in dark mode; outer cards follow the selected accent.</p><div class="grid" id="articles-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))"></div></section>
+<section id="proposals"><h2>Profile & Community — proposals for approval</h2><p>Own profile keeps personal check-in statistics in the private account view. Community has one creation action, clearer Posts/Groups navigation and visible moderation controls. Names, bios, counts and posts below are sample content.</p><div class="grid" id="proposal-grid"></div></section>
+<section id="more"><h2>Groups & public member profile — proposals</h2><p>Public member views show non-anonymous public posts, without personal wellness statistics. Group screens use existing discovery and membership concepts.</p><div class="grid" id="more-grid"></div></section>
+<section><h2>Implemented Provider views</h2><div class="grid" id="provider-grid"></div></section>
+<section id="themes"><h2>Compare all app themes</h2><div class="controls">
+<label>Appearance<select id="mode"><option value="light">Light</option><option value="dark">Dark</option></select></label>
+<label>Accent<select id="accent"><option value="blue">Blue</option><option value="green">Green</option><option value="orange">Orange</option><option value="yellow">Yellow</option></select></label>
+<label>Contrast<select id="contrast"><option value="">Standard</option><option value="-contrast">High contrast</option></select></label>
+</div><div class="grid" id="theme-grid"></div></section>
+<section id="large"><h2>Large text & keyboard</h2><p>320 px width, 200% text and dark high contrast. The landscape capture reserves the operating system’s keyboard space; the system keyboard itself is not drawn by a Flutter widget test.</p><div class="grid" id="large-grid"></div><p><a href="provider-landscape-keyboard.png">Open full landscape keyboard capture</a></p></section>
+<script>
+const figure=(file,title)=>{const f=document.createElement('figure');const cap=document.createElement('figcaption');cap.textContent=title;const a=document.createElement('a');a.href=file+'.png';const img=document.createElement('img');img.src=a.href;img.alt=title;img.loading='lazy';a.append(img);f.append(cap,a);return f;};
+function add(id,rows){for(const [file,title] of rows)document.querySelector(id).append(figure(file,title));}
+add('#implemented-grid',[['activity-light-blue-full','Activity · complete page · light'],['activity-dark-blue-full','Activity · complete page · dark'],['provider-light-blue','Provider · Messages · light']]);
+add('#articles-grid',[['../../../assets/png/recommended_anxiety','Mental Health 101'],['../../../assets/png/recommended_burnout','Productivity & burnout'],['../../../assets/png/recommended_wellbeing','Diet, exercise & mental health'],['../../../assets/png/recommended_gratitude','Gratitude']]);
+add('#proposal-grid',[['proposal-profile-light-full','Own profile · full design · light'],['proposal-community-light-full','Community Posts · full design · light'],['proposal-community-dark-full','Community Posts · full design · dark']]);
+add('#more-grid',[['proposal-groups-light-full','Groups · full design'],['proposal-member-light-full','Public member profile · full design'],['proposal-profile-dark-full','Own profile · dark']]);
+add('#provider-grid',[['provider-dark-blue','Messages · dark'],['provider-history-light','Shared history'],['provider-resources-light','Resources']]);
+function themes(){const root=document.querySelector('#theme-grid');root.replaceChildren();for(const [file,title] of [['activity','Activity'],['provider','Provider']])root.append(figure(file+'-'+document.querySelector('#mode').value+'-'+document.querySelector('#accent').value+document.querySelector('#contrast').value,title));}
+for(const id of ['#mode','#accent','#contrast'])document.querySelector(id).addEventListener('change',themes);themes();
+add('#large-grid',[['activity-large-contrast','Activity · large text'],['provider-large-contrast','Provider · large text'],['profile-large-contrast','Profile proposal · large text'],['community-large-contrast','Community proposal · large text'],['groups-large-contrast','Groups proposal · large text'],['member-large-contrast','Public profile proposal · large text']]);
+</script></main></html>

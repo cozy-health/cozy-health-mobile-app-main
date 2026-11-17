@@ -1,696 +1,535 @@
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../../core/network/api_client.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../utils/responsive_extensions.dart';
-import '../../data/activity_service.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' show DateFormat;
+import '../../../../core/models/journal_entry.dart';
+import '../../../../core/models/mood_entry.dart';
+import '../../../../core/repositories/journal_repository.dart';
+import '../../../../core/repositories/mood_repository.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import '../../../content/presentation/widgets/recommended_article_grid.dart';
+import '../../../content/data/published_articles_repository.dart';
+import '../../data/activity_summary.dart';
 
 class ActivityScreen extends StatefulWidget {
-  const ActivityScreen({super.key});
-
+  const ActivityScreen({super.key, this.articlesRepository});
+  final PublishedArticlesRepository? articlesRepository;
   @override
   State<ActivityScreen> createState() => _ActivityScreenState();
 }
 
 class _ActivityScreenState extends State<ActivityScreen> {
-  final ActivityService _activityService = ActivityService();
-
-  bool _loading = true;
-  String? _error;
-
-  Map<String, dynamic> _overview = {};
-  List<dynamic> _chart = [];
-  List<dynamic> _triggers = [];
-  Map<String, dynamic> _journalStats = {};
-  List<dynamic> _recommendations = [];
-
+  late Stream<List<MoodEntry>> _moods;
+  late Stream<List<JournalEntry>> _journals;
+  int _period = 0;
+  bool _showData = false;
+  final _days = const [7, 30, 90, 365];
   @override
   void initState() {
     super.initState();
-    _loadActivity();
+    _watch();
   }
 
-  Future<void> _loadActivity() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      final results = await Future.wait([
-        _activityService.getOverview(),
-        _activityService.getMoodChart(days: 7),
-        _activityService.getCommonTriggers(),
-        _activityService.getJournalStats(),
-        _activityService.getRecommendations(),
-      ]);
-
-      setState(() {
-        _overview = results[0]['overview'] as Map<String, dynamic>? ?? {};
-        _chart = results[1]['chart'] as List<dynamic>? ?? [];
-        _triggers = results[2]['triggers'] as List<dynamic>? ?? [];
-        _journalStats = results[3]['stats'] as Map<String, dynamic>? ?? {};
-        _recommendations =
-            results[4]['recommendations'] as List<dynamic>? ?? [];
-      });
-    } on ApiException catch (e) {
-      setState(() => _error = e.message);
-    } catch (_) {
-      setState(() => _error = 'Unable to load activity data.');
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+  void _watch() {
+    _moods = MoodRepository().watchMoodEntries();
+    _journals = JournalRepository().watchJournalEntries();
   }
 
-  String get _weeklyMood {
-    if (_chart.isEmpty) return 'No data yet';
-
-    final latest = _chart.firstWhere(
-      (item) => item is Map && item['feeling'] != null,
-      orElse: () => null,
-    );
-
-    if (latest is Map && latest['feeling'] != null) {
-      return latest['feeling'].toString();
-    }
-
-    return 'Tracked';
-  }
-
+  String _range(DateTime a, DateTime b) =>
+      '${DateFormat('d MMM').format(a)}–${DateFormat('d MMM y').format(activityDateOffset(b, -1))}';
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        title: Text('Your activity', style: AppTextStyles.heading2),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_today, color: AppColors.primary),
-            onPressed: _loadActivity,
-          ),
-        ],
+    final w = context.cozyColors.wellness,
+        t = Theme.of(context),
+        c = t.colorScheme;
+    Widget heading(String label) => Padding(
+      padding: EdgeInsets.only(top: w.sectionSpacing, bottom: w.contentGap),
+      child: Text(
+        label,
+        style: t.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(6.w),
-                    child: Text(
-                      _error!,
-                      style: AppTextStyles.body1.copyWith(color: Colors.red),
-                      textAlign: TextAlign.center,
+    );
+    return Scaffold(
+      backgroundColor: w.canvas(
+        t.brightness,
+        MediaQuery.highContrastOf(context),
+      ),
+      body: SafeArea(
+        child: StreamBuilder<List<MoodEntry>>(
+          stream: _moods,
+          builder: (context, moods) => StreamBuilder<List<JournalEntry>>(
+            stream: _journals,
+            builder: (context, journals) {
+              final loading =
+                  (moods.connectionState == ConnectionState.waiting &&
+                      !moods.hasData) ||
+                  (journals.connectionState == ConnectionState.waiting &&
+                      !journals.hasData);
+              final s = ActivitySummary(
+                moods: moods.data ?? [],
+                journals: journals.data ?? [],
+                days: _days[_period],
+                now: DateTime.now(),
+              );
+              return ListView(
+                padding: EdgeInsets.fromLTRB(
+                  w.page,
+                  w.contentGap,
+                  w.page,
+                  wellnessFloatingClearance(context),
+                ),
+                children: [
+                  Text(
+                    'Your activity',
+                    style: t.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadActivity,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.symmetric(horizontal: 6.w),
+                  SizedBox(height: w.tight),
+                  Text(
+                    'A little perspective on your activity.',
+                    style: t.textTheme.bodyMedium,
+                  ),
+                  SizedBox(height: w.sectionSpacing),
+                  WellnessSegments(
+                    labels: const ['Week', 'Month', '3 Months', 'Year'],
+                    selected: _period,
+                    onSelected: (i) => setState(() => _period = i),
+                    keyPrefix: 'activity-period',
+                  ),
+                  SizedBox(height: w.contentGap),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _range(s.start, s.end),
+                          style: t.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      AppPressable(
+                        label: 'Open mood history',
+                        onPressed: () => context.push(AppRouter.moodHistory),
+                        child: SizedBox(
+                          width: w.touch,
+                          height: w.touch,
+                          child: const Icon(
+                            Icons.calendar_today_outlined,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (loading)
+                    const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: ScreenSkeleton(),
+                    ),
+                  if (moods.hasError || journals.hasError) ...[
+                    WellnessPanel(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Some activity could not be loaded. Available records are shown below.',
+                          ),
+                          WellnessAction(
+                            label: 'Retry activity',
+                            onPressed: () => setState(_watch),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: w.contentGap),
+                  ],
+                  WellnessPanel(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        3.sh,
-
-                        SizedBox(
-                          width: double.infinity,
-                          child: Container(
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: AppColors.lightGrey,
-                              borderRadius: BorderRadius.circular(30),
+                        Text(
+                          'AVERAGE INTENSITY',
+                          style: t.textTheme.labelMedium,
+                        ),
+                        SizedBox(height: w.small),
+                        Wrap(
+                          spacing: w.small,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              s.average?.toStringAsFixed(1) ?? '—',
+                              style: t.textTheme.displaySmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                            child: Row(
-                              children: [
-                                Expanded(child: _buildTab('Week', true)),
-                                Expanded(child: _buildTab('Month', false)),
-                                Expanded(child: _buildTab('3 Months', false)),
-                                Expanded(child: _buildTab('Year', false)),
-                              ],
-                            ),
+                            const Text('/ 5'),
+                          ],
+                        ),
+                        Text(
+                          _comparison(s),
+                          style: t.textTheme.bodyMedium?.copyWith(
+                            color: c.onSurfaceVariant,
                           ),
                         ),
-
-                        5.sh,
-
-                        _buildOverviewCard(),
-
-                        5.sh,
-
-                        _buildMoodCard(),
-
-                        5.sh,
-
-                        Text('General Insights', style: AppTextStyles.heading2),
-
-                        3.sh,
-
-                        _buildInsightCard(
-                          title: 'Cozy Calendar',
-                          subtitle:
-                              'Collected from the app openings and mood check-ins',
-                          content: _buildCalendarDots(),
-                          onViewLog: () {},
-                        ),
-
-                        4.sh,
-
-                        _buildInsightCard(
-                          title: 'Writing',
-                          subtitle: 'Days when you wrote',
-                          content: _buildWritingDots(),
-                          onViewLog: () {},
-                        ),
-
-                        4.sh,
-
-                        _buildTriggersCard(),
-
-                        6.sh,
-
+                        SizedBox(height: w.gap),
+                        if (s.average != null || s.previousAverage != null) ...[
+                          Semantics(
+                            label:
+                                'Intensity from 1 to 5. Current ${s.average?.toStringAsFixed(1) ?? 'no data'}, previous ${s.previousAverage?.toStringAsFixed(1) ?? 'no data'}. Open chart data for individual values.',
+                            child: ExcludeSemantics(
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: 180,
+                                child: CustomPaint(
+                                  painter: _IntensityChart(
+                                    s,
+                                    c,
+                                    t.textTheme.bodySmall,
+                                    MediaQuery.textScalerOf(context),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: w.contentGap),
+                          Wrap(
+                            spacing: w.gap,
+                            runSpacing: w.small,
+                            children: [
+                              _legend('This period', false),
+                              _legend('Previous period', true),
+                            ],
+                          ),
+                          SizedBox(height: w.small),
+                          Text(
+                            'Compared with ${_range(activityDateOffset(s.start, -s.days), s.start)}',
+                            style: t.textTheme.bodySmall,
+                          ),
+                          WellnessAction(
+                            label: _showData
+                                ? 'Hide chart data'
+                                : 'View chart data',
+                            onPressed: () =>
+                                setState(() => _showData = !_showData),
+                          ),
+                          if (_showData)
+                            ...s.buckets.map(
+                              (b) => Padding(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: w.small,
+                                ),
+                                child: Text(
+                                  '${DateFormat('d MMM').format(b.start)}–${DateFormat('d MMM').format(activityDateOffset(b.end, -1))}: ${b.current?.toStringAsFixed(1) ?? 'No check-in'}; previous ${b.previous?.toStringAsFixed(1) ?? 'No check-in'}',
+                                ),
+                              ),
+                            ),
+                        ],
                         Text(
-                          'Recommended for you',
-                          style: AppTextStyles.heading2,
+                          'Intensity measures strength, from 1 to 5. Gaps mean no check-in.',
+                          style: t.textTheme.bodySmall,
                         ),
-
-                        3.sh,
-
-                        _buildRecommendations(),
-
-                        12.sh,
+                        if (!loading && s.average == null) ...[
+                          SizedBox(height: w.contentGap),
+                          WellnessAction(
+                            label: 'Record a check-in',
+                            onPressed: () =>
+                                context.push(AppRouter.moodFeeling),
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                ),
-    );
-  }
-
-  Widget _buildOverviewCard() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(5.w),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F5FA),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Wrap(
-        spacing: 5.w,
-        runSpacing: 2.h,
-        children: [
-          _overviewItem(
-            'Check-ins',
-            _overview['mood_checkins']?.toString() ?? '0',
-          ),
-          _overviewItem(
-            'Journals',
-            _overview['journals']?.toString() ?? '0',
-          ),
-          _overviewItem(
-            'Coping',
-            _overview['coping_actions']?.toString() ?? '0',
-          ),
-          _overviewItem(
-            'Streak',
-            '${_overview['current_streak'] ?? 0} days',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _overviewItem(String label, String value) {
-    return SizedBox(
-      width: 35.w,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            value,
-            style: AppTextStyles.heading2.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          0.8.sh,
-          Text(
-            label,
-            style: AppTextStyles.body2.copyWith(color: AppColors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMoodCard() {
-    return Container(
-      padding: EdgeInsets.all(5.w),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 6,
-            children: [
-              Text(
-                'Mood for the week:',
-                style: AppTextStyles.heading2.copyWith(fontSize: 18),
-              ),
-              const Text('😊', style: TextStyle(fontSize: 24)),
-              Text(
-                _weeklyMood,
-                style: AppTextStyles.heading2.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-
-          4.sh,
-
-          SizedBox(
-            height: 180,
-            child: CustomPaint(
-              size: const Size(double.infinity, 180),
-              painter: MoodLineChartPainter(chart: _chart),
-            ),
-          ),
-
-          2.sh,
-
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 6.w,
-            runSpacing: 1.h,
-            children: [
-              _buildLegend('This week', AppColors.primary),
-              _buildLegend('Previous week', const Color(0xFF9BE6A6)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTriggersCard() {
-    return Container(
-      padding: EdgeInsets.all(5.w),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text('Common Triggers', style: AppTextStyles.heading2),
-              TextButton(
-                onPressed: () {},
-                child: Text('Details', style: AppTextStyles.linkText),
-              ),
-            ],
-          ),
-
-          4.sh,
-
-          if (_triggers.isEmpty)
-            Text(
-              'No triggers recorded yet.',
-              style: AppTextStyles.body2.copyWith(color: AppColors.grey),
-            )
-          else
-            ..._triggers.map((item) {
-              final trigger = item as Map<String, dynamic>;
-              final name = trigger['name']?.toString() ?? 'Unknown';
-              final percentage = trigger['percentage']?.toString() ?? '0';
-
-              return Padding(
-                padding: EdgeInsets.only(bottom: 3.h),
-                child: _buildTriggerItem(
-                  name,
-                  '$percentage%',
-                  _impactLabel(int.tryParse(percentage) ?? 0),
-                  _impactColor(int.tryParse(percentage) ?? 0),
-                ),
+                  heading('Your check-in rhythm'),
+                  WellnessPanel(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${s.checkedDays.length} of 7 days checked in',
+                          style: t.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: w.contentGap),
+                        Row(
+                          children: [
+                            for (final day in s.rhythmDates)
+                              Expanded(
+                                child: Semantics(
+                                  label:
+                                      '${DateFormat.yMMMMd().format(day)}: ${s.checkedDays.contains(day) ? 'checked in' : 'no check-in'}',
+                                  child: ExcludeSemantics(
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          DateFormat('EEEEE').format(day),
+                                          style: t.textTheme.labelSmall,
+                                        ),
+                                        SizedBox(height: w.small),
+                                        Container(
+                                          width: 28,
+                                          height: 28,
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: s.checkedDays.contains(day)
+                                                ? w.accentPanel(c)
+                                                : c.surface,
+                                            border: Border.all(
+                                              color: day == s.today
+                                                  ? c.onSurface
+                                                  : c.outlineVariant,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            s.checkedDays.contains(day)
+                                                ? Icons.check_rounded
+                                                : Icons.remove_rounded,
+                                            size: 16,
+                                          ),
+                                        ),
+                                        SizedBox(height: w.tight),
+                                        Text(
+                                          '${day.day}',
+                                          style: t.textTheme.labelSmall,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        SizedBox(height: w.contentGap),
+                        WellnessAction(
+                          label: 'View mood log',
+                          onPressed: () => context.push(AppRouter.moodHistory),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: w.contentGap),
+                  AppPressable(
+                    label:
+                        'Open journal, current writing streak ${s.writingStreak} days',
+                    onPressed: () => context.push(AppRouter.journal),
+                    child: WellnessPanel(
+                      tinted: true,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.edit_note_rounded, size: 28),
+                          SizedBox(width: w.contentGap),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'A ${s.writingStreak}-day writing streak',
+                                  style: t.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: w.tight),
+                                const Text('Your current streak, as of today.'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  heading('Common causes'),
+                  WellnessPanel(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Mentioned across ${s.entries.length} check-ins'),
+                        SizedBox(height: w.gap),
+                        if (s.causes.isEmpty)
+                          const Text('Causes you record will appear here.'),
+                        for (final cause in s.causes.take(3)) ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  cause.label,
+                                  style: t.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: w.small),
+                              Text('${cause.count} of ${s.entries.length}'),
+                            ],
+                          ),
+                          SizedBox(height: w.small),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(w.small),
+                            child: LinearProgressIndicator(
+                              value: cause.count / s.entries.length,
+                              minHeight: 6,
+                              color: c.primary,
+                              backgroundColor: c.outlineVariant,
+                            ),
+                          ),
+                          SizedBox(height: w.contentGap),
+                        ],
+                        Text(
+                          'A check-in can include more than one cause.',
+                          style: t.textTheme.bodySmall,
+                        ),
+                        SizedBox(height: w.small),
+                        WellnessAction(
+                          label: 'Explore causes',
+                          onPressed: () =>
+                              context.push(AppRouter.insightsTriggers),
+                        ),
+                      ],
+                    ),
+                  ),
+                  heading('Recommended for you'),
+                  const Text('A few thoughtful reads for your day.'),
+                  SizedBox(height: w.contentGap),
+                  RecommendedArticles(repository: widget.articlesRepository),
+                ],
               );
-            }),
-        ],
+            },
+          ),
+        ),
       ),
     );
   }
 
-  String _impactLabel(int percentage) {
-    if (percentage >= 70) return 'High Impact';
-    if (percentage >= 40) return 'Medium Impact';
-    return 'Low Impact';
-  }
-
-  Color _impactColor(int percentage) {
-    if (percentage >= 70) return const Color(0xFFFF6B6B);
-    if (percentage >= 40) return const Color(0xFFFFB74D);
-    return const Color(0xFF4ADE80);
-  }
-
-  Widget _buildRecommendations() {
-    if (_recommendations.isEmpty) {
-      return Text(
-        'No recommendations yet.',
-        style: AppTextStyles.body2.copyWith(color: AppColors.grey),
-      );
+  String _comparison(ActivitySummary s) {
+    if (s.average == null) return 'No check-ins in this period yet.';
+    if (s.previousAverage == null) {
+      return 'No check-ins in the previous period to compare.';
     }
-
-    return GridView.builder(
-  itemCount: _recommendations.length > 4
-      ? 4
-      : _recommendations.length,
-
-  shrinkWrap: true,
-  physics: const NeverScrollableScrollPhysics(),
-
-  gridDelegate:
-      SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: 2,
-    crossAxisSpacing: 4.w,
-    mainAxisSpacing: 4.h,
-    childAspectRatio: 0.88,
-  ),
-
-  itemBuilder: (context, index) {
-    final item =
-        _recommendations[index] as Map<String, dynamic>;
-
-    return _buildRecommendationCard(
-      title:
-          item['title']?.toString() ??
-          item['name']?.toString() ??
-          'Recommended Resource',
-
-      color: index.isEven
-          ? const Color(0xFFE0F2E9)
-          : const Color(0xFFFFF4E5),
-
-      emoji: index.isEven ? '🧠' : '⏰',
-    );
-  },
-);
+    final change = s.average! - s.previousAverage!;
+    return change.abs() < .05
+        ? 'The same as the previous period'
+        : '${change.abs().toStringAsFixed(1)} ${change > 0 ? 'higher' : 'lower'} than the previous period';
   }
 
-  Widget _buildTab(String text, bool isActive) {
-    return Container(
-      height: double.infinity,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: isActive ? AppColors.primary : Colors.transparent,
-        borderRadius: BorderRadius.circular(30),
+  Widget _legend(String label, bool dashed) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      CustomPaint(
+        size: const Size(24, 12),
+        painter: _ChartSwatch(Theme.of(context).colorScheme, dashed),
       ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: AppTextStyles.body2.copyWith(
-          fontSize: 12,
-          color: isActive ? AppColors.white : AppColors.grey,
-          fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLegend(String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        2.sw,
-        Text(label, style: AppTextStyles.body2),
-      ],
-    );
-  }
-
-  Widget _buildInsightCard({
-    required String title,
-    required String subtitle,
-    required Widget content,
-    required VoidCallback onViewLog,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(5.w),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: AppTextStyles.heading2),
-          1.sh,
-          Text(
-            subtitle,
-            style: AppTextStyles.body2.copyWith(color: AppColors.grey),
-          ),
-          4.sh,
-          content,
-          3.sh,
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onViewLog,
-              child: Text('View Log →', style: AppTextStyles.linkText),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCalendarDots() {
-    final checkins = int.tryParse(
-          _overview['mood_checkins']?.toString() ?? '0',
-        ) ??
-        0;
-
-    final colors = [
-      AppColors.primary,
-      const Color(0xFF9BE6A6),
-      const Color(0xFFFFD08A),
-      const Color(0xFFFFB3D1),
-      const Color(0xFFFF8A8A),
-    ];
-
-    return Wrap(
-      spacing: 2.w,
-      runSpacing: 1.h,
-      alignment: WrapAlignment.spaceBetween,
-      children: List.generate(
-        7,
-        (index) => Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: index < checkins
-                ? colors[index % colors.length].withOpacity(0.5)
-                : AppColors.lightGrey,
-            shape: BoxShape.circle,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWritingDots() {
-    final thisWeek = int.tryParse(
-          _journalStats['this_week']?.toString() ?? '0',
-        ) ??
-        0;
-
-    return Wrap(
-      spacing: 2.w,
-      runSpacing: 1.h,
-      alignment: WrapAlignment.spaceBetween,
-      children: List.generate(
-        7,
-        (index) => Icon(
-          index < thisWeek ? Icons.check_circle : Icons.circle_outlined,
-          color: index < thisWeek ? AppColors.primary : AppColors.midGrey,
-          size: 28,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTriggerItem(
-    String trigger,
-    String percentage,
-    String impact,
-    Color color,
-  ) {
-    final value =
-        (double.tryParse(percentage.replaceAll('%', '')) ?? 0) / 100;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(trigger, style: AppTextStyles.body1),
-              1.sh,
-              LinearProgressIndicator(
-                value: value,
-                backgroundColor: AppColors.lightGrey,
-                valueColor: AlwaysStoppedAnimation(color),
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
-          ),
-        ),
-        4.sw,
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              percentage,
-              style: AppTextStyles.heading2.copyWith(fontSize: 18),
-            ),
-            Text(
-              impact,
-              style: AppTextStyles.body2.copyWith(
-                color: AppColors.grey,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRecommendationCard({
-    required String title,
-    required Color color,
-    required String emoji,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 32)),
-          const Spacer(),
-          Text(
-            title,
-            style: AppTextStyles.body1.copyWith(
-              fontWeight: FontWeight.w600,
-              height: 1.4,
-            ),
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
+      const SizedBox(width: 8),
+      Text(label, style: Theme.of(context).textTheme.bodySmall),
+    ],
+  );
 }
 
-class MoodLineChartPainter extends CustomPainter {
-  final List<dynamic> chart;
-
-  MoodLineChartPainter({required this.chart});
-
+class _ChartSwatch extends CustomPainter {
+  _ChartSwatch(this.c, this.dashed);
+  final ColorScheme c;
+  final bool dashed;
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF0460D8)
-      ..strokeWidth = 4
-      ..style = PaintingStyle.stroke;
-
-    final path = Path();
-
-    final values = chart
-        .map((item) {
-          if (item is Map && item['intensity'] != null) {
-            return double.tryParse(item['intensity'].toString()) ?? 5;
-          }
-          return 5.0;
-        })
-        .toList();
-
-    if (values.isEmpty) {
-      path.moveTo(0, size.height * 0.6);
-      path.quadraticBezierTo(
-        size.width * 0.25,
-        size.height * 0.4,
-        size.width * 0.5,
-        size.height * 0.75,
+    final p = Paint()
+      ..color = (dashed ? c.onSurfaceVariant : c.primary)
+      ..strokeWidth = 2;
+    for (double x = 0; x < size.width; x += dashed ? 8 : size.width) {
+      canvas.drawLine(
+        Offset(x, 6),
+        Offset(math.min(x + (dashed ? 4 : size.width), size.width), 6),
+        p,
       );
-      path.quadraticBezierTo(
-        size.width * 0.75,
-        size.height * 0.3,
-        size.width,
-        size.height * 0.55,
-      );
-      canvas.drawPath(path, paint);
-      return;
     }
-
-    for (int i = 0; i < values.length; i++) {
-      final x = values.length == 1 ? 0.0 : (size.width / (values.length - 1)) * i;
-      final normalized = values[i].clamp(1, 10) / 10;
-      final y = size.height - (normalized * size.height);
-
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-
-    canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant MoodLineChartPainter oldDelegate) {
-    return oldDelegate.chart != chart;
+  bool shouldRepaint(covariant _ChartSwatch old) =>
+      old.c != c || old.dashed != dashed;
+}
+
+class _IntensityChart extends CustomPainter {
+  _IntensityChart(this.s, this.c, this.style, this.scaler);
+  final ActivitySummary s;
+  final ColorScheme c;
+  final TextStyle? style;
+  final TextScaler scaler;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fontSize = scaler.scale(11),
+        left = fontSize + 12,
+        right = size.width - 8,
+        top = fontSize,
+        bottom = size.height - fontSize * 2 - 8;
+    Offset point(int i, double v) => Offset(
+      left + i * (right - left) / 6,
+      bottom - (v - 1) * (bottom - top) / 4,
+    );
+    void text(String str, Offset pos) {
+      final p = TextPainter(
+        text: TextSpan(
+          text: str,
+          style: style?.copyWith(color: c.onSurfaceVariant, fontSize: fontSize),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      p.paint(canvas, pos);
+      p.dispose();
+    }
+
+    for (var v = 1; v <= 5; v++) {
+      final y = point(0, v.toDouble()).dy;
+      canvas.drawLine(
+        Offset(left, y),
+        Offset(right, y),
+        Paint()..color = c.outlineVariant,
+      );
+      text('$v', Offset(0, y - fontSize / 2));
+    }
+    for (var i = 0; i < 7; i++) {
+      text(
+        s.days <= 30
+            ? '${s.buckets[i].start.day}'
+            : DateFormat('MMM').format(s.buckets[i].start),
+        Offset(point(i, 1).dx - fontSize / 2, bottom + 8),
+      );
+      for (final previous in [true, false]) {
+        final v = previous ? s.buckets[i].previous : s.buckets[i].current;
+        if (v == null) continue;
+        final p = Paint()
+          ..color = (previous ? c.onSurfaceVariant : c.primary)
+          ..strokeWidth = (previous ? 1.5 : 2.5);
+        final last = i > 0
+            ? (previous ? s.buckets[i - 1].previous : s.buckets[i - 1].current)
+            : null;
+        if (last != null) {
+          final a = point(i - 1, last), b = point(i, v);
+          if (previous) {
+            for (double d = 0; d < 1; d += .19) {
+              canvas.drawLine(
+                Offset.lerp(a, b, d)!,
+                Offset.lerp(a, b, math.min(d + .09, 1))!,
+                p,
+              );
+            }
+          } else {
+            canvas.drawLine(a, b, p);
+          }
+        }
+        canvas.drawCircle(point(i, v), previous ? 2 : 4, p);
+        if (!previous) {
+          canvas.drawCircle(point(i, v), 2, Paint()..color = c.surface);
+        }
+      }
+    }
   }
+
+  @override
+  bool shouldRepaint(covariant _IntensityChart old) =>
+      old.s != s || old.c != c || old.scaler != scaler;
 }

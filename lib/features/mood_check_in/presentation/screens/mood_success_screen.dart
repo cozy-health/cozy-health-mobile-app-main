@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/app_scroll_body.dart';
+import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
@@ -26,148 +28,175 @@ class MoodSuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 6.w),
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
+          child: AppScrollBody(
+            child: Column(
+              children: [
+                const Spacer(flex: 2),
 
-              // Confetti + Great Job illustration
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  Assets.png.confetti.image(
-                    height: 220,
-                    width: 220,
-                    fit: BoxFit.contain,
-                  ),
-
-                  Positioned(
-                    top: 45,
-                    child: Text(
-                      'Great Job!',
-                      style: TextStyle(
-                        fontFamily: 'Outfit',
-                        fontSize: 52,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF00C853),
-                        height: 1.0,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              8.sh,
-
-              // Personalized message
-              Text(
-                'Welldone $userName',
-                style: AppTextStyles.heading1.copyWith(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              2.sh,
-
-              Text(
-                'You have completed the mood check in for today',
-                style: AppTextStyles.body1.copyWith(
-                  color: AppColors.grey,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              3.sh,
-
-              // Optional summary
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(4.w),
-                decoration: BoxDecoration(
-                  color: AppColors.lightGrey,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // Confetti + Great Job illustration
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Text(
-                      'Mood Summary',
-                      style: AppTextStyles.heading2.copyWith(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                    Assets.png.confetti.image(
+                      height: 220,
+                      width: 220,
+                      fit: BoxFit.contain,
+                    ),
+
+                    Positioned(
+                      top: 45,
+                      child: Text(
+                        'Great Job!',
+                        style: TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 52,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.success,
+                          height: 1.0,
+                          shadows: [
+                            Shadow(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.shadow.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  ],
+                ),
 
-                    2.sh,
+                8.sh,
 
-                    Text(
-                      'Feeling: $selectedFeeling',
-                      style: AppTextStyles.body1,
-                    ),
+                // Personalized message
+                Text(
+                  'Welldone $userName',
+                  style: AppTextStyles.heading1.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
 
-                    1.sh,
+                2.sh,
 
-                    Text(
-                      'Reasons: ${selectedReasons.join(', ')}',
-                      style: AppTextStyles.body1,
-                    ),
+                Text(
+                  'You have completed the mood check in for today',
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
 
-                    1.sh,
+                3.sh,
 
-                    Text(
-                      'Coping: ${selectedCoping.join(', ')}',
-                      style: AppTextStyles.body1,
-                    ),
+                // Optional summary
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(4.w),
+                  decoration: BoxDecoration(
+                    border: AppSurface.border(context),
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mood Summary',
+                        style: AppTextStyles.heading2.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
 
-                    if (journalText.isNotEmpty) ...[
                       2.sh,
 
                       Text(
-                        'Journal:',
+                        'Feeling: $selectedFeeling',
                         style: AppTextStyles.body1.copyWith(
-                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
 
                       1.sh,
 
                       Text(
-                        journalText,
+                        'Reasons: ${selectedReasons.join(', ')}',
                         style: AppTextStyles.body1.copyWith(
-                          color: AppColors.grey,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
+
+                      1.sh,
+
+                      Text(
+                        'Coping: ${selectedCoping.join(', ')}',
+                        style: AppTextStyles.body1.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+
+                      if (journalText.isNotEmpty) ...[
+                        2.sh,
+
+                        Text(
+                          'Journal:',
+                          style: AppTextStyles.body1.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+
+                        1.sh,
+
+                        Text(
+                          journalText,
+                          style: AppTextStyles.body1.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
 
-              const Spacer(flex: 3),
+                const Spacer(flex: 3),
 
-              // Finish button
-              Padding(
-                padding: EdgeInsets.only(bottom: 4.h),
-                child: AppButton(
-                  text: 'Finish',
-                  onPressed: () {
-                    context.go(AppRouter.home);
-                  },
-                  isOutlined: true,
+                Padding(
+                  padding: EdgeInsets.only(bottom: 4.h),
+                  child: Column(
+                    children: [
+                      AppButton(
+                        text: 'Back to Home',
+                        onPressed: () => context.go(AppRouter.home),
+                      ),
+                      1.5.sh,
+                      AppButton(
+                        text: 'Log another',
+                        onPressed: () => context.go(AppRouter.moodFeeling),
+                        isOutlined: true,
+                      ),
+                      1.5.sh,
+                      TextButton(
+                        onPressed: () => context.push(AppRouter.moodHistory),
+                        child: const Text('See past entries'),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

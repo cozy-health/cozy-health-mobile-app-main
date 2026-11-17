@@ -1,138 +1,108 @@
+import 'package:cozy_health/core/artwork/content_artwork.dart';
+import 'package:cozy_health/core/widgets/illustration_plate.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../utils/responsive_extensions.dart';
-import '../../../../gen/assets.gen.dart';
-import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_snackbar.dart';
+import '../../domain/clinical_assessment.dart';
 
 class QuizDetailScreen extends StatelessWidget {
-  final int quizId;
-  final String quizTitle;
-  final String quizType;
-
-  const QuizDetailScreen({
-    super.key,
-    required this.quizId,
-    required this.quizTitle,
-    required this.quizType,
-  });
-
+  const QuizDetailScreen({super.key, required this.extra});
+  final Map<String, dynamic> extra;
   @override
   Widget build(BuildContext context) {
+    final assessment = ClinicalAssessment.fromExtra(extra);
+    final title =
+        assessment?.title ?? extra['title'] as String? ?? 'Assessment';
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.black),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(quizTitle, style: AppTextStyles.heading2),
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            4.sh,
+            Text(title, style: Theme.of(context).textTheme.headlineMedium),
+            const SizedBox(height: 12),
             Text(
-              'Assess your current emotional health and mood patterns.',
-              style: AppTextStyles.body1,
+              assessment != null
+                  ? assessment.questionTimeframe
+                  : 'Take a moment to reflect',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-            3.sh,
-            Row(
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 20,
+              runSpacing: 8,
               children: [
-                _buildBadge(Icons.timer, '5 Minutes'),
-                4.sw,
-                _buildBadge(Icons.calendar_today, 'Monthly'),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.schedule, size: 18),
+                    const SizedBox(width: 6),
+                    Text('${assessment?.minutes ?? 3} minutes'),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.calendar_today_outlined, size: 18),
+                    const SizedBox(width: 6),
+                    Text('${assessment?.questions.length ?? 3} questions'),
+                  ],
+                ),
               ],
             ),
-            5.sh,
-            Center(
-              child: Container(
-                width: double.infinity,
-                height: 220,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFF),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Center(
-                  child: Assets.png.emotionalWellbeing.image(
-                    height: 180,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
+            const SizedBox(height: 20),
+            IllustrationPlate(
+              height: 239,
+              asset: ContentArtwork.assessment(assessment?.id),
             ),
-            6.sh,
+            const SizedBox(height: 20),
             Text(
-              'Your emotions shape your daily experiences. This quiz helps you understand your mood patterns and emotional resilience.',
-              style: AppTextStyles.body1.copyWith(height: 1.6),
+              assessment != null
+                  ? assessment.questionTimeframe
+                  : 'Take a few minutes to reflect on how you are feeling.',
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
-            const Spacer(),
-            AppButton(
-              text: 'Start',
-              onPressed: () {
-                context.push(
-                  AppRouter.quizTaking,
-                  extra: {
-                    'id': quizId,
-                    'title': quizTitle,
-                    'type': quizType,
-                  },
-                );
-              },
+            const SizedBox(height: 12),
+            const Text(
+              'This is not a diagnosis. Talk to a professional for clinical evaluation.',
             ),
-            3.sh,
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  context.push(AppRouter.quizResults, extra: {
-                    'title': quizTitle,
-                    'score': 0,
-                    'total_questions': 0,
-                  });
-                },
-                child: Text(
-                  'See results',
-                  style: AppTextStyles.linkText.copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+            const SizedBox(height: 28),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
+              onPressed: assessment?.definitionVersion == null
+                  ? null
+                  : () async {
+                      try {
+                        if (context.mounted) {
+                          context.push(AppRouter.quizTaking, extra: extra);
+                        }
+                      } catch (_) {
+                        if (context.mounted) {
+                          AppSnackbar.show(
+                            context,
+                            AppSnackbar.fromLegacy(
+                              content: const Text(
+                                'Could not start the assessment. Please try again.',
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: const Text('Start Assessment'),
             ),
-            6.sh,
+            TextButton(
+              onPressed: () => context.push(AppRouter.quizHistory),
+              child: const Text('See results'),
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildBadge(IconData icon, String text) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-      decoration: BoxDecoration(
-        color: AppColors.lightGrey,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: AppColors.grey),
-          2.sw,
-          Text(
-            text,
-            style: AppTextStyles.body2.copyWith(
-              color: AppColors.grey,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }

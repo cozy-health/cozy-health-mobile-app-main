@@ -1,0 +1,82 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/guest_session_service.dart';
+import '../../../../core/storage/token_storage.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../widgets/auth_ui.dart';
+
+class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 47, 24, 24),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 24),
+                const AuthLogoMark(),
+                const SizedBox(height: 48),
+                Text(
+                  'Welcome to\nCozy Health.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.heading1.copyWith(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 300),
+                  child: Text(
+                    'A quiet space to check in with yourself.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 48),
+                AuthPrimaryButton(
+                  text: 'Sign Up',
+                  onPressed: () => context.push(AppRouter.createAccount),
+                ),
+                const SizedBox(height: 12),
+                AuthPrimaryButton(
+                  text: 'Log In',
+                  isOutlined: true,
+                  onPressed: () => context.push(AppRouter.login),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () async {
+                    await TokenStorage().clearToken();
+                    await GuestSessionService().enterGuestSession();
+                    if (context.mounted) context.go(AppRouter.home);
+                  },
+                  child: Text(
+                    'Continue as Guest',
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const LegalFooter(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

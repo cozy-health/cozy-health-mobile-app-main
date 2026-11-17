@@ -1,0 +1,394 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
+import 'dart:async';
+import '../../../../core/widgets/empty_state.dart';
+import 'package:flutter/material.dart';
+import 'chat_shared_widgets.dart';
+import 'message_bubble.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../data/chat_repository.dart';
+import '../../models/chat.dart';
+import '../../../../core/services/local_db_service.dart';
+
+class ConversationHistoryScreen extends StatefulWidget {
+  const ConversationHistoryScreen({super.key, required this.conversations});
+
+  final List<Conversation> conversations;
+
+  @override
+  State<ConversationHistoryScreen> createState() =>
+      _ConversationHistoryScreenState();
+}
+
+class _ConversationHistoryScreenState extends State<ConversationHistoryScreen> {
+  late final List<Conversation> _conversations = [...widget.conversations];
+  StreamSubscription<void>? _account;
+  @override
+  void initState() {
+    super.initState();
+    _account = LocalDbService().accountChanges.listen((_) {
+      if (mounted) setState(_conversations.clear);
+    });
+  }
+
+  @override
+  void dispose() {
+    _account?.cancel();
+    super.dispose();
+  }
+
+  Map<String, List<Conversation>> get _sections {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    final sections = <String, List<Conversation>>{};
+    final sorted = [..._conversations]
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    for (final conversation in sorted) {
+      final date = conversation.updatedAt.toLocal();
+      final label = !date.isBefore(today)
+          ? 'Today'
+          : !date.isBefore(yesterday)
+          ? 'Yesterday'
+          : 'Earlier';
+      sections.putIfAbsent(label, () => []).add(conversation);
+    }
+    return sections;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AssistantSubScaffold(
+      title: 'History',
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        children: [
+          if (_conversations.isNotEmpty)
+            WarmPanel(
+              color: AppColors.primarySubtle,
+              borderColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: .15),
+              padding: const EdgeInsets.all(14),
+              child: InkWell(
+                onTap: () => Navigator.pop(context, Conversation.empty()),
+                child: Text(
+                  '+ New conversation',
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(height: 28),
+          if (_conversations.isEmpty)
+            EmptyState(
+              icon: Icons.chat_bubble_outline,
+              title: 'Start your first conversation.',
+              primaryCtaLabel: 'Say hi',
+              onPrimaryCta: () => Navigator.pop(context, Conversation.empty()),
+            )
+          else ...[
+            for (final section in _sections.entries) ...[
+              HistorySection(
+                title: section.key,
+                conversations: section.value,
+                onOpen: _openConversation,
+                onDelete: _confirmDelete,
+              ),
+              const SizedBox(height: 28),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openConversation(Conversation conversation) async {
+    final owner = LocalDbService().activeUserId;
+    final messages = await ChatRepository().fetchMessages(conversation.id);
+    if (!mounted || owner != LocalDbService().activeUserId) return;
+    conversation.messages
+      ..clear()
+      ..addAll(
+        messages.map(
+          (message) => ChatMessage(
+            id: message.id,
+            role: ChatRole.values.firstWhere(
+              (role) => role.name == message.role,
+              orElse: () => ChatRole.user,
+            ),
+            text: message.content,
+            createdAt: message.createdAt,
+            isCrisisFlagged: message.isCrisisFlagged,
+          ),
+        ),
+      );
+    final resume = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => PastConversationScreen(conversation: conversation),
+      ),
+    );
+    if (resume == true && mounted) Navigator.pop(context, conversation);
+  }
+
+  void _confirmDelete(Conversation conversation) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => DeleteConversationDialog(
+        onDelete: () async {
+          Navigator.pop(context);
+          final index = _conversations.indexWhere(
+            (item) => item.id == conversation.id,
+          );
+          if (index == -1) return;
+
+          final repo = ChatRepository();
+          await repo.deleteConversation(conversation.id);
+
+          if (!mounted) return;
+          if (!context.mounted) return;
+
+          setState(() => _conversations.removeAt(index));
+          AppSnackbar.show(
+            context,
+            AppSnackbar.fromLegacy(content: const Text('Conversation deleted')),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class PastConversationScreen extends StatelessWidget {
+  const PastConversationScreen({super.key, required this.conversation});
+
+  final Conversation conversation;
+
+  @override
+  Widget build(BuildContext context) {
+    return AssistantSubScaffold(
+      title: conversation.title,
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+              children: conversation.messages
+                  .map(
+                    (message) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: MessageBubble(message: message, onLongPress: null),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            child: PrimaryButton(
+              label: 'Continue conversation',
+              onPressed: () => Navigator.pop(context, true),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class HistorySection extends StatelessWidget {
+  const HistorySection({
+    super.key,
+    required this.title,
+    required this.conversations,
+    required this.onOpen,
+    required this.onDelete,
+  });
+
+  final String title;
+  final List<Conversation> conversations;
+  final ValueChanged<Conversation> onOpen;
+  final ValueChanged<Conversation> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    if (conversations.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        for (final conversation in conversations) ...[
+          ConversationCard(
+            conversation: conversation,
+            onTap: () => onOpen(conversation),
+            onLongPress: () => onDelete(conversation),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ],
+    );
+  }
+}
+
+class ConversationCard extends StatelessWidget {
+  const ConversationCard({
+    super.key,
+    required this.conversation,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  final Conversation conversation;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      borderRadius: BorderRadius.circular(16),
+      child: WarmPanel(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    conversation.title,
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '"${conversation.lastMessagePreview}"',
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              formatTime(conversation.updatedAt),
+              style: timestampStyle(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ConversationEmptyState extends StatelessWidget {
+  const ConversationEmptyState({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: 80),
+        Icon(
+          Icons.chat_bubble_outline_rounded,
+          size: 56,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        const SizedBox(height: 22),
+        Text(
+          'No conversations yet.',
+          style: AppTextStyles.heading2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          "Start one whenever\nyou're ready.",
+          textAlign: TextAlign.center,
+          style: AppTextStyles.body1.copyWith(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class DeleteConversationDialog extends StatelessWidget {
+  const DeleteConversationDialog({super.key, required this.onDelete});
+
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
+      child: SingleChildScrollView(
+        child: WarmPanel(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Delete this\nconversation?',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.heading2.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'All messages will be\npermanently removed.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: onDelete,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.danger,
+                    foregroundColor: AppColors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Delete'),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SecondaryButton(
+                label: 'Cancel',
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

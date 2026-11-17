@@ -1,0 +1,420 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
+import 'package:flutter/material.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../../../../core/models/reminder_settings.dart';
+import '../../../../core/models/user_profile.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/services/push_notification_service.dart';
+import '../../../notifications/presentation/widgets/notification_permission_sheet.dart';
+import '../../data/profile_repository.dart';
+
+class NotificationPreferencesScreen extends StatefulWidget {
+  const NotificationPreferencesScreen({super.key});
+  @override
+  State<NotificationPreferencesScreen> createState() =>
+      _NotificationPreferencesScreenState();
+}
+
+class _NotificationPreferencesScreenState
+    extends State<NotificationPreferencesScreen> {
+  final _repo = ProfileRepository();
+  final _push = PushNotificationService.instance;
+  bool _saving = false;
+  bool _testingPhone = false;
+
+  Future<void> _testPhone(String category) async {
+    if (_testingPhone) return;
+    setState(() => _testingPhone = true);
+    final message = await _push.phoneTests.schedule(category);
+    if (!mounted) return;
+    setState(() => _testingPhone = false);
+    AppSnackbar.show(context, SnackBar(content: Text(message)));
+  }
+
+  Future<void> _change(UserProfile profile, String key, dynamic value) async {
+    setState(() => _saving = true);
+    try {
+      await _repo.saveProfile(
+        profile.copyWithField(key, value).copyWith(updatedAt: DateTime.now()),
+      );
+      await _push.refresh();
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          const SnackBar(
+            content: Text(
+              'Could not save reminder settings. Please try again.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _setting(UserProfile profile, String key, dynamic value) =>
+      _change(profile, 'reminder_settings', {
+        ...ReminderSettings.resolve(profile.reminderSettings),
+        key: value,
+      });
+
+  Future<void> _time(
+    UserProfile profile,
+    String key,
+    String value, {
+    bool mood = false,
+  }) async {
+    final parts = value.split(':');
+    final chosen = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: int.parse(parts[0]),
+        minute: int.parse(parts[1]),
+      ),
+    );
+    if (chosen == null || !mounted) return;
+    final time =
+        '${chosen.hour.toString().padLeft(2, '0')}:${chosen.minute.toString().padLeft(2, '0')}';
+    if (mood) {
+      await _change(profile, 'daily_checkin_time', time);
+    } else {
+      await _setting(profile, key, time);
+    }
+  }
+
+  Future<void> _days(
+    UserProfile profile,
+    String category,
+    List<int> initial,
+  ) async {
+    final selected = initial.toSet();
+    final result = await showWellnessSheet<List<int>>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, update) => WellnessSheet(
+          title: 'Reminder days',
+          children: [
+            const Text('Choose at least one day.'),
+            SizedBox(height: context.cozyColors.wellness.gap),
+            for (var i = 1; i <= 7; i++)
+              WellnessSheetOption(
+                key: ValueKey('reminder-day-$i'),
+                label: const [
+                  'Monday',
+                  'Tuesday',
+                  'Wednesday',
+                  'Thursday',
+                  'Friday',
+                  'Saturday',
+                  'Sunday',
+                ][i - 1],
+                icon: Icons.calendar_today_outlined,
+                selected: selected.contains(i),
+                onPressed: () => update(() {
+                  if (!selected.add(i)) selected.remove(i);
+                }),
+              ),
+            WellnessAction(
+              key: const ValueKey('reminder-days-save'),
+              label: 'Save',
+              filled: true,
+              onPressed: selected.isEmpty
+                  ? null
+                  : () => Navigator.pop(context, selected.toList()..sort()),
+            ),
+            SizedBox(height: context.cozyColors.wellness.small),
+            WellnessAction(
+              key: const ValueKey('reminder-days-cancel'),
+              label: 'Cancel',
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      await _setting(profile, '${category}_days', result);
+    }
+  }
+
+  Widget _settingsPanel({required Widget child, bool tinted = false}) =>
+      WellnessPanel(
+        tinted: tinted,
+        child: Material(type: MaterialType.transparency, child: child),
+      );
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Notifications')),
+    body: StreamBuilder<UserProfile?>(
+      stream: _repo.watchProfile(),
+      initialData: LocalDbService().getUserProfile(),
+      builder: (context, snapshot) {
+        final p = snapshot.data;
+        if (p == null) {
+          return const Center(child: Text('Sign in to configure reminders.'));
+        }
+        final w = context.cozyColors.wellness;
+        final s = ReminderSettings.resolve(p.reminderSettings);
+        final enabled = p.pushConsent && p.notificationsMaster;
+        return ListView(
+          padding: EdgeInsets.all(w.page),
+          children: [
+            Text(
+              'Gentle reminders',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            if (PushNotificationService.internalBuild) ...[
+              const Divider(),
+              const Text('Internal notification testing'),
+              const Text(
+                'Tap Simulate to show an in-app notification banner. Tap the banner to open its destination. This does not send a phone push.',
+              ),
+              for (final c in ['mood', 'journal', 'streak', 'affirmation'])
+                ListTile(
+                  title: Text('Test $c'),
+                  subtitle: Wrap(
+                    spacing: 8,
+                    children: [
+                      TextButton(
+                        onPressed: () => _push.simulate(c),
+                        child: const Text('Simulate'),
+                      ),
+                      TextButton(
+                        onPressed: _testingPhone ? null : () => _testPhone(c),
+                        child: const Text('Phone test'),
+                      ),
+                    ],
+                  ),
+                  onTap: () => _push.simulate(c),
+                ),
+              const Text(
+                'Phone test: enable phone alerts, tap the button, then lock your phone. The test uses the Cozy sound and follows your phone notification settings.',
+              ),
+            ],
+            const SizedBox(height: 8),
+            const Text(
+              'Up to three reminders per day, at least two hours apart. Quiet hours may move reminders later. A completed check-in cancels its reminder.',
+            ),
+            ListenableBuilder(
+              listenable: _push,
+              builder: (_, _) => WellnessPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _push.status,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SizedBox(height: w.small),
+                    Text('Phone permission: ${_push.permission}'),
+                    SizedBox(height: w.contentGap),
+                    WellnessAction(
+                      key: const ValueKey('notification-phone-permission'),
+                      onPressed: _push.phonePermission.needsSettings
+                          ? openAppSettings
+                          : _push.phonePermission.allowed
+                          ? null
+                          : () => _push.enablePhoneAlerts(),
+                      label: _push.phonePermission.needsSettings
+                          ? 'Phone settings'
+                          : _push.phonePermission.allowed
+                          ? 'Allowed'
+                          : 'Enable phone alerts',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SwitchListTile(
+              title: const Text('Allow notifications'),
+              value: enabled,
+              onChanged: _saving
+                  ? null
+                  : (value) async {
+                      if (value && !p.pushConsent) {
+                        await NotificationPermissionSheet.show(context);
+                      } else {
+                        await _change(p, 'notifications_master', value);
+                      }
+                    },
+            ),
+            if (p.pushConsent)
+              TextButton(
+                onPressed: _saving
+                    ? null
+                    : () => _change(p, 'push_consent', false),
+                child: const Text('Withdraw reminder consent'),
+              ),
+            SizedBox(height: w.section),
+            _settingsPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Community activity',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  SwitchListTile(
+                    title: const Text('Replies to my posts'),
+                    value: p.commentsNotifications,
+                    onChanged: _saving
+                        ? null
+                        : (v) => _change(p, 'comments_notifications', v),
+                  ),
+                  SwitchListTile(
+                    title: const Text('Likes on my posts'),
+                    value: s['community_likes_enabled'] as bool,
+                    onChanged: _saving
+                        ? null
+                        : (v) => _setting(p, 'community_likes_enabled', v),
+                  ),
+                  SwitchListTile(
+                    title: const Text('Community phone alerts'),
+                    subtitle: const Text(
+                      'Also send permitted phone notifications. Your inbox remains available without phone alerts.',
+                    ),
+                    value: s['community_push_enabled'] as bool,
+                    onChanged: _saving || !enabled
+                        ? null
+                        : (v) => _setting(p, 'community_push_enabled', v),
+                  ),
+                ],
+              ),
+            ),
+            for (final c in ['mood', 'journal', 'streak', 'affirmation']) ...[
+              SizedBox(height: w.gap),
+              _settingsPanel(
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      title: Text(
+                        const {
+                          'mood': 'Mood check-in',
+                          'journal': 'Journal prompt',
+                          'streak': 'Streak reminder',
+                          'affirmation': 'Affirmation',
+                        }[c]!,
+                      ),
+                      subtitle: Text(
+                        const {
+                          'mood': 'Only when you have not checked in today.',
+                          'journal': 'A writing prompt on your chosen days.',
+                          'streak':
+                              'Only while today’s check-in can continue your streak.',
+                          'affirmation': 'Encouragement; no action required.',
+                        }[c]!,
+                      ),
+                      value: switch (c) {
+                        'mood' => p.dailyCheckinEnabled,
+                        'journal' => p.journalReminderEnabled,
+                        _ => s['${c}_enabled'] as bool,
+                      },
+                      onChanged: _saving || !enabled
+                          ? null
+                          : (v) {
+                              if (c == 'mood') {
+                                _change(p, 'daily_checkin_enabled', v);
+                              } else if (c == 'journal') {
+                                _change(p, 'journal_reminder_enabled', v);
+                              } else {
+                                _setting(p, '${c}_enabled', v);
+                              }
+                            },
+                    ),
+                    ListTile(
+                      key: ValueKey('reminder-time-$c'),
+                      title: const Text('Reminder time'),
+                      trailing: Text(
+                        c == 'mood'
+                            ? p.dailyCheckinTime
+                            : s['${c}_time'] as String,
+                      ),
+                      onTap: _saving
+                          ? null
+                          : () => _time(
+                              p,
+                              '${c}_time',
+                              c == 'mood'
+                                  ? p.dailyCheckinTime
+                                  : s['${c}_time'] as String,
+                              mood: c == 'mood',
+                            ),
+                    ),
+                    ListTile(
+                      key: ValueKey('reminder-days-$c'),
+                      title: const Text('Days'),
+                      subtitle: Text(
+                        (s['${c}_days'] as List)
+                            .map(
+                              (d) => const [
+                                'Mon',
+                                'Tue',
+                                'Wed',
+                                'Thu',
+                                'Fri',
+                                'Sat',
+                                'Sun',
+                              ][(d as int) - 1],
+                            )
+                            .join(', '),
+                      ),
+                      onTap: _saving
+                          ? null
+                          : () => _days(
+                              p,
+                              c,
+                              List<int>.from(s['${c}_days'] as List),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            SizedBox(height: w.section),
+            _settingsPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SwitchListTile(
+                    title: const Text('Quiet hours'),
+                    subtitle: const Text(
+                      'Delayed reminders are spaced out afterward. Streak reminders expire at midnight.',
+                    ),
+                    value: s['quiet_enabled'] as bool,
+                    onChanged: _saving
+                        ? null
+                        : (v) => _setting(p, 'quiet_enabled', v),
+                  ),
+                  for (final key in ['quiet_start', 'quiet_end'])
+                    ListTile(
+                      title: Text(
+                        key == 'quiet_start'
+                            ? 'Quiet hours start'
+                            : 'Quiet hours end',
+                      ),
+                      trailing: Text(s[key] as String),
+                      onTap: _saving
+                          ? null
+                          : () => _time(p, key, s[key] as String),
+                    ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'Times use your saved account timezone. Equal start and end times mean no quiet interval.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}

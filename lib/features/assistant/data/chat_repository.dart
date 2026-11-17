@@ -1,0 +1,267 @@
+import '../../../core/services/user_data_merge.dart';
+import 'package:flutter/foundation.dart';
+import '../../../core/models/chat_conversation.dart';
+import '../../../core/models/chat_message.dart';
+import '../../../core/services/local_db_service.dart';
+import '../../../core/api/api_client.dart';
+
+class ChatRepository {
+  final LocalDbService _local = LocalDbService();
+  Future<List<dynamic>> _pages(String path, String scope) async {
+    final result = <dynamic>[];
+    var page = 1;
+    var last = 1;
+    do {
+      final response = await ApiClient.instance.get(
+        path,
+        query: {'page': page, 'per_page': 50},
+      );
+      if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+        throw StateError('Account changed');
+      }
+      result.addAll(_extractListData(response.data, path));
+      final envelope = response.data is Map ? response.data['data'] : null;
+      last = envelope is Map
+          ? (envelope['last_page'] as num?)?.toInt() ?? 1
+          : 1;
+      page++;
+    } while (page <= last);
+    return result;
+  }
+
+  Future<bool> _deleted(String id) async =>
+      ((await _local.settingsBox()).get(
+                'deleted_conversations',
+                defaultValue: <String>[],
+              )
+              as List)
+          .contains(id);
+
+  List<dynamic> _extractListData(dynamic data, String label) {
+    if (data is List) return data;
+    if (data is Map && data['data'] is List) {
+      return data['data'] as List;
+    }
+    if (data is Map && data['data'] is Map) {
+      final nested = data['data'] as Map;
+      if (nested['data'] is List) return nested['data'] as List;
+    }
+    debugPrint('Unexpected $label response shape: ${data.runtimeType}');
+    return const [];
+  }
+
+  Future<List<ChatConversation>> fetchConversations() async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
+    try {
+      final items = (await _pages('/conversations', scope))
+          .whereType<Map>()
+          .map(
+            (json) =>
+                ChatConversation.fromJson(Map<String, dynamic>.from(json)),
+          )
+          .toList();
+      for (final item in items) {
+        if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+          return [];
+        }
+        if (await _deleted(item.id)) continue;
+        await UserDataMerge().apply(
+          'chat_conversation',
+          item.toJson(),
+          isActive: () =>
+              scope == _local.boxName(LocalDbService.userSettingsBoxName),
+        );
+      }
+      return _local.getAllChatConversations();
+    } catch (e) {
+      if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+        return [];
+      }
+      return _local.getAllChatConversations();
+    }
+  }
+
+  Stream<List<ChatConversation>> watchConversations() {
+    return _local.watchChatConversations();
+  }
+
+  Future<List<ChatMessage>> fetchMessages(String convId) async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
+    try {
+      if (await _deleted(convId)) return [];
+      final items = (await _pages('/conversations/$convId/messages', scope))
+          .whereType<Map>()
+          .map((json) => ChatMessage.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
+      for (final item in items) {
+        if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+          return [];
+        }
+        if (await _deleted(convId)) return [];
+        if (!_local.hasPending('chat_message', item.id)) {
+          await _local.saveChatMessage(item);
+        }
+      }
+      return _local.getMessagesForConversation(convId);
+    } catch (e) {
+      if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+        return [];
+      }
+      return _local.getMessagesForConversation(convId);
+    }
+  }
+
+  Stream<List<ChatMessage>> watchMessages(String conversationId) {
+    return _local.watchChatMessages(conversationId);
+  }
+
+  Future<ChatConversation> saveConversation(ChatConversation conv) async {
+    final operationOwner = _local.activeUserId;
+    await _local.saveChatConversation(conv);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
+    await _local.enqueueSync(
+      type: 'chat_conversation',
+      action: 'upsert',
+      recordId: conv.id,
+      payload: conv.toJson(),
+    );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
+    _local.processSyncQueue();
+    return conv;
+  }
+
+  Future<void> deleteConversation(String id) async {
+    final operationOwner = _local.activeUserId;
+    final settings = await _local.settingsBox();
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
+    final deleted =
+        (settings.get('deleted_conversations', defaultValue: <String>[])
+                as List)
+            .cast<String>()
+            .toSet()
+          ..add(id);
+    await settings.put('deleted_conversations', deleted.toList());
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
+    for (final message in _local.getMessagesForConversation(id)) {
+      await _local.removeFromQueue('chat_message', message.id);
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
+    }
+    await _local.deleteChatConversation(id);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
+    await _local.enqueueSync(
+      type: 'chat_conversation',
+      action: 'delete',
+      recordId: id,
+      payload: null,
+    );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
+    _local.processSyncQueue();
+  }
+
+  Future<void> saveMessage(ChatMessage msg) async {
+    final operationOwner = _local.activeUserId;
+    await _local.saveChatMessage(msg);
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
+    await _local.enqueueSync(
+      type: 'chat_message',
+      action: 'upsert',
+      recordId: msg.id,
+      payload: msg.toJson(),
+    );
+    if (operationOwner != _local.activeUserId) {
+      throw StateError('Account changed');
+    }
+    _local.processSyncQueue();
+  }
+
+  Future<void> updateMessageStatus(String msgId, String status) async {
+    final operationOwner = _local.activeUserId;
+    // We fetch, update, save
+    final msg = _local.getChatMessage(msgId);
+    if (msg != null) {
+      await _local.saveChatMessage(msg);
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
+      await _local.enqueueSync(
+        type: 'chat_message',
+        action: 'upsert',
+        recordId: msg.id,
+        payload: msg.toJson(),
+      );
+      if (operationOwner != _local.activeUserId) {
+        throw StateError('Account changed');
+      }
+      _local.processSyncQueue();
+    }
+  }
+
+  Future<List<ChatMessage>> sendMessage(
+    String conversationId,
+    ChatMessage userMessage,
+  ) async {
+    final scope = _local.boxName(LocalDbService.userSettingsBoxName);
+    try {
+      final response = await ApiClient.instance.post(
+        '/conversations/$conversationId/messages',
+        data: {
+          'id': userMessage.id,
+          'content': userMessage.content,
+          'client_created_at': userMessage.createdAt.toUtc().toIso8601String(),
+        },
+      );
+
+      if (scope != _local.boxName(LocalDbService.userSettingsBoxName)) {
+        return [];
+      }
+      final responseData = response.data;
+      if (responseData is! Map<String, dynamic>) {
+        debugPrint(
+          'Unexpected send message response shape: ${responseData.runtimeType}',
+        );
+        throw const FormatException('Unexpected send message response shape');
+      }
+      final data = responseData['data'];
+      if (data is! Map) {
+        debugPrint('Unexpected send message data shape: ${data.runtimeType}');
+        throw const FormatException('Unexpected send message data shape');
+      }
+      final userMessageData = data['user_message'];
+      final assistantMessageData = data['assistant_message'];
+      if (userMessageData is! Map || assistantMessageData is! Map) {
+        debugPrint('Unexpected send message payload shape');
+        throw const FormatException('Unexpected send message payload shape');
+      }
+      final userMsg = ChatMessage.fromJson(
+        Map<String, dynamic>.from(userMessageData),
+      );
+      final assistantMsg = ChatMessage.fromJson(
+        Map<String, dynamic>.from(assistantMessageData),
+      );
+
+      await _local.saveChatMessage(userMsg);
+      await _local.saveChatMessage(assistantMsg);
+
+      return [userMsg, assistantMsg];
+    } catch (e) {
+      // Mark as failed locally (omitting method call since not defined in local_db_service)
+      rethrow;
+    }
+  }
+}

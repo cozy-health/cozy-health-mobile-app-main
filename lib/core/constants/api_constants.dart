@@ -1,22 +1,31 @@
 class ApiConstants {
-  static const String baseUrl =
-      'http://10.0.2.2:8000/api/v1';
+  static const String environment = String.fromEnvironment(
+    'COZY_ENVIRONMENT',
+    defaultValue: 'development',
+  );
+  static const String baseUrl = environment == 'production'
+      ? 'https://api.cozyhealth.org/api/v1'
+      : 'https://api-dev.cozyhealth.org/api/v1';
 
   /*
   |--------------------------------------------------------------------------
   | Auth
   |--------------------------------------------------------------------------
   */
-  static const String login = '/login';
-  static const String register = '/register';
-  static const String logout = '/logout';
+  static const String login = '/auth/login';
+  static const String googleLogin = '/auth/google';
+  static const String appleLogin = '/auth/apple';
+  static const String register = '/auth/register';
+  static const String logout = '/auth/logout';
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String resetPassword = '/auth/reset-password';
 
   /*
   |--------------------------------------------------------------------------
   | User
   |--------------------------------------------------------------------------
   */
-  static const String me = '/me';
+  static const String me = '/user/profile';
 
   /*
   |--------------------------------------------------------------------------
@@ -33,90 +42,66 @@ class ApiConstants {
   |--------------------------------------------------------------------------
   */
   static const String subscription = '/subscription';
-  static const String subscriptionPackages =
-      '/subscription/packages';
+  static const String subscriptionPackages = '/subscription/packages';
 
-  static const String subscriptionActivate =
-      '/subscription/activate';
+  static const String subscriptionActivate = '/subscription/activate';
 
-  static const String subscriptionCancel =
-      '/subscription/cancel';
+  static const String subscriptionCancel = '/subscription/cancel';
 
   /*
   |--------------------------------------------------------------------------
   | Mood Check-ins
   |--------------------------------------------------------------------------
   */
-  static const String moodCheckins =
-      '/mood-checkins';
-
-  static const String moodCheckinToday =
-      '/mood-checkins/today';
-
-  /*
-  |--------------------------------------------------------------------------
-  | Mood Lookup Data
-  |--------------------------------------------------------------------------
-  */
-  static const String feelings =
-      '/feelings';
-
-  static const String feelingExpressions =
-      '/feeling-expressions';
-
-  static const String feelingCauses =
-      '/feeling-causes';
-
-  static const String copingMechanisms =
-      '/coping-mechanisms';
+  static const String moodEntries = '/mood-entries';
 
   /*
   |--------------------------------------------------------------------------
   | Journals
   |--------------------------------------------------------------------------
   */
-  static const String journals =
-      '/journals';
+  static const String journals = '/journals';
+
+  static const String journalEntries = '/journal-entries';
 
   /*
   |--------------------------------------------------------------------------
-  | Quizzes
+  | Assessments
   |--------------------------------------------------------------------------
   */
-  static const String quizzes =
-      '/quizzes';
+  static const String quizzes = '/quizzes';
 
-  static const String quizResults =
-      '/quiz-results';
+  static const String quizResults = '/quiz-results';
+
+  static const String quizAttempts = '/quiz-attempts';
 
   /*
   |--------------------------------------------------------------------------
-  | Activity
+  | Assistant
   |--------------------------------------------------------------------------
   */
-  static const String activityOverview =
-      '/activity/overview';
+  static const String conversations = '/conversations';
 
-  static const String activityMoodChart =
-      '/activity/mood-chart';
+  /*
+  |--------------------------------------------------------------------------
+  | Content
+  |--------------------------------------------------------------------------
+  */
+  static const String savedContent = '/content/saved';
 
-  static const String activityCommonTriggers =
-      '/activity/common-triggers';
-
-  static const String activityJournalStats =
-      '/activity/journal-stats';
-
-  static const String activityRecommendations =
-      '/activity/recommendations';
+  /*
+  |--------------------------------------------------------------------------
+  | Crisis
+  |--------------------------------------------------------------------------
+  */
+  static const String safetyPlan = '/safety-plan';
 
   /*
   |--------------------------------------------------------------------------
   | Notifications
   |--------------------------------------------------------------------------
   */
-  static const String notifications =
-      '/notifications';
+  static const String notifications = '/notifications';
 
-  static const String notificationUnreadCount =
-      '/notifications/unread-count';
+  static const String notificationUnreadCount = '/notifications/unread-count';
 }

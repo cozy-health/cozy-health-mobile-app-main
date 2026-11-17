@@ -1,323 +1,357 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../../core/network/api_client.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../utils/responsive_extensions.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../data/quiz_service.dart';
+import '../../../../core/widgets/progress_track.dart';
+import '../../domain/clinical_assessment.dart';
+import '../widgets/clinical_disclaimer_sheet.dart';
+import '../widgets/quiz_back_confirm_dialog.dart';
+import 'package:uuid/uuid.dart';
+import '../../../../core/models/quiz_attempt.dart';
+import '../../data/quiz_repository.dart';
+import '../../../../core/services/feature_flags_service.dart';
+import '../widgets/quiz_session_guard.dart';
 
 class QuizTakingScreen extends StatefulWidget {
-  final int quizId;
-  final String quizTitle;
-  final String quizType;
-
-  const QuizTakingScreen({
-    super.key,
-    required this.quizId,
-    required this.quizTitle,
-    required this.quizType,
-  });
-
+  const QuizTakingScreen({super.key, required this.extra, this.repository});
+  final Map<String, dynamic> extra;
+  final QuizRepository? repository;
   @override
   State<QuizTakingScreen> createState() => _QuizTakingScreenState();
 }
 
-class _QuizTakingScreenState extends State<QuizTakingScreen> {
-  final QuizService _quizService = QuizService();
-
-  bool _loading = true;
+class _QuizTakingScreenState extends State<QuizTakingScreen>
+    with QuizSessionGuard<QuizTakingScreen> {
+  static const _legacyQuestions = [
+    'Little interest or pleasure in doing things?',
+    'Feeling down, depressed, or hopeless?',
+    'Trouble falling or staying asleep, or sleeping too much?',
+  ];
+  late final ClinicalAssessment? _assessment;
+  late final List<int?> _answers;
+  int _currentIndex = 0;
+  bool _ready = false;
   bool _submitting = false;
+  bool _invalidAssessment = false;
   String? _error;
-
-  int currentQuestionIndex = 0;
-  int? selectedOptionIndex;
-
-  List<dynamic> questions = [];
-  List<dynamic> options = [];
-  final List<Map<String, int>> answers = [];
-
+  final String _attemptId = const Uuid().v4();
+  List<String> get _questions => _assessment?.questions ?? _legacyQuestions;
   @override
   void initState() {
     super.initState();
-    _loadQuiz();
+    _assessment = widget.extra['definition'] is Map
+        ? ClinicalAssessment.fromExtra(widget.extra)
+        : null;
+    _invalidAssessment =
+        _assessment == null || !FeatureFlagsService.instance.isEnabled('quiz');
+    _answers = List<int?>.filled(_questions.length, null);
+    if (_invalidAssessment) {
+      _error =
+          'This assessment is not available. Please return to the assessment chooser.';
+    } else if (_assessment == null) {
+      _ready = true;
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _acknowledge());
+    }
   }
 
-  Future<void> _loadQuiz() async {
+  Future<void> _acknowledge() async {
     try {
-      final response = await _quizService.getQuiz(quizId: widget.quizId);
-      final quiz = response['quiz'] as Map<String, dynamic>;
-
-      setState(() {
-        questions = quiz['questions'] as List<dynamic>? ?? [];
-        options = quiz['options'] as List<dynamic>? ?? [];
-      });
-    } on ApiException catch (e) {
-      setState(() => _error = e.message);
+      final accepted = await ClinicalDisclaimerSheet.show(
+        context,
+        disclaimer: _assessment?.disclaimer,
+      );
+      if (!mounted) return;
+      if (accepted == true) {
+        setState(() {
+          _ready = true;
+          _error = null;
+        });
+      } else {
+        context.pop();
+      }
     } catch (_) {
-      setState(() => _error = 'Unable to load quiz.');
-    } finally {
       if (mounted) {
-        setState(() => _loading = false);
+        setState(
+          () => _error = 'Could not start the assessment. Please try again.',
+        );
       }
     }
   }
 
-  String _questionText(dynamic question, int index) {
-    if (question is Map<String, dynamic>) {
-      return question['question']?.toString() ??
-          question['text']?.toString() ??
-          'Question ${index + 1}';
+  Future<void> _leave() async {
+    if (!_ready || await QuizBackConfirmDialog.show(context) == true) {
+      if (mounted) {
+        setState(() => _ready = false);
+        context.pop();
+      }
     }
-
-    return question.toString();
   }
 
-  List<dynamic> _currentOptions() {
-    final raw = options[currentQuestionIndex];
-
-    if (raw is List) return raw;
-
-    if (raw is Map<String, dynamic>) {
-      final values = raw['options'];
-      if (values is List) return values;
-    }
-
-    return [];
-  }
-
-  String _optionText(dynamic option) {
-    if (option is Map<String, dynamic>) {
-      return option['label']?.toString() ??
-          option['text']?.toString() ??
-          option['option']?.toString() ??
-          '';
-    }
-
-    return option.toString();
-  }
-
-  Future<void> _nextOrSubmit() async {
-    if (selectedOptionIndex == null) return;
-
-    answers.removeWhere(
-      (item) => item['question_index'] == currentQuestionIndex,
-    );
-
-    answers.add({
-      'question_index': currentQuestionIndex,
-      'option_index': selectedOptionIndex!,
-    });
-
-    if (currentQuestionIndex < questions.length - 1) {
-      setState(() {
-        currentQuestionIndex++;
-        selectedOptionIndex = null;
-      });
+  Future<void> _nextQuestion() async {
+    if (!isQuizSessionActive) return;
+    if (_answers[_currentIndex] == null || _submitting) return;
+    if (_currentIndex < _questions.length - 1) {
+      setState(() => _currentIndex++);
       return;
     }
-
+    final answers = _answers.cast<int>();
+    final score =
+        _assessment?.score(answers) ??
+        answers.fold<int>(0, (sum, answer) => sum + answer);
     setState(() => _submitting = true);
-
-    try {
-      final response = await _quizService.submitQuiz(
-        quizId: widget.quizId,
-        answers: answers,
-      );
-
-      final summary = response['summary'] as Map<String, dynamic>? ?? {};
-
-      if (!mounted) return;
-
-      context.pushReplacement(
-        AppRouter.quizResults,
-        extra: {
-          'title': summary['quiz_title']?.toString() ?? widget.quizTitle,
-          'score': summary['score'] ?? 0,
-          'total_questions': summary['total_questions'] ?? questions.length,
+    final assessment = _assessment!;
+    final attempt = QuizAttempt(
+      id: _attemptId,
+      quizId: assessment.id,
+      quizSlug: assessment.id,
+      quizTitle: assessment.title,
+      answers: answers,
+      score: score,
+      interpretation: assessment.severity(score),
+      isCrisisFlagged: assessment.needsSupport(answers),
+      completedAt: DateTime.now(),
+      metadata: {
+        'definition_version': assessment.definitionVersion,
+        'validation_state': 'pending',
+        'disclaimer_accepted': true,
+        'maximum_score': assessment.maximumScore,
+        'result_snapshot': {
+          'definition': assessment.definition,
+          'disclaimer': assessment.disclaimer,
+          'recommendation': assessment.recommendation(score),
         },
-      );
-    } on ApiException catch (e) {
-      setState(() => _error = e.message);
+      },
+    );
+    try {
+      await (widget.repository ?? QuizRepository()).saveAttempt(attempt);
     } catch (_) {
-      setState(() => _error = 'Unable to submit quiz.');
-    } finally {
       if (mounted) {
-        setState(() => _submitting = false);
+        setState(() {
+          _submitting = false;
+          _error = 'Could not save your answers. Please retry.';
+        });
       }
+      return;
     }
+    if (!mounted) return;
+    context.pushReplacement(
+      AppRouter.quizResults,
+      extra: {
+        ...widget.extra,
+        'score': score,
+        'answers': answers,
+        'attempt': attempt,
+        'title': assessment.title,
+      },
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(
-        backgroundColor: AppColors.white,
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (_error != null) {
-      return Scaffold(
-        backgroundColor: AppColors.white,
-        appBar: AppBar(backgroundColor: AppColors.white, elevation: 0),
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.all(6.w),
-            child: Text(
-              _error!,
-              style: AppTextStyles.body1.copyWith(color: Colors.red),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (questions.isEmpty) {
-      return Scaffold(
-        backgroundColor: AppColors.white,
-        appBar: AppBar(backgroundColor: AppColors.white, elevation: 0),
-        body: Center(
-          child: Text(
-            'No questions available for this quiz.',
-            style: AppTextStyles.body1,
-          ),
-        ),
-      );
-    }
-
-    final currentQuestion = questions[currentQuestionIndex];
-    final currentOptions = _currentOptions();
-
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.black),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(widget.quizTitle, style: AppTextStyles.heading2),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close, color: AppColors.black),
-            onPressed: () => context.pop(),
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            4.sh,
-            LinearProgressIndicator(
-              value: (currentQuestionIndex + 1) / questions.length,
-              backgroundColor: AppColors.lightGrey,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppColors.primary,
-              ),
-              minHeight: 6,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            5.sh,
-            Text(
-              'Question ${currentQuestionIndex + 1} of ${questions.length}',
-              style: AppTextStyles.body2.copyWith(color: AppColors.grey),
-            ),
-            2.sh,
-            Text(
-              _questionText(currentQuestion, currentQuestionIndex),
-              style: AppTextStyles.heading1.copyWith(fontSize: 22),
-            ),
-            6.sh,
-            Column(
-              children: List.generate(currentOptions.length, (index) {
-                final option = currentOptions[index];
-                final isSelected = selectedOptionIndex == index;
-
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedOptionIndex = index;
-                    });
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(bottom: 2.h),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 5.w,
-                      vertical: 3.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color:
-                            isSelected ? AppColors.primary : AppColors.midGrey,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _optionText(option),
-                            style: AppTextStyles.body1.copyWith(
-                              color:
-                                  isSelected ? AppColors.white : AppColors.black,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
+  Widget build(BuildContext context) => !isQuizSessionActive
+      ? const Scaffold(body: Center(child: Text('Sign in again to continue.')))
+      : PopScope<Object?>(
+          canPop: !_ready,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop) _leave();
+          },
+          child: Scaffold(
+            body: SafeArea(
+              child: !_ready
+                  ? Center(
+                      child: _error == null
+                          ? const Text('Read the disclaimer to continue.')
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(_error!),
+                                if (!_invalidAssessment)
+                                  TextButton(
+                                    onPressed: _acknowledge,
+                                    child: const Text('Retry'),
+                                  ),
+                                TextButton(
+                                  onPressed: () => context.pop(),
+                                  child: const Text('Back'),
+                                ),
+                              ],
                             ),
+                    )
+                  : Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                tooltip: 'Back',
+                                onPressed: _currentIndex == 0
+                                    ? _leave
+                                    : () => setState(() => _currentIndex--),
+                                icon: const Icon(Icons.chevron_left),
+                              ),
+                              Expanded(
+                                child: ProgressTrack(
+                                  value:
+                                      (_currentIndex + 1) / _questions.length,
+                                  semanticLabel:
+                                      'Question ${_currentIndex + 1} of ${_questions.length}',
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Close',
+                                onPressed: _leave,
+                                icon: const Icon(Icons.close),
+                              ),
+                            ],
                           ),
                         ),
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color:
-                                  isSelected ? AppColors.white : AppColors.midGrey,
-                              width: 2,
-                            ),
-                            color:
-                                isSelected ? AppColors.white : Colors.transparent,
+                        Expanded(
+                          child: ListView(
+                            key: ValueKey(_currentIndex),
+                            padding: const EdgeInsets.all(16),
+                            children: [
+                              Text(
+                                'Question ${_currentIndex + 1} of ${_questions.length}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 16),
+                              if (_assessment != null) ...[
+                                Text(
+                                  _assessment.questionTimeframe,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+                              Semantics(
+                                header: true,
+                                child: Text(
+                                  _questions[_currentIndex],
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineMedium,
+                                ),
+                              ),
+                              const SizedBox(height: 28),
+                              for (
+                                var index = 0;
+                                index <
+                                    (_assessment
+                                            ?.options(_currentIndex)
+                                            .length ??
+                                        0);
+                                index++
+                              ) ...[
+                                Semantics(
+                                  button: true,
+                                  selected:
+                                      _answers[_currentIndex] ==
+                                      _assessment!.options(
+                                        _currentIndex,
+                                      )[index]['id'],
+                                  child: Material(
+                                    color:
+                                        _answers[_currentIndex] ==
+                                            _assessment.options(
+                                              _currentIndex,
+                                            )[index]['id']
+                                        ? Theme.of(context).colorScheme.primary
+                                              .withValues(alpha: .08)
+                                        : Theme.of(context).colorScheme.surface,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      side: BorderSide(
+                                        color:
+                                            _answers[_currentIndex] ==
+                                                _assessment.options(
+                                                  _currentIndex,
+                                                )[index]['id']
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.primary
+                                            : Theme.of(context).dividerColor,
+                                      ),
+                                    ),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(8),
+                                      onTap: () => setState(
+                                        () => _answers[_currentIndex] =
+                                            _assessment.options(
+                                                  _currentIndex,
+                                                )[index]['id']
+                                                as int,
+                                      ),
+                                      child: Container(
+                                        constraints: const BoxConstraints(
+                                          minHeight: 48,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                _assessment.options(
+                                                      _currentIndex,
+                                                    )[index]['label']
+                                                    as String,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Icon(
+                                              _answers[_currentIndex] ==
+                                                      _assessment.options(
+                                                        _currentIndex,
+                                                      )[index]['id']
+                                                  ? Icons.radio_button_checked
+                                                  : Icons
+                                                        .radio_button_unchecked,
+                                              size: 20,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                            ],
                           ),
-                          child: isSelected
-                              ? const Icon(
-                                  Icons.check,
-                                  size: 16,
-                                  color: AppColors.primary,
-                                )
-                              : null,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              if (_error != null) Text(_error!),
+                              SizedBox(
+                                width: double.infinity,
+                                child: FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    minimumSize: const Size.fromHeight(48),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  onPressed:
+                                      _answers[_currentIndex] != null &&
+                                          !_submitting
+                                      ? _nextQuestion
+                                      : null,
+                                  child: Text(
+                                    _currentIndex < _questions.length - 1
+                                        ? 'Next'
+                                        : 'Submit',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                );
-              }),
             ),
-            const Spacer(),
-            Padding(
-              padding: EdgeInsets.only(bottom: 4.h),
-              child: AppButton(
-                text: _submitting
-                    ? 'Submitting...'
-                    : currentQuestionIndex == questions.length - 1
-                        ? 'Finish Quiz'
-                        : 'Next',
-                onPressed:
-                    selectedOptionIndex == null || _submitting ? null : _nextOrSubmit,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+          ),
+        );
 }

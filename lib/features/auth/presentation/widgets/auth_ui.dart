@@ -1,0 +1,658 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../gen/assets.gen.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/utils/motion.dart';
+
+enum AuthMessageType { hint, error, success, warning }
+
+enum AuthToastType { success, error, info, warning, loading }
+
+class AuthScaffold extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final List<Widget> children;
+  final bool showBack;
+  final Widget? footer;
+  final VoidCallback? onBack;
+
+  const AuthScaffold({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.children,
+    this.showBack = true,
+    this.footer,
+    this.onBack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (showBack)
+                IconButton(
+                  onPressed: onBack ?? () => context.pop(),
+                  icon: Icon(Icons.arrow_back),
+                  color: colorScheme.onSurface,
+                  padding: EdgeInsets.zero,
+                  alignment: Alignment.centerLeft,
+                  constraints: const BoxConstraints(
+                    minWidth: 48,
+                    minHeight: 48,
+                  ),
+                )
+              else
+                const SizedBox(height: 48),
+              const SizedBox(height: 24),
+              Text(
+                title,
+                style: AppTextStyles.heading1.copyWith(
+                  color: colorScheme.onSurface,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                style: AppTextStyles.body1.copyWith(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 40),
+              ...children,
+              if (footer != null) ...[
+                const SizedBox(height: 24),
+                Center(child: footer!),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AuthTextField extends StatefulWidget {
+  final String label;
+  final String? helper;
+  final String? error;
+  final String? success;
+  final TextEditingController controller;
+  final TextInputType? keyboardType;
+  final bool obscure;
+  final int? maxLength;
+  final bool enabled;
+  final ValueChanged<String>? onChanged;
+  final Iterable<String>? autofillHints;
+  final TextInputAction textInputAction;
+  final ValueChanged<String>? onSubmitted;
+
+  const AuthTextField({
+    super.key,
+    required this.label,
+    required this.controller,
+    this.helper,
+    this.error,
+    this.success,
+    this.keyboardType,
+    this.obscure = false,
+    this.maxLength,
+    this.enabled = true,
+    this.onChanged,
+    this.autofillHints,
+    this.textInputAction = TextInputAction.next,
+    this.onSubmitted,
+  });
+
+  @override
+  State<AuthTextField> createState() => _AuthTextFieldState();
+}
+
+class _AuthTextFieldState extends State<AuthTextField> {
+  final FocusNode _focusNode = FocusNode();
+  bool _obscure = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasError = widget.error != null;
+    final hasSuccess = widget.success != null && !hasError;
+    final borderColor = hasError
+        ? AppColors.danger
+        : _focusNode.hasFocus
+        ? (isDark ? AppColors.borderStrongDark : AppColors.borderStrongLight)
+        : colorScheme.outline;
+    final message = widget.error ?? widget.success ?? widget.helper;
+    final messageType = hasError
+        ? AuthMessageType.error
+        : hasSuccess
+        ? AuthMessageType.success
+        : AuthMessageType.hint;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedDefaultTextStyle(
+          duration: shouldReduceMotion(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 200),
+          style: AppTextStyles.body2.copyWith(
+            color: _focusNode.hasFocus
+                ? colorScheme.onSurface
+                : Theme.of(context).textTheme.bodyMedium?.color,
+            fontWeight: FontWeight.w500,
+          ),
+          child: Text(widget.label),
+        ),
+        const SizedBox(height: 8),
+        AnimatedContainer(
+          duration: shouldReduceMotion(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 200),
+          constraints: const BoxConstraints(minHeight: 56),
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.surfaceElevatedDark
+                : Color.alphaBlend(
+                    colorScheme.onSurface.withValues(alpha: .08),
+                    colorScheme.surface,
+                  ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color:
+                  hasError ||
+                      _focusNode.hasFocus ||
+                      MediaQuery.highContrastOf(context)
+                  ? borderColor
+                  : Colors.transparent,
+              width: 1,
+            ),
+          ),
+          child: TextField(
+            autofillHints: widget.autofillHints,
+            maxLength: widget.maxLength,
+            autocorrect:
+                !widget.obscure &&
+                widget.keyboardType != TextInputType.emailAddress,
+            enableSuggestions:
+                !widget.obscure &&
+                widget.keyboardType != TextInputType.emailAddress,
+            textInputAction: widget.textInputAction,
+            onSubmitted:
+                widget.onSubmitted ??
+                (_) {
+                  if (widget.textInputAction == TextInputAction.next) {
+                    FocusScope.of(context).nextFocus();
+                  } else {
+                    _focusNode.unfocus();
+                  }
+                },
+            onTapOutside: (_) => _focusNode.unfocus(),
+            scrollPadding: const EdgeInsets.all(48),
+            controller: widget.controller,
+            focusNode: _focusNode,
+            enabled: widget.enabled,
+            keyboardType: widget.keyboardType,
+            obscureText: widget.obscure && _obscure,
+            onChanged: widget.onChanged,
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            decoration: InputDecoration(
+              filled: false,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+              suffixIcon: widget.obscure
+                  ? IconButton(
+                      tooltip: _obscure ? 'Show password' : 'Hide password',
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                      icon: Icon(
+                        _obscure ? Icons.visibility_off : Icons.visibility,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                        size: 20,
+                      ),
+                    )
+                  : hasSuccess
+                  ? Icon(Icons.check_circle, color: AppColors.success, size: 18)
+                  : hasError
+                  ? Icon(Icons.error, color: AppColors.danger, size: 18)
+                  : null,
+            ),
+          ),
+        ),
+        AnimatedSwitcher(
+          duration: shouldReduceMotion(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 250),
+          child: message == null
+              ? const SizedBox(height: 0)
+              : Padding(
+                  key: ValueKey(message),
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Semantics(
+                    liveRegion: hasError,
+                    child: InlineMessage(type: messageType, text: message),
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class InlineMessage extends StatelessWidget {
+  final AuthMessageType type;
+  final String text;
+
+  const InlineMessage({super.key, required this.type, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (type) {
+      AuthMessageType.error => AppColors.danger,
+      AuthMessageType.success => AppColors.success,
+      AuthMessageType.warning => AppColors.warning,
+      AuthMessageType.hint =>
+        Theme.of(context).brightness == Brightness.dark
+            ? AppColors.textSubtleDark
+            : AppColors.textSubtleLight,
+    };
+    final icon = switch (type) {
+      AuthMessageType.error => Icons.close,
+      AuthMessageType.success => Icons.check,
+      AuthMessageType.warning => Icons.warning_amber_rounded,
+      AuthMessageType.hint => Icons.info_outline,
+    };
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: AppTextStyles.body2.copyWith(color: color, height: 1.35),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class PasswordStrengthBar extends StatelessWidget {
+  final String password;
+
+  const PasswordStrengthBar({super.key, required this.password});
+
+  int get score {
+    var value = 0;
+    if (password.length >= 8) value++;
+    if (password.contains(RegExp(r'[a-z]')) &&
+        password.contains(RegExp(r'[A-Z]'))) {
+      value++;
+    }
+    if (password.contains(RegExp(r'[0-9]'))) value++;
+    if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) value++;
+    return value;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (password.isEmpty) {
+      return Text(
+        'Use 8+ characters with a mix of letters and numbers.',
+        style: Theme.of(context).textTheme.bodySmall,
+      );
+    }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labels = ['Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+    final colors = [
+      AppColors.danger,
+      AppColors.danger,
+      AppColors.warning,
+      Theme.of(context).colorScheme.primary,
+      AppColors.success,
+    ];
+    final fill = score == 0 ? 0.12 : score / 4;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: Stack(
+                  children: [
+                    Container(
+                      height: 4,
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.lightGrey,
+                    ),
+                    AnimatedFractionallySizedBox(
+                      duration: shouldReduceMotion(context)
+                          ? Duration.zero
+                          : const Duration(milliseconds: 300),
+                      curve: Curves.easeOutCubic,
+                      widthFactor: fill,
+                      child: Container(height: 4, color: colors[score]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            AnimatedSwitcher(
+              duration: shouldReduceMotion(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 200),
+              child: Text(
+                labels[score],
+                key: ValueKey(score),
+                style: AppTextStyles.body2.copyWith(
+                  color: colors[score],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Use 8+ characters with a mix of letters and numbers.',
+          style: AppTextStyles.body2.copyWith(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textSubtleDark
+                : AppColors.textSubtleLight,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class AuthLogoMark extends StatelessWidget {
+  final double size;
+
+  const AuthLogoMark({super.key, this.size = 120});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: size + 80,
+          height: size + 80,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0),
+              ],
+            ),
+          ),
+        ),
+        SvgPicture.asset(Assets.svg.logo, width: size, height: size),
+      ],
+    );
+  }
+}
+
+class LegalFooter extends StatefulWidget {
+  const LegalFooter({super.key});
+
+  @override
+  State<LegalFooter> createState() => _LegalFooterState();
+}
+
+class _LegalFooterState extends State<LegalFooter> {
+  late final TapGestureRecognizer _termsRecognizer;
+  late final TapGestureRecognizer _privacyRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()
+      ..onTap = () => context.push('/legal/terms');
+    _privacyRecognizer = TapGestureRecognizer()
+      ..onTap = () => context.push('/legal/privacy');
+  }
+
+  @override
+  void dispose() {
+    _termsRecognizer.dispose();
+    _privacyRecognizer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      TextSpan(
+        text: 'By continuing, you agree to our ',
+        children: [
+          TextSpan(
+            text: 'Terms',
+            style: AppTextStyles.body2.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              decoration: TextDecoration.underline,
+            ),
+            recognizer: _termsRecognizer,
+          ),
+          const TextSpan(text: ' and '),
+          TextSpan(
+            text: 'Privacy Policy.',
+            style: AppTextStyles.body2.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              decoration: TextDecoration.underline,
+            ),
+            recognizer: _privacyRecognizer,
+          ),
+        ],
+      ),
+      textAlign: TextAlign.center,
+      style: AppTextStyles.body2.copyWith(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.textSubtleDark
+            : AppColors.textSubtleLight,
+        fontWeight: FontWeight.w500,
+        height: 1.4,
+      ),
+    );
+  }
+}
+
+void showAuthToast(
+  BuildContext context, {
+  required AuthToastType type,
+  required String title,
+  String? description,
+  VoidCallback? onRetry,
+}) {
+  if (type == AuthToastType.loading) return;
+  final message = description == null ? title : '$title\n$description';
+  AppSnackbar.show(context, switch (type) {
+    AuthToastType.success => AppSnackbar.success(message),
+    AuthToastType.error => AppSnackbar.error(message, onRetry: onRetry),
+    AuthToastType.warning => AppSnackbar.warning(message),
+    _ => AppSnackbar.info(message),
+  });
+}
+
+class AuthFooterLink extends StatelessWidget {
+  final String text;
+  final String action;
+  final VoidCallback onTap;
+
+  const AuthFooterLink({
+    super.key,
+    required this.text,
+    required this.action,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onTap,
+      child: Text.rich(
+        TextSpan(
+          text: '$text\n',
+          children: [
+            TextSpan(
+              text: action,
+              style: AppTextStyles.body2.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ],
+        ),
+        textAlign: TextAlign.center,
+        style: AppTextStyles.body2.copyWith(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.textMutedDark
+              : AppColors.textMutedLight,
+        ),
+      ),
+    );
+  }
+}
+
+class AuthPrimaryButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final bool isOutlined;
+
+  const AuthPrimaryButton({
+    super.key,
+    required this.text,
+    required this.onPressed,
+    this.isLoading = false,
+    this.isOutlined = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: AppButton(
+        text: text,
+        onPressed: onPressed == null
+            ? null
+            : () {
+                HapticFeedback.lightImpact();
+                onPressed!();
+              },
+        isLoading: isLoading,
+        isOutlined: isOutlined,
+        padding: EdgeInsets.zero,
+      ),
+    );
+  }
+}
+
+class AuthSelectionRow extends StatelessWidget {
+  const AuthSelectionRow({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+  final String label;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  @override
+  Widget build(BuildContext context) {
+    final w = context.cozyColors.wellness;
+    final c = Theme.of(context).colorScheme;
+    return Semantics(
+      checked: value,
+      child: AppPressable(
+        label: label,
+        onPressed: onChanged == null ? null : () => onChanged!(!value),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: w.touch),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: w.actionIcon,
+                height: w.actionIcon,
+                decoration: BoxDecoration(
+                  color: value ? c.primary : c.surface,
+                  border: Border.all(
+                    color: onChanged == null ? c.outlineVariant : c.outline,
+                  ),
+                  borderRadius: BorderRadius.circular(w.tight),
+                ),
+                child: value
+                    ? Icon(Icons.check, size: w.actionIcon, color: c.onPrimary)
+                    : null,
+              ),
+              SizedBox(width: w.contentGap),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

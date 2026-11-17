@@ -1,18 +1,19 @@
+import '../widgets/protected_signin.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:local_auth/local_auth.dart';
 
-import '../../../../core/network/api_client.dart';
+import '../../../../core/api/api_exceptions.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/api/auth_token_service.dart';
+import '../../../../core/storage/token_storage.dart';
+import '../../../../core/services/guest_session_service.dart';
+
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/custom_text_field.dart';
-import '../../../../core/widgets/google_sign_in_button.dart';
-
-import '../../../../utils/responsive_extensions.dart';
-import '../../../../utils/screen_util.dart';
-
 import '../../data/auth_service.dart';
+import '../widgets/auth_ui.dart';
+import '../widgets/google_auth_button.dart';
+import '../widgets/apple_auth_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,18 +24,54 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
-  final TextEditingController _emailController =
-      TextEditingController();
-
-  final TextEditingController _passwordController =
-      TextEditingController();
-
+  bool _stayLoggedIn = true;
+  bool _isLoading = false;
+  bool _googleLoading = false;
+  bool _appleLoading = false;
+  bool _biometricAvailable = false;
+  bool _biometricLoading = false;
+  bool get _busy =>
+      _isLoading || _googleLoading || _appleLoading || _biometricLoading;
   String? _emailError;
   String? _passwordError;
-  String? _generalError;
 
-  bool _isLoading = false;
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_clearErrors);
+    _passwordController.addListener(_clearErrors);
+    _checkBiometric();
+  }
+
+  Future<void> _checkBiometric() async {
+    try {
+      final auth = LocalAuthentication();
+      final types = await auth.getAvailableBiometrics();
+      final token = await AuthTokenService.getToken();
+      final supported = await auth.isDeviceSupported();
+      if (mounted) {
+        setState(
+          () => _biometricAvailable =
+              supported &&
+              types.isNotEmpty &&
+              token != null &&
+              token.isNotEmpty,
+        );
+      }
+    } catch (_) {
+      // Devices without configured biometrics use the existing sign-in options.
+    }
+  }
+
+  void _clearErrors() {
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+    });
+  }
 
   @override
   void dispose() {
@@ -43,305 +80,268 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _login() async {
     FocusScope.of(context).unfocus();
-
-    setState(() {
-      _emailError = null;
-      _passwordError = null;
-      _generalError = null;
-    });
-
     final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (email.isEmpty || !email.contains('@')) {
-      setState(() {
-        _emailError =
-            "Please enter a valid email address.";
-      });
-      return;
-    }
-
-    if (password.isEmpty) {
-      setState(() {
-        _passwordError =
-            "Password is required.";
-      });
-      return;
-    }
+    final password = _passwordController.text;
 
     setState(() {
-      _isLoading = true;
+      _emailError = email.contains('@') ? null : 'Enter a valid email.';
+      _passwordError = password.isNotEmpty ? null : 'Enter your password.';
     });
+
+    if (_emailError != null || _passwordError != null) return;
+
+    setState(() => _isLoading = true);
+    showAuthToast(
+      context,
+      type: AuthToastType.loading,
+      title: 'Logging you in...',
+    );
 
     try {
-      final response = await _authService.login(
-        email: email,
-        password: password,
+      final completed = await runProtectedSignIn(
+        context,
+        _authService,
+        () => _authService.login(
+          email: email,
+          password: password,
+          stayLoggedIn: _stayLoggedIn,
+        ),
+        clearSecrets: _passwordController.clear,
       );
-
+      if (completed == null) return;
       if (!mounted) return;
 
-      final user = response['user'];
-
-      final hasProfile =
-          user != null &&
-          user['profile'] != null;
-
-      if (hasProfile) {
-        context.go(AppRouter.home);
-      } else {
-        context.go(AppRouter.personalization);
-      }
+      showAuthToast(
+        context,
+        type: AuthToastType.success,
+        title: 'Welcome back.',
+      );
+      await GuestSessionService().exitGuestSession();
+      if (!mounted) return;
+      context.go(AppRouter.home);
+    } on AuthLocalDataException catch (e) {
+      if (!mounted) return;
+      showAuthToast(
+        context,
+        type: AuthToastType.error,
+        onRetry: _login,
+        title: e.message,
+      );
     } on ApiException catch (e) {
-      setState(() {
-        _generalError = e.message;
-      });
-    } catch (e) {
-      setState(() {
-        _generalError =
-            'Unable to login right now. Please try again.';
-      });
+      if (!mounted) return;
+      final message = e is ApiSecureConnectionException
+          ? 'This build cannot establish a secure connection. Install the latest test build.'
+          : _friendlyLoginError(e.message);
+      setState(() => _passwordError = message);
+      showAuthToast(
+        context,
+        type: AuthToastType.error,
+        onRetry: _login,
+        title: message,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      showAuthToast(
+        context,
+        type: AuthToastType.error,
+        onRetry: _login,
+        title: "Can't reach the server. Check your connection.",
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  String _friendlyLoginError(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('password') || lower.contains('credential')) {
+      return "That password didn't match. Try again?";
+    }
+    if (lower.contains('not found') || lower.contains('account')) {
+      setState(() {
+        _emailError = "We couldn't find an account with that email.";
+      });
+      return "We couldn't find that account.";
+    }
+    if (lower.contains('locked') || lower.contains('attempt')) {
+      return 'Too many attempts. Try again in 15 minutes.';
+    }
+    return "We couldn't log you in. Check your connection and try again.";
+  }
+
+  Future<void> _loginWithBiometric() async {
+    if (_busy || !_biometricAvailable) return;
+    setState(() => _biometricLoading = true);
+    final auth = LocalAuthentication();
+
+    try {
+      final canCheck = await auth.canCheckBiometrics;
+      final isSupported = await auth.isDeviceSupported();
+
+      if (!canCheck || !isSupported) {
+        if (!mounted) return;
+        showAuthToast(
+          context,
+          type: AuthToastType.warning,
+          title: "Face ID isn't set up on this device.",
+        );
+        return;
       }
+
+      final authenticated = await auth.authenticate(
+        localizedReason: 'Log in to Cozy Health',
+        biometricOnly: true,
+        persistAcrossBackgrounding: true,
+      );
+
+      if (!authenticated) return;
+
+      final token = await AuthTokenService.getToken();
+
+      if (token == null || token.isEmpty) {
+        if (!mounted) return;
+        showAuthToast(
+          context,
+          type: AuthToastType.warning,
+          title: 'Please log in with your password first.',
+        );
+        return;
+      }
+
+      await _authService.resumeStoredSession();
+      await TokenStorage().setSessionPersistence(
+        _stayLoggedIn,
+        expectedGeneration: TokenStorage.generation,
+      );
+      await GuestSessionService().exitGuestSession();
+      if (mounted) {
+        context.go(AppRouter.home);
+      }
+    } catch (e) {
+      debugPrint('Biometric error: details withheld.');
+      if (!mounted) return;
+      showAuthToast(
+        context,
+        type: AuthToastType.error,
+        onRetry: _login,
+        title: "Face ID isn't available right now.",
+      );
+    } finally {
+      if (mounted) setState(() => _biometricLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    ScreenUtil.init(context);
-
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(
-            Icons.arrow_back,
-            color: AppColors.black,
-          ),
-        ),
-        title: Text(
-          'Log In',
-          style: AppTextStyles.heading2,
-        ),
-        centerTitle: true,
+    return AuthScaffold(
+      title: 'Welcome back.',
+      subtitle: "It's good to see you again.",
+      footer: AuthFooterLink(
+        text: 'New here?',
+        action: 'Create an account',
+        onTap: () => context.go(AppRouter.createAccount),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 6.w,
-            ),
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                2.sh,
-
-                Text(
-                  'Welcome Back',
-                  style:
-                      AppTextStyles.heading1.copyWith(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                2.sh,
-
-                if (_generalError != null) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(4.w),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius:
-                          BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _generalError!,
-                      style:
-                          AppTextStyles.body2.copyWith(
-                        color: Colors.red,
-                      ),
-                    ),
-                  ),
-                  3.sh,
-                ],
-
-                if (_emailError != null) ...[
-                  Text(
-                    _emailError!,
-                    style:
-                        AppTextStyles.body2.copyWith(
-                      color: Colors.red,
-                    ),
-                  ),
-                  1.sh,
-                ],
-
-                CustomTextField(
-                  hintText: 'Email Address',
-                  controller: _emailController,
-                  keyboardType:
-                      TextInputType.emailAddress,
-                  hasError: _emailError != null,
-                ),
-
-                3.sh,
-
-                if (_passwordError != null) ...[
-                  Text(
-                    _passwordError!,
-                    style:
-                        AppTextStyles.body2.copyWith(
-                      color: Colors.red,
-                    ),
-                  ),
-                  1.sh,
-                ],
-
-                CustomTextField(
-                  hintText: 'Password',
-                  isPassword: true,
-                  controller: _passwordController,
-                  hasError:
-                      _passwordError != null,
-                ),
-
-                2.sh,
-
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize:
-                          MaterialTapTargetSize
-                              .shrinkWrap,
-                    ),
-                    child: Text(
-                      'Forgot your password ?',
-                      style:
-                          AppTextStyles.linkText
-                              .copyWith(
-                        decoration:
-                            TextDecoration
-                                .underline,
-                      ),
-                    ),
-                  ),
-                ),
-
-                4.sh,
-
-                AppButton(
-                  text: _isLoading
-                      ? 'Logging In...'
-                      : 'Log In',
-                  onPressed:
-                      _isLoading
-                          ? null
-                          : _handleLogin,
-                  isOutlined: false,
-                ),
-
-                4.sh,
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        color:
-                            AppColors.lightGrey,
-                        thickness: 1,
-                      ),
-                    ),
-                    Padding(
-                      padding:
-                          EdgeInsets.symmetric(
-                        horizontal: 4.w,
-                      ),
-                      child: Text(
-                        'or',
-                        style:
-                            AppTextStyles.body2
-                                .copyWith(
-                          color:
-                              AppColors.grey,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Divider(
-                        color:
-                            AppColors.lightGrey,
-                        thickness: 1,
-                      ),
-                    ),
-                  ],
-                ),
-
-                4.sh,
-
-                GoogleSignInButton(
-                  onPressed: () {},
-                ),
-
-                2.sh,
-
-                Center(
-                  child: TextButton(
-                    onPressed: () => context.go(
-                      AppRouter.createAccount,
-                    ),
-                    child: RichText(
-                      text: TextSpan(
-                        text:
-                            'Don\'t have an account? ',
-                        style:
-                            AppTextStyles.body1
-                                .copyWith(
-                          color:
-                              AppColors.grey,
-                        ),
-                        children: [
-                          TextSpan(
-                            text: 'Sign up',
-                            style:
-                                AppTextStyles
-                                    .body1
-                                    .copyWith(
-                              color:
-                                  AppColors
-                                      .primary,
-                              fontWeight:
-                                  FontWeight
-                                      .w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                2.sh,
-              ],
+      children: [
+        AuthTextField(
+          label: 'Email',
+          error: _emailError,
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+          enabled: !_busy,
+        ),
+        const SizedBox(height: 24),
+        AuthTextField(
+          label: 'Password',
+          error: _passwordError,
+          controller: _passwordController,
+          obscure: true,
+          autofillHints: const [AutofillHints.password],
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            if (!_busy) _login();
+          },
+          enabled: !_busy,
+        ),
+        const SizedBox(height: 16),
+        AuthSelectionRow(
+          key: const ValueKey('auth-stay-logged-in'),
+          label: 'Stay logged in',
+          value: _stayLoggedIn,
+          onChanged: _busy
+              ? null
+              : (value) => setState(() => _stayLoggedIn = value),
+        ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: _busy
+                ? null
+                : () => context.push(AppRouter.forgotPassword),
+            child: Text(
+              'Forgot password?',
+              style: AppTextStyles.linkText.copyWith(
+                decoration: TextDecoration.underline,
+              ),
             ),
           ),
         ),
-      ),
+        const SizedBox(height: 32),
+        AuthPrimaryButton(
+          text: 'Log In',
+          onPressed: _busy ? null : _login,
+          isLoading: _isLoading,
+        ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(child: Divider(color: Theme.of(context).dividerColor)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                'or',
+                style: AppTextStyles.body2.copyWith(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+              ),
+            ),
+            Expanded(child: Divider(color: Theme.of(context).dividerColor)),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppleAuthButton(
+              iconOnly: true,
+              enabled: !_busy,
+              stayLoggedIn: _stayLoggedIn,
+              onLoadingChanged: (value) =>
+                  setState(() => _appleLoading = value),
+            ),
+            GoogleAuthButton(
+              iconOnly: true,
+              enabled: !_busy,
+              stayLoggedIn: _stayLoggedIn,
+              onLoadingChanged: (value) =>
+                  setState(() => _googleLoading = value),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        if (_biometricAvailable)
+          AuthPrimaryButton(
+            isLoading: _biometricLoading,
+            text: Theme.of(context).platform == TargetPlatform.iOS
+                ? 'Log in with Face ID'
+                : 'Log in with fingerprint',
+            isOutlined: true,
+            onPressed: _busy ? null : _loginWithBiometric,
+          ),
+      ],
     );
   }
 }

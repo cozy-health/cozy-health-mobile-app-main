@@ -1,0 +1,137 @@
+import '../../../../core/services/user_data_fetcher.dart';
+import '../../../../core/services/local_db_service.dart';
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
+import '../../../../core/widgets/empty_state.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/models/saved_article.dart';
+import '../../data/content_repository.dart';
+import '../widgets/article_card_compact.dart';
+
+class SavedArticlesScreen extends StatefulWidget {
+  const SavedArticlesScreen({super.key});
+
+  @override
+  State<SavedArticlesScreen> createState() => _SavedArticlesScreenState();
+}
+
+class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
+  void _removeArticle(SavedArticle article) async {
+    await ContentRepository().toggleSave({'id': article.articleId});
+    if (mounted) {
+      AppSnackbar.show(
+        context,
+        AppSnackbar.fromLegacy(
+          content: Text('Removed from library'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go(AppRouter.contentHome),
+        ),
+        title: Text('Saved', style: Theme.of(context).textTheme.headlineMedium),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: StreamBuilder<List<SavedArticle>>(
+          stream: ContentRepository().watchSavedArticles(),
+          initialData: LocalDbService().getAllSavedArticles(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData) {
+              return const ListSkeleton();
+            }
+            final articles = snapshot.data ?? [];
+            if (articles.isEmpty) return _buildEmptyState();
+            return _buildList(articles);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildList(List<SavedArticle> articles) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Saved articles',
+            style: AppTextStyles.heading1.copyWith(
+              fontSize: 28,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: articles.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final article = articles[index];
+              return ArticleCardCompact(
+                title: article.title,
+                metadata: 'Saved for later', // Can format based on actual data
+                onTap: () {
+                  context.push(
+                    AppRouter.articleDetail,
+                    extra: {
+                      'id': article.articleId,
+                      'title': article.title,
+                      'slug': article.articleSlug,
+                      'body': article.body,
+                      'license': article.license,
+                      'source_url': article.sourceUrl,
+                      'excerpt': article.excerpt,
+                      'category': article.category,
+                      'read_time_minutes': article.readTimeMinutes,
+                    },
+                  );
+                },
+                trailing: IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () => _removeArticle(article),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() => EmptyState(
+    onOfflineRetry: () => UserDataFetcher().fetchSavedArticles(),
+    icon: Icons.bookmark_border,
+    title: 'Save articles to read later.',
+    primaryCtaLabel: 'Explore articles',
+    onPrimaryCta: () => context.push(AppRouter.contentHome),
+  );
+}

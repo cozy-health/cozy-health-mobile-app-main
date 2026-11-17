@@ -1,154 +1,118 @@
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import '../../../../core/api/api_client.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/widgets/security_blur.dart';
+import 'package:uuid/uuid.dart';
 
-import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../utils/responsive_extensions.dart';
+class ReportProblemScreen extends StatefulWidget {
+  const ReportProblemScreen({super.key, this.feedback = false});
+  final bool feedback;
+  @override
+  State<ReportProblemScreen> createState() => _ReportProblemScreenState();
+}
 
-class ReportProblemScreen extends StatelessWidget {
-  const ReportProblemScreen({super.key});
+class _ReportProblemScreenState extends State<ReportProblemScreen> {
+  final _message = TextEditingController();
+  final _owner = LocalDbService().activeUserId;
+  bool _busy = false;
+  String? _error;
+  String _category = 'General';
+  String _requestId = const Uuid().v4();
+  String? _lastPayload;
+  Future<void> _submit() async {
+    if (_owner != LocalDbService().activeUserId ||
+        _busy ||
+        _message.text.trim().isEmpty) {
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final payload = '$_category:${_message.text.trim()}';
+    if (_lastPayload != payload) {
+      _requestId = const Uuid().v4();
+      _lastPayload = payload;
+    }
+    try {
+      await ApiClient().post(
+        '/support/reports',
+        data: {
+          'subject':
+              '${widget.feedback ? 'Feedback' : 'Problem report'}: $_category',
+          'message': _message.text.trim(),
+          'request_id': _requestId,
+        },
+      );
+      if (!mounted || _owner != LocalDbService().activeUserId) return;
+      AppSnackbar.show(
+        context,
+        const SnackBar(content: Text('Your report was received. Thank you.')),
+      );
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error =
+              'Could not submit. Your message is still here; please retry.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              5.sh,
+  void dispose() {
+    _message.dispose();
+    super.dispose();
+  }
 
-              Text(
-                'Report a problem',
-                style: AppTextStyles.heading1.copyWith(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.black,
-                ),
-              ),
+  @override
+  Widget build(BuildContext context) =>
+      SecurityBlur(child: _buildReport(context));
 
-              4.sh,
-
-              _sectionTitle('Account'),
-
-              _settingsTile(
-                icon: Icons.person_outline,
-                title: 'Edit profile',
-                onTap: () => context.push(AppRouter.editProfile),
-              ),
-
-              _settingsTile(
-                icon: Icons.privacy_tip_outlined,
-                title: 'Security',
-                onTap: () => context.push(AppRouter.privacySettings),
-              ),
-
-              _settingsTile(
-                icon: Icons.notifications_none,
-                title: 'Notifications',
-                onTap: () {},
-              ),
-
-              4.sh,
-
-              _sectionTitle('Support & About'),
-
-              _settingsTile(
-                icon: Icons.credit_card_outlined,
-                title: 'My Subscription',
-                onTap: () {},
-              ),
-
-              _settingsTile(
-                icon: Icons.help_outline,
-                title: 'Help & Support',
-                onTap: () => context.push(AppRouter.helpSupport),
-              ),
-
-              _settingsTile(
-                icon: Icons.article_outlined,
-                title: 'Terms and Policies',
-                onTap: () => context.push(AppRouter.termsPolicies),
-              ),
-
-              4.sh,
-
-              _sectionTitle('Actions'),
-
-              _settingsTile(
-                icon: Icons.flag_outlined,
-                title: 'Report a problem',
-                onTap: () {},
-              ),
-
-              _settingsTile(
-                icon: Icons.logout,
-                title: 'Log out',
-                onTap: () {},
-              ),
-            ],
+  Widget _buildReport(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: Text(widget.feedback ? 'Share feedback' : 'Report a problem'),
+    ),
+    body: ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        DropdownButtonFormField<String>(
+          isExpanded: true,
+          initialValue: _category,
+          decoration: const InputDecoration(labelText: 'Category'),
+          items: [
+            for (final name in ['General', 'Bug', 'Feature request', 'Account'])
+              DropdownMenuItem(value: name, child: Text(name)),
+          ],
+          onChanged: _busy
+              ? null
+              : (value) => setState(() => _category = value ?? 'General'),
+        ),
+        const SizedBox(height: 20),
+        TextField(
+          controller: _message,
+          maxLength: 10000,
+          minLines: 6,
+          maxLines: 14,
+          decoration: const InputDecoration(
+            labelText: 'Your message',
+            alignLabelWithHint: true,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 1.2.h),
-      child: Text(
-        title,
-        style: AppTextStyles.body1.copyWith(
-          fontSize: 17,
-          fontWeight: FontWeight.w800,
-          color: AppColors.black,
+        const Text(
+          'Screenshot attachments are not available yet. Please describe the screen and what happened.',
         ),
-      ),
-    );
-  }
-
-  Widget _settingsTile({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: 54,
-        padding: EdgeInsets.symmetric(horizontal: 3.w),
-        decoration: const BoxDecoration(
-          color: Color(0xFFF3F5FA),
+        const SizedBox(height: 16),
+        if (_error != null) Text(_error!),
+        FilledButton(
+          onPressed: _busy ? null : _submit,
+          child: Text(_busy ? 'Submitting…' : 'Submit'),
         ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 23,
-              color: AppColors.black,
-            ),
-            5.sw,
-            Expanded(
-              child: Text(
-                title,
-                style: AppTextStyles.body1.copyWith(
-                  fontSize: 16,
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              size: 26,
-              color: AppColors.darkGrey,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
 }

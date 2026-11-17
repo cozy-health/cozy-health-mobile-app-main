@@ -4,6 +4,11 @@
 *.pyc
 *.swp
 .DS_Store
+analyze_*_output.txt
+analyze_output.txt
+analyze_out.txt
+analyze_final.txt
+ci_status.json
 .atom/
 .build/
 .buildlog/
@@ -11,6 +16,11 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+
+# AI agent helper scripts - should never be in lib/
+lib/**/*.php
+lib/**/*.py
+lib/update_repos.php
 
 # IntelliJ related
 *.iml
@@ -43,3 +53,31 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/build/
+/android/.kotlin/
+
+# Repository agent instructions are versioned.
+
+# Flutter generated desktop plugin files
+linux/flutter/generated_plugin_registrant.cc
+linux/flutter/generated_plugins.cmake
+macos/Flutter/GeneratedPluginRegistrant.swift
+windows/flutter/generated_plugin_registrant.cc
+windows/flutter/generated_plugins.cmake
+
+# Temporary files and generated outputs
+.env
+.env.*
+!.env.example
+analyze.txt
+analyze_*.txt
+build/
+.next/
+node_modules/
+Thumbs.db
+scratch/
+push-defines.json
+ios/Runner/GoogleService-Info.plist
+ios/Flutter/GoogleDevelopment.generated.xcconfig
+android/app/google-services.json
+tmp/

@@ -1,0 +1,234 @@
+# Notification, snackbar, and transient feedback inventory
+
+Generated 2026-10-10. Source locations for transient feedback, banners, permission sheets, and dialog actions. This is a search-based inventory; message truthfulness findings are in full-app-audit.md.
+- [lib/core/api/api_interceptors.dart:115](../../lib/core/api/api_interceptors.dart): `AppSnackbar.show(`
+- [lib/core/api/api_interceptors.dart:117](../../lib/core/api/api_interceptors.dart): `AppSnackbar.fromLegacy(`
+- [lib/core/widgets/app_snackbar.dart:105](../../lib/core/widgets/app_snackbar.dart): `..hideCurrentSnackBar()`
+- [lib/core/widgets/app_snackbar.dart:106](../../lib/core/widgets/app_snackbar.dart): `..showSnackBar(`
+- [lib/core/widgets/friendly_error.dart:6](../../lib/core/widgets/friendly_error.dart): `const FriendlyError({`
+- [lib/core/widgets/network_observer.dart:50](../../lib/core/widgets/network_observer.dart): `AppSnackbar.show(`
+- [lib/core/widgets/network_observer.dart:53](../../lib/core/widgets/network_observer.dart): `? AppSnackbar.success(summary.message)`
+- [lib/core/widgets/network_observer.dart:54](../../lib/core/widgets/network_observer.dart): `: AppSnackbar.error(summary.message, onRetry: _retry),`
+- [lib/core/widgets/network_observer.dart:94](../../lib/core/widgets/network_observer.dart): `AppSnackbar.show(context, AppSnackbar.info('Connection restored'));`
+- [lib/core/widgets/network_observer.dart:112](../../lib/core/widgets/network_observer.dart): `final visibleBanner = OfflineStatusBanner(`
+- [lib/core/widgets/offline_status_banner.dart:5](../../lib/core/widgets/offline_status_banner.dart): `class OfflineStatusBanner extends StatefulWidget {`
+- [lib/core/widgets/offline_status_banner.dart:6](../../lib/core/widgets/offline_status_banner.dart): `const OfflineStatusBanner({super.key, required this.onRetry});`
+- [lib/core/widgets/offline_status_banner.dart:9](../../lib/core/widgets/offline_status_banner.dart): `State<OfflineStatusBanner> createState() => _OfflineStatusBannerState();`
+- [lib/core/widgets/offline_status_banner.dart:12](../../lib/core/widgets/offline_status_banner.dart): `class _OfflineStatusBannerState extends State<OfflineStatusBanner> {`
+- [lib/features/assistant/presentation/screens/assistant_screen.dart:505](../../lib/features/assistant/presentation/screens/assistant_screen.dart): `AppSnackbar.show(`
+- [lib/features/assistant/presentation/screens/assistant_screen.dart:507](../../lib/features/assistant/presentation/screens/assistant_screen.dart): `AppSnackbar.fromLegacy(content: Text('Copied')),`
+- [lib/features/assistant/presentation/widgets/conversation_list_view.dart:111](../../lib/features/assistant/presentation/widgets/conversation_list_view.dart): `AppSnackbar.show(`
+- [lib/features/assistant/presentation/widgets/conversation_list_view.dart:113](../../lib/features/assistant/presentation/widgets/conversation_list_view.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/auth/presentation/screens/create_account_screen.dart:101](../../lib/features/auth/presentation/screens/create_account_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/create_account_screen.dart:110](../../lib/features/auth/presentation/screens/create_account_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/create_account_screen.dart:125](../../lib/features/auth/presentation/screens/create_account_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/create_account_screen.dart:134](../../lib/features/auth/presentation/screens/create_account_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/create_account_screen.dart:138](../../lib/features/auth/presentation/screens/create_account_screen.dart): `title: _friendlyError(e.message),`
+- [lib/features/auth/presentation/screens/create_account_screen.dart:142](../../lib/features/auth/presentation/screens/create_account_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/create_account_screen.dart:153](../../lib/features/auth/presentation/screens/create_account_screen.dart): `String _friendlyError(String message) {`
+- [lib/features/auth/presentation/screens/forgot_password_screen.dart:61](../../lib/features/auth/presentation/screens/forgot_password_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/forgot_password_screen.dart:70](../../lib/features/auth/presentation/screens/forgot_password_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/forgot_password_screen.dart:79](../../lib/features/auth/presentation/screens/forgot_password_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/forgot_password_screen.dart:87](../../lib/features/auth/presentation/screens/forgot_password_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/forgot_password_screen.dart:104](../../lib/features/auth/presentation/screens/forgot_password_screen.dart): `showAuthToast(context, type: AuthToastType.success, title: 'Code verified');`
+- [lib/features/auth/presentation/screens/forgot_password_screen.dart:126](../../lib/features/auth/presentation/screens/forgot_password_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/forgot_password_screen.dart:139](../../lib/features/auth/presentation/screens/forgot_password_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/forgot_password_screen.dart:147](../../lib/features/auth/presentation/screens/forgot_password_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/forgot_password_screen.dart:157](../../lib/features/auth/presentation/screens/forgot_password_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/login_screen.dart:97](../../lib/features/auth/presentation/screens/login_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/login_screen.dart:111](../../lib/features/auth/presentation/screens/login_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/login_screen.dart:133](../../lib/features/auth/presentation/screens/login_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/login_screen.dart:141](../../lib/features/auth/presentation/screens/login_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/login_screen.dart:180](../../lib/features/auth/presentation/screens/login_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/login_screen.dart:200](../../lib/features/auth/presentation/screens/login_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/screens/login_screen.dart:217](../../lib/features/auth/presentation/screens/login_screen.dart): `showAuthToast(`
+- [lib/features/auth/presentation/widgets/apple_auth_button.dart:118](../../lib/features/auth/presentation/widgets/apple_auth_button.dart): `AppSnackbar.show(context, AppSnackbar.fromLegacy(content: Text(message)));`
+- [lib/features/auth/presentation/widgets/auth_ui.dart:462](../../lib/features/auth/presentation/widgets/auth_ui.dart): `void showAuthToast(`
+- [lib/features/auth/presentation/widgets/auth_ui.dart:471](../../lib/features/auth/presentation/widgets/auth_ui.dart): `AppSnackbar.show(context, switch (type) {`
+- [lib/features/auth/presentation/widgets/auth_ui.dart:472](../../lib/features/auth/presentation/widgets/auth_ui.dart): `AuthToastType.success => AppSnackbar.success(message),`
+- [lib/features/auth/presentation/widgets/auth_ui.dart:473](../../lib/features/auth/presentation/widgets/auth_ui.dart): `AuthToastType.error => AppSnackbar.error(message, onRetry: onRetry),`
+- [lib/features/auth/presentation/widgets/auth_ui.dart:474](../../lib/features/auth/presentation/widgets/auth_ui.dart): `AuthToastType.warning => AppSnackbar.warning(message),`
+- [lib/features/auth/presentation/widgets/auth_ui.dart:475](../../lib/features/auth/presentation/widgets/auth_ui.dart): `_ => AppSnackbar.info(message),`
+- [lib/features/auth/presentation/widgets/google_auth_button.dart:88](../../lib/features/auth/presentation/widgets/google_auth_button.dart): `AppSnackbar.show(context, AppSnackbar.fromLegacy(content: Text(message)));`
+- [lib/features/community/presentation/screens/create_post_screen.dart:58](../../lib/features/community/presentation/screens/create_post_screen.dart): `AppSnackbar.show(`
+- [lib/features/community/presentation/screens/create_post_screen.dart:60](../../lib/features/community/presentation/screens/create_post_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/community/presentation/screens/create_post_screen.dart:73](../../lib/features/community/presentation/screens/create_post_screen.dart): `AppSnackbar.show(`
+- [lib/features/community/presentation/screens/create_post_screen.dart:75](../../lib/features/community/presentation/screens/create_post_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/community/presentation/screens/message_requests_screen.dart:22](../../lib/features/community/presentation/screens/message_requests_screen.dart): `AppSnackbar.show(`
+- [lib/features/community/presentation/screens/message_requests_screen.dart:24](../../lib/features/community/presentation/screens/message_requests_screen.dart): `AppSnackbar.fromLegacy(content: Text('Request $action.')),`
+- [lib/features/community/presentation/screens/post_detail_screen.dart:395](../../lib/features/community/presentation/screens/post_detail_screen.dart): `AppSnackbar.show(`
+- [lib/features/community/presentation/screens/post_detail_screen.dart:397](../../lib/features/community/presentation/screens/post_detail_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/community/presentation/screens/user_profile_screen.dart:86](../../lib/features/community/presentation/screens/user_profile_screen.dart): `AppSnackbar.show(`
+- [lib/features/community/presentation/screens/user_profile_screen.dart:88](../../lib/features/community/presentation/screens/user_profile_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/community/presentation/widgets/post_actions.dart:24](../../lib/features/community/presentation/widgets/post_actions.dart): `AppSnackbar.show(context, AppSnackbar.info('Post copied'));`
+- [lib/features/community/presentation/widgets/post_actions.dart:37](../../lib/features/community/presentation/widgets/post_actions.dart): `AppSnackbar.show(`
+- [lib/features/community/presentation/widgets/post_actions.dart:39](../../lib/features/community/presentation/widgets/post_actions.dart): `AppSnackbar.info('User hidden for this session'),`
+- [lib/features/community/presentation/widgets/post_actions.dart:52](../../lib/features/community/presentation/widgets/post_actions.dart): `AppSnackbar.show(`
+- [lib/features/community/presentation/widgets/post_actions.dart:54](../../lib/features/community/presentation/widgets/post_actions.dart): `AppSnackbar.info('Post hidden for this session'),`
+- [lib/features/content/presentation/screens/article_detail_screen.dart:52](../../lib/features/content/presentation/screens/article_detail_screen.dart): `AppSnackbar.show(`
+- [lib/features/content/presentation/screens/article_detail_screen.dart:54](../../lib/features/content/presentation/screens/article_detail_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/content/presentation/screens/article_detail_screen.dart:107](../../lib/features/content/presentation/screens/article_detail_screen.dart): `AppSnackbar.show(`
+- [lib/features/content/presentation/screens/article_detail_screen.dart:109](../../lib/features/content/presentation/screens/article_detail_screen.dart): `AppSnackbar.info('Article copied. Paste it to share.'),`
+- [lib/features/content/presentation/screens/daily_affirmation_screen.dart:42](../../lib/features/content/presentation/screens/daily_affirmation_screen.dart): `AppSnackbar.show(`
+- [lib/features/content/presentation/screens/daily_affirmation_screen.dart:44](../../lib/features/content/presentation/screens/daily_affirmation_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/content/presentation/screens/saved_articles_screen.dart:25](../../lib/features/content/presentation/screens/saved_articles_screen.dart): `AppSnackbar.show(`
+- [lib/features/content/presentation/screens/saved_articles_screen.dart:27](../../lib/features/content/presentation/screens/saved_articles_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/crisis/presentation/screens/crisis_screens.dart:674](../../lib/features/crisis/presentation/screens/crisis_screens.dart): `AppSnackbar.show(`
+- [lib/features/crisis/presentation/screens/crisis_screens.dart:676](../../lib/features/crisis/presentation/screens/crisis_screens.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/home/presentation/screens/home_screen.dart:189](../../lib/features/home/presentation/screens/home_screen.dart): `AppSnackbar.show(`
+- [lib/features/home/presentation/screens/home_screen.dart:191](../../lib/features/home/presentation/screens/home_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/home/presentation/screens/home_screen.dart:658](../../lib/features/home/presentation/screens/home_screen.dart): `AppSnackbar.show(`
+- [lib/features/home/presentation/screens/home_screen.dart:660](../../lib/features/home/presentation/screens/home_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/insights/presentation/widgets/insights_feed.dart:145](../../lib/features/insights/presentation/widgets/insights_feed.dart): `return FriendlyError(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:269](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:271](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.error(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:286](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:288](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.saved(type: 'journal_entry', id: entry.id),`
+- [lib/features/journal/presentation/screens/journal_screen.dart:407](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:409](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:512](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:514](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:521](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:523](../../lib/features/journal/presentation/screens/journal_screen.dart): `SnackBar(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:532](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:534](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.error('Unable to restore entry. Try again.'),`
+- [lib/features/journal/presentation/screens/journal_screen.dart:812](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:814](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.error(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1105](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1107](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.fromLegacy(content: Text('Transcription ready.')),`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1160](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1162](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.fromLegacy(content: Text('Hold longer to record.')),`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1168](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1170](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1186](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1188](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1199](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1201](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1211](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1213](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1266](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1268](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.fromLegacy(content: Text("Couldn't play recording.")),`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1277](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1279](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.fromLegacy(content: Text("Couldn't play recording.")),`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1512](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/journal_screen.dart:1514](../../lib/features/journal/presentation/screens/journal_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/journal/presentation/screens/voice_recording_screen.dart:103](../../lib/features/journal/presentation/screens/voice_recording_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/voice_recording_screen.dart:105](../../lib/features/journal/presentation/screens/voice_recording_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/journal/presentation/screens/voice_recording_screen.dart:123](../../lib/features/journal/presentation/screens/voice_recording_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/voice_recording_screen.dart:125](../../lib/features/journal/presentation/screens/voice_recording_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/journal/presentation/screens/voice_recording_screen.dart:133](../../lib/features/journal/presentation/screens/voice_recording_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/voice_recording_screen.dart:135](../../lib/features/journal/presentation/screens/voice_recording_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/journal/presentation/screens/voice_recording_screen.dart:144](../../lib/features/journal/presentation/screens/voice_recording_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/voice_recording_screen.dart:146](../../lib/features/journal/presentation/screens/voice_recording_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/journal/presentation/screens/voice_recording_screen.dart:203](../../lib/features/journal/presentation/screens/voice_recording_screen.dart): `AppSnackbar.show(`
+- [lib/features/journal/presentation/screens/voice_recording_screen.dart:205](../../lib/features/journal/presentation/screens/voice_recording_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart:216](../../lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart): `AppSnackbar.show(`
+- [lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart:218](../../lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart): `AppSnackbar.error(`
+- [lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart:408](../../lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart): `AppSnackbar.show(`
+- [lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart:410](../../lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart): `AppSnackbar.error(`
+- [lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart:428](../../lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart): `AppSnackbar.show(`
+- [lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart:430](../../lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart): `AppSnackbar.saved(type: 'mood_entry', id: entry.id),`
+- [lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart:1052](../../lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart): `AppSnackbar.show(`
+- [lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart:1054](../../lib/features/mood_check_in/presentation/screens/mood_feeling_screen.dart): `AppSnackbar.fromLegacy(content: Text('Entry saved.')),`
+- [lib/features/notifications/presentation/screens/notifications_screen.dart:26](../../lib/features/notifications/presentation/screens/notifications_screen.dart): `AppSnackbar.show(`
+- [lib/features/notifications/presentation/screens/notifications_screen.dart:28](../../lib/features/notifications/presentation/screens/notifications_screen.dart): `AppSnackbar.fromLegacy(content: Text('All caught up')),`
+- [lib/features/notifications/presentation/screens/notifications_screen.dart:37](../../lib/features/notifications/presentation/screens/notifications_screen.dart): `AppSnackbar.show(`
+- [lib/features/notifications/presentation/screens/notifications_screen.dart:39](../../lib/features/notifications/presentation/screens/notifications_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/notifications/presentation/widgets/app_notification_banner.dart:4](../../lib/features/notifications/presentation/widgets/app_notification_banner.dart): `class AppNotificationBanner extends StatefulWidget {`
+- [lib/features/notifications/presentation/widgets/app_notification_banner.dart:12](../../lib/features/notifications/presentation/widgets/app_notification_banner.dart): `const AppNotificationBanner({`
+- [lib/features/notifications/presentation/widgets/app_notification_banner.dart:23](../../lib/features/notifications/presentation/widgets/app_notification_banner.dart): `State<AppNotificationBanner> createState() => _AppNotificationBannerState();`
+- [lib/features/notifications/presentation/widgets/app_notification_banner.dart:26](../../lib/features/notifications/presentation/widgets/app_notification_banner.dart): `class _AppNotificationBannerState extends State<AppNotificationBanner>`
+- [lib/features/notifications/presentation/widgets/notification_denied_sheet.dart:6](../../lib/features/notifications/presentation/widgets/notification_denied_sheet.dart): `class NotificationDeniedSheet extends StatelessWidget {`
+- [lib/features/notifications/presentation/widgets/notification_denied_sheet.dart:7](../../lib/features/notifications/presentation/widgets/notification_denied_sheet.dart): `const NotificationDeniedSheet({super.key});`
+- [lib/features/notifications/presentation/widgets/notification_denied_sheet.dart:17](../../lib/features/notifications/presentation/widgets/notification_denied_sheet.dart): `builder: (context) => const NotificationDeniedSheet(),`
+- [lib/features/notifications/presentation/widgets/notification_permission_sheet.dart:6](../../lib/features/notifications/presentation/widgets/notification_permission_sheet.dart): `class NotificationPermissionSheet extends StatelessWidget {`
+- [lib/features/notifications/presentation/widgets/notification_permission_sheet.dart:7](../../lib/features/notifications/presentation/widgets/notification_permission_sheet.dart): `const NotificationPermissionSheet({super.key});`
+- [lib/features/notifications/presentation/widgets/notification_permission_sheet.dart:17](../../lib/features/notifications/presentation/widgets/notification_permission_sheet.dart): `builder: (context) => const NotificationPermissionSheet(),`
+- [lib/features/onboarding/presentation/screens/onboarding_screen.dart:133](../../lib/features/onboarding/presentation/screens/onboarding_screen.dart): `AppSnackbar.show(`
+- [lib/features/onboarding/presentation/screens/onboarding_screen.dart:135](../../lib/features/onboarding/presentation/screens/onboarding_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/quiz/presentation/screen/quiz_detail_screen.dart:101](../../lib/features/quiz/presentation/screen/quiz_detail_screen.dart): `AppSnackbar.show(`
+- [lib/features/quiz/presentation/screen/quiz_detail_screen.dart:103](../../lib/features/quiz/presentation/screen/quiz_detail_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart:54](../../lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart): `AppSnackbar.show(`
+- [lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart:56](../../lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart:86](../../lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart): `AppSnackbar.show(`
+- [lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart:88](../../lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart:98](../../lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart): `AppSnackbar.show(`
+- [lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart:100](../../lib/features/quiz/presentation/widgets/provider_share_confirm_dialog.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/about_screen.dart:217](../../lib/features/settings/presentation/screens/about_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/about_screen.dart:219](../../lib/features/settings/presentation/screens/about_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/accessibility_settings_screen.dart:58](../../lib/features/settings/presentation/screens/accessibility_settings_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/accessibility_settings_screen.dart:60](../../lib/features/settings/presentation/screens/accessibility_settings_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/account_deletion_screen.dart:146](../../lib/features/settings/presentation/screens/account_deletion_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/account_deletion_screen.dart:148](../../lib/features/settings/presentation/screens/account_deletion_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/active_sessions_screen.dart:68](../../lib/features/settings/presentation/screens/active_sessions_screen.dart): `ScaffoldMessenger.of(context).showSnackBar(`
+- [lib/features/settings/presentation/screens/active_sessions_screen.dart:69](../../lib/features/settings/presentation/screens/active_sessions_screen.dart): `const SnackBar(content: Text('Could not revoke session. Try again.')),`
+- [lib/features/settings/presentation/screens/active_sessions_screen.dart:105](../../lib/features/settings/presentation/screens/active_sessions_screen.dart): `ScaffoldMessenger.of(context).showSnackBar(`
+- [lib/features/settings/presentation/screens/active_sessions_screen.dart:106](../../lib/features/settings/presentation/screens/active_sessions_screen.dart): `const SnackBar(`
+- [lib/features/settings/presentation/screens/billing_history_screen.dart:127](../../lib/features/settings/presentation/screens/billing_history_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/billing_history_screen.dart:129](../../lib/features/settings/presentation/screens/billing_history_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/blocked_users_screen.dart:76](../../lib/features/settings/presentation/screens/blocked_users_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/blocked_users_screen.dart:78](../../lib/features/settings/presentation/screens/blocked_users_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/cancel_subscription_screen.dart:105](../../lib/features/settings/presentation/screens/cancel_subscription_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/cancel_subscription_screen.dart:107](../../lib/features/settings/presentation/screens/cancel_subscription_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/cancel_subscription_screen.dart:276](../../lib/features/settings/presentation/screens/cancel_subscription_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/cancel_subscription_screen.dart:278](../../lib/features/settings/presentation/screens/cancel_subscription_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/change_password_screen.dart:53](../../lib/features/settings/presentation/screens/change_password_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/change_password_screen.dart:55](../../lib/features/settings/presentation/screens/change_password_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/change_password_screen.dart:69](../../lib/features/settings/presentation/screens/change_password_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/change_password_screen.dart:71](../../lib/features/settings/presentation/screens/change_password_screen.dart): `AppSnackbar.fromLegacy(content: Text('Password changed successfully')),`
+- [lib/features/settings/presentation/screens/connected_apps_screen.dart:27](../../lib/features/settings/presentation/screens/connected_apps_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/connected_apps_screen.dart:29](../../lib/features/settings/presentation/screens/connected_apps_screen.dart): `AppSnackbar.fromLegacy(content: Text('Connected to $app')),`
+- [lib/features/settings/presentation/screens/connected_apps_screen.dart:70](../../lib/features/settings/presentation/screens/connected_apps_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/connected_apps_screen.dart:72](../../lib/features/settings/presentation/screens/connected_apps_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/data_export_screen.dart:73](../../lib/features/settings/presentation/screens/data_export_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/data_export_screen.dart:75](../../lib/features/settings/presentation/screens/data_export_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/data_export_status_screen.dart:218](../../lib/features/settings/presentation/screens/data_export_status_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/data_export_status_screen.dart:220](../../lib/features/settings/presentation/screens/data_export_status_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/digital_wellbeing_screen.dart:48](../../lib/features/settings/presentation/screens/digital_wellbeing_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/digital_wellbeing_screen.dart:50](../../lib/features/settings/presentation/screens/digital_wellbeing_screen.dart): `AppSnackbar.error(`
+- [lib/features/settings/presentation/screens/digital_wellbeing_screen.dart:71](../../lib/features/settings/presentation/screens/digital_wellbeing_screen.dart): `child: FriendlyError(`
+- [lib/features/settings/presentation/screens/download_my_data_screen.dart:37](../../lib/features/settings/presentation/screens/download_my_data_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/download_my_data_screen.dart:39](../../lib/features/settings/presentation/screens/download_my_data_screen.dart): `AppSnackbar.fromLegacy(content: Text('PDF ready. Check your Downloads.')),`
+- [lib/features/settings/presentation/screens/edit_profile_screen.dart:67](../../lib/features/settings/presentation/screens/edit_profile_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/edit_profile_screen.dart:69](../../lib/features/settings/presentation/screens/edit_profile_screen.dart): `AppSnackbar.saved(type: 'user_profile', id: _currentProfile!.id),`
+- [lib/features/settings/presentation/screens/edit_profile_screen.dart:74](../../lib/features/settings/presentation/screens/edit_profile_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/edit_profile_screen.dart:76](../../lib/features/settings/presentation/screens/edit_profile_screen.dart): `AppSnackbar.error(`
+- [lib/features/settings/presentation/screens/email_settings_screen.dart:38](../../lib/features/settings/presentation/screens/email_settings_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/email_settings_screen.dart:40](../../lib/features/settings/presentation/screens/email_settings_screen.dart): `AppSnackbar.fromLegacy(content: Text('Verification email sent')),`
+- [lib/features/settings/presentation/screens/feedback_screen.dart:37](../../lib/features/settings/presentation/screens/feedback_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/feedback_screen.dart:39](../../lib/features/settings/presentation/screens/feedback_screen.dart): `AppSnackbar.fromLegacy(content: Text('Thanks. We read every message.')),`
+- [lib/features/settings/presentation/screens/language_settings_screen.dart:55](../../lib/features/settings/presentation/screens/language_settings_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/language_settings_screen.dart:57](../../lib/features/settings/presentation/screens/language_settings_screen.dart): `AppSnackbar.fromLegacy(content: Text('Language changed to $lang')),`
+- [lib/features/settings/presentation/screens/phone_settings_screen.dart:39](../../lib/features/settings/presentation/screens/phone_settings_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/phone_settings_screen.dart:41](../../lib/features/settings/presentation/screens/phone_settings_screen.dart): `AppSnackbar.fromLegacy(content: Text('Verification code sent')),`
+- [lib/features/settings/presentation/screens/phone_settings_screen.dart:227](../../lib/features/settings/presentation/screens/phone_settings_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/phone_settings_screen.dart:229](../../lib/features/settings/presentation/screens/phone_settings_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/privacy_settings_screen.dart:63](../../lib/features/settings/presentation/screens/privacy_settings_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/privacy_settings_screen.dart:65](../../lib/features/settings/presentation/screens/privacy_settings_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/privacy_settings_screen.dart:77](../../lib/features/settings/presentation/screens/privacy_settings_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/privacy_settings_screen.dart:79](../../lib/features/settings/presentation/screens/privacy_settings_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/provider_screen.dart:131](../../lib/features/settings/presentation/screens/provider_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/provider_screen.dart:133](../../lib/features/settings/presentation/screens/provider_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/provider_screen.dart:188](../../lib/features/settings/presentation/screens/provider_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/provider_screen.dart:190](../../lib/features/settings/presentation/screens/provider_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/provider_screen.dart:237](../../lib/features/settings/presentation/screens/provider_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/provider_screen.dart:239](../../lib/features/settings/presentation/screens/provider_screen.dart): `AppSnackbar.fromLegacy(content: Text('Provider removed successfully.')),`
+- [lib/features/settings/presentation/screens/provider_screen.dart:432](../../lib/features/settings/presentation/screens/provider_screen.dart): `FriendlyError(`
+- [lib/features/settings/presentation/screens/referral_screen.dart:99](../../lib/features/settings/presentation/screens/referral_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/referral_screen.dart:101](../../lib/features/settings/presentation/screens/referral_screen.dart): `AppSnackbar.fromLegacy(content: Text('Link copied')),`
+- [lib/features/settings/presentation/screens/referral_screen.dart:112](../../lib/features/settings/presentation/screens/referral_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/referral_screen.dart:114](../../lib/features/settings/presentation/screens/referral_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/reminder_times_screen.dart:22](../../lib/features/settings/presentation/screens/reminder_times_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/reminder_times_screen.dart:24](../../lib/features/settings/presentation/screens/reminder_times_screen.dart): `AppSnackbar.fromLegacy(content: Text('Reminder set for $formattedTime.')),`
+- [lib/features/settings/presentation/screens/report_problem_screen.dart:36](../../lib/features/settings/presentation/screens/report_problem_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/report_problem_screen.dart:38](../../lib/features/settings/presentation/screens/report_problem_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/subscription_screen.dart:223](../../lib/features/settings/presentation/screens/subscription_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/subscription_screen.dart:225](../../lib/features/settings/presentation/screens/subscription_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/two_factor_auth_screen.dart:233](../../lib/features/settings/presentation/screens/two_factor_auth_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/two_factor_auth_screen.dart:235](../../lib/features/settings/presentation/screens/two_factor_auth_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/two_factor_auth_screen.dart:254](../../lib/features/settings/presentation/screens/two_factor_auth_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/two_factor_auth_screen.dart:256](../../lib/features/settings/presentation/screens/two_factor_auth_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/two_factor_auth_screen.dart:423](../../lib/features/settings/presentation/screens/two_factor_auth_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/two_factor_auth_screen.dart:425](../../lib/features/settings/presentation/screens/two_factor_auth_screen.dart): `AppSnackbar.fromLegacy(`
+- [lib/features/settings/presentation/screens/two_factor_auth_screen.dart:471](../../lib/features/settings/presentation/screens/two_factor_auth_screen.dart): `AppSnackbar.show(`
+- [lib/features/settings/presentation/screens/two_factor_auth_screen.dart:473](../../lib/features/settings/presentation/screens/two_factor_auth_screen.dart): `AppSnackbar.fromLegacy(`

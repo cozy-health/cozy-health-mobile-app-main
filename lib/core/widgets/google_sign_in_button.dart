@@ -1,46 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
 import '../../gen/assets.gen.dart';
 
 class GoogleSignInButton extends StatelessWidget {
   final VoidCallback? onPressed;
-
+  final bool isLoading;
+  final bool iconOnly;
   const GoogleSignInButton({
     super.key,
     this.onPressed,
+    this.isLoading = false,
+    this.iconOnly = false,
   });
-
   @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onPressed,
+  Widget build(BuildContext context) => Semantics(
+    label: iconOnly ? 'Continue with Google' : null,
+    child: OutlinedButton(
+      onPressed: isLoading ? null : onPressed,
       style: OutlinedButton.styleFrom(
-        side: BorderSide(color: AppColors.primary, width: 1.5),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        backgroundColor: AppColors.white,
+        minimumSize: iconOnly
+            ? const Size(56, 56)
+            : const Size(double.infinity, 56),
+        fixedSize: iconOnly ? const Size(56, 56) : null,
+        padding: iconOnly ? EdgeInsets.zero : null,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SvgPicture.asset(
-            Assets.svg.google,
-            width: 20,
-            height: 20,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'Continue With Google',
-            style: AppTextStyles.buttonText.copyWith(
-              color: AppColors.black,
+      child: isLoading
+          ? const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                semanticsLabel: 'Signing in with Google',
+              ),
+            )
+          : iconOnly
+          ? SvgPicture.asset(Assets.svg.google, width: 24, height: 24)
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(Assets.svg.google, width: 24, height: 24),
+                const SizedBox(width: 12),
+                const Text('Continue with Google'),
+              ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
+    ),
+  );
 }

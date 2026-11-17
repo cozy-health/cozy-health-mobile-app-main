@@ -1,319 +1,743 @@
+import '../../../../core/widgets/wellness_panel.dart';
+import '../../../../core/widgets/startup_cover.dart';
+import 'dart:async';
+import '../../../../core/repositories/streak_repository.dart';
+import '../../../../core/services/streak_controller.dart';
+import '../../../settings/data/wellness_progress.dart';
+import '../../../settings/presentation/screens/achievements_screen.dart';
+import '../../../../core/widgets/profile_avatar.dart';
+import '../../../../core/widgets/mood_artwork.dart';
+import 'package:cozy_health/core/theme/app_surface.dart';
+import '../../../../core/data/demo_mode.dart';
+import '../widgets/mood_chips_row.dart';
+import '../widgets/home_design_widgets.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/theme/wellness_tokens.dart';
+import '../../../../core/utils/motion.dart';
+import '../../../../core/widgets/sync_queue_badge.dart';
+import '../../../../core/widgets/background_restore_badge.dart';
+import 'package:cozy_health/core/widgets/skeleton_loader.dart';
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
+
+import '../widgets/feature_tour.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+
+import '../widgets/preference_suggestions.dart';
+import '../../../../core/widgets/affirmation_panel.dart';
+import '../../../../core/services/affirmation_controller.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/repositories/home_repository.dart';
+import '../../../../core/api/auth_token_service.dart';
+
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/guest_session_service.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/services/user_data_fetcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../utils/responsive_extensions.dart';
-import '../../../../utils/screen_util.dart';
-import '../../../../gen/assets.gen.dart';
+import '../../../../core/repositories/mood_repository.dart';
+import '../../../../core/models/mood_entry.dart';
+import '../../../../core/models/user_profile.dart';
+import '../../../../features/settings/data/profile_repository.dart';
+import '../../../../features/notifications/presentation/widgets/notification_bell.dart';
+
+enum HomeDashboardState {
+  returningUser,
+  firstTime,
+  partialData,
+  loading,
+  offline,
+  error,
+}
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    this.state = HomeDashboardState.returningUser,
+    this.tourTargets,
+    this.notificationFocus,
+    this.affirmationController,
+  });
+  final FeatureTourTargets? tourTargets;
+  final String? notificationFocus;
+  final AffirmationController? affirmationController;
+
+  final HomeDashboardState state;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  String? selectedMood;
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  late final AnimationController _entranceController;
+  final _reminderTarget = GlobalKey();
+  bool _reminderFocused = false;
+
+  void _focusReminder() {
+    if (_reminderFocused || widget.notificationFocus == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _reminderTarget.currentContext;
+      if (!mounted || target == null) return;
+      _reminderFocused = true;
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0.15,
+        duration: Duration.zero,
+      );
+    });
+  }
+
+  final MoodRepository _moodRepo = MoodRepository();
+  final HomeRepository _homeRepo = HomeRepository();
+  late final Stream<List<MoodEntry>> _moodStream;
+  DashboardData? _dashboard;
+  bool _loadingDashboard = true;
+  late final StreakController _streakController;
+  StreamSubscription<void>? _accountSubscription;
+  int _dashboardRevision = 0;
+  @override
+  void initState() {
+    super.initState();
+    _moodStream = _moodRepo.watchMoodEntries();
+    _streakController = StreakController()
+      ..addListener(_streakChanged)
+      ..start();
+    WidgetsBinding.instance.addObserver(this);
+    _accountSubscription = LocalDbService().accountChanges.listen((_) {
+      if (!mounted) return;
+      _dashboardRevision++;
+      setState(() {
+        _dashboard = null;
+        _loadingDashboard = false;
+      });
+      unawaited(_loadDashboard());
+    });
+    _loadDashboard();
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const WellnessTokens().transition,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!shouldReduceMotion(context)) {
+        _entranceController.forward();
+      } else {
+        _entranceController.value = 1;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _accountSubscription?.cancel();
+    _streakController.removeListener(_streakChanged);
+    _streakController.dispose();
+    _entranceController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    StartupCover.retryWith(context, () => _loadDashboard());
+  }
+
+  void _streakChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_streakController.refresh());
+    }
+  }
+
+  Future<void> _loadDashboard() async {
+    final revision = ++_dashboardRevision;
+    if (DemoMode.instance.enabled) {
+      if (mounted) {
+        setState(() {
+          _dashboard = null;
+          _loadingDashboard = false;
+        });
+      }
+      StartupCover.ready(context);
+      return;
+    }
+    final cached = await _homeRepo.getCachedDashboard();
+    final offline =
+        cached ?? await _homeRepo.getCachedDashboard(allowStale: true);
+    if (!mounted || revision != _dashboardRevision) return;
+    setState(() {
+      _dashboard = offline;
+      _loadingDashboard = false;
+    });
+    StartupCover.retryWith(context, () => _loadDashboard());
+    StartupCover.ready(context);
+    if (!await AuthTokenService.hasToken()) {
+      if (mounted && revision == _dashboardRevision) {
+        setState(() => _loadingDashboard = false);
+      }
+      return;
+    }
+    try {
+      final fresh = await _homeRepo.fetchDashboard();
+      if (mounted && revision == _dashboardRevision) {
+        setState(() {
+          _dashboard = fresh;
+        });
+      }
+    } catch (_) {
+      if (mounted && revision == _dashboardRevision) {
+        if (_dashboard == null) {
+          AppSnackbar.show(
+            context,
+            AppSnackbar.fromLegacy(
+              content: Text(
+                'Could not refresh Home. Your saved moods are still available.',
+              ),
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted && revision == _dashboardRevision) {
+        setState(() => _loadingDashboard = false);
+      }
+    }
+  }
+
+  int _localStreak(List<MoodEntry> entries) => WellnessProgress(
+    moods: entries,
+    journals: const [],
+    now: DateTime.now(),
+    calendarTime: LocalDbService().accountTime,
+  ).current;
 
   @override
   Widget build(BuildContext context) {
-    ScreenUtil.init(context);
-    
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                4.sh,
-                
-                // Header with profile and notification
-                Row(
-                  children: [
-                    // Profile picture
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: AssetImage(Assets.png.profilePic.path),
-                          fit: BoxFit.cover,
+    _focusReminder();
+    if (widget.state == HomeDashboardState.error) {
+      return _HomeErrorView(onRetry: () {});
+    }
+
+    return Theme(
+      data: Theme.of(context).copyWith(
+        textTheme: Theme.of(context).textTheme.apply(
+          bodyColor: Theme.of(context).colorScheme.onSurface,
+          displayColor: Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: context.cozyColors.wellness.canvas(
+          Theme.of(context).brightness,
+          MediaQuery.highContrastOf(context),
+        ),
+        body: SafeArea(
+          child: StreamBuilder<List<MoodEntry>>(
+            key: ValueKey(LocalDbService().activeUserId),
+            stream: _moodStream,
+            initialData: _moodRepo.currentEntries(),
+            builder: (context, snapshot) {
+              if ((_loadingDashboard &&
+                      _dashboard == null &&
+                      (snapshot.data?.isEmpty ?? true)) ||
+                  snapshot.connectionState == ConnectionState.waiting &&
+                      !snapshot.hasData) {
+                return const _HomeSkeleton();
+              }
+
+              final entries = snapshot.data ?? [];
+              final isEmpty =
+                  entries.isEmpty &&
+                  (_dashboard?.recentEntries.isEmpty ?? true) &&
+                  _dashboard?.todayMood == null;
+              // Compute streak
+              final now = DateTime.now();
+              final progress = _streakController.progress;
+              final streak =
+                  progress?.currentDays ??
+                  _dashboard?.streakDays ??
+                  _localStreak(entries);
+
+              // Up to three recent entries
+              final recentEntries =
+                  _dashboard?.recentMoods(entries) ?? entries.take(3).toList();
+              final today = LocalDbService().accountTime(now);
+              final hasMoodToday =
+                  progress?.todayCompleted ??
+                  entries.any((entry) {
+                    final day = LocalDbService().accountTime(entry.createdAt);
+                    return day.year == today.year &&
+                        day.month == today.month &&
+                        day.day == today.day;
+                  });
+
+              return FeatureTour(
+                targets: widget.tourTargets,
+                child: _DashboardScope(
+                  data: _dashboard,
+                  child: Semantics(
+                    label:
+                        'Home dashboard loaded. $streak day streak. ${recentEntries.length} recent entries.',
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        if (!DemoMode.instance.enabled) {
+                          await UserDataFetcher().fetchAll();
+                        }
+                        await _loadDashboard();
+                        await _streakController.refresh();
+                      },
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          context.cozyColors.wellness.page,
+                          context.cozyColors.wellness.page,
+                          context.cozyColors.wellness.page,
+                          wellnessFloatingClearance(context),
                         ),
-                      ),
-                    ),
-                    3.sw,
-                    
-                    // Welcome text
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Welcome',
-                            style: AppTextStyles.body2.copyWith(
-                              color: AppColors.grey,
-                            ),
-                          ),
-                          Text(
-                            'Cordelia Ifeyinwa',
-                            style: AppTextStyles.heading2.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    // Notification icon
-                    GestureDetector(
-                      onTap: () => context.push(AppRouter.notifications),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.lightGrey,
-                        ),
-                        child: Center(
-                          child: SvgPicture.asset(
-                            Assets.svg.notification,
-                            width: 20,
-                            height: 20,
-                            colorFilter: ColorFilter.mode(
-                              AppColors.primary,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                3.sh,
-                
-                // Mood check-in section
-                Text(
-                  'Tell cozy how you are feeling today',
-                  style: AppTextStyles.heading2.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                
-                2.sh,
-                
-                // Mood buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildMoodButton('Angry', Assets.svg.angry, const Color(0xFFFFE4B5)),
-                    ),
-                    2.sw,
-                    Expanded(
-                      child: _buildMoodButton('Sad', Assets.svg.sad, const Color(0xFFE0F7FA)),
-                    ),
-                    2.sw,
-                    Expanded(
-                      child: _buildMoodButton('Good', Assets.svg.good, const Color(0xFFFFF8DC)),
-                    ),
-                  ],
-                ),
-                
-                6.sh,
-                
-                // Mental Health Quiz section - UPDATED NAVIGATION
-                Container(
-                  padding: EdgeInsets.all(4.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      // Quiz illustration
-                      Expanded(
-                        flex: 2,
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Image.asset(
-                            Assets.png.mentalQuiz.path,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                      3.sw,
-                      
-                      // Quiz content
-                      Expanded(
-                        flex: 3,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Mental Health Quiz',
-                              style: AppTextStyles.heading2.copyWith(
-                                fontWeight: FontWeight.bold,
+                            const _GuestBanner(),
+                            const SyncQueueBadge(),
+                            const BackgroundRestoreBadge(),
+                            _AnimatedIn(
+                              controller: _entranceController,
+                              interval: const Interval(
+                                0,
+                                .35,
+                                curve: Curves.easeOutCubic,
+                              ),
+                              child: const _Header(),
+                            ),
+                            SizedBox(height: context.cozyColors.wellness.gap),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: AppPressable(
+                                label: 'Need help now?',
+                                onPressed: () =>
+                                    context.push(AppRouter.crisisContact),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: context.cozyColors.wellness.gap,
+                                    vertical: context.cozyColors.wellness.small,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                      context.cozyColors.wellness.tileRadius,
+                                    ),
+                                    border: Border.all(
+                                      color: context.cozyColors.crisis,
+                                      width: MediaQuery.highContrastOf(context)
+                                          ? 2
+                                          : 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.favorite_border,
+                                        color: context.cozyColors.crisis,
+                                      ),
+                                      SizedBox(
+                                        width:
+                                            context.cozyColors.wellness.small,
+                                      ),
+                                      Text(
+                                        'Need help now?',
+                                        style: TextStyle(
+                                          color: context.cozyColors.recording
+                                              .controlColor(
+                                                context.cozyColors.crisis,
+                                                Theme.of(
+                                                  context,
+                                                ).scaffoldBackgroundColor,
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                              ),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
-                            1.sh,
-                            Text(
-                              'Take a quick self-assessment to gain insights into your mental well-being.',
-                              style: AppTextStyles.body2.copyWith(
-                                color: AppColors.grey,
+                            SizedBox(height: context.cozyColors.wellness.gap),
+                            _HomeEmotionStrip(key: widget.tourTargets?.hero),
+                            SizedBox(height: context.cozyColors.wellness.gap),
+                            _HomeDesignCards(
+                              reminderKey: _reminderTarget,
+                              notificationFocus: widget.notificationFocus,
+                              entries: entries,
+                              streak: streak,
+                              streakController: _streakController,
+                              isEmpty: isEmpty,
+                              hasMoodToday: hasMoodToday,
+                              affirmation: AffirmationPanel(
+                                compact: true,
+                                controller: widget.affirmationController,
                               ),
-                            ),
-                            2.sh,
-                            AppButton(
-                              text: 'Start Quiz',
-                              onPressed: () => context.push(AppRouter.quizSelection),
-                              isOutlined: true,
-                              width: 30.w,
-                              trailingIcon: Icons.arrow_forward,
                             ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-                
-                4.sh,
-                
-                // Cozy Calendar section (unchanged)
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardScope extends InheritedWidget {
+  const _DashboardScope({required this.data, required super.child});
+  final DashboardData? data;
+  static DashboardData? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_DashboardScope>()?.data;
+  @override
+  bool updateShouldNotify(_DashboardScope oldWidget) => data != oldWidget.data;
+}
+
+class _GuestBanner extends StatelessWidget {
+  const _GuestBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: GuestSessionService().isGuestSession(),
+      builder: (context, snapshot) {
+        if (snapshot.data != true) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppSurface.tint(
+                context,
+                Theme.of(context).colorScheme.primary.withValues(alpha: .08),
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: AppSurface.border(context),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.person_outline,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 20,
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "You're browsing as a guest",
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.go(AppRouter.createAccount),
+                  child: Text('Create Account'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _HomeEmotionStrip extends StatelessWidget {
+  const _HomeEmotionStrip({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final t = context.cozyColors.wellness;
+    return HomeDesignCard(
+      color: t.accentPanel(Theme.of(context).colorScheme),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'A MOMENT TO CHECK IN',
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+          SizedBox(height: t.contentGap),
+          Text(
+            'How are you feeling today?',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontSize: t.heading,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: t.small),
+          const Text('Every feeling has a place here.'),
+          SizedBox(height: t.gap),
+          const MoodChipsRow(),
+          SizedBox(height: t.gap),
+          const Text('One small check-in. A little more clarity.'),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeDesignCards extends StatelessWidget {
+  const _HomeDesignCards({
+    this.reminderKey,
+    this.notificationFocus,
+    required this.entries,
+    required this.streak,
+    required this.streakController,
+    required this.isEmpty,
+    required this.hasMoodToday,
+    required this.affirmation,
+  });
+  final List<MoodEntry> entries;
+  final int streak;
+  final StreakController streakController;
+  final bool isEmpty, hasMoodToday;
+  final Widget affirmation;
+  final GlobalKey? reminderKey;
+  final String? notificationFocus;
+  @override
+  Widget build(BuildContext context) {
+    final t = context.cozyColors.wellness;
+    Widget title(String label) => Padding(
+      padding: EdgeInsets.only(bottom: t.small),
+      child: Text(
+        label,
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        KeyedSubtree(
+          key: notificationFocus == 'affirmation' ? reminderKey : null,
+          child: affirmation,
+        ),
+        SizedBox(height: t.sectionSpacing),
+        title('Your check-in rhythm'),
+        HomeRhythmCard(
+          key: notificationFocus == 'streak' ? reminderKey : null,
+          entries: entries,
+          streak: streak,
+          hasMoodToday: hasMoodToday,
+          progress: streakController.progress,
+          onStreak: isEmpty
+              ? () => context.push(AppRouter.moodFeeling)
+              : () => _pushPage(
+                  context,
+                  StreakDetailScreen(
+                    streak: streak,
+                    controller: streakController,
+                  ),
+                ),
+        ),
+        SizedBox(height: t.sectionSpacing),
+        const PreferenceSuggestions(),
+        SizedBox(height: t.sectionSpacing),
+        title('A little more you-time'),
+        const HomeFeatureCards(),
+        SizedBox(height: t.gap),
+        Text(
+          'Small steps. Your pace. Your cozy space.',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<UserProfile?>(
+      stream: ProfileRepository().watchProfile(),
+      initialData: LocalDbService.instance.getUserProfile(),
+      builder: (context, snapshot) {
+        final profile = snapshot.data;
+        final profileName = profile?.name.trim();
+        final name = profileName == null || profileName.isEmpty
+            ? ''
+            : profileName;
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppPressable(
+              label: 'Open profile',
+              onPressed: () => context.push(AppRouter.editProfile),
+              child: Center(child: ProfileAvatar(profile: profile, size: 40)),
+            ),
+            SizedBox(width: context.cozyColors.wellness.small),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Welcome',
+                    style: AppTextStyles.body1.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
+                  ),
+                  if (name.isNotEmpty) SizedBox(height: 4),
+                  if (name.isNotEmpty)
+                    Text(
+                      name,
+                      style: AppTextStyles.heading2.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const NotificationBell(),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _HomeSkeleton extends StatelessWidget {
+  const _HomeSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SkeletonLine(width: 130),
+          SizedBox(height: 8),
+          Row(
+            children: const [
+              _SkeletonLine(width: 110, height: 24),
+              Spacer(),
+              _SkeletonCircle(size: 40),
+            ],
+          ),
+          SizedBox(height: 28),
+          const _SkeletonBox(height: 140, radius: 20),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _SkeletonBox(height: 96, radius: 16)),
+              SizedBox(width: 12),
+              Expanded(child: _SkeletonBox(height: 96, radius: 16)),
+            ],
+          ),
+          SizedBox(height: 32),
+          const _SkeletonLine(width: 100),
+          SizedBox(height: 12),
+          const _SkeletonBox(height: 120, radius: 16),
+          SizedBox(height: 32),
+          const _SkeletonLine(width: 130),
+          SizedBox(height: 12),
+          const _SkeletonBox(height: 72, radius: 16),
+          SizedBox(height: 8),
+          const _SkeletonBox(height: 72, radius: 16),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeErrorView extends StatelessWidget {
+  const _HomeErrorView({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Container(
-                  padding: EdgeInsets.all(4.w),
+                  width: 88,
+                  height: 88,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF8F0),
-                    borderRadius: BorderRadius.circular(16),
+                    border: AppSurface.border(context),
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Cozy Calendar',
-                            style: AppTextStyles.heading2.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {},
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'View Log',
-                                  style: AppTextStyles.linkText.copyWith(
-                                    color: Colors.orange,
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.arrow_forward,
-                                  size: 16,
-                                  color: Colors.orange,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      1.sh,
-                      Text(
-                        'Cozy Calendar tracks your mood by helping you log daily emotions to identify trends.',
-                        style: AppTextStyles.body2.copyWith(
-                          color: AppColors.grey,
-                        ),
-                      ),
-                      3.sh,
-                      
-                      // Calendar days
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildCalendarDay('Mon'),
-                          _buildCalendarDay('Tue'),
-                          _buildCalendarDay('Wed'),
-                          _buildCalendarDay('Thur'),
-                          _buildCalendarDay('Fri'),
-                          _buildCalendarDay('Sat'),
-                          _buildCalendarDay('Sun'),
-                        ],
-                      ),
-                    ],
+                  child: Icon(
+                    Icons.cloud_off_rounded,
+                    size: 44,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                   ),
                 ),
-                
-                4.sh,
-                
-                // Journaling section
-                GestureDetector(
-                  onTap: () => context.push(AppRouter.journal),
-                  child: Container(
-                    padding: EdgeInsets.all(4.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        // Journaling illustration
-                        SvgPicture.asset(
-                          Assets.svg.journaling,
-                          width: 80,
-                          height: 80,
-                        ),
-                        4.sw,
-                        
-                        // Journaling content
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Journaling',
-                                style: AppTextStyles.heading2.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              1.sh,
-                              Text(
-                                'Your thoughts deserve a safe space. Write freely, reflect on your journey.',
-                                style: AppTextStyles.body2.copyWith(
-                                  color: AppColors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                SizedBox(height: 28),
+                Text(
+                  "We couldn't load\nyour home screen.",
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.heading1.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                
-                10.sh, // Extra space for bottom navigation
+                SizedBox(height: 12),
+                Text(
+                  'Check your connection\nand try again.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
+                    height: 1.4,
+                  ),
+                ),
+                SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: onRetry,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: AppColors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text('Try again'),
+                  ),
+                ),
               ],
             ),
           ),
@@ -321,71 +745,538 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
 
-  Widget _buildMoodButton(String mood, String assetPath, Color backgroundColor) {
-    final isSelected = selectedMood == mood;
-    
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedMood = mood;
-        });
-        context.push(AppRouter.moodFeeling);
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 1.h, horizontal: 2.w),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-          border: isSelected 
-              ? Border.all(color: AppColors.primary, width: 2)
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              assetPath,
-              width: 35,
-              height: 35,
-              colorFilter: isSelected 
-                  ? const ColorFilter.mode(Colors.white, BlendMode.srcIn)
-                  : null,
-            ),
-            1.sw,
-            Text(
-              mood,
-              style: AppTextStyles.body2.copyWith(
-                color: isSelected ? AppColors.white : AppColors.black,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+class StreakDetailScreen extends StatefulWidget {
+  const StreakDetailScreen({
+    super.key,
+    required this.streak,
+    this.repository,
+    this.controller,
+  });
+  final int streak;
+  final HomeRepository? repository;
+  final StreakController? controller;
+  @override
+  State<StreakDetailScreen> createState() => _StreakDetailScreenState();
+}
+
+class _StreakDetailScreenState extends State<StreakDetailScreen>
+    with WidgetsBindingObserver {
+  late final StreakController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        widget.controller ??
+        StreakController(repository: StreakRepository(api: widget.repository));
+    _controller.start();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (widget.controller == null) _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_controller.refresh());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.cozyColors.wellness;
+    return _DetailScaffold(
+      title: 'Your streak',
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final progress = _controller.progress;
+          if (_controller.loading && progress == null) {
+            return const Center(
+              child: CircularProgressIndicator(
+                semanticsLabel: 'Loading your streak',
               ),
+            );
+          }
+          if (progress == null) {
+            return Column(
+              children: [
+                const Text(
+                  'We could not check your streak. Your saved mood check-ins are safe. Connect to the internet and try again.',
+                ),
+                WellnessAction(
+                  label: 'Try again',
+                  icon: Icons.refresh,
+                  onPressed: _controller.refresh,
+                ),
+              ],
+            );
+          }
+          final count = progress.currentDays,
+              bank = progress.restDays,
+              run = progress.earningProgress;
+          final today = DateTime.parse(progress.localDate);
+          final completed = progress.completedDates,
+              protected = progress.protectedDates;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Icon(
+                Icons.local_fire_department_rounded,
+                size: t.streakIcon,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              Text(
+                '$count ${count == 1 ? 'day' : 'days'}',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+              SizedBox(height: t.gap),
+              if (_controller.offline ||
+                  progress.estimated ||
+                  progress.clockChanged) ...[
+                Text(
+                  progress.clockChanged
+                      ? 'Your device time changed. Check your date and time settings. Showing the last confirmed streak.'
+                      : progress.estimated
+                      ? 'Progress shown is an estimate from this device. Your rest days and check-ins will be confirmed after sync.'
+                      : 'Showing your saved streak. Connect to refresh.',
+                ),
+                SizedBox(height: t.small),
+                WellnessAction(
+                  label: 'Refresh streak',
+                  icon: Icons.refresh,
+                  onPressed: _controller.loading ? null : _controller.refresh,
+                ),
+                SizedBox(height: t.gap),
+              ],
+              const Text(
+                'One saved mood check-in completes your day. Your streak stays with you on every plan.',
+              ),
+              SizedBox(height: t.gap),
+              WellnessPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$bank of 2 rest days saved',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SizedBox(height: t.small),
+                    const Text(
+                      'A rest day is used automatically when you miss a day. It protects your number without adding a check-in.',
+                    ),
+                    SizedBox(height: t.small),
+                    Text(
+                      '$run of 7 uninterrupted check-in days toward your next rest day.',
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: t.gap),
+              Text(
+                'Your last 7 days',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              for (var i = 6; i >= 0; i--)
+                Builder(
+                  builder: (context) {
+                    // UTC arithmetic preserves calendar labels across device DST changes.
+                    final day = DateTime.utc(
+                      today.year,
+                      today.month,
+                      today.day,
+                    ).subtract(Duration(days: i));
+                    final date = day.toIso8601String().substring(0, 10);
+                    final active = completed.contains(date),
+                        rested = protected.contains(date);
+                    final label = active
+                        ? progress.pendingDates.contains(date)
+                              ? 'Check-in waiting to sync'
+                              : 'Check-in saved'
+                        : rested
+                        ? 'Rest day used'
+                        : i == 0
+                        ? 'Still time to check in'
+                        : 'No check-in';
+                    return Padding(
+                      padding: EdgeInsets.symmetric(vertical: t.small),
+                      child: Row(
+                        children: [
+                          Icon(
+                            active
+                                ? Icons.check_circle_outline
+                                : rested
+                                ? Icons.nightlight_outlined
+                                : Icons.radio_button_unchecked,
+                          ),
+                          SizedBox(width: t.small),
+                          Expanded(child: Text('$date · $label')),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              SizedBox(height: t.gap),
+              WellnessAction(
+                label: 'Save a mood check-in',
+                icon: Icons.add_circle_outline,
+                filled: true,
+                onPressed: () => context.push(AppRouter.moodFeeling),
+              ),
+              SizedBox(height: t.small),
+              WellnessAction(
+                label: 'View achievements',
+                icon: Icons.emoji_events_outlined,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AchievementsScreen(),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class InsightsScreen extends StatelessWidget {
+  const InsightsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return _DetailScaffold(
+      title: 'Insights',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  'This week',
+                  style: AppTextStyles.heading1.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'You felt calmer\nthan last week.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
+                    height: 1.35,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
+          SizedBox(height: 28),
+          _WarmCard(
+            color: Theme.of(context).colorScheme.surfaceContainer,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mood trend',
+                  style: AppTextStyles.body1.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 18),
+                const _SimpleAreaChart(),
+              ],
+            ),
+          ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _BreakdownCard(
+                  title: 'Most common',
+                  value: 'Good',
+                  mood: 'good',
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _BreakdownCard(
+                  title: 'Most common trigger',
+                  value: 'Work',
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 28),
+          Text(
+            'What helped',
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            '• Breathing (4 times)\n• Journaling (2 times)',
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+              height: 1.5,
+            ),
+          ),
+          SizedBox(height: 24),
+          Text(
+            'Gentle note',
+            style: AppTextStyles.heading2.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            "You logged 12 entries this week. That's a lot of self-awareness.",
+            style: AppTextStyles.body1.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailScaffold extends StatelessWidget {
+  const _DetailScaffold({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    tooltip: 'Back',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(Icons.arrow_back),
+                  ),
+                  Expanded(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles.heading2.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 24),
+              child,
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildCalendarDay(String day) {
-    return Column(
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.orange,
+class _BreakdownCard extends StatelessWidget {
+  const _BreakdownCard({required this.title, required this.value, this.mood});
+
+  final String title;
+  final String value;
+  final String? mood;
+
+  @override
+  Widget build(BuildContext context) {
+    return _WarmCard(
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: AppTextStyles.body2.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
           ),
-        ),
-        1.sh,
-        Text(
-          day,
-          style: AppTextStyles.body2.copyWith(
-            color: AppColors.grey,
-            fontSize: 12,
+          SizedBox(height: 10),
+          Row(
+            children: [
+              if (mood != null && MoodArtwork.assetFor(mood!) != null) ...[
+                MoodArtwork(mood: mood!, size: 24),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Text(
+                  value,
+                  style: AppTextStyles.heading2.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+}
+
+class _SimpleAreaChart extends StatelessWidget {
+  const _SimpleAreaChart();
+
+  @override
+  Widget build(BuildContext context) {
+    const values = [28.0, 50.0, 68.0, 86.0, 70.0, 52.0, 38.0];
+    return SizedBox(
+      height: 120,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: values
+            .map(
+              (value) => Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  height: value,
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: .2 + value / 200),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _WarmCard extends StatelessWidget {
+  const _WarmCard({required this.child, this.color});
+
+  final Widget child;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveColor =
+        color ?? Theme.of(context).colorScheme.surfaceContainer;
+    final effectiveBorder = (isDark
+        ? AppColors.borderDark.withValues(alpha: .9)
+        : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .65));
+
+    return Container(
+      width: double.infinity,
+
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: effectiveColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: effectiveBorder),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _AnimatedIn extends StatelessWidget {
+  const _AnimatedIn({
+    required this.controller,
+    required this.child,
+    required this.interval,
+  });
+
+  final AnimationController controller;
+  final Widget child;
+  final Interval interval;
+
+  @override
+  Widget build(BuildContext context) {
+    if (shouldReduceMotion(context)) return child;
+
+    final animation = CurvedAnimation(parent: controller, curve: interval);
+    return AnimatedBuilder(
+      animation: animation,
+      child: child,
+      builder: (context, child) {
+        return Opacity(
+          opacity: animation.value,
+          child: Transform.translate(
+            offset: Offset(0, 8 * (1 - animation.value)),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SkeletonBox extends StatelessWidget {
+  const _SkeletonBox({required this.height, required this.radius});
+
+  final double height;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonLoader(height: height, radius: radius);
+  }
+}
+
+class _SkeletonLine extends StatelessWidget {
+  const _SkeletonLine({required this.width, this.height = 16});
+
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonLoader(width: width, height: height, radius: 20);
+  }
+}
+
+class _SkeletonCircle extends StatelessWidget {
+  const _SkeletonCircle({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonLoader(width: size, height: size, radius: size / 2);
+  }
+}
+
+void _pushPage(BuildContext context, Widget page) {
+  final dashboard = _DashboardScope.of(context);
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => _DashboardScope(data: dashboard, child: page),
+    ),
+  );
 }

@@ -1,357 +1,278 @@
+import '../widgets/launch_billing_panel.dart';
+import '../widgets/store_plan_panel.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/routing/app_router.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../../core/network/api_client.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../utils/responsive_extensions.dart';
-import '../../data/settings_service.dart';
+import '../../data/subscription_repository.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../data/native_billing_service.dart';
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/models/subscription_status.dart';
 
 class SubscriptionScreen extends StatefulWidget {
-  const SubscriptionScreen({super.key});
-
+  const SubscriptionScreen({
+    super.key,
+    this.title = 'Plans and pricing',
+    this.deferBilling = false,
+  });
+  final String title;
+  final bool deferBilling;
   @override
   State<SubscriptionScreen> createState() => _SubscriptionScreenState();
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
-  final SettingsService _settingsService = SettingsService();
-
-  bool _loading = true;
-  bool _processing = false;
-  String? _error;
-
-  Map<String, dynamic>? _subscription;
-  List<dynamic> _packages = [];
-
+  // Plan benefits are independent of country. Only native store product
+  // metadata may supply checkout prices; legacy regional caches are ignored.
+  static const List<Map<String, Object>> _packages = [
+    {
+      'package_name': 'Standard',
+      'features': [
+        'Written journals',
+        'Mood tracking and streaks',
+        'Emergency support',
+        'Read-only community access',
+      ],
+    },
+    {
+      'package_name': 'Student',
+      'features': ['All Premium features', 'Verify a Nigerian academic email'],
+    },
+    {
+      'package_name': 'Premium',
+      'features': [
+        'Written and voice journals',
+        'Mood tracking and streaks',
+        'Connect and chat with a provider',
+        'Assessments and challenges',
+        'Trends and insights dashboard',
+        'Explicit journal sharing with your provider',
+        'Full community access',
+        'Emergency support',
+      ],
+    },
+  ];
+  final _repo = SubscriptionRepository();
+  final _owner = LocalDbService().activeUserId;
+  late Future<SubscriptionStatus?> _subscription;
   @override
   void initState() {
     super.initState();
-    _loadSubscriptionData();
-  }
-
-  Future<void> _loadSubscriptionData() async {
-    try {
-      final subRes = await _settingsService.getSubscription();
-      final packagesRes = await _settingsService.getPackages();
-
-      setState(() {
-        _subscription = subRes['subscription'] as Map<String, dynamic>?;
-        _packages = packagesRes['packages'] as List<dynamic>? ?? [];
-      });
-    } on ApiException catch (e) {
-      _error = e.message;
-    } catch (_) {
-      _error = 'Unable to load subscription.';
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
-    }
-  }
-
-  Future<void> _activatePackage(int packageId) async {
-    setState(() {
-      _processing = true;
-      _error = null;
-    });
-
-    try {
-      await _settingsService.activateSubscription(packageId: packageId);
-      await _loadSubscriptionData();
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Subscription activated successfully.')),
-      );
-    } on ApiException catch (e) {
-      setState(() => _error = e.message);
-    } catch (_) {
-      setState(() => _error = 'Unable to activate subscription.');
-    } finally {
-      if (mounted) {
-        setState(() => _processing = false);
-      }
-    }
-  }
-
-  Future<void> _cancelSubscription() async {
-    setState(() {
-      _processing = true;
-      _error = null;
-    });
-
-    try {
-      await _settingsService.cancelSubscription();
-      await _loadSubscriptionData();
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Subscription cancelled successfully.')),
-      );
-    } on ApiException catch (e) {
-      setState(() => _error = e.message);
-    } catch (_) {
-      setState(() => _error = 'Unable to cancel subscription.');
-    } finally {
-      if (mounted) {
-        setState(() => _processing = false);
-      }
-    }
+    _subscription = _repo.fetchSubscription();
   }
 
   @override
   Widget build(BuildContext context) {
-    final status = _subscription?['status']?.toString() ?? 'inactive';
-    final current = _subscription?['current'];
-    final package = current is Map<String, dynamic> ? current['package'] : null;
-    final packageName = package is Map<String, dynamic>
-        ? package['package_name']?.toString() ?? 'Free Plan'
-        : 'Free Plan';
-
     return Scaffold(
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5.w),
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
+      appBar: AppBar(
+        title: Text(widget.title),
+        leading: AppPressable(
+          label: 'Back',
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go(AppRouter.settings),
+          child: SizedBox(
+            width: context.cozyColors.wellness.touch,
+            height: context.cozyColors.wellness.touch,
+            child: const Icon(Icons.arrow_back),
+          ),
+        ),
+      ),
+      body: ListView(
+        padding: EdgeInsets.all(context.cozyColors.wellness.page),
+        children: [
+          FutureBuilder<SubscriptionStatus?>(
+            future: _subscription,
+            builder: (context, snapshot) {
+              final subscription = snapshot.data;
+              if (snapshot.hasError) {
+                return WellnessPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Your current plan could not be loaded. Refresh to check your access.',
+                      ),
+                      WellnessAction(
+                        key: const ValueKey('retry-current-plan'),
+                        label: 'Refresh plan status',
+                        onPressed: () => setState(
+                          () => _subscription = _repo.fetchSubscription(),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Text('Checking your current plan…');
+              }
+              if (_owner == LocalDbService().activeUserId &&
+                  subscription != null &&
+                  subscription.isStoreManaged) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: StorePlanPanel(
+                    subscription: subscription,
+                    onRefresh: () => setState(
+                      () => _subscription = _repo.fetchSubscription(),
+                    ),
+                  ),
+                );
+              }
+              if (_owner != LocalDbService().activeUserId ||
+                  subscription == null ||
+                  !subscription.isDevelopmentTest ||
+                  !subscription.isActive) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: WellnessPanel(
+                  tinted: true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      3.sh,
-                      _header(context),
-                      5.sh,
-
                       Text(
-                        'My Subscription',
-                        style: AppTextStyles.heading1.copyWith(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.black,
-                        ),
+                        'Development test access',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-
-                      2.sh,
-
                       Text(
-                        'Manage your plan, billing, and access to Cozy Health features.',
-                        style: AppTextStyles.body1.copyWith(
-                          color: AppColors.grey,
-                          height: 1.4,
-                        ),
+                        '${subscription.tier} · Ends ${subscription.expiresAt == null ? 'at the scheduled expiry' : DateFormat.yMMMd().add_jm().format(subscription.expiresAt!.toLocal())}',
                       ),
-
-                      3.sh,
-
-                      if (_error != null) ...[
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(3.w),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            _error!,
-                            style: AppTextStyles.body2.copyWith(
-                              color: Colors.red,
-                            ),
-                          ),
-                        ),
-                        3.sh,
-                      ],
-
-                      _currentPlanCard(
-                        packageName: packageName,
-                        status: status,
-                        expiryDate: _subscription?['expiry_date']?.toString(),
+                      const Text(
+                        'Temporary access for testing. No payment was collected.',
                       ),
-
-                      4.sh,
-
-                      Text(
-                        'Available Plans',
-                        style: AppTextStyles.heading2.copyWith(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-
-                      2.sh,
-
-                      if (_packages.isEmpty)
-                        Text(
-                          'No packages available yet.',
-                          style: AppTextStyles.body2.copyWith(
-                            color: AppColors.grey,
-                          ),
-                        )
-                      else
-                        ..._packages.map((item) {
-                          final pkg = item as Map<String, dynamic>;
-                          final id = int.tryParse(pkg['id'].toString()) ?? 0;
-                          final name = pkg['package_name']?.toString() ?? 'Plan';
-                          final price = pkg['price']?.toString() ?? '0';
-                          final duration = pkg['duration']?.toString() ?? '';
-
-                          return _packageCard(
-                            id: id,
-                            name: name,
-                            price: price,
-                            duration: duration,
-                          );
-                        }),
-
-                      3.sh,
-
-                      if (status == 'active')
-                        Center(
-                          child: TextButton(
-                            onPressed: _processing ? null : _cancelSubscription,
-                            child: Text(
-                              _processing ? 'Processing...' : 'Cancel subscription',
-                              style: AppTextStyles.body2.copyWith(
-                                color: AppColors.grey,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      4.sh,
                     ],
                   ),
                 ),
-        ),
-      ),
-    );
-  }
-
-  Widget _header(BuildContext context) {
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () => context.pop(),
-          child: Row(
-            children: [
-              const Icon(Icons.chevron_left, size: 22, color: AppColors.darkGrey),
-              Text(
-                'Back',
-                style: AppTextStyles.body2.copyWith(color: AppColors.grey),
-              ),
-            ],
+              );
+            },
           ),
-        ),
-        Expanded(
-          child: Center(
+          Text(
+            'Choose your pace',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Choose Standard, Student, or Premium. Student includes all Premium features with verified Nigerian academic email eligibility.',
+          ),
+          const SizedBox(height: 20),
+          for (final row in _packages) _plan(row),
+          if (widget.deferBilling)
+            const Text(
+              'Store purchases are currently unavailable. No purchase can be started here.',
+            )
+          else
+            const WellnessPanel(
+              child: LaunchBillingPanel(showStudentVerification: false),
+            ),
+          const SizedBox(height: 20),
+          const WellnessPanel(
             child: Text(
-              'Subscription',
-              style: AppTextStyles.heading2.copyWith(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: AppColors.black,
-              ),
+              'The store shows the applicable price and renewal details before payment. Student and Premium have the same paid benefits. Verify a Nigerian academic email ending in .edu.ng or an approved school domain. Eligibility lasts 12 months and does not activate a subscription.',
             ),
           ),
-        ),
-        SizedBox(width: 14.w),
-      ],
-    );
-  }
-
-  Widget _currentPlanCard({
-    required String packageName,
-    required String status,
-    String? expiryDate,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(5.w),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F5FA),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Current Plan', style: AppTextStyles.body2.copyWith(color: AppColors.grey)),
-          1.sh,
-          Text(
-            packageName,
-            style: AppTextStyles.heading1.copyWith(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: AppColors.black,
+          if (!widget.deferBilling)
+            TextButton(
+              onPressed: () => context.push(AppRouter.billingHistory),
+              child: const Text('Billing history'),
             ),
-          ),
-          1.sh,
-          Text(
-            'Status: ${status.toUpperCase()}',
-            style: AppTextStyles.body2.copyWith(
-              color: status == 'active' ? AppColors.primary : AppColors.grey,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (expiryDate != null) ...[
-            1.sh,
-            Text(
-              'Expires: $expiryDate',
-              style: AppTextStyles.body2.copyWith(color: AppColors.darkGrey),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  Widget _packageCard({
-    required int id,
-    required String name,
-    required String price,
-    required String duration,
-  }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 2.h),
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE1E4EA)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: AppTextStyles.body1.copyWith(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w700,
+  Widget _plan(Map<String, Object> row) {
+    final w = context.cozyColors.wellness;
+    final name = row['package_name'] as String;
+    final features = row['features'] as List<String>;
+    final student = name == 'Student';
+    return Padding(
+      padding: EdgeInsets.only(bottom: w.gap),
+      child: WellnessPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(name, style: Theme.of(context).textTheme.titleLarge),
+            SizedBox(height: w.small),
+            FutureBuilder<SubscriptionStatus?>(
+              future: _subscription,
+              builder: (context, snapshot) {
+                final current = snapshot.data;
+                return _owner == LocalDbService().activeUserId &&
+                        current != null &&
+                        current.isActive &&
+                        current.tier.toLowerCase() == name.toLowerCase()
+                    ? const Text('Current plan')
+                    : const SizedBox.shrink();
+              },
+            ),
+            Text(
+              student
+                  ? 'Premium benefits with verified academic email eligibility.'
+                  : name == 'Premium'
+                  ? 'More ways to reflect, connect and understand your wellbeing.'
+                  : 'Everyday tools for your wellbeing.',
+            ),
+            SizedBox(height: w.contentGap),
+            for (final feature in features)
+              Padding(
+                padding: EdgeInsets.only(bottom: w.small),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.check_rounded,
+                      size: w.actionIcon,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    SizedBox(width: w.small),
+                    Expanded(child: Text(feature)),
+                  ],
+                ),
+              ),
+            if (student && !widget.deferBilling) ...[
+              SizedBox(height: w.small),
+              const StudentPricingAction(),
+            ],
+            SizedBox(height: w.contentGap),
+            WellnessAction(
+              key: ValueKey('plan-details-${name.toLowerCase()}'),
+              label: 'View $name details',
+              onPressed: () => showWellnessSheet<void>(
+                context: context,
+                builder: (context) => ListenableBuilder(
+                  listenable: NativeBillingService.instance,
+                  builder: (context, _) => WellnessSheet(
+                    title: name,
+                    children: [
+                      for (final feature in features)
+                        Padding(
+                          padding: EdgeInsets.only(bottom: w.small),
+                          child: Text(feature),
+                        ),
+                      SizedBox(height: w.contentGap),
+                      Text(
+                        widget.deferBilling ||
+                                !NativeBillingService.instance.enabled
+                            ? 'Store purchases are currently unavailable. No purchase can be started here.'
+                            : 'Available prices and purchase options are shown in Store purchases on the plans page. Your store confirms the price and renewal details before payment.',
+                      ),
+                      if (student)
+                        const Text(
+                          'Student eligibility lasts 12 months. Verification enables Student pricing; it does not activate paid access.',
+                        ),
+                    ],
                   ),
                 ),
-                0.8.sh,
-                Text(
-                  '₦$price ${duration.isNotEmpty ? '/ $duration' : ''}',
-                  style: AppTextStyles.body2.copyWith(color: AppColors.grey),
-                ),
-              ],
+              ),
             ),
-          ),
-          SizedBox(
-            width: 110,
-            child: AppButton(
-              text: _processing ? '...' : 'Activate',
-              onPressed: _processing ? null : () => _activatePackage(id),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

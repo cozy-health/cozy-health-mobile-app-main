@@ -1,18 +1,16 @@
+import '../widgets/protected_signin.dart';
+import '../../../../core/widgets/analytics_opt_in.dart';
+import '../../../../core/services/usage_analytics.dart';
+import '../../../../core/services/legal_documents.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/network/api_client.dart';
+import '../../../../core/api/api_exceptions.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/custom_text_field.dart';
-import '../../../../core/widgets/google_sign_in_button.dart';
-import '../../../../core/widgets/password_validation.dart';
-import '../../../../utils/responsive_extensions.dart';
-import '../../../../utils/screen_util.dart';
-
 import '../../data/auth_service.dart';
+import '../widgets/auth_ui.dart';
+import '../widgets/google_auth_button.dart';
+import '../widgets/apple_auth_button.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -23,325 +21,278 @@ class CreateAccountScreen extends StatefulWidget {
 
 class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final AuthService _authService = AuthService();
-
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmController = TextEditingController();
 
   bool _agreeToTerms = false;
   bool _isLoading = false;
-
-  String _currentPassword = '';
-  String? _usernameError;
+  bool _googleLoading = false;
+  bool _appleLoading = false;
+  bool get _busy => _isLoading || _googleLoading || _appleLoading;
+  String? _nameError;
   String? _emailError;
   String? _passwordError;
-  String? _generalError;
+  String? _confirmError;
+  String? _termsError;
+
+  bool get _isFormValid {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    return _nameController.text.trim().isNotEmpty &&
+        email.contains('@') &&
+        password.length >= 8 &&
+        _confirmController.text == password &&
+        _agreeToTerms;
+  }
 
   @override
   void initState() {
     super.initState();
+    _nameController.addListener(_clearLiveErrors);
+    _emailController.addListener(_clearLiveErrors);
+    _passwordController.addListener(_clearLiveErrors);
+    _confirmController.addListener(_clearLiveErrors);
+  }
 
-    _passwordController.addListener(() {
-      setState(() {
-        _currentPassword = _passwordController.text;
-      });
+  void _clearLiveErrors() {
+    setState(() {
+      _emailError = null;
+      _nameError = null;
+      _passwordError = null;
+      _confirmError = null;
+      _termsError = null;
     });
   }
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleCreateAccount() async {
+  Future<void> _submit() async {
     FocusScope.of(context).unfocus();
-
-    setState(() {
-      _usernameError = null;
-      _emailError = null;
-      _passwordError = null;
-      _generalError = null;
-    });
-
-    final username = _usernameController.text.trim();
+    final name = _nameController.text.trim();
     final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (username.isEmpty) {
-      setState(() {
-        _usernameError = 'Username is required.';
-      });
-      return;
-    }
-
-    if (email.isEmpty || !email.contains('@')) {
-      setState(() {
-        _emailError = 'Please enter a valid email address.';
-      });
-      return;
-    }
-
-    if (password.length < 6) {
-      setState(() {
-        _passwordError = 'Password must be at least 6 characters.';
-      });
-      return;
-    }
-
-    if (!_agreeToTerms) {
-      setState(() {
-        _generalError = 'Please agree to the terms and conditions.';
-      });
-      return;
-    }
+    final password = _passwordController.text;
 
     setState(() {
-      _isLoading = true;
+      _nameError = name.isNotEmpty ? null : 'Enter your name.';
+      _emailError = email.contains('@')
+          ? null
+          : "That email doesn't look quite right.";
+      _passwordError = password.length >= 8
+          ? null
+          : 'Passwords need at least 8 characters.';
+      _confirmError = _confirmController.text == password
+          ? null
+          : "Passwords don't match yet.";
+      _termsError = _agreeToTerms
+          ? null
+          : 'Please agree to the Terms and Privacy Policy to continue.';
     });
+
+    if (_emailError != null ||
+        _nameError != null ||
+        _passwordError != null ||
+        _confirmError != null ||
+        _termsError != null) {
+      showAuthToast(
+        context,
+        type: AuthToastType.warning,
+        title: _termsError ?? 'Check the highlighted fields.',
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    showAuthToast(
+      context,
+      type: AuthToastType.loading,
+      title: 'Creating your account...',
+    );
 
     try {
-      await _authService.register(
-        firstname: username,
-        lastname: '',
-        email: email,
-        password: password,
-      );
-
+      await UsageAnalytics.instance.track('signup_started');
       if (!mounted) return;
-
+      final completed = await runProtectedSignIn(
+        context,
+        _authService,
+        () => _authService.register(
+          firstname: name,
+          lastname: '',
+          email: email,
+          password: password,
+          confirmPassword: _confirmController.text,
+        ),
+        clearSecrets: () {
+          _passwordController.clear();
+          _confirmController.clear();
+        },
+      );
+      if (completed == null) return;
+      await UsageAnalytics.instance.track('signup_completed');
+      if (!mounted) return;
+      showAuthToast(
+        context,
+        type: AuthToastType.success,
+        title: 'Welcome to Cozy Health.',
+        description: completed['challenge_required'] == false
+            ? 'Continue your setup.'
+            : "Let's verify your email.",
+      );
       context.go(AppRouter.congratulations);
     } on ApiException catch (e) {
-      setState(() {
-        _generalError = e.message;
-      });
+      if (!mounted) return;
+      showAuthToast(
+        context,
+        type: AuthToastType.error,
+        onRetry: _submit,
+        title: e is ApiValidationException && e.fieldErrors.isNotEmpty
+            ? e.fieldErrors.values.expand((messages) => messages).join(' ')
+            : _friendlyError(e.message),
+      );
     } catch (_) {
-      setState(() {
-        _generalError = 'Unable to create account. Please try again.';
-      });
+      if (!mounted) return;
+      showAuthToast(
+        context,
+        type: AuthToastType.error,
+        onRetry: _submit,
+        title: "We couldn't reach the server. Retry?",
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  String _friendlyError(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('exist') || lower.contains('taken')) {
+      setState(() {
+        _emailError = 'An account already exists with this email.';
+      });
+      return 'That email is already registered.';
+    }
+    return message;
   }
 
   @override
   Widget build(BuildContext context) {
-    ScreenUtil.init(context);
-
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: _isLoading ? null : () => context.pop(),
-          icon: const Icon(Icons.arrow_back, color: AppColors.black),
-        ),
-        title: Text('Create An Account', style: AppTextStyles.heading2),
-        centerTitle: true,
+    return AuthScaffold(
+      title: 'Create your\naccount.',
+      subtitle: "Let's start with the basics.",
+      footer: AuthFooterLink(
+        text: 'Already have an account?',
+        action: 'Log In',
+        onTap: () => context.go(AppRouter.login),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                2.sh,
-
-                Text(
-                  'Sign Up',
-                  style: AppTextStyles.heading1.copyWith(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                2.sh,
-
-                if (_generalError != null) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(4.w),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _generalError!,
-                      style: AppTextStyles.body2.copyWith(
-                        color: Colors.red,
-                      ),
-                    ),
-                  ),
-                  3.sh,
-                ],
-
-                if (_usernameError != null) ...[
-                  Text(
-                    _usernameError!,
-                    style: AppTextStyles.body2.copyWith(color: Colors.red),
-                  ),
-                  1.sh,
-                ],
-
-                CustomTextField(
-                  hintText: 'Username',
-                  controller: _usernameController,
-                  hasError: _usernameError != null,
-                ),
-
-                2.sh,
-
-                if (_emailError != null) ...[
-                  Text(
-                    _emailError!,
-                    style: AppTextStyles.body2.copyWith(color: Colors.red),
-                  ),
-                  1.sh,
-                ],
-
-                CustomTextField(
-                  hintText: 'Email Address',
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  hasError: _emailError != null,
-                ),
-
-                2.sh,
-
-                if (_passwordError != null) ...[
-                  Text(
-                    _passwordError!,
-                    style: AppTextStyles.body2.copyWith(color: Colors.red),
-                  ),
-                  1.sh,
-                ],
-
-                CustomTextField(
-                  hintText: 'Password',
-                  isPassword: true,
-                  controller: _passwordController,
-                  hasError: _passwordError != null,
-                ),
-
-                2.sh,
-
-                PasswordValidation(password: _currentPassword),
-
-                4.sh,
-
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Checkbox(
-                      value: _agreeToTerms,
-                      onChanged: _isLoading
-                          ? null
-                          : (value) {
-                              setState(() {
-                                _agreeToTerms = value ?? false;
-                              });
-                            },
-                      activeColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(
-                          'By signing up, you are agreeing to our terms and conditions',
-                          style: AppTextStyles.body2.copyWith(
-                            color: AppColors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                3.sh,
-
-                AppButton(
-                  text: 'Create An Account',
-                  onPressed: _isLoading ? null : _handleCreateAccount,
-                  isLoading: _isLoading,
-                  isOutlined: false,
-                ),
-
-                4.sh,
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        color: AppColors.lightGrey,
-                        thickness: 1,
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w),
-                      child: Text(
-                        'or',
-                        style: AppTextStyles.body2.copyWith(
-                          color: AppColors.grey,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Divider(
-                        color: AppColors.lightGrey,
-                        thickness: 1,
-                      ),
-                    ),
-                  ],
-                ),
-
-                2.sh,
-
-                GoogleSignInButton(onPressed: () {}),
-
-                2.sh,
-
-                Center(
-                  child: TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () => context.go(AppRouter.login),
-                    child: RichText(
-                      text: TextSpan(
-                        text: 'Already have an account? ',
-                        style: AppTextStyles.body1.copyWith(
-                          color: AppColors.grey,
-                        ),
-                        children: [
-                          TextSpan(
-                            text: 'Log In',
-                            style: AppTextStyles.body1.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                2.sh,
-              ],
+      children: [
+        AuthTextField(
+          label: 'Full Name',
+          autofillHints: const [AutofillHints.name],
+          error: _nameError,
+          controller: _nameController,
+          enabled: !_busy,
+        ),
+        const SizedBox(height: 24),
+        AuthTextField(
+          label: 'Email',
+          helper: 'For account and security messages.',
+          error: _emailError,
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+          enabled: !_busy,
+        ),
+        const SizedBox(height: 24),
+        AuthTextField(
+          label: 'Password',
+          error: _passwordError,
+          controller: _passwordController,
+          obscure: true,
+          autofillHints: const [AutofillHints.newPassword],
+          enabled: !_busy,
+        ),
+        const SizedBox(height: 12),
+        PasswordStrengthBar(password: _passwordController.text),
+        const SizedBox(height: 24),
+        AuthTextField(
+          label: 'Confirm Password',
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            if (!_busy && _isFormValid) _submit();
+          },
+          error: _confirmError,
+          controller: _confirmController,
+          autofillHints: const [AutofillHints.newPassword],
+          obscure: true,
+          enabled: !_busy,
+        ),
+        const SizedBox(height: 24),
+        AuthSelectionRow(
+          key: const ValueKey('auth-terms-consent'),
+          label: 'I agree to the Terms and Privacy Policy.',
+          value: _agreeToTerms,
+          onChanged: _busy
+              ? null
+              : (value) => setState(() {
+                  _agreeToTerms = value;
+                  _termsError = null;
+                }),
+        ),
+        Wrap(
+          spacing: 12,
+          children: [
+            TextButton(
+              onPressed: () =>
+                  LegalDocuments.open(LegalDocuments.documentUrl('/terms')),
+              child: const Text('Terms of Use'),
             ),
-          ),
+            TextButton(
+              onPressed: () =>
+                  LegalDocuments.open(LegalDocuments.documentUrl('/privacy')),
+              child: const Text('Privacy Policy'),
+            ),
+          ],
         ),
-      ),
+        const AnalyticsOptIn(),
+        if (_termsError != null) ...[
+          const SizedBox(height: 8),
+          InlineMessage(type: AuthMessageType.warning, text: _termsError!),
+        ],
+        const SizedBox(height: 32),
+        AuthPrimaryButton(
+          text: 'Create Account',
+          onPressed: _busy || !_isFormValid ? null : _submit,
+          isLoading: _isLoading,
+        ),
+        const SizedBox(height: 24),
+        const Center(child: Text('or')),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppleAuthButton(
+              iconOnly: true,
+              enabled: !_busy,
+              onLoadingChanged: (value) =>
+                  setState(() => _appleLoading = value),
+            ),
+            GoogleAuthButton(
+              iconOnly: true,
+              enabled: !_busy,
+              onLoadingChanged: (value) =>
+                  setState(() => _googleLoading = value),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 }

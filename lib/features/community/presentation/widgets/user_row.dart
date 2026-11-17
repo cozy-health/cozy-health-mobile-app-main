@@ -1,0 +1,112 @@
+import 'package:flutter/material.dart';
+import '../community_theme.dart';
+
+class UserRow extends StatelessWidget {
+  final Map<String, dynamic> user;
+  final VoidCallback onTap;
+  final VoidCallback onFollowToggle;
+
+  const UserRow({
+    super.key,
+    required this.user,
+    required this.onTap,
+    required this.onFollowToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final username = user['username'] as String? ?? 'user';
+    final bio = user['bio'] as String?;
+    final isFollowing = user['isFollowing'] as bool? ?? false;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                username.substring(0, 1).toUpperCase(),
+                style: context.communityBody1.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '@$username',
+                    style: context.communityBody1.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (bio != null && bio.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      bio,
+                      style: context.communityBody2.copyWith(
+                        color: context.communityMuted,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Semantics(
+                button: true,
+                label: isFollowing
+                    ? 'Unfollow @$username'
+                    : 'Follow @$username',
+                child: GestureDetector(
+                  onTap: onFollowToggle,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isFollowing
+                          ? Colors.transparent
+                          : Theme.of(context).colorScheme.primary,
+                      border: isFollowing
+                          ? Border.all(color: context.communityBorder)
+                          : null,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      isFollowing ? 'Following' : 'Follow',
+                      style: context.communityBody2.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isFollowing
+                            ? context.communityText
+                            : Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

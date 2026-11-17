@@ -1,0 +1,405 @@
+import 'package:cozy_health/core/theme/app_surface.dart';
+import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+
+class AssistantSubScaffold extends StatelessWidget {
+  const AssistantSubScaffold({
+    super.key,
+    required this.title,
+    required this.child,
+  });
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 24, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: 'Back',
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles.heading2.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(child: child),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class MenuSheet extends StatelessWidget {
+  const MenuSheet({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        child: Material(
+          color: Theme.of(context).bottomSheetTheme.backgroundColor,
+          shape: AppSurface.shape(context, BorderRadius.circular(18)),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: EdgeInsets.all(12 + AppSurface.side(context).width),
+            child: SingleChildScrollView(
+              child: Column(mainAxisSize: MainAxisSize.min, children: children),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SheetTile extends StatelessWidget {
+  const SheetTile({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: danger
+            ? AppColors.danger
+            : Theme.of(context).colorScheme.onSurface,
+      ),
+      title: Text(
+        label,
+        style: AppTextStyles.body1.copyWith(
+          color: danger
+              ? AppColors.danger
+              : Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
+      onTap: onTap,
+    );
+  }
+}
+
+class CozyCharacter extends StatefulWidget {
+  const CozyCharacter({super.key, required this.size});
+
+  final double size;
+
+  @override
+  State<CozyCharacter> createState() => CozyCharacterState();
+}
+
+class CozyCharacterState extends State<CozyCharacter>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4000),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    return Center(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: reduceMotion ? 1 : 1 + (_controller.value * .03),
+            child: child,
+          );
+        },
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            border: AppSurface.border(context),
+            color: AppSurface.tint(context, AppColors.primarySoft),
+            borderRadius: BorderRadius.circular(widget.size * .25),
+          ),
+          child: Icon(
+            Icons.favorite_rounded,
+            size: widget.size * .42,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class WarmPanel extends StatelessWidget {
+  const WarmPanel({
+    super.key,
+    required this.child,
+    this.color = AppColors.surfaceElevated,
+    this.borderColor,
+    this.padding = const EdgeInsets.all(20),
+  });
+
+  final Widget child;
+  final Color color;
+  final Color? borderColor;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveColor = color == AppColors.surfaceElevated
+        ? Theme.of(context).colorScheme.surfaceContainerHigh
+        : color.a < 1
+        ? AppSurface.tint(context, color)
+        : color;
+
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: effectiveColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.fromBorderSide(
+          AppSurface.side(context, color: borderColor),
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+class PrimaryButton extends StatelessWidget {
+  const PrimaryButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: AppColors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(label),
+      ),
+    );
+  }
+}
+
+class SecondaryButton extends StatelessWidget {
+  const SecondaryButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
+          side: BorderSide(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.borderDark
+                : AppColors.borderLight,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(label),
+      ),
+    );
+  }
+}
+
+class AnimatedIn extends StatelessWidget {
+  const AnimatedIn({
+    super.key,
+    required this.controller,
+    required this.child,
+    required this.interval,
+    this.yOffset = 8,
+  });
+
+  final AnimationController controller;
+  final Widget child;
+  final Interval interval;
+  final double yOffset;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.of(context).disableAnimations) return child;
+    final animation = CurvedAnimation(parent: controller, curve: interval);
+    return FadeTransition(
+      opacity: animation,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: Offset(0, yOffset / 100),
+          end: Offset.zero,
+        ).animate(animation),
+        child: child,
+      ),
+    );
+  }
+}
+
+class InlineSuggestions extends StatelessWidget {
+  const InlineSuggestions({super.key, required this.onPick});
+
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    const suggestions = [
+      'Tell me more',
+      'How do I feel?',
+      'I want to slow down',
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          WarmPanel(
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              '💡 Want a prompt?',
+              style: AppTextStyles.body2.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: suggestions
+                  .map(
+                    (text) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ActionChip(
+                        label: Text(text),
+                        onPressed: () => onPick(text),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PromptButton extends StatelessWidget {
+  const PromptButton({super.key, required this.text, required this.onTap});
+
+  final String text;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        alignment: Alignment.centerLeft,
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.surfaceElevatedDark
+              : AppColors.surfaceElevatedLight,
+          borderRadius: BorderRadius.circular(22),
+          border: AppSurface.border(context),
+        ),
+        child: Text(
+          text,
+          style: AppTextStyles.body2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+TextStyle timestampStyle(BuildContext context) => AppTextStyles.body2.copyWith(
+  color: Theme.of(context).colorScheme.onSurfaceVariant,
+  fontSize: 11,
+  fontWeight: FontWeight.w500,
+);
+
+String formatTime(DateTime date) {
+  final hour = date.hour == 0
+      ? 12
+      : (date.hour > 12 ? date.hour - 12 : date.hour);
+  final minute = date.minute.toString().padLeft(2, '0');
+  final suffix = date.hour >= 12 ? 'PM' : 'AM';
+  return '$hour:$minute $suffix';
+}

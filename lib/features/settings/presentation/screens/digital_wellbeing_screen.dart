@@ -1,0 +1,185 @@
+import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_dropdown.dart';
+import '../../../../core/models/digital_wellbeing_preferences.dart';
+import '../../../../core/services/digital_wellbeing_service.dart';
+import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../core/widgets/friendly_error.dart';
+import '../../../../core/widgets/skeleton_loader.dart';
+import '../../../../core/theme/cozy_colors.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+
+class DigitalWellbeingScreen extends StatefulWidget {
+  const DigitalWellbeingScreen({super.key, this.service});
+  final DigitalWellbeingService? service;
+  @override
+  State<DigitalWellbeingScreen> createState() => _DigitalWellbeingScreenState();
+}
+
+class _DigitalWellbeingScreenState extends State<DigitalWellbeingScreen> {
+  late final _service = widget.service ?? DigitalWellbeingService();
+  DigitalWellbeingPreferences? _preferences;
+  bool _saving = false;
+  int _failures = 0;
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final value = await _service.load();
+      if (mounted) {
+        setState(() {
+          _preferences = value;
+          _failures = 0;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _failures++);
+    }
+  }
+
+  Future<void> _save(DigitalWellbeingPreferences value) async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await _service.save(value);
+      if (mounted) setState(() => _preferences = value);
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            "We couldn't save your preferences. Please try again.",
+            onRetry: () => _save(value),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Widget _settingsPanel({required Widget child, bool tinted = false}) =>
+      WellnessPanel(
+        tinted: tinted,
+        child: Material(type: MaterialType.transparency, child: child),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final preferences = _preferences;
+    final w = context.cozyColors.wellness;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Digital Wellbeing')),
+      body: preferences == null
+          ? (_failures == 0
+                ? const ListSkeleton(count: 3)
+                : Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: FriendlyError(
+                      onRetry: _load,
+                      failureCount: _failures,
+                    ),
+                  ))
+          : ListView(
+              padding: EdgeInsets.all(w.page),
+              children: [
+                _settingsPanel(
+                  tinted: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Your wellbeing preferences',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      SizedBox(height: w.small),
+                      const Text(
+                        'Saved preferences only. Phone reminders are managed in Notifications; limits and usage summaries are not active.',
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: w.gap),
+                _settingsPanel(
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Gentle reminders'),
+                        subtitle: const Text(
+                          'A wellbeing preference only. Set up phone reminders in Notifications.',
+                        ),
+                        value: preferences.gentleReminders,
+                        onChanged: _saving
+                            ? null
+                            : (value) => _save(
+                                preferences.copyWith(gentleReminders: value),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: w.gap),
+                _settingsPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Time and reflection',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      SizedBox(height: w.contentGap),
+                      AppDropdown<int>(
+                        value: preferences.dailyLimitMinutes,
+                        label: const Text('Suggested daily usage limit'),
+                        entries: const [
+                          DropdownMenuEntry(value: 15, label: '15 min'),
+                          DropdownMenuEntry(value: 30, label: '30 min'),
+                          DropdownMenuEntry(value: 60, label: '1 hour'),
+                          DropdownMenuEntry(value: 0, label: 'No limit'),
+                        ],
+                        onChanged: _saving
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  _save(
+                                    preferences.copyWith(
+                                      dailyLimitMinutes: value,
+                                    ),
+                                  );
+                                }
+                              },
+                      ),
+                      const SizedBox(height: 24),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Show usage summary at close'),
+                        subtitle: const Text(
+                          'Saved preference; usage summaries are not active yet.',
+                        ),
+                        value: preferences.showUsageSummary,
+                        onChanged: _saving
+                            ? null
+                            : (value) => _save(
+                                preferences.copyWith(showUsageSummary: value),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_saving)
+                  const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+              ],
+            ),
+    );
+  }
+}

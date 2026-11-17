@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CozyHealth — Activity & Provider design review</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;background:#f1f0ed;color:#242424;font:16px/1.5 system-ui,sans-serif}
+  main{max-width:1240px;margin:auto;padding:32px 24px 80px}h1{font-size:32px;line-height:1.15;letter-spacing:-1px;margin:0 0 12px}
+  p{max-width:800px}header{margin-bottom:28px}small,.muted{color:#595959}a{color:#0756aa;text-underline-offset:3px}
+  nav{display:flex;gap:16px;flex-wrap:wrap;margin:24px 0}section{padding:24px 0;border-top:1px solid #ccc}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;align-items:start}
+  figure{margin:0;max-width:390px}figcaption{margin:0 0 12px;font-weight:600}figure p{font-size:14px;margin:8px 0 20px}
+  img{width:100%;height:auto;display:block;border:1px solid #bbb;border-radius:20px;background:#fff}
+  .controls{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0 24px}label{display:grid;gap:6px;font-size:14px}
+  select{font:inherit;padding:12px;border:1px solid #777;border-radius:10px;background:#fff;color:#242424;min-width:160px}
+  h2{font-size:24px;letter-spacing:-.5px}.note{padding:16px 20px;border:1px solid #ccc;border-radius:16px;background:#fff}
+  @media(max-width:600px){main{padding:24px 16px}h1{font-size:28px}.grid{grid-template-columns:1fr}figure{max-width:100%}}
+</style>
+<main>
+<header>
+  <small>COZYHEALTH · DESIGN PROPOSAL · 22 OCTOBER 2026</small>
+  <h1>Activity & Provider</h1>
+  <p>Rendered in Flutter using CozyHealth’s real Outfit font, theme settings and navigation. These are review layouts with sample data. The production Activity and Provider screens have not been replaced.</p>
+  <p class="note">Home and mood work is committed on <strong>develop · bae3d14</strong>. These proposed screens are awaiting your design review.</p>
+  <nav><a href="#overview">Full screenshots</a><a href="#states">Provider views</a><a href="#themes">Compare themes</a><a href="#accessibility">Large text & keyboard</a><a href="README.md">Design notes</a></nav>
+</header>
+<section id="overview">
+  <h2>Full screenshots</h2>
+  <p>Click any image to open its original, full-resolution PNG. The long Activity captures show the complete scrollable page.</p>
+  <div class="grid">
+    <figure><figcaption>Activity · light · complete page</figcaption><a href="activity-light-blue-full.png"><img src="activity-light-blue-full.png" alt="Complete proposed Activity page in light blue theme"></a></figure>
+    <figure><figcaption>Activity · dark · complete page</figcaption><a href="activity-dark-blue-full.png"><img src="activity-dark-blue-full.png" alt="Complete proposed Activity page in dark blue theme"></a></figure>
+    <figure><figcaption>Provider · Messages · light</figcaption><a href="messages-light-blue.png"><img src="messages-light-blue.png" alt="Provider Messages proposed light layout"></a><p>Readable incoming and outgoing messages; full-width composer; separate sharing, voice and send controls.</p><figcaption>Provider · Messages · dark</figcaption><a href="messages-dark-blue.png"><img src="messages-dark-blue.png" alt="Provider Messages proposed dark layout"></a></figure>
+  </div>
+</section>
+<section>
+  <h2>Your recommended articles reference</h2>
+  <p>All four reference topics, fully wrapping titles, two equal columns and consistent illustration frames. Card surfaces follow the user’s accent. Artwork here combines the existing CozyHealth brain, a drawn balance dial and reference-inspired lettering; exact final article artwork remains open to your review.</p>
+  <div class="grid">
+    <figure><figcaption>Articles · light</figcaption><a href="activity-light-blue-articles.png"><img src="activity-light-blue-articles.png" alt="Recommended articles in light theme"></a></figure>
+    <figure><figcaption>Articles · dark</figcaption><a href="activity-dark-blue-articles.png"><img src="activity-dark-blue-articles.png" alt="Recommended articles in dark theme"></a></figure>
+  </div>
+</section>
+<section id="states">
+  <h2>Provider views & connection states</h2>
+  <p>“Shared” opens Shared history. Record previews keep dates and internal IDs out of the shared content. The connection screens distinguish a new connection from an invitation awaiting acceptance.</p>
+  <div class="grid" id="provider-states"></div>
+</section>
+<section id="themes">
+  <h2>Compare the app themes</h2>
+  <div class="controls">
+    <label>Appearance<select id="appearance"><option value="light">Light</option><option value="dark">Dark</option></select></label>
+    <label>Accent<select id="accent"><option value="blue">Blue</option><option value="green">Green</option><option value="orange">Orange</option><option value="yellow">Yellow</option></select></label>
+  </div>
+  <div class="grid" id="theme-grid"></div>
+</section>
+<section id="accessibility">
+  <h2>Large text, high contrast & keyboard</h2>
+  <p>320 px width, 200% text and dark high contrast. Article cards move to a single column. Tabs scroll horizontally. In landscape with the keyboard open, the composer uses one compact row.</p>
+  <div class="grid" id="accessible-grid"></div>
+  <p><a href="messages-landscape-keyboard.png">Open landscape keyboard screenshot</a>. The blank lower area represents the reserved system keyboard inset; this widget render does not draw an operating-system keyboard.</p>
+</section>
+<script>
+  const figure=(file,title)=>{const f=document.createElement('figure');const cap=document.createElement('figcaption');cap.textContent=title;const a=document.createElement('a');a.href=file+'.png';const img=document.createElement('img');img.src=a.href;img.alt=title;img.loading='lazy';a.append(img);f.append(cap,a);return f;};
+  for(const [file,title] of [['history','Shared history'],['resources','Resources'],['connect','Connect a provider'],['pending','Invitation pending']]){document.querySelector('#provider-states').append(figure(file+'-light-blue',title));}
+  function themes(){const root=document.querySelector('#theme-grid');root.replaceChildren();for(const [file,title] of [['activity','Activity'],['messages','Provider · Messages']]){root.append(figure(file+'-'+document.querySelector('#appearance').value+'-'+document.querySelector('#accent').value,title));}}
+  document.querySelector('#appearance').addEventListener('change',themes);document.querySelector('#accent').addEventListener('change',themes);themes();
+  for(const [file,title] of [['activity-large-articles','Articles · single column'],['messages-large-contrast','Messages · large type'],['history-large-contrast','Shared history · large type'],['resources-large-contrast','Resources · large type']]){document.querySelector('#accessible-grid').append(figure(file,title));}
+</script>
+</main>
+</html>

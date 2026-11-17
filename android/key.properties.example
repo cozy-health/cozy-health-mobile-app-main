@@ -1,0 +1,6 @@
+# Copy to key.properties locally. Never commit passwords or the upload keystore.
+# storeFile is resolved relative to the android directory; use forward slashes.
+storeFile=
+storePassword=
+keyAlias=
+keyPassword=

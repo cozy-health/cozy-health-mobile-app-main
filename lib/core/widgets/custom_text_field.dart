@@ -35,43 +35,62 @@ class _CustomTextFieldState extends State<CustomTextField> {
       controller: widget.controller,
       validator: widget.validator,
       keyboardType: widget.keyboardType,
+      autofillHints: widget.isPassword
+          ? const [AutofillHints.newPassword]
+          : widget.keyboardType == TextInputType.emailAddress
+          ? const [AutofillHints.email]
+          : null,
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       obscureText: widget.isPassword ? _obscureText : false,
-      style: AppTextStyles.body1.copyWith(color: AppColors.black),
+      style: AppTextStyles.body1.copyWith(
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: AppTextStyles.body1.copyWith(color: AppColors.grey),
+        hintStyle: AppTextStyles.body1.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         filled: true,
-        fillColor: AppColors.white,
+        fillColor: Theme.of(context).colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: widget.hasError ? Colors.red : AppColors.primary, 
+            color: widget.hasError
+                ? AppColors.danger
+                : Theme.of(context).colorScheme.outline,
             width: 1.5,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: widget.hasError ? Colors.red : AppColors.primary, 
+            color: widget.hasError
+                ? AppColors.danger
+                : Theme.of(context).colorScheme.outline,
             width: 1.5,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: widget.hasError ? Colors.red : AppColors.primary, 
+            color: widget.hasError
+                ? AppColors.danger
+                : Theme.of(context).colorScheme.primary,
             width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderSide: const BorderSide(color: AppColors.danger, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         suffixIcon: widget.isPassword
             ? GestureDetector(
                 onTap: () {
@@ -87,35 +106,37 @@ class _CustomTextFieldState extends State<CustomTextField> {
                           width: 20,
                           height: 20,
                           colorFilter: const ColorFilter.mode(
-                            Colors.red,
+                            AppColors.danger,
                             BlendMode.srcIn,
                           ),
                         )
                       : SvgPicture.asset(
-                          _obscureText ? Assets.svg.padlockClosed : Assets.svg.padlockOpen,
+                          _obscureText
+                              ? Assets.svg.padlockClosed
+                              : Assets.svg.padlockOpen,
                           width: 20,
                           height: 20,
                           colorFilter: ColorFilter.mode(
-                            AppColors.grey,
+                            Theme.of(context).colorScheme.onSurfaceVariant,
                             BlendMode.srcIn,
                           ),
                         ),
                 ),
               )
             : widget.hasError
-                ? Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: SvgPicture.asset(
-                      Assets.svg.warning,
-                      width: 20,
-                      height: 20,
-                      colorFilter: const ColorFilter.mode(
-                        Colors.red,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  )
-                : null,
+            ? Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: SvgPicture.asset(
+                  Assets.svg.warning,
+                  width: 20,
+                  height: 20,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.danger,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              )
+            : null,
       ),
     );
   }

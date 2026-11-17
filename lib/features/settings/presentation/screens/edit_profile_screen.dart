@@ -1,308 +1,399 @@
+import '../../../../core/widgets/wellness_sheet.dart';
+import 'dart:async';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import '../../data/avatar_repository.dart';
+import '../../services/avatar_photo_picker.dart';
+import '../../../../core/widgets/profile_avatar.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/guest_session_service.dart';
+import '../widgets/avatar_picker_sheet.dart';
+import 'package:cozy_health/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../utils/responsive_extensions.dart';
-import '../../data/settings_service.dart';
+import '../../../../core/models/user_profile.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../data/profile_repository.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  const EditProfileScreen({
+    super.key,
+    this.guestLookup,
+    this.avatarRepository,
+    this.photoPicker,
+  });
+  final Future<bool> Function()? guestLookup;
+  final AvatarRepository? avatarRepository;
+  final AvatarPhotoPicker? photoPicker;
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final SettingsService _settingsService = SettingsService();
-
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController bioController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController =
-      TextEditingController(text: '************');
 
-  bool _loading = true;
+  bool _hasChanges = false;
   bool _saving = false;
-  String? _error;
-
-  String _firstname = '';
-  String _lastname = '';
+  UserProfile? _currentProfile;
+  StreamSubscription<UserProfile?>? _profileSubscription;
+  bool _pickerOpen = false;
+  late String _profileScope;
 
   @override
   void initState() {
     super.initState();
+    _profileScope = LocalDbService().boxName(
+      LocalDbService.userSettingsBoxName,
+    );
     _loadProfile();
+    _profileSubscription = ProfileRepository().watchProfile().listen((profile) {
+      if (!mounted) return;
+      final scope = LocalDbService().boxName(
+        LocalDbService.userSettingsBoxName,
+      );
+      if (scope != _profileScope) {
+        _profileScope = scope;
+        nameController.text = profile?.name ?? '';
+        usernameController.text = profile?.username ?? '';
+        bioController.text = profile?.bio ?? '';
+        emailController.text = profile?.email ?? '';
+        _hasChanges = false;
+      }
+      setState(() => _currentProfile = profile);
+    });
+  }
+
+  void _loadProfile() async {
+    final profile = LocalDbService().getUserProfile();
+    if (profile != null) {
+      _currentProfile = profile;
+      nameController.text = profile.name;
+      usernameController.text = profile.username ?? '';
+      bioController.text = profile.bio ?? '';
+      emailController.text = profile.email;
+    }
+  }
+
+  Future<void> _changePhoto() async {
+    if (_pickerOpen) return;
+    _pickerOpen = true;
+    FocusManager.instance.primaryFocus?.unfocus();
+    final scope = LocalDbService().boxName(LocalDbService.userSettingsBoxName);
+    try {
+      final createAccount = await showWellnessSheet<bool>(
+        context: context,
+        dismissible: false,
+        builder: (sheetContext) => AvatarPickerSheet(
+          repository: widget.avatarRepository,
+          picker: widget.photoPicker,
+          initialProfile: _currentProfile,
+          accountScope: scope,
+          guestLookup:
+              widget.guestLookup ?? GuestSessionService().isGuestSession,
+          onCreateAccount: () => Navigator.pop(sheetContext, true),
+        ),
+      );
+      if (mounted &&
+          createAccount == true &&
+          scope ==
+              LocalDbService().boxName(LocalDbService.userSettingsBoxName)) {
+        context.push(AppRouter.createAccount);
+      }
+    } catch (error, stack) {
+      unawaited(Sentry.captureException(error, stackTrace: stack));
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            "We couldn't open picture options. Please try again.",
+            onRetry: _changePhoto,
+          ),
+        );
+      }
+    } finally {
+      _pickerOpen = false;
+    }
   }
 
   @override
   void dispose() {
-    nameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
+    _profileSubscription?.cancel();
+    for (final controller in [
+      nameController,
+      usernameController,
+      bioController,
+      emailController,
+    ]) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
-  Future<void> _loadProfile() async {
-    try {
-      final response = await _settingsService.getProfile();
-      final user = response['user'];
-      final profile = user?['profile'];
-
-      _firstname = profile?['firstname']?.toString() ?? '';
-      _lastname = profile?['lastname']?.toString() ?? '';
-
-      nameController.text = [_firstname, _lastname]
-          .where((value) => value.trim().isNotEmpty)
-          .join(' ');
-
-      emailController.text = user?['email']?.toString() ?? '';
-    } on ApiException catch (e) {
-      _error = e.message;
-    } catch (_) {
-      _error = 'Unable to load profile.';
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
+  void _onChanged(String _) {
+    if (!_hasChanges) {
+      setState(() => _hasChanges = true);
     }
   }
 
-  Future<void> _saveProfile() async {
-    final fullName = nameController.text.trim();
-
-    if (fullName.isEmpty) {
-      setState(() {
-        _error = 'Name is required.';
-      });
-      return;
-    }
-
-    final parts = fullName.split(' ');
-    final firstname = parts.first;
-    final lastname = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-
+  void _saveChanges() async {
+    if (_saving || _currentProfile == null) return;
+    setState(() => _saving = true);
     try {
-      await _settingsService.updateProfile(
-        firstname: firstname,
-        lastname: lastname,
-      );
+      if (_currentProfile != null) {
+        final updated = _currentProfile!.copyWith(
+          name: nameController.text.trim(),
+          username: usernameController.text.trim(),
+          bio: bioController.text.trim(),
+          email: emailController.text.trim(),
+          updatedAt: DateTime.now(),
+        );
+        await ProfileRepository().saveProfile(updated);
+      }
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully.'),
-        ),
+      AppSnackbar.show(
+        context,
+        AppSnackbar.saved(type: 'user_profile', id: _currentProfile!.id),
       );
-
       context.pop();
-    } on ApiException catch (e) {
-      setState(() {
-        _error = e.message;
-      });
     } catch (_) {
-      setState(() {
-        _error = 'Unable to update profile.';
-      });
-    } finally {
       if (mounted) {
-        setState(() {
-          _saving = false;
-        });
+        AppSnackbar.show(
+          context,
+          AppSnackbar.error(
+            "We couldn't save your profile. Please try again.",
+            onRetry: _saveChanges,
+          ),
+        );
       }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _hasChanges && !_saving ? _saveChanges : null,
+            child: Text(
+              _saving ? 'Loading...' : 'Save',
+              style: AppTextStyles.body1.copyWith(
+                color: _hasChanges
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.4),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          SizedBox(width: 8),
+        ],
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5.w),
-          child: _loading
-              ? const Center(
-                  child: CircularProgressIndicator(),
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: 24),
+              // Avatar
+              Center(
+                child: Column(
                   children: [
-                    3.sh,
-
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: _saving ? null : () => context.pop(),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.chevron_left,
-                                size: 22,
-                                color: AppColors.darkGrey,
-                              ),
-                              Text(
-                                'Back',
-                                style: AppTextStyles.body2.copyWith(
-                                  color: AppColors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              'Profile',
-                              style: AppTextStyles.heading2.copyWith(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.black,
-                              ),
+                    InkWell(
+                      key: const Key('edit-profile-picture'),
+                      onTap: _changePhoto,
+                      customBorder: const CircleBorder(),
+                      child: Stack(
+                        children: [
+                          ProfileAvatar(profile: _currentProfile, size: 96),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: CircleAvatar(
+                              radius: 16,
+                              child: Icon(Icons.edit, size: 18),
                             ),
                           ),
-                        ),
-                        SizedBox(width: 14.w),
-                      ],
+                        ],
+                      ),
                     ),
-
-                    5.sh,
-
-                    Center(
-                      child: Container(
-                        height: 135,
-                        width: 135,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color(0xFFC9FF6B),
-                        ),
-                        child: Center(
-                          child: CircleAvatar(
-                            radius: 48,
-                            backgroundColor:
-                                AppColors.primary.withOpacity(0.15),
-                            child: const Icon(
-                              Icons.person,
-                              size: 58,
-                              color: AppColors.primary,
-                            ),
-                          ),
+                    SizedBox(height: 12),
+                    TextButton(
+                      onPressed: _changePhoto,
+                      child: Text(
+                        'Change photo',
+                        style: AppTextStyles.body2.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-
-                    5.sh,
-
-                    if (_error != null) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(3.w),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          _error!,
-                          style: AppTextStyles.body2.copyWith(
-                            color: Colors.red,
-                          ),
-                        ),
-                      ),
-                      2.sh,
-                    ],
-
-                    _label('Name'),
-                    _inputField(nameController),
-
-                    2.5.sh,
-
-                    _label('Email'),
-                    _inputField(emailController, enabled: false),
-
-                    2.5.sh,
-
-                    _label('Password'),
-                    _inputField(
-                      passwordController,
-                      obscureText: true,
-                      enabled: false,
-                    ),
-
-                    const Spacer(),
-
-                    AppButton(
-                      text: _saving ? 'Saving...' : 'Save',
-                      onPressed: _saving ? null : _saveProfile,
-                    ),
-
-                    4.sh,
                   ],
                 ),
+              ),
+              SizedBox(height: 32),
+
+              _FormField(
+                label: 'Name',
+                controller: nameController,
+                onChanged: _onChanged,
+              ),
+              SizedBox(height: 24),
+
+              _FormField(
+                label: 'Username',
+                controller: usernameController,
+                helperText: 'Letters and numbers only.',
+                onChanged: _onChanged,
+              ),
+              SizedBox(height: 24),
+
+              _FormField(
+                label: 'Bio',
+                controller: bioController,
+                maxLines: 4,
+                onChanged: _onChanged,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    '${bioController.text.length} / 150',
+                    style: AppTextStyles.body2.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textMutedDark
+                          : AppColors.textMutedLight,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 24),
+
+              _FormField(
+                label: 'Email',
+                controller: emailController,
+                helperText: 'Contact support to change.',
+                enabled: false,
+              ),
+              SizedBox(height: 48),
+
+              AppButton(
+                text: 'Save Changes',
+                isLoading: _saving,
+                onPressed: _hasChanges && !_saving ? _saveChanges : null,
+              ),
+              SizedBox(height: 48),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _label(String text) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 1.h),
-      child: Text(
-        text,
-        style: AppTextStyles.body2.copyWith(
-          color: AppColors.black,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
+class _FormField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final String? helperText;
+  final int maxLines;
+  final bool enabled;
+  final ValueChanged<String>? onChanged;
 
-  Widget _inputField(
-    TextEditingController controller, {
-    bool obscureText = false,
-    bool enabled = true,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      enabled: enabled,
-      style: AppTextStyles.body1.copyWith(
-        fontSize: 14,
-        color: enabled ? AppColors.black : AppColors.grey,
-      ),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: enabled ? AppColors.white : const Color(0xFFF4F5F7),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 4.w,
-          vertical: 1.8.h,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: Color(0xFFE1E4EA),
+  const _FormField({
+    required this.label,
+    required this.controller,
+    this.helperText,
+    this.maxLines = 1,
+    this.enabled = true,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.body2.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.w500,
           ),
         ),
-        disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: Color(0xFFE1E4EA),
+        SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          enabled: enabled,
+          onChanged: onChanged,
+          style: AppTextStyles.body1.copyWith(
+            color: enabled
+                ? Theme.of(context).colorScheme.onSurface
+                : Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textMutedDark
+                : AppColors.textMutedLight,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surface,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).dividerColor),
+            ),
           ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.primary,
+        if (helperText != null) ...[
+          SizedBox(height: 8),
+          Text(
+            helperText!,
+            style: AppTextStyles.body2.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
           ),
-        ),
-      ),
+        ],
+      ],
     );
   }
 }

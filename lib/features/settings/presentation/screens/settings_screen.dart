@@ -1,154 +1,520 @@
+import 'about_screen.dart' show InstalledBuildLabel;
+import '../../../../core/widgets/wellness_sheet.dart';
+import '../../../../core/widgets/wellness_panel.dart';
+import '../../../../core/widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_surface.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../utils/responsive_extensions.dart';
+import '../../../../core/models/user_profile.dart';
+import '../../../../core/services/guest_session_service.dart';
+import '../../../../core/services/local_db_service.dart';
+import '../../../../core/widgets/app_scaffold_padding.dart';
+import '../../../auth/data/auth_service.dart';
+import '../../data/profile_repository.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-  child: SingleChildScrollView(
-    padding: EdgeInsets.symmetric(horizontal: 5.w),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        5.sh,
-
-        Text(
+      appBar: AppBar(
+        elevation: 0,
+        title: Text(
           'Settings',
-          style: AppTextStyles.heading1.copyWith(
-            fontSize: 26,
-            fontWeight: FontWeight.w800,
-            color: AppColors.darkGrey,
+          style: AppTextStyles.heading2.copyWith(color: colorScheme.onSurface),
+        ),
+        centerTitle: false,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            0,
+            24,
+            AppScaffoldPadding.tabScrollBottom(context).bottom,
           ),
-        ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: 24),
+              StreamBuilder<UserProfile?>(
+                stream: ProfileRepository().watchProfile(),
+                initialData: LocalDbService.instance.getUserProfile(),
+                builder: (context, snapshot) {
+                  final profile = snapshot.data;
 
-        3.sh,
+                  return FutureBuilder<bool>(
+                    future: GuestSessionService().isGuestSession(),
+                    builder: (context, guestSnapshot) {
+                      final isGuest = guestSnapshot.data ?? false;
 
-        _sectionTitle('Account'),
+                      final name = isGuest
+                          ? 'Guest'
+                          : profile?.name ?? 'Loading...';
+                      final email = isGuest
+                          ? 'Create an account to sync your data'
+                          : profile?.email ?? 'Loading...';
 
-        _settingsTile(
-          icon: Icons.person_outline,
-          title: 'Edit profile',
-          onTap: () => context.push(AppRouter.editProfile),
-        ),
+                      return Material(
+                        color: colorScheme.surface,
+                        shape: AppSurface.shape(
+                          context,
+                          BorderRadius.circular(16),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            context.push(
+                              isGuest
+                                  ? AppRouter.createAccount
+                                  : AppRouter.profileView,
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 88),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              border: AppSurface.border(context),
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                ProfileAvatar(
+                                  profile: isGuest ? null : profile,
+                                  size: 48,
+                                ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: AppTextStyles.body1.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      Text(
+                                        email,
+                                        style: AppTextStyles.body2.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium?.color,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  size: 20,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.textSubtleDark
+                                      : AppColors.textSubtleLight,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+              SizedBox(height: 32),
 
-        _settingsTile(
-          icon: Icons.medical_services_outlined,
-          title: 'Provider / Therapist',
-          onTap: () => context.push(AppRouter.provider),
-        ),
+              _SettingsSection(
+                title: 'SUPPORT',
+                children: [
+                  _SettingsRow(
+                    icon: Icons.favorite_outline,
+                    label: 'Next of kin',
+                    subtitle: 'Set up or contact someone you trust',
+                    emphasisColor: AppColors.crisisPrimary,
+                    onTap: () => context.push(AppRouter.crisisContact),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.spa_outlined,
+                    label: 'Support tools',
+                    subtitle: 'Safety plan, breathing, grounding',
+                    onTap: () => context.push(AppRouter.crisisHub),
+                  ),
+                ],
+              ),
+              SizedBox(height: 32),
 
-        _settingsTile(
-          icon: Icons.privacy_tip_outlined,
-          title: 'Privacy settings',
-          onTap: () => context.push(AppRouter.privacySettings),
-        ),
+              _SettingsSection(
+                title: 'PREFERENCES',
+                children: [
+                  _SettingsRow(
+                    icon: Icons.notifications_none,
+                    label: 'Notifications',
+                    onTap: () =>
+                        context.push(AppRouter.notificationPreferences),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.lock_outline,
+                    label: 'Privacy',
+                    onTap: () => context.push(AppRouter.privacySettings),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.palette_outlined,
+                    label: 'Appearance',
+                    onTap: () => context.push(AppRouter.appearanceSettings),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.language,
+                    label: 'Language',
+                    onTap: () => context.push(AppRouter.languageSettings),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.accessibility_new,
+                    label: 'Accessibility',
+                    onTap: () => context.push(AppRouter.accessibilitySettings),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.spa_outlined,
+                    label: 'Digital Wellbeing',
+                    onTap: () => context.push(AppRouter.digitalWellbeing),
+                  ),
+                ],
+              ),
+              SizedBox(height: 32),
 
-        4.sh,
+              _SettingsSection(
+                title: 'ACCOUNT',
+                children: [
+                  _SettingsRow(
+                    icon: Icons.key_outlined,
+                    label: 'Change Password',
+                    onTap: () => context.push(AppRouter.changePassword),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.email_outlined,
+                    label: 'Email',
+                    onTap: () => context.push(AppRouter.emailSettings),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.phone_outlined,
+                    label: 'Phone',
+                    onTap: () => context.push(AppRouter.phoneSettings),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.security,
+                    label: 'Sign-in protection',
+                    onTap: () => context.push(AppRouter.signInProtection),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.devices,
+                    label: 'Active Sessions',
+                    onTap: () => context.push(AppRouter.activeSessions),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.link,
+                    label: 'Connected Apps',
+                    onTap: () => context.push(AppRouter.connectedApps),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.medical_services_outlined,
+                    label: 'My Provider',
+                    subtitle: 'Manage your therapist connection',
+                    onTap: () => context.push(AppRouter.provider),
+                  ),
+                ],
+              ),
+              SizedBox(height: 32),
 
-        _sectionTitle('Support & About'),
+              _SettingsSection(
+                title: 'SUBSCRIPTION',
+                children: [
+                  _SettingsRow(
+                    icon: Icons.task_alt,
+                    label: 'Cozy Challenges',
+                    onTap: () => context.push(AppRouter.wellnessChallenges),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.inventory_2_outlined,
+                    label: 'Cozy Packages',
+                    onTap: () => context.push(AppRouter.wellnessPackages),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.star_border,
+                    label: 'My plan and access',
+                    onTap: () => context.push(AppRouter.subscription),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.receipt_long,
+                    label: 'Billing History',
+                    onTap: () => context.push(AppRouter.billingHistory),
+                  ),
+                ],
+              ),
+              SizedBox(height: 32),
 
-        _settingsTile(
-          icon: Icons.credit_card_outlined,
-          title: 'My Subscription',
-          onTap: () => context.push(AppRouter.subscription),
-        ),
+              _SettingsSection(
+                title: 'DATA',
+                children: [
+                  _SettingsRow(
+                    icon: Icons.download_outlined,
+                    label: 'Export My Data',
+                    onTap: () => context.push(AppRouter.dataExport),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.info_outline,
+                    label: 'Data Export Status',
+                    onTap: () => context.push(AppRouter.dataExportStatus),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.share_outlined,
+                    label: 'Download My Data',
+                    onTap: () => context.push(AppRouter.downloadMyData),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.delete_outline,
+                    label: 'Delete Account',
+                    isDanger: true,
+                    onTap: () => context.push(AppRouter.accountDeletion),
+                  ),
+                ],
+              ),
+              SizedBox(height: 32),
 
-        _settingsTile(
-          icon: Icons.help_outline,
-          title: 'Help & Support',
-          onTap: () => context.push(AppRouter.helpSupport),
-        ),
+              _SettingsSection(
+                title: 'SUPPORT',
+                children: [
+                  _SettingsRow(
+                    icon: Icons.help_outline,
+                    label: 'Help & Support',
+                    onTap: () => context.push(AppRouter.helpSupport),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.bug_report_outlined,
+                    label: 'Report a Problem',
+                    onTap: () => context.push(AppRouter.reportProblem),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.lightbulb_outline,
+                    label: 'Feedback',
+                    onTap: () => context.push(AppRouter.feedback),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.card_giftcard,
+                    label: 'Invite a Friend',
+                    onTap: () => context.push(AppRouter.referral),
+                  ),
+                ],
+              ),
+              SizedBox(height: 32),
 
-        _settingsTile(
-          icon: Icons.article_outlined,
-          title: 'Terms and Policies',
-          onTap: () => context.push(AppRouter.termsPolicies),
-        ),
+              _SettingsSection(
+                title: 'ABOUT',
+                children: [
+                  _SettingsRow(
+                    icon: Icons.info_outline,
+                    label: 'About Cozy Health',
+                    onTap: () => context.push(AppRouter.about),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.description_outlined,
+                    label: 'Legal',
+                    onTap: () => context.push(AppRouter.legalHub),
+                  ),
+                ],
+              ),
+              SizedBox(height: 48),
 
-        4.sh,
-
-        _sectionTitle('Actions'),
-
-        _settingsTile(
-          icon: Icons.flag_outlined,
-          title: 'Report a problem',
-          onTap: () => context.push(AppRouter.reportProblem),
-        ),
-
-        _settingsTile(
-          icon: Icons.logout,
-          title: 'Log out',
-          onTap: () {},
-        ),
-
-        4.sh,
-      ],
-    ),
-  ),
-),
-    );
-  }
-
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 1.2.h),
-      child: Text(
-        title,
-        style: AppTextStyles.body1.copyWith(
-          fontSize: 15,
-          fontWeight: FontWeight.w800,
-          color: AppColors.darkGrey,
+              WellnessAction(
+                key: const ValueKey('settings-logout'),
+                label: 'Log out',
+                onPressed: () async {
+                  final pending = LocalDbService().pendingItems.length;
+                  final confirmed = await confirmWellnessAction(
+                    context,
+                    title: 'Log out?',
+                    message: pending == 0
+                        ? "You'll need to log in again."
+                        : '$pending changes are saved securely on this device. They will upload only when you sign in to this account again.',
+                    action: 'Log out',
+                  );
+                  if (!confirmed || !context.mounted) return;
+                  try {
+                    await AuthService().logout();
+                  } catch (_) {
+                    debugPrint('Logout error: details withheld.');
+                  }
+                  if (context.mounted) context.go(AppRouter.welcome);
+                },
+              ),
+              const SizedBox(height: 16),
+              const InstalledBuildLabel(),
+              SizedBox(height: 48),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _settingsTile({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: 54,
-        padding: EdgeInsets.symmetric(horizontal: 3.w),
-        decoration: const BoxDecoration(
-          color: Color(0xFFF3F5FA),
+class _SettingsSection extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _SettingsSection({required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerTheme.color;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            title,
+            style: AppTextStyles.body2.copyWith(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+              letterSpacing: 0.5,
+            ),
+          ),
         ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 22,
-              color: AppColors.darkGrey,
-            ),
-            5.sw,
-            Expanded(
-              child: Text(
-                title,
-                style: AppTextStyles.body1.copyWith(
-                  fontSize: 15,
-                  color: AppColors.darkGrey,
-                  fontWeight: FontWeight.w500,
-                ),
+        Material(
+          color: colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: MediaQuery.highContrastOf(context)
+                ? BorderSide(color: colorScheme.outline)
+                : BorderSide.none,
+          ),
+          clipBehavior: Clip.antiAlias,
+          borderOnForeground: true,
+          child: Column(
+            children: List.generate(children.length, (index) {
+              final isLast = index == children.length - 1;
+              return Column(
+                children: [
+                  children[index],
+                  if (!isLast)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 56),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: dividerColor ?? colorScheme.outlineVariant,
+                      ),
+                    ),
+                ],
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final bool isDanger;
+  final Color? emphasisColor;
+  final VoidCallback onTap;
+
+  const _SettingsRow({
+    required this.icon,
+    required this.label,
+    this.subtitle,
+    this.isDanger = false,
+    this.emphasisColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        emphasisColor ??
+        (isDanger ? AppColors.danger : Theme.of(context).colorScheme.onSurface);
+    final iconColor =
+        emphasisColor ??
+        (isDanger
+            ? AppColors.danger
+            : Theme.of(context).textTheme.bodyMedium?.color ??
+                  AppColors.textMuted);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          constraints: BoxConstraints(minHeight: subtitle == null ? 56 : 72),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 24, color: iconColor),
+              SizedBox(width: 16),
+              Expanded(
+                child: subtitle == null
+                    ? Text(
+                        label,
+                        style: AppTextStyles.body1.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            label,
+                            style: AppTextStyles.body1.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            subtitle!,
+                            style: AppTextStyles.body2.copyWith(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? AppColors.textMutedDark
+                                  : AppColors.textMutedLight,
+                            ),
+                          ),
+                        ],
+                      ),
               ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              size: 25,
-              color: AppColors.darkGrey,
-            ),
-          ],
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: isDanger
+                    ? AppColors.danger
+                    : Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textSubtleDark
+                    : AppColors.textSubtleLight,
+              ),
+            ],
+          ),
         ),
       ),
     );
