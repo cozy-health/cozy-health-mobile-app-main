@@ -42,7 +42,7 @@ void main() {
   tearDownAll(resetLocalTestFonts);
   for (final status in [200, 429, 500]) {
     testWidgets(
-      'diagnostic reset request status $status and unverified six digit code',
+      'reset request status $status advances only after an accepted request',
       (tester) async {
         FlutterSecureStorage.setMockInitialValues({});
         SharedPreferences.setMockInitialValues({});
@@ -73,6 +73,22 @@ void main() {
         await tester.ensureVisible(send);
         await tester.tap(send);
         await tester.pumpAndSettle();
+        if (status != 200) {
+          expect(find.text('Reset your\npassword.'), findsOneWidget);
+          expect(find.text('Check your\ninbox.'), findsNothing);
+          expect(
+            tester
+                .widget<EditableText>(find.byType(EditableText).first)
+                .controller
+                .text,
+            'audit@example.test',
+          );
+          final attempts = transport.paths.length;
+          transport.status = 200;
+          await tester.tap(find.text('Send Code'));
+          await tester.pumpAndSettle();
+          expect(transport.paths.length, attempts + 1);
+        }
         expect(find.text('Check your\ninbox.'), findsOneWidget);
         final before = transport.paths.length;
         await tester.enterText(find.byType(EditableText).first, '000000');
@@ -84,7 +100,8 @@ void main() {
         expect(find.text('Set a new\npassword.'), findsOneWidget);
         expect(transport.paths.length, before);
         expect(find.text('Code verified'), findsNothing);
-        // Confirms observed defects; a green diagnostic does not mean this flow is correct.
+        // Six digits only advance local input; the server validates the code
+        // when the new password is submitted. Never claim it is verified here.
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pumpAndSettle();
       },

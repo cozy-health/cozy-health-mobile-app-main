@@ -1,0 +1,103 @@
+{
+  "capturedOn": "2026-11-21",
+  "source": {
+    "sourceHead": "861f6b427b243a0e49c6c1a6658d7b13378a93fb",
+    "workingTreeFiles": {
+      "analysis_options.yaml": "403d2c563287e55f12ff36526c0eeebec0510f7bf1a7b18a44bb6fef89cf7661",
+      "lib/features/auth/presentation/screens/create_account_screen.dart": "0130575c18f3c5242c8f2ba9636fd25514d6e7893195d7e6005429200f70a846",
+      "lib/features/auth/presentation/screens/login_screen.dart": "4ee983cdbb2decd96c96c4afbaa79e583174419aca5094541cdb8b073b9907d7",
+      "lib/features/auth/presentation/screens/forgot_password_screen.dart": "49766df9a577f174fb146604504b250179ef524a02e3d7113f49cc75695385fb",
+      "lib/features/crisis/services/crisis_detector.dart": "7aad7941f4ebb73c762c75ec20e5e0dfe0c5eaa67843b7bced8687acb3f583f4",
+      "lib/features/journal/presentation/screens/journal_screen.dart": "16d9957fdaf49b55a3bac116f0c4ce45160cc7133099491a63f089f419ea0326",
+      "test/features/auth/auth_submission_test.dart": "05d824acab63ee1a9e423fbbfb7f0dbc193595e77c6ae1ceb080062fd36548d0",
+      "test/audit/auth_reset_audit_test.dart": "46d12586236edabe63317d65afd0ed0bf998e1af626733a8e51e09f6b4287d42",
+      "test/core/account_recovery_test.dart": "fac714ed2623abb0e80ee064f9f9ca072bad5b93d7383e6c4d04aa9978a7c509",
+      "test/features/ui_review/ui_review_test.dart": "b6c1f895c950d3ec42eec786f2f04c1e29b2db10ead8a949defbe296f0bbe8b9"
+    },
+    "sdk": "Flutter3.47.8",
+    "logicalCanvas": [
+      430,
+      932
+    ],
+    "nativePngCanvas": [
+      1290,
+      2796
+    ],
+    "safeAreaLogicalPoints": {
+      "top": 59,
+      "bottom": 34
+    },
+    "syntheticData": true,
+    "physicalDeviceCapture": false,
+    "postCaptureCrop": false
+  },
+  "validation": "Four selected widget capture tests passed; visual PNG review completed.",
+  "files": [
+    {
+      "file": "03-mood-detail.png",
+      "width": 1290,
+      "height": 2796,
+      "sha256": "89b89dc4fdf094855c7eb9fc383861ec26b54421cd66bc2345e2ae46e6e51889"
+    },
+    {
+      "file": "04-mood-confirmed.png",
+      "width": 1290,
+      "height": 2796,
+      "sha256": "9ad91495f9d86901910ab2c8e9f06c91f309850c05bacfef1c1fa4cf33336d28"
+    },
+    {
+      "file": "03a-mood-causes.png",
+      "width": 1290,
+      "height": 2796,
+      "sha256": "e144bdb442c3a546a2498e332a8c42521ffc5914cd9f196d87764914842e2955"
+    },
+    {
+      "file": "03b-mood-review.png",
+      "width": 1290,
+      "height": 2796,
+      "sha256": "7ecb704d4bae17ef0e0ec9bd751975825932d090943d875954c7f487849d8362"
+    },
+    {
+      "file": "05-journal.png",
+      "width": 1290,
+      "height": 2796,
+      "sha256": "60d8d411c24233f7f2d2623e608fb4ff545cd133773023d4d2fb1bee6aa93eea"
+    },
+    {
+      "file": "05a-journal-list.png",
+      "width": 1290,
+      "height": 2796,
+      "sha256": "3ca638c6a64b3c37f3f0564156d64daf01dfbc858f2a96e4280b567b8008c2b6"
+    },
+    {
+      "file": "06-provider.png",
+      "width": 1290,
+      "height": 2796,
+      "sha256": "a4f375e021c8070d17af5d238e09c344ba57ec98a4b6791501f541bf8e7935a0"
+    },
+    {
+      "file": "06a-provider-sharing.png",
+      "width": 1290,
+      "height": 2796,
+      "sha256": "e8c06cf8d20db8d23d80980f49b7860bc322e8b8bb44c8094e96a31e0fe1394f"
+    },
+    {
+      "file": "07-breathing.png",
+      "width": 1290,
+      "height": 2796,
+      "sha256": "b3288e0c7f5820f4b8c249f2646e909ea9b39a93cc7074430f81ed2bbc6e3b22"
+    },
+    {
+      "file": "07a-breathing-ready.png",
+      "width": 1290,
+      "height": 2796,
+      "sha256": "0c286a19cb1cdb6d95a279d3f1b039aa3609f7d380f63d4aed93abeae9aa7189"
+    },
+    {
+      "file": "08-community.png",
+      "width": 1290,
+      "height": 2796,
+      "sha256": "7b65304d1b85e91064f6920bbaa9d4e6ca999914a81a2ade31caffa3c6a87db9"
+    }
+  ]
+}

@@ -281,7 +281,9 @@ class _JournalScreenState extends State<JournalScreen>
       'journal',
       signal,
     );
-    final entryToSave = shouldShowCrisisSupport
+    // Save a detector match even while the support prompt is on cooldown.
+    // Existing flags are retained; historical entries are not reclassified.
+    final entryToSave = signal != CrisisSignal.none
         ? JournalEntry(
             id: entry.id,
             type: entry.type,
@@ -901,14 +903,16 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
         ),
       );
 
-      if (mounted && _active)
+      if (mounted && _active) {
         setState(() => _saveStatus = 'Draft saved ${_timeNow()}');
+      }
     } catch (_) {
-      if (mounted && _active)
+      if (mounted && _active) {
         setState(
           () => _saveStatus =
               'Draft could not save. Keep this page open and retry.',
         );
+      }
     }
   }
 
@@ -966,8 +970,9 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
     if (widget.onSave != null && !await widget.onSave!(entry)) return;
     if (!_active) return;
     await LocalDbService.instance.deleteJournalDraft(_draftId);
-    if (mounted && _active)
+    if (mounted && _active) {
       Navigator.pop(context, widget.onSave == null ? entry : null);
+    }
   }
 }
 

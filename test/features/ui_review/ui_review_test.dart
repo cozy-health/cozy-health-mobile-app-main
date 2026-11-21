@@ -34,6 +34,7 @@ import 'package:cozy_health/features/home/presentation/widgets/cozy_calendar.dar
 import 'package:cozy_health/features/home/presentation/screens/main_screen.dart';
 import 'package:cozy_health/core/widgets/bottom_navigation_bar.dart';
 import 'package:cozy_health/features/crisis/presentation/widgets/crisis_fab.dart';
+import 'package:cozy_health/features/crisis/services/crisis_detector.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
 import 'package:cozy_health/features/community/presentation/screens/community_hub_screen.dart';
 import 'package:cozy_health/features/community/presentation/screens/post_detail_screen.dart';
@@ -192,6 +193,78 @@ void main() {
       '${screen.runtimeType}_${dark ? 'dark' : 'light'}_${size.width.toInt()}x${size.height.toInt()}',
     );
   }
+
+  testWidgets(
+    'journal flags each match while prompting only once in cooldown',
+    (tester) async {
+      const detector = CrisisDetector();
+      final original = List<JournalEntry>.of(DemoMode.instance.journals);
+      detector.resetCooldown('journal');
+      addTearDown(() {
+        detector.resetCooldown('journal');
+        DemoMode.instance.journals
+          ..clear()
+          ..addAll(original);
+      });
+      final bodies = [
+        'Synthetic journal: I feel hopeless and worthless today.',
+        'Synthetic journal: I still feel hopeless and worthless later today.',
+        'Synthetic journal: I enjoyed a quiet walk in the park.',
+      ];
+      for (var index = 0; index < bodies.length; index++) {
+        await mount(
+          tester,
+          const JournalScreen(openCompose: true),
+          dark: false,
+          size: const Size(390, 844),
+          textScale: 1,
+        );
+        await tester.pumpAndSettle();
+        final bodyField = find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.decoration?.hintText == 'Start writing...',
+        );
+        await tester.enterText(bodyField, bodies[index]);
+        await tester.tap(find.text('Done'));
+        // Saving waits for the support dialog to close; its busy indicator is
+        // intentionally still animating underneath that dialog.
+        for (var frame = 0; frame < 20; frame++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+          await tester.pump(const Duration(milliseconds: 100));
+          if (index == 0 &&
+              find.text('That sounds heavy.').evaluate().isNotEmpty) {
+            break;
+          }
+          if (index > 0 && find.text('Done').evaluate().isNotEmpty) break;
+        }
+        if (index == 0) {
+          expect(find.text('That sounds heavy.'), findsOneWidget);
+          await tester.tap(find.byTooltip('Close'));
+          await tester.pumpAndSettle();
+        } else {
+          expect(find.text('That sounds heavy.'), findsNothing);
+        }
+        final saved = DemoMode.instance.journals.singleWhere(
+          (entry) => entry.body == bodies[index],
+        );
+        expect(saved.isCrisisFlagged, index < 2);
+        expect(saved.isDraft, isFalse);
+        for (final retained in original) {
+          expect(
+            DemoMode.instance.journals.singleWhere(
+              (row) => row.id == retained.id,
+            ),
+            same(retained),
+          );
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      }
+    },
+  );
 
   for (final dark in [false, true]) {
     testWidgets('Journal layout and entry picker remain readable dark=$dark', (

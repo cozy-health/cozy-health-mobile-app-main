@@ -1,7 +1,9 @@
+import '../../../core/services/local_db_service.dart';
+
 enum CrisisSignal { none, soft, hard }
 
 class CrisisDetector {
-  static final Map<String, DateTime> _lastTriggered = {};
+  static final Map<(String?, String), DateTime> _lastTriggered = {};
   static const Duration cooldown = Duration(hours: 4);
 
   static const List<String> _tier1 = [
@@ -60,6 +62,9 @@ class CrisisDetector {
 
   const CrisisDetector();
 
+  (String?, String) _cooldownKey(String surface) =>
+      (LocalDbService.instance.activeUserId, surface);
+
   CrisisSignal analyze(String text) {
     final normalized = text
         .toLowerCase()
@@ -76,16 +81,16 @@ class CrisisDetector {
   bool canTrigger(String surface, CrisisSignal signal, {DateTime? now}) {
     if (signal == CrisisSignal.none) return false;
     final current = now ?? DateTime.now();
-    final last = _lastTriggered[surface];
+    final last = _lastTriggered[_cooldownKey(surface)];
     if (last != null && current.difference(last) < cooldown) return false;
     return true;
   }
 
   void markTriggered(String surface, {DateTime? now}) {
-    _lastTriggered[surface] = now ?? DateTime.now();
+    _lastTriggered[_cooldownKey(surface)] = now ?? DateTime.now();
   }
 
   void resetCooldown(String surface) {
-    _lastTriggered.remove(surface);
+    _lastTriggered.remove(_cooldownKey(surface));
   }
 }
