@@ -1,3 +1,5 @@
+import 'package:cozy_health/core/widgets/wellness_panel.dart';
+import 'dart:async';
 import 'dart:io';
 import 'package:cozy_health/core/widgets/wellness_sheet.dart';
 import 'package:cozy_health/core/audio/audio_recorder_service.dart';
@@ -61,6 +63,8 @@ void main() {
     WidgetTester tester, {
     required bool journal,
     required Future<void> Function(RecordedAudio) confirm,
+    bool start = true,
+    Future<MicPermissionResult> Function()? requestMicrophone,
     bool denied = false,
     MicPermissionResult? permission,
   }) async {
@@ -74,11 +78,13 @@ void main() {
                 context,
                 journal: journal,
                 recorder: recorder,
-                requestMicrophone: () async =>
-                    permission ??
-                    (denied
-                        ? MicPermissionResult.denied
-                        : MicPermissionResult.granted),
+                requestMicrophone:
+                    requestMicrophone ??
+                    () async =>
+                        permission ??
+                        (denied
+                            ? MicPermissionResult.denied
+                            : MicPermissionResult.granted),
                 onConfirm: confirm,
               ),
               child: const Icon(Icons.mic),
@@ -91,6 +97,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(recorder.starts, 0);
+    if (!start) return;
     await tester.tap(find.text('Continue'));
     await tester.pump(const Duration(milliseconds: 300));
     if (find.text('Microphone access is off').evaluate().isNotEmpty) {
@@ -99,6 +106,35 @@ void main() {
       await tester.pumpAndSettle();
     }
   }
+
+  testWidgets('microphone consent ignores repeated activation before redraw', (
+    tester,
+  ) async {
+    final permission = Completer<MicPermissionResult>();
+    var requests = 0;
+    await open(
+      tester,
+      journal: true,
+      start: false,
+      confirm: (_) async {},
+      requestMicrophone: () {
+        requests++;
+        return permission.future;
+      },
+    );
+    final action = tester
+        .widget<WellnessAction>(find.widgetWithText(WellnessAction, 'Continue'))
+        .onPressed!;
+    action();
+    action();
+    final countBeforeRedraw = requests;
+    permission.complete(MicPermissionResult.granted);
+    await driveUntil(tester, () => recorder.starts > 0);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    expect(countBeforeRedraw, 1);
+    expect(recorder.starts, 1);
+  });
 
   testWidgets(
     'bottom recorder sheet previews before sending and preserves failed sends for retry',

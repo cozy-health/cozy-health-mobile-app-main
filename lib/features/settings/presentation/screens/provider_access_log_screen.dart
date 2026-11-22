@@ -114,7 +114,7 @@ class _ProviderAccessLogScreenState extends State<ProviderAccessLogScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Provider Access Log')),
       body: SafeArea(
-        child: RefreshIndicator(
+        child: RefreshIndicator.adaptive(
           onRefresh: _load,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),

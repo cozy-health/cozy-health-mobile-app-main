@@ -41,7 +41,7 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
               '${attempt.quizSlug}:${attempt.metadata['definition_version']}:${attempt.metadata['maximum_score']}';
           (groups[key] ??= []).add(attempt);
         }
-        return RefreshIndicator(
+        return RefreshIndicator.adaptive(
           onRefresh: () async {
             await _repository.fetchAttempts();
           },

@@ -104,7 +104,7 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
             final completed = (attempts.data ?? [])
                 .map((a) => a.assessmentId)
                 .toSet();
-            return RefreshIndicator(
+            return RefreshIndicator.adaptive(
               onRefresh: () async {
                 setState(() {
                   _category = 'All';

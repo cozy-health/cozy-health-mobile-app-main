@@ -1,20 +1,16 @@
+import '../widgets/settings_profile_card.dart';
 import 'about_screen.dart' show InstalledBuildLabel;
 import '../../../../core/widgets/wellness_sheet.dart';
 import '../../../../core/widgets/wellness_panel.dart';
-import '../../../../core/widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_surface.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/models/user_profile.dart';
-import '../../../../core/services/guest_session_service.dart';
 import '../../../../core/services/local_db_service.dart';
 import '../../../../core/widgets/app_scaffold_padding.dart';
 import '../../../auth/data/auth_service.dart';
-import '../../data/profile_repository.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -44,100 +40,10 @@ class SettingsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(height: 24),
-              StreamBuilder<UserProfile?>(
-                stream: ProfileRepository().watchProfile(),
-                initialData: LocalDbService.instance.getUserProfile(),
-                builder: (context, snapshot) {
-                  final profile = snapshot.data;
-
-                  return FutureBuilder<bool>(
-                    future: GuestSessionService().isGuestSession(),
-                    builder: (context, guestSnapshot) {
-                      final isGuest = guestSnapshot.data ?? false;
-
-                      final name = isGuest
-                          ? 'Guest'
-                          : profile?.name ?? 'Loading...';
-                      final email = isGuest
-                          ? 'Create an account to sync your data'
-                          : profile?.email ?? 'Loading...';
-
-                      return Material(
-                        color: colorScheme.surface,
-                        shape: AppSurface.shape(
-                          context,
-                          BorderRadius.circular(16),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: () {
-                            context.push(
-                              isGuest
-                                  ? AppRouter.createAccount
-                                  : AppRouter.profileView,
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            constraints: const BoxConstraints(minHeight: 88),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              border: AppSurface.border(context),
-                            ),
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              children: [
-                                ProfileAvatar(
-                                  profile: isGuest ? null : profile,
-                                  size: 48,
-                                ),
-                                SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        name,
-                                        style: AppTextStyles.body1.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      Text(
-                                        email,
-                                        style: AppTextStyles.body2.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium?.color,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.chevron_right,
-                                  size: 20,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? AppColors.textSubtleDark
-                                      : AppColors.textSubtleLight,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-              SizedBox(height: 32),
-
+              const SettingsProfileCard(),
+              const SizedBox(height: 24),
               _SettingsSection(
-                title: 'SUPPORT',
+                title: 'SAFETY & CRISIS',
                 children: [
                   _SettingsRow(
                     icon: Icons.favorite_outline,
@@ -293,7 +199,7 @@ class SettingsScreen extends StatelessWidget {
               SizedBox(height: 32),
 
               _SettingsSection(
-                title: 'SUPPORT',
+                title: 'HELP & SUPPORT',
                 children: [
                   _SettingsRow(
                     icon: Icons.help_outline,

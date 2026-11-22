@@ -142,7 +142,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       grouped.putIfAbsent(group, () => []).add(item);
     }
 
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       onRefresh: () async {
         await Future.delayed(const Duration(seconds: 1));
       },

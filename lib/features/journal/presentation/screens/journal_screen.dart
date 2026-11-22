@@ -178,7 +178,7 @@ class _JournalScreenState extends State<JournalScreen>
                 ),
               );
             }
-            return RefreshIndicator(
+            return RefreshIndicator.adaptive(
               onRefresh: () async => _repo.fetchJournalEntries(),
               child: ListView(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 28),
@@ -734,7 +734,13 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  const Spacer(),
+                  Expanded(
+                    child: Text(
+                      'Your journal',
+                      style: Theme.of(context).textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                   TextButton(
                     onPressed: _saving ? null : _finish,
                     child: _saving
@@ -749,7 +755,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                                 ),
                               ),
                               SizedBox(width: 8),
-                              Text('Loading...'),
+                              Text('Saving…'),
                             ],
                           )
                         : const Text('Done'),
@@ -762,6 +768,13 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
                 children: [
                   Text(_dateStamp(), style: _captionStyle(context)),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Your reflection',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   if (prompt != null) ...[
                     SizedBox(height: 18),
                     _PromptPinnedCard(prompt: prompt),
@@ -776,9 +789,10 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                   ],
                   SizedBox(height: 18),
                   TextField(
+                    key: const ValueKey('journal-editor-body'),
                     controller: _controller,
                     autofocus: true,
-                    minLines: 12,
+                    minLines: 10,
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
                     style: TextStyle(
@@ -789,12 +803,19 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
                     ),
                     decoration: InputDecoration(
                       hintText: 'Start writing...',
+                      filled: false,
+                      contentPadding: EdgeInsets.zero,
                       hintStyle: TextStyle(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? AppColors.textSubtleDark
                             : AppColors.textSubtleLight,
                       ),
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
                     ),
                     onChanged: (_) => _scheduleAutoSave(),
                   ),
@@ -802,6 +823,7 @@ class _JournalEditorScreenState extends State<JournalEditorScreen>
               ),
             ),
             _EditorFooter(
+              keyboardOpen: MediaQuery.viewInsetsOf(context).bottom > 0,
               tags: _tags,
               wordCount: _wordCount,
               status: _saveStatus,
@@ -2117,6 +2139,7 @@ class _TagRow extends StatelessWidget {
 
 class _EditorFooter extends StatelessWidget {
   const _EditorFooter({
+    required this.keyboardOpen,
     required this.tags,
     required this.wordCount,
     required this.status,
@@ -2124,35 +2147,52 @@ class _EditorFooter extends StatelessWidget {
   });
 
   final List<String> tags;
+  final bool keyboardOpen;
   final int wordCount;
   final String status;
   final VoidCallback onAddTag;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 18),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _WarmPanel(
-            padding: const EdgeInsets.all(10),
-            child: _TagRow(tags: tags, onAddTag: onAddTag),
-          ),
-          SizedBox(height: 8),
-          _WarmPanel(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Wrap(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (keyboardOpen)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: onAddTag,
+                  icon: const Icon(Icons.sell_outlined, size: 18),
+                  label: Text(tags.isEmpty ? 'Add tag' : '${tags.length} tags'),
+                ),
+              )
+            else
+              _TagRow(tags: tags, onAddTag: onAddTag),
+            const SizedBox(height: 6),
+            Wrap(
               alignment: WrapAlignment.spaceBetween,
-              spacing: 12,
-              runSpacing: 8,
+              spacing: 16,
+              runSpacing: 6,
               children: [
                 Text('$wordCount words', style: _captionStyle(context)),
-                Text(status, style: _captionStyle(context)),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(status, style: _captionStyle(context)),
+                ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

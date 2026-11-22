@@ -50,7 +50,7 @@ class AuthScaffold extends StatelessWidget {
               if (showBack)
                 IconButton(
                   onPressed: onBack ?? () => context.pop(),
-                  icon: Icon(Icons.arrow_back),
+                  icon: Icon(Icons.adaptive.arrow_back),
                   color: colorScheme.onSurface,
                   padding: EdgeInsets.zero,
                   alignment: Alignment.centerLeft,

@@ -1,6 +1,7 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_pressable.dart';
 
 class CategoryCard extends StatelessWidget {
   final String title;
@@ -16,8 +17,8 @@ class CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    return AppPressable(
+      onPressed: onTap,
       child: Container(
         constraints: const BoxConstraints(minWidth: 140),
         padding: const EdgeInsets.all(16),

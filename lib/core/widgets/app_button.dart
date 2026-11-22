@@ -59,9 +59,9 @@ class AppButton extends StatelessWidget {
                 SizedBox(
                   width: w.sectionSpacing,
                   height: w.sectionSpacing,
-                  child: CircularProgressIndicator(
+                  child: CircularProgressIndicator.adaptive(
                     strokeWidth: 2,
-                    color: foreground,
+                    valueColor: AlwaysStoppedAnimation<Color>(foreground),
                   ),
                 ),
                 SizedBox(width: w.contentGap),

@@ -121,7 +121,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
         ? Center(
             child: TextButton(onPressed: _load, child: Text(_error!)),
           )
-        : RefreshIndicator(
+        : RefreshIndicator.adaptive(
             onRefresh: _load,
             child: ListView(
               children: [

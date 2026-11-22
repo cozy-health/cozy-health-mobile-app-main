@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
@@ -5,6 +6,15 @@ import 'app_text_styles.dart';
 import 'cozy_colors.dart';
 
 class AppTheme {
+  static const PageTransitionsTheme _nativePageTransitions =
+      PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      );
+
   /// Apply the persisted accent before deriving high-contrast themes.
   static ThemeData withAccent(ThemeData theme, Color accent) {
     final onAccent = accent.computeLuminance() > .179
@@ -12,6 +22,10 @@ class AppTheme {
         : Colors.white;
     return theme.copyWith(
       primaryColor: accent,
+      cupertinoOverrideTheme: CupertinoThemeData(
+        brightness: theme.brightness,
+        primaryColor: accent,
+      ),
       colorScheme: theme.colorScheme.copyWith(
         primary: accent,
         onPrimary: onAccent,
@@ -132,6 +146,8 @@ class AppTheme {
       bottomSheetTheme: base.bottomSheetTheme.copyWith(
         backgroundColor: overlay,
         modalBackgroundColor: overlay,
+        showDragHandle: true,
+        dragHandleColor: scheme.outline,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -353,6 +369,11 @@ class AppTheme {
       brightness: Brightness.light,
       extensions: const [CozyColors.light],
       useMaterial3: true,
+      pageTransitionsTheme: _nativePageTransitions,
+      cupertinoOverrideTheme: const CupertinoThemeData(
+        brightness: Brightness.light,
+        primaryColor: AppColors.primary,
+      ),
       scaffoldBackgroundColor: AppColors.backgroundLight,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
@@ -456,6 +477,11 @@ class AppTheme {
       brightness: Brightness.dark,
       extensions: const [CozyColors.dark],
       useMaterial3: true,
+      pageTransitionsTheme: _nativePageTransitions,
+      cupertinoOverrideTheme: const CupertinoThemeData(
+        brightness: Brightness.dark,
+        primaryColor: AppColors.primaryDark,
+      ),
       scaffoldBackgroundColor: AppColors.backgroundDark,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primaryDark,
@@ -548,7 +574,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(color: AppColors.primaryDark, width: 2),
         ),
       ),
     ),

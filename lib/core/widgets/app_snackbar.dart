@@ -1,5 +1,3 @@
-import 'wellness_sheet.dart';
-import 'wellness_panel.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/app_surface.dart';
@@ -11,7 +9,6 @@ import '../utils/motion.dart';
 enum _NoticeKind { success, error, info, warning }
 
 class AppSnackbar {
-  static bool _syncDialogOpen = false;
   static OverlayEntry? _entry;
   static VoidCallback? _dismissCurrent;
   static void dismiss() => _dismissCurrent?.call();
@@ -88,31 +85,6 @@ class AppSnackbar {
   }
 
   static void show(BuildContext context, SnackBar snack) {
-    final message = snack.content is Text
-        ? (snack.content as Text).data ?? ''
-        : '';
-    if (message.contains('will sync') ||
-        message.contains('Changes will sync')) {
-      if (!_syncDialogOpen) {
-        _syncDialogOpen = true;
-        unawaited(
-          showWellnessDialog<void>(
-            context: context,
-            builder: (context) => WellnessSheet(
-              title: 'Saved on this device',
-              children: [
-                const Text('Your saved changes will sync when you reconnect.'),
-                WellnessAction(
-                  label: 'Got it',
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ).whenComplete(() => _syncDialogOpen = false),
-        );
-      }
-      return;
-    }
     if (snack is! _Notice) {
       snack = fromLegacy(content: snack.content, action: snack.action);
     }
@@ -195,6 +167,7 @@ class _TopNoticeState extends State<_TopNotice> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final reduced = shouldReduceMotion(context);
     return Positioned(
       top: 0,
       left: 16,
@@ -203,49 +176,65 @@ class _TopNoticeState extends State<_TopNotice> {
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.only(top: 12),
-          child: Semantics(
-            liveRegion: true,
-            child: Material(
-              key: const Key('app-top-notice'),
-              color: colors.inverseSurface,
-              elevation: 4,
-              shape: widget.snack.shape,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(context).height * .6,
-                ),
-                child: SingleChildScrollView(
-                  child: DefaultTextStyle(
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      color: colors.onInverseSurface,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: reduced ? 1.0 : 0.0, end: 1.0),
+            duration: reduced
+                ? Duration.zero
+                : const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            builder: (_, value, child) => Transform.translate(
+              offset: Offset(0, -16 * (1 - value)),
+              child: Opacity(opacity: value, child: child),
+            ),
+            child: Dismissible(
+              key: ObjectKey(widget.snack),
+              direction: DismissDirection.up,
+              onDismissed: (_) => widget.onDismiss(),
+              child: Semantics(
+                liveRegion: true,
+                child: Material(
+                  key: const Key('app-top-notice'),
+                  color: colors.inverseSurface,
+                  elevation: 4,
+                  shape: widget.snack.shape,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(context).height * .6,
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: widget.snack.content),
-                          if (widget.snack.action case final action?)
-                            TextButton(
-                              style: TextButton.styleFrom(
-                                foregroundColor: colors.onInverseSurface,
+                    child: SingleChildScrollView(
+                      child: DefaultTextStyle(
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                          color: colors.onInverseSurface,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: widget.snack.content),
+                              if (widget.snack.action case final action?)
+                                TextButton(
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: colors.onInverseSurface,
+                                  ),
+                                  onPressed: () {
+                                    widget.onDismiss();
+                                    action.onPressed();
+                                  },
+                                  child: Text(action.label),
+                                ),
+                              IconButton(
+                                tooltip: 'Dismiss notification',
+                                onPressed: widget.onDismiss,
+                                icon: Icon(
+                                  Icons.close,
+                                  color: colors.onInverseSurface,
+                                  size: 20,
+                                ),
                               ),
-                              onPressed: () {
-                                widget.onDismiss();
-                                action.onPressed();
-                              },
-                              child: Text(action.label),
-                            ),
-                          IconButton(
-                            tooltip: 'Dismiss notification',
-                            onPressed: widget.onDismiss,
-                            icon: Icon(
-                              Icons.close,
-                              color: colors.onInverseSurface,
-                              size: 20,
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),

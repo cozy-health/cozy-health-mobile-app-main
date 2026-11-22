@@ -186,7 +186,9 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
           darkTheme: highContrast ? darkHighContrast : darkTheme,
           highContrastTheme: lightHighContrast,
           highContrastDarkTheme: darkHighContrast,
-          themeAnimationDuration: Duration.zero,
+          themeAnimationDuration: (profile?.reduceMotion ?? false)
+              ? Duration.zero
+              : const Duration(milliseconds: 200),
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
             final media = appearanceMediaQuery(
@@ -202,73 +204,74 @@ class _CozyHealthAppState extends State<CozyHealthApp> {
             ScreenUtil.init(context);
             final brightness = Theme.of(context).brightness;
             final isDark = brightness == Brightness.dark;
-            SystemChrome.setSystemUIOverlayStyle(
-              SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
-                statusBarIconBrightness: isDark
-                    ? Brightness.light
-                    : Brightness.dark,
-                statusBarBrightness: brightness,
-                systemNavigationBarColor: Colors.transparent,
-                systemNavigationBarIconBrightness: isDark
-                    ? Brightness.light
-                    : Brightness.dark,
-              ),
+            final overlayStyle = SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: isDark
+                  ? Brightness.light
+                  : Brightness.dark,
+              statusBarBrightness: brightness,
+              systemNavigationBarColor: Colors.transparent,
+              systemNavigationBarIconBrightness: isDark
+                  ? Brightness.light
+                  : Brightness.dark,
             );
-            return MediaQuery(
-              data: media,
-              child: Theme(
-                data: currentTheme,
-                child: LiveAppearanceTheme(
-                  theme: currentTheme,
-                  child: HeroMode(
-                    enabled: !media.disableAnimations,
-                    child: Listener(
-                      onPointerDown: (_) {
-                        if (WidgetsBinding.instance.lifecycleState ==
-                            AppLifecycleState.resumed) {
-                          TokenStorage().recordActivity();
-                        }
-                      },
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onTap: () =>
-                            FocusManager.instance.primaryFocus?.unfocus(),
-                        child: NotificationListener<ScrollStartNotification>(
-                          onNotification: (notification) {
-                            if (notification.dragDetails != null) {
-                              FocusManager.instance.primaryFocus?.unfocus();
-                            }
-                            return false;
-                          },
-                          child: StartupCover(
-                            child: NetworkObserver(
-                              child: AppAvailabilityGate(
-                                child: SecurityCaptureOverlay(
-                                  child: SecurityGate(
-                                    child: ConsentGate(
-                                      child: PushNotificationHost(
-                                        child: DeviceIntegrityNotice(
-                                          child: ListenableBuilder(
-                                            listenable: AppRouter
-                                                .router
-                                                .routeInformationProvider,
-                                            builder: (context, _) =>
-                                                StartupDestination(
-                                                  ready:
-                                                      !{
-                                                        AppRouter.splash,
-                                                        AppRouter.home,
-                                                      }.contains(
-                                                        AppRouter
-                                                            .router
-                                                            .routeInformationProvider
-                                                            .value
-                                                            .uri
-                                                            .path,
-                                                      ),
-                                                  child: child!,
-                                                ),
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: overlayStyle,
+              child: MediaQuery(
+                data: media,
+                child: Theme(
+                  data: currentTheme,
+                  child: LiveAppearanceTheme(
+                    theme: currentTheme,
+                    child: HeroMode(
+                      enabled: !media.disableAnimations,
+                      child: Listener(
+                        onPointerDown: (_) {
+                          if (WidgetsBinding.instance.lifecycleState ==
+                              AppLifecycleState.resumed) {
+                            TokenStorage().recordActivity();
+                          }
+                        },
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onTap: () =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
+                          child: NotificationListener<ScrollStartNotification>(
+                            onNotification: (notification) {
+                              if (notification.dragDetails != null) {
+                                FocusManager.instance.primaryFocus?.unfocus();
+                              }
+                              return false;
+                            },
+                            child: StartupCover(
+                              child: NetworkObserver(
+                                child: AppAvailabilityGate(
+                                  child: SecurityCaptureOverlay(
+                                    child: SecurityGate(
+                                      child: ConsentGate(
+                                        child: PushNotificationHost(
+                                          child: DeviceIntegrityNotice(
+                                            child: ListenableBuilder(
+                                              listenable: AppRouter
+                                                  .router
+                                                  .routeInformationProvider,
+                                              builder: (context, _) =>
+                                                  StartupDestination(
+                                                    ready:
+                                                        !{
+                                                          AppRouter.splash,
+                                                          AppRouter.home,
+                                                        }.contains(
+                                                          AppRouter
+                                                              .router
+                                                              .routeInformationProvider
+                                                              .value
+                                                              .uri
+                                                              .path,
+                                                        ),
+                                                    child: child!,
+                                                  ),
+                                            ),
                                           ),
                                         ),
                                       ),

@@ -194,6 +194,91 @@ void main() {
     );
   }
 
+  for (final dark in [false, true]) {
+    testWidgets(
+      'journal writing surface stays usable with keyboard and large text dark=$dark',
+      (tester) async {
+        final saved = <JournalEntry>[];
+        final entry = JournalEntry(
+          id: 'editor-polish',
+          type: 'free',
+          body: 'A quiet moment.',
+          tags: ['Calm', 'Work'],
+          wordCount: 3,
+          createdAt: DateTime(2026, 11, 22),
+          updatedAt: DateTime(2026, 11, 22),
+        );
+        await mount(
+          tester,
+          JournalEditorScreen(
+            type: 'free',
+            existing: entry,
+            onSave: (value) async {
+              saved.add(value);
+              return false;
+            },
+          ),
+          dark: dark,
+          size: const Size(320, 700),
+          textScale: 2,
+        );
+        tester.view.viewInsets = const FakeViewPadding(bottom: 240);
+        addTearDown(tester.view.resetViewInsets);
+        await tester.pump();
+        final field = find.byKey(const ValueKey('journal-editor-body'));
+        final input = tester.widget<TextField>(field);
+        expect(input.decoration?.focusedBorder, InputBorder.none);
+        expect(input.decoration?.enabledBorder, InputBorder.none);
+        expect(input.decoration?.filled, isFalse);
+        const body =
+            'Today I made room for a quiet moment and a few slow breaths.';
+        await tester.enterText(field, body);
+        await tester.pump();
+        expect(find.text('2 tags'), findsOneWidget);
+        await tester.tap(find.text('Done'));
+        await tester.pump();
+        expect(saved.single.body, body);
+        expect(saved.single.tags, ['Calm', 'Work']);
+        expect(tester.widget<TextField>(field).controller?.text, body);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      },
+    );
+  }
+
+  testWidgets(
+    'main tabs load on first visit and retain inactive state without ticking',
+    (tester) async {
+      await mount(
+        tester,
+        const MainScreen(),
+        dark: false,
+        size: const Size(430, 932),
+        textScale: 1,
+      );
+      await tester.pumpAndSettle();
+      final providerBeforeVisit = find
+          .byType(ProviderHubScreen, skipOffstage: false)
+          .evaluate()
+          .length;
+      await tester.tap(find.text('Provider').last);
+      await tester.pumpAndSettle();
+      final providerState = tester.state(find.byType(ProviderHubScreen));
+      await tester.tap(find.text('Home').last);
+      await tester.pumpAndSettle();
+      final retained = find.byType(ProviderHubScreen, skipOffstage: false);
+      expect(tester.state(retained), same(providerState));
+      final inactiveTicking = TickerMode.valuesOf(
+        tester.element(retained),
+      ).enabled;
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      expect(providerBeforeVisit, 0);
+      expect(inactiveTicking, isFalse);
+    },
+  );
+
   testWidgets(
     'journal flags each match while prompting only once in cooldown',
     (tester) async {

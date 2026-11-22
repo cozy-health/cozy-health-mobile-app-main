@@ -1,6 +1,7 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/widgets/app_pressable.dart';
 
 class QuizRecommendationCard extends StatelessWidget {
   final VoidCallback onTap;
@@ -9,8 +10,8 @@ class QuizRecommendationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    return AppPressable(
+      onPressed: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
