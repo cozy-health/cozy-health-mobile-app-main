@@ -23,6 +23,7 @@ import '../support/mobile_sync_contract.dart';
 
 class PlanAdapter implements HttpClientAdapter {
   bool enabled = true, offline = false, denied = false;
+  Duration responseDelay = Duration.zero;
   List<String> features = ['written_journal', 'mood_checkin', 'community_read'];
   String? expiry = DateTime.now()
       .add(const Duration(days: 1))
@@ -34,6 +35,9 @@ class PlanAdapter implements HttpClientAdapter {
     Stream<Uint8List>? stream,
     Future<void>? cancel,
   ) async {
+    if (responseDelay > Duration.zero) {
+      await Future<void>.delayed(responseDelay);
+    }
     if (options.path == '/config') {
       return ResponseBody.fromString(
         jsonEncode({
@@ -268,6 +272,7 @@ void main() {
   testWidgets(
     'Standard plan gate stays readable in dark mode at 320px and 200% text',
     (tester) async {
+      adapter.responseDelay = const Duration(milliseconds: 100);
       tester.view.physicalSize = const Size(320, 640);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -288,9 +293,13 @@ void main() {
             ),
           ),
         );
-        await Future<void>.delayed(const Duration(milliseconds: 50));
       });
       await tester.pump();
+      expect(find.text('Private trend content'), findsNothing);
+      await pumpUntilVisible(
+        tester,
+        find.text('Included with Premium and verified Student'),
+      );
       expect(find.text('Private trend content'), findsNothing);
       expect(
         find.text('Included with Premium and verified Student'),
