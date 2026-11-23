@@ -125,7 +125,7 @@ class _PublishedArticleBrowserState extends State<PublishedArticleBrowser> {
         ),
       ),
       body: SafeArea(
-        child: RefreshIndicator(
+        child: RefreshIndicator.adaptive(
           onRefresh: _load,
           child: ListView(
             padding: EdgeInsets.all(w.page),

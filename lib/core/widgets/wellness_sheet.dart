@@ -1,8 +1,10 @@
 import 'dart:async';
 import '../storage/token_storage.dart';
 import 'dart:math' as math;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/cozy_colors.dart';
+import '../utils/haptics.dart';
 import 'app_pressable.dart';
 import 'wellness_panel.dart';
 import '../utils/motion.dart';
@@ -13,6 +15,7 @@ Future<T?> showWellnessSheet<T>({
   bool dismissible = true,
 }) => showModalBottomSheet<T>(
   context: context,
+  showDragHandle: dismissible,
   sheetAnimationStyle: shouldReduceMotion(context)
       ? AnimationStyle.noAnimation
       : AnimationStyle(
@@ -332,6 +335,34 @@ Future<bool> confirmWellnessAction(
   String cancel = 'Cancel',
   void Function(Route<dynamic>?)? onRoute,
 }) async {
+  AppHaptics.medium();
+  final platform = Theme.of(context).platform;
+  if (platform == TargetPlatform.iOS || platform == TargetPlatform.macOS) {
+    final result = await showAdaptiveDialog<bool>(
+      context: context,
+      builder: (context) {
+        onRoute?.call(ModalRoute.of(context));
+        return _SessionDialogScope(
+          builder: (context) => AlertDialog.adaptive(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(cancel),
+              ),
+              CupertinoDialogAction(
+                isDestructiveAction: true,
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(action),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    return result == true;
+  }
   final result = await showWellnessDialog<bool>(
     context: context,
     builder: (context) {

@@ -75,150 +75,180 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> {
         MediaQuery.highContrastOf(context),
       ),
       body: SafeArea(
-        child: RefreshIndicator(
+        child: RefreshIndicator.adaptive(
           onRefresh: _repository.load,
-          child: ListView(
+          child: ListView.builder(
             padding: EdgeInsets.fromLTRB(
               w.page,
               w.page,
               w.page,
               wellnessFloatingClearance(context),
             ),
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Community',
-                      style: t.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const NotificationBell(),
-                ],
-              ),
-              SizedBox(height: w.small),
-              const Text('Share at your own pace.'),
-              SizedBox(height: w.small),
-              if (CommunityModerationState.instance.restricted)
-                const Text('Community participation is restricted. You can still read, report, block and appeal.'),
-              WellnessAction(label: 'Moderation decisions and appeals', onPressed: () => context.push('/community/moderation')),
-              SizedBox(height: w.gap),
-              AppPressable(
-                label: 'Search community',
-                onPressed: () => context.push(AppRouter.communitySearch),
-                child: WellnessPanel(
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search_rounded),
-                      SizedBox(width: w.contentGap),
-                      const Expanded(child: Text('Search posts and groups')),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: w.gap),
-              WellnessSegments(
-                labels: const ['Posts', 'Groups'],
-                selected: _groups ? 1 : 0,
-                keyPrefix: 'community-tab',
-                onSelected: (i) => setState(() => _groups = i == 1),
-              ),
-              SizedBox(height: w.gap),
-              if (_groups)
-                const CommunityGroups()
-              else ...[
-                WellnessAction(
-                  label: 'Create a post',
-                  icon: Icons.add_rounded,
-                  filled: true,
-                  onPressed: CommunityModerationState.instance.restricted ? null : () => context.push(AppRouter.createPost),
-                ),
-                SizedBox(height: w.gap),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final topic in _topics)
-                        Padding(
-                          padding: EdgeInsets.only(right: w.small),
-                          child: AppPressable(
-                            selected: _filter == topic,
-                            onPressed: () => setState(() => _filter = topic),
-                            child: Container(
-                              constraints: BoxConstraints(minHeight: w.touch),
-                              alignment: Alignment.center,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: w.contentGap,
-                                vertical: w.small,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _filter == topic ? c.primary : c.surface,
-                                border: Border.all(color: c.outlineVariant),
-                                borderRadius: BorderRadius.circular(
-                                  w.tileRadius,
-                                ),
-                              ),
-                              child: Text(
-                                topic,
-                                style: t.textTheme.labelLarge?.copyWith(
-                                  color: _filter == topic
-                                      ? c.onPrimary
-                                      : c.onSurface,
-                                ),
-                              ),
+            itemCount: _groups ? 1 : posts.length + 2,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Community',
+                            style: t.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: w.sectionSpacing),
-                Text('Latest posts', style: t.textTheme.titleLarge),
-                SizedBox(height: w.contentGap),
-                if (_repository.loading && widget.posts == null)
-                  const LinearProgressIndicator(),
-                if (_repository.error != null && widget.posts == null) ...[
-                  Text(_repository.error!),
-                  WellnessAction(
-                    label: 'Retry community',
-                    onPressed: _repository.load,
-                  ),
-                ],
-                if (posts.isEmpty &&
-                    !_repository.loading &&
-                    _repository.error == null)
-                  const WellnessPanel(
-                    child: Text(
-                      'No posts here yet. Share something when you’re ready.',
+                        const NotificationBell(),
+                      ],
                     ),
-                  ),
-                for (final post in posts)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: w.gap),
-                    child: PostCard(
-                      post: post,
-                      onTap: () => context.push(
-                        AppRouter.postDetail,
-                        extra: {'post': post},
+                    SizedBox(height: w.small),
+                    const Text('Share at your own pace.'),
+                    SizedBox(height: w.small),
+                    if (CommunityModerationState.instance.restricted) ...[
+                      const Text(
+                        'Community participation is restricted. You can still read, report, block and appeal.',
                       ),
-                      onAvatarTap: () {
-                        if (post['isAnonymous'] != true) {
-                          context.push(
-                            AppRouter.userProfile,
-                            extra: {
-                              'username': post['username'],
-                              'authorId': post['authorId'],
-                            },
-                          );
-                        }
-                      },
-                      onLongPress: () => PostActions.show(context, post),
+                      WellnessAction(
+                        label: 'Moderation decisions and appeals',
+                        onPressed: () => context.push('/community/moderation'),
+                      ),
+                    ],
+                    SizedBox(height: w.gap),
+                    AppPressable(
+                      label: 'Search community',
+                      onPressed: () => context.push(AppRouter.communitySearch),
+                      child: WellnessPanel(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.search_rounded),
+                            SizedBox(width: w.contentGap),
+                            const Expanded(
+                              child: Text('Search posts and groups'),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
+                    SizedBox(height: w.gap),
+                    WellnessSegments(
+                      labels: const ['Posts', 'Groups'],
+                      selected: _groups ? 1 : 0,
+                      keyPrefix: 'community-tab',
+                      onSelected: (i) => setState(() => _groups = i == 1),
+                    ),
+                    SizedBox(height: w.gap),
+                    if (_groups)
+                      const CommunityGroups()
+                    else ...[
+                      WellnessAction(
+                        label: 'Create a post',
+                        icon: Icons.add_rounded,
+                        filled: true,
+                        onPressed: CommunityModerationState.instance.restricted
+                            ? null
+                            : () => context.push(AppRouter.createPost),
+                      ),
+                      SizedBox(height: w.gap),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            for (final topic in _topics)
+                              Padding(
+                                padding: EdgeInsets.only(right: w.small),
+                                child: AppPressable(
+                                  selected: _filter == topic,
+                                  onPressed: () =>
+                                      setState(() => _filter = topic),
+                                  child: Container(
+                                    constraints: BoxConstraints(
+                                      minHeight: w.touch,
+                                    ),
+                                    alignment: Alignment.center,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: w.contentGap,
+                                      vertical: w.small,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _filter == topic
+                                          ? c.primary
+                                          : c.surface,
+                                      border: Border.all(
+                                        color: c.outlineVariant,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        w.tileRadius,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      topic,
+                                      style: t.textTheme.labelLarge?.copyWith(
+                                        color: _filter == topic
+                                            ? c.onPrimary
+                                            : c.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: w.sectionSpacing),
+                      Text('Latest posts', style: t.textTheme.titleLarge),
+                      SizedBox(height: w.contentGap),
+                      if (_repository.loading && widget.posts == null)
+                        const LinearProgressIndicator(),
+                      if (_repository.error != null &&
+                          widget.posts == null) ...[
+                        Text(_repository.error!),
+                        WellnessAction(
+                          label: 'Retry community',
+                          onPressed: _repository.load,
+                        ),
+                      ],
+                      if (posts.isEmpty &&
+                          !_repository.loading &&
+                          _repository.error == null)
+                        const WellnessPanel(
+                          child: Text(
+                            'No posts here yet. Share something when you’re ready.',
+                          ),
+                        ),
+                    ],
+                  ],
+                );
+              }
+              if (index <= posts.length) {
+                final post = posts[index - 1];
+                return Padding(
+                  padding: EdgeInsets.only(bottom: w.gap),
+                  child: PostCard(
+                    post: post,
+                    onTap: () => context.push(
+                      AppRouter.postDetail,
+                      extra: {'post': post},
+                    ),
+                    onAvatarTap: () {
+                      if (post['isAnonymous'] != true) {
+                        context.push(
+                          AppRouter.userProfile,
+                          extra: {
+                            'username': post['username'],
+                            'authorId': post['authorId'],
+                          },
+                        );
+                      }
+                    },
+                    onLongPress: () => PostActions.show(context, post),
                   ),
-                SizedBox(height: w.contentGap),
-                WellnessPanel(
+                );
+              }
+              return Padding(
+                padding: EdgeInsets.only(top: w.contentGap),
+                child: WellnessPanel(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -233,8 +263,8 @@ class _CommunityHubScreenState extends State<CommunityHubScreen> {
                     ],
                   ),
                 ),
-              ],
-            ],
+              );
+            },
           ),
         ),
       ),

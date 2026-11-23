@@ -105,7 +105,7 @@ class _WellnessScreenState extends State<WellnessScreen> {
                   : 'No challenges are available yet.',
             ),
           )
-        : RefreshIndicator(
+        : RefreshIndicator.adaptive(
             onRefresh: _load,
             child: ListView.separated(
               padding: const EdgeInsets.all(20),

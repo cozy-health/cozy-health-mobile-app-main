@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/mood_artwork.dart';
 import 'package:cozy_health/features/mood_check_in/presentation/screens/mood_intensity_control.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -29,6 +30,7 @@ void main() {
                   builder: (context, update) => MoodIntensityControl(
                     value: value,
                     feeling: 'Resentful',
+                    mood: 'angry',
                     onChanged: (next) => update(() => value = next),
                   ),
                 ),
@@ -37,11 +39,16 @@ void main() {
           ),
         );
         expect(find.text('Moderate · 3/5'), findsOneWidget);
-        final preview = find.byKey(const ValueKey('intensity-visual-layer-3'));
-        final initialWidth = tester
-            .widget<AnimatedContainer>(preview)
-            .constraints!
-            .maxWidth;
+        final preview = find.byKey(const ValueKey('intensity-mood-scale'));
+        final initialScale = tester.widget<AnimatedScale>(preview).scale;
+        expect(
+          tester.widget<MoodArtwork>(find.byType(MoodArtwork)).mood,
+          'angry',
+        );
+        final originalAsset =
+            (tester.widget<Image>(find.byType(Image)).image as AssetImage)
+                .assetName;
+        expect(originalAsset, MoodArtwork.assetFor('angry'));
         const labels = ['Slight', 'Mild', 'Moderate', 'Strong', 'Very strong'];
         for (var level = 1; level <= 5; level++) {
           tester.widget<Slider>(find.byType(Slider)).onChanged!(
@@ -58,8 +65,13 @@ void main() {
             isTrue,
           );
         }
-        final last = tester.widget<AnimatedContainer>(preview);
-        expect(last.constraints!.maxWidth, greaterThan(initialWidth));
+        final last = tester.widget<AnimatedScale>(preview);
+        expect(last.scale, greaterThan(initialScale));
+        expect(
+          (tester.widget<Image>(find.byType(Image)).image as AssetImage)
+              .assetName,
+          originalAsset,
+        );
         expect(last.duration, Duration(milliseconds: reducedMotion ? 0 : 200));
 
         // Exercise the actual tap gesture, rather than only the callback.

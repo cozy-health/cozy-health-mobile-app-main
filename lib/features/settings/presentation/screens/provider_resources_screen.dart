@@ -241,7 +241,7 @@ class _ProviderResourcesScreenState extends State<ProviderResourcesScreen> {
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Provider Resources')),
-      body: RefreshIndicator(
+      body: RefreshIndicator.adaptive(
         onRefresh: () async {
           if (!_loading && _updating == null) await _load();
         },

@@ -76,6 +76,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     FocusScope.of(context).unfocus();
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();

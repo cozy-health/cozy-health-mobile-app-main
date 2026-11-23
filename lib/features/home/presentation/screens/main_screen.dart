@@ -1,4 +1,5 @@
 import '../../../../core/services/feature_flags_service.dart';
+import '../../../../core/utils/haptics.dart';
 import '../../../../core/widgets/app_pressable.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
 import 'package:cozy_health/features/settings/presentation/screens/provider_hub_screen.dart';
@@ -24,6 +25,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  final Set<int> _visitedTabs = {0};
 
   final _tourTargets = FeatureTourTargets();
   late final List<Widget> _screens = [
@@ -49,7 +51,18 @@ class _MainScreenState extends State<MainScreen> {
             children: [
               SizedBox.expand(
                 key: const ValueKey('main-tab-content'),
-                child: _screens[_currentIndex],
+                child: IndexedStack(
+                  index: _currentIndex,
+                  children: [
+                    for (var index = 0; index < _screens.length; index++)
+                      TickerMode(
+                        enabled: index == _currentIndex,
+                        child: _visitedTabs.contains(index)
+                            ? _screens[index]
+                            : const SizedBox.shrink(),
+                      ),
+                  ],
+                ),
               ),
               if (_currentIndex != 2 &&
                   MediaQuery.viewInsetsOf(context).bottom == 0) ...[
@@ -140,8 +153,10 @@ class _MainScreenState extends State<MainScreen> {
           providerTourKey: _tourTargets.provider,
           currentIndex: _currentIndex,
           onTap: (index) {
+            if (index != _currentIndex) AppHaptics.selection();
             setState(() {
               _currentIndex = index;
+              _visitedTabs.add(index);
             });
           },
         ),
@@ -154,7 +169,10 @@ class _MainScreenState extends State<MainScreen> {
       context,
       onMood: () => context.push(AppRouter.moodFeeling),
       onJournal: () => context.push(AppRouter.journal),
-      onProvider: () => setState(() => _currentIndex = 2),
+      onProvider: () => setState(() {
+        _currentIndex = 2;
+        _visitedTabs.add(2);
+      }),
       onBreathe: () => context.push(AppRouter.breathing),
     );
   }

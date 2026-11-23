@@ -16,7 +16,7 @@ class AvatarPhotoPicker {
         requestFullMetadata: false,
       );
       if (file == null || !context.mounted) return null;
-      return crop(context, file.path);
+      return await crop(context, file.path);
     } finally {
       await box.delete('avatar_capture_pending');
     }
