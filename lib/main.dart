@@ -41,8 +41,10 @@ Future<void> _prepareApp() async {
   await InstallMarkerService().clearLingeringSessionOnFreshInstall();
   UsageAnalytics.instance.initialize();
   AppRouter.router.routeInformationProvider.addListener(() {
-    UsageAnalytics.instance.routeChanged(
-      AppRouter.router.routeInformationProvider.value.uri.path,
+    unawaited(
+      UsageAnalytics.instance.routeChanged(
+        AppRouter.router.routeInformationProvider.value.uri.path,
+      ),
     );
     CrashReporting.tagRoute(
       AppRouter.router.routeInformationProvider.value.uri.path,
