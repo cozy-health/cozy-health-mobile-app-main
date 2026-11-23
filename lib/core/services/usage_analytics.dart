@@ -83,14 +83,15 @@ class UsageAnalytics {
     }
   }
 
-  void routeChanged(String route) {
+  Future<void> routeChanged(String route) async {
+    final pending = <Future<void>>[];
     final previousRoute = _route;
     _route = route;
     if (route == '/onboarding') {
-      unawaited(track('onboarding_started'));
+      pending.add(track('onboarding_started'));
     }
     if (previousRoute == '/onboarding' && route == '/home') {
-      unawaited(track('onboarding_completed'));
+      pending.add(track('onboarding_completed'));
     }
     const routes = {
       '/home': 'home',
@@ -103,13 +104,15 @@ class UsageAnalytics {
     final feature = routes[route];
     if (feature == null) {
       _lastFeature = null;
+      await Future.wait(pending);
       return;
     }
-    unawaited(track('app_active'));
+    pending.add(track('app_active'));
     if (_lastFeature != feature) {
       _lastFeature = feature;
-      unawaited(track('feature_opened', feature: feature));
+      pending.add(track('feature_opened', feature: feature));
     }
+    await Future.wait(pending);
   }
 
   Future<void> track(String event, {String? feature}) async {

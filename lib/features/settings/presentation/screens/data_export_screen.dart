@@ -5,7 +5,11 @@ import '../../../../core/services/local_db_service.dart';
 import '../../../../core/storage/token_storage.dart';
 
 class DataExportScreen extends StatefulWidget {
-  const DataExportScreen({super.key});
+  const DataExportScreen({super.key, this.local, this.tokens, this.sharing});
+
+  final LocalDbService? local;
+  final TokenStorage? tokens;
+  final SharePlus? sharing;
   @override
   State<DataExportScreen> createState() => _DataExportScreenState();
 }
@@ -15,21 +19,31 @@ class _DataExportScreenState extends State<DataExportScreen> {
   String? _status;
   Future<void> _export() async {
     if (_busy) return;
-    final local = LocalDbService();
+    final local = widget.local ?? LocalDbService();
+    final tokens = widget.tokens ?? TokenStorage();
     final owner = local.activeUserId;
-    if (owner == null ||
-        owner.startsWith('guest_') ||
-        await TokenStorage().getToken() == null) {
-      if (mounted) {
-        setState(() => _status = 'Sign in to export your account data.');
-      }
-      return;
-    }
+    final generation = TokenStorage.generation;
+    bool active() =>
+        mounted &&
+        owner == local.activeUserId &&
+        generation == TokenStorage.generation;
     setState(() {
       _busy = true;
       _status = null;
     });
     try {
+      if (owner == null || owner.startsWith('guest_')) {
+        if (active()) {
+          setState(() => _status = 'Sign in to export your account data.');
+        }
+        return;
+      }
+      final token = await tokens.getToken();
+      if (!active()) return;
+      if (token == null) {
+        setState(() => _status = 'Sign in to export your account data.');
+        return;
+      }
       final payload = {
         'exported_at': DateTime.now().toUtc().toIso8601String(),
         'scope':
@@ -48,12 +62,11 @@ class _DataExportScreenState extends State<DataExportScreen> {
             .map((row) => row.toJson())
             .toList(),
       };
-      if (owner != local.activeUserId ||
-          await TokenStorage().getToken() == null) {
-        return;
-      }
       final box = await local.settingsBox();
-      final result = await SharePlus.instance.share(
+      if (!active()) return;
+      final currentToken = await tokens.getToken();
+      if (!active() || currentToken == null) return;
+      final result = await (widget.sharing ?? SharePlus.instance).share(
         ShareParams(
           files: [
             XFile.fromData(
@@ -64,12 +77,13 @@ class _DataExportScreenState extends State<DataExportScreen> {
           fileNameOverrides: ['cozy-device-data.json'],
         ),
       );
-      if (owner != local.activeUserId || !mounted) return;
+      if (!active()) return;
       if (result.status == ShareResultStatus.success) {
         await box.put(
           'last_device_export',
           DateTime.now().toUtc().toIso8601String(),
         );
+        if (!active()) return;
         setState(() => _status = 'Export shared.');
       } else {
         setState(
@@ -78,7 +92,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
         );
       }
     } catch (_) {
-      if (mounted) {
+      if (active()) {
         setState(
           () => _status = 'Could not create or share the export. Please retry.',
         );

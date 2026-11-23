@@ -2,62 +2,34 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
-import 'leaf_pin_policy.dart';
+import 'api_destination_policy.dart';
 
-HttpClientAdapter createApiTransport(
-  LeafPinPolicy policy, {
-  bool requirePins = true,
-}) => PinnedApiAdapter(policy, requirePins: requirePins);
+HttpClientAdapter createApiTransport(ApiDestinationPolicy policy) =>
+    VerifiedApiAdapter(policy);
 
-class PinnedApiAdapter implements HttpClientAdapter {
-  PinnedApiAdapter(
-    this.policy, {
-    SecurityContext? context,
-    this.requirePins = true,
-  }) {
+class VerifiedApiAdapter implements HttpClientAdapter {
+  VerifiedApiAdapter(this.policy, {SecurityContext? context}) {
     _inner = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient(context: context);
         client.findProxy = (_) => 'DIRECT';
         client.connectionFactory = (uri, proxyHost, proxyPort) async {
-          if ((requirePins && !policy.ready) ||
-              !policy.permits(uri) ||
-              proxyHost != null ||
-              proxyPort != null) {
-            throw const HandshakeException(
-              'Pinned API connection is unavailable.',
-            );
+          if (!policy.permits(uri) || proxyHost != null || proxyPort != null) {
+            throw const HandshakeException('API destination is unavailable.');
           }
-          // SecureSocket uses normal chain/hostname/expiry verification. The leaf
-          // pin is checked before HttpClient receives a socket or sends headers.
+          // Verify the chain, hostname and expiry before sending HTTP headers.
           final task = await SecureSocket.startConnect(
             uri.host,
             uri.port,
             context: context,
           );
-          final verified = task.socket.then<Socket>((socket) {
-            if (requirePins &&
-                !policy.accepts(
-                  socket.peerCertificate?.der,
-                  uri.host,
-                  uri.port,
-                )) {
-              socket.destroy();
-              throw const HandshakeException('API certificate pin mismatch.');
-            }
-            return socket;
-          });
-          return ConnectionTask.fromSocket(verified, task.cancel);
+          return ConnectionTask.fromSocket(task.socket, task.cancel);
         };
         return client;
       },
-      // Defense in depth; this callback alone runs after sending the request.
-      validateCertificate: (cert, host, port) =>
-          !requirePins || policy.accepts(cert?.der, host, port),
     );
   }
-  final LeafPinPolicy policy;
-  final bool requirePins;
+  final ApiDestinationPolicy policy;
   late final IOHttpClientAdapter _inner;
   @override
   Future<ResponseBody> fetch(
@@ -65,10 +37,10 @@ class PinnedApiAdapter implements HttpClientAdapter {
     Stream<Uint8List>? stream,
     Future<void>? cancelFuture,
   ) {
-    if ((requirePins && !policy.ready) || !policy.permits(options.uri)) {
+    if (!policy.permits(options.uri)) {
       throw DioException.badCertificate(
         requestOptions: options,
-        error: 'API pin configuration or destination is invalid.',
+        error: 'API destination is invalid.',
       );
     }
     // No redirects, including same-host redirects, can bypass the destination gate.

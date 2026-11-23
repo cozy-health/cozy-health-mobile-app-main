@@ -34,6 +34,7 @@ import 'package:cozy_health/features/home/presentation/widgets/cozy_calendar.dar
 import 'package:cozy_health/features/home/presentation/screens/main_screen.dart';
 import 'package:cozy_health/core/widgets/bottom_navigation_bar.dart';
 import 'package:cozy_health/features/crisis/presentation/widgets/crisis_fab.dart';
+import 'package:cozy_health/features/crisis/services/crisis_detector.dart';
 import 'package:cozy_health/features/activity/presentation/screens/activity_screens.dart';
 import 'package:cozy_health/features/community/presentation/screens/community_hub_screen.dart';
 import 'package:cozy_health/features/community/presentation/screens/post_detail_screen.dart';
@@ -192,6 +193,163 @@ void main() {
       '${screen.runtimeType}_${dark ? 'dark' : 'light'}_${size.width.toInt()}x${size.height.toInt()}',
     );
   }
+
+  for (final dark in [false, true]) {
+    testWidgets(
+      'journal writing surface stays usable with keyboard and large text dark=$dark',
+      (tester) async {
+        final saved = <JournalEntry>[];
+        final entry = JournalEntry(
+          id: 'editor-polish',
+          type: 'free',
+          body: 'A quiet moment.',
+          tags: ['Calm', 'Work'],
+          wordCount: 3,
+          createdAt: DateTime(2026, 11, 22),
+          updatedAt: DateTime(2026, 11, 22),
+        );
+        await mount(
+          tester,
+          JournalEditorScreen(
+            type: 'free',
+            existing: entry,
+            onSave: (value) async {
+              saved.add(value);
+              return false;
+            },
+          ),
+          dark: dark,
+          size: const Size(320, 700),
+          textScale: 2,
+        );
+        tester.view.viewInsets = const FakeViewPadding(bottom: 240);
+        addTearDown(tester.view.resetViewInsets);
+        await tester.pump();
+        final field = find.byKey(const ValueKey('journal-editor-body'));
+        final input = tester.widget<TextField>(field);
+        expect(input.decoration?.focusedBorder, InputBorder.none);
+        expect(input.decoration?.enabledBorder, InputBorder.none);
+        expect(input.decoration?.filled, isFalse);
+        const body =
+            'Today I made room for a quiet moment and a few slow breaths.';
+        await tester.enterText(field, body);
+        await tester.pump();
+        expect(find.text('2 tags'), findsOneWidget);
+        await tester.tap(find.text('Done'));
+        await tester.pump();
+        expect(saved.single.body, body);
+        expect(saved.single.tags, ['Calm', 'Work']);
+        expect(tester.widget<TextField>(field).controller?.text, body);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      },
+    );
+  }
+
+  testWidgets(
+    'main tabs load on first visit and retain inactive state without ticking',
+    (tester) async {
+      await mount(
+        tester,
+        const MainScreen(),
+        dark: false,
+        size: const Size(430, 932),
+        textScale: 1,
+      );
+      await tester.pumpAndSettle();
+      final providerBeforeVisit = find
+          .byType(ProviderHubScreen, skipOffstage: false)
+          .evaluate()
+          .length;
+      await tester.tap(find.text('Provider').last);
+      await tester.pumpAndSettle();
+      final providerState = tester.state(find.byType(ProviderHubScreen));
+      await tester.tap(find.text('Home').last);
+      await tester.pumpAndSettle();
+      final retained = find.byType(ProviderHubScreen, skipOffstage: false);
+      expect(tester.state(retained), same(providerState));
+      final inactiveTicking = TickerMode.valuesOf(
+        tester.element(retained),
+      ).enabled;
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      expect(providerBeforeVisit, 0);
+      expect(inactiveTicking, isFalse);
+    },
+  );
+
+  testWidgets(
+    'journal flags each match while prompting only once in cooldown',
+    (tester) async {
+      const detector = CrisisDetector();
+      final original = List<JournalEntry>.of(DemoMode.instance.journals);
+      detector.resetCooldown('journal');
+      addTearDown(() {
+        detector.resetCooldown('journal');
+        DemoMode.instance.journals
+          ..clear()
+          ..addAll(original);
+      });
+      final bodies = [
+        'Synthetic journal: I feel hopeless and worthless today.',
+        'Synthetic journal: I still feel hopeless and worthless later today.',
+        'Synthetic journal: I enjoyed a quiet walk in the park.',
+      ];
+      for (var index = 0; index < bodies.length; index++) {
+        await mount(
+          tester,
+          const JournalScreen(openCompose: true),
+          dark: false,
+          size: const Size(390, 844),
+          textScale: 1,
+        );
+        await tester.pumpAndSettle();
+        final bodyField = find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.decoration?.hintText == 'Start writing...',
+        );
+        await tester.enterText(bodyField, bodies[index]);
+        await tester.tap(find.text('Done'));
+        // Saving waits for the support dialog to close; its busy indicator is
+        // intentionally still animating underneath that dialog.
+        for (var frame = 0; frame < 20; frame++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+          await tester.pump(const Duration(milliseconds: 100));
+          if (index == 0 &&
+              find.text('That sounds heavy.').evaluate().isNotEmpty) {
+            break;
+          }
+          if (index > 0 && find.text('Done').evaluate().isNotEmpty) break;
+        }
+        if (index == 0) {
+          expect(find.text('That sounds heavy.'), findsOneWidget);
+          await tester.tap(find.byTooltip('Close'));
+          await tester.pumpAndSettle();
+        } else {
+          expect(find.text('That sounds heavy.'), findsNothing);
+        }
+        final saved = DemoMode.instance.journals.singleWhere(
+          (entry) => entry.body == bodies[index],
+        );
+        expect(saved.isCrisisFlagged, index < 2);
+        expect(saved.isDraft, isFalse);
+        for (final retained in original) {
+          expect(
+            DemoMode.instance.journals.singleWhere(
+              (row) => row.id == retained.id,
+            ),
+            same(retained),
+          );
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      }
+    },
+  );
 
   for (final dark in [false, true]) {
     testWidgets('Journal layout and entry picker remain readable dark=$dark', (

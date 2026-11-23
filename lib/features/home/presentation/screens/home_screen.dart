@@ -283,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Semantics(
                     label:
                         'Home dashboard loaded. $streak day streak. ${recentEntries.length} recent entries.',
-                    child: RefreshIndicator(
+                    child: RefreshIndicator.adaptive(
                       onRefresh: () async {
                         if (!DemoMode.instance.enabled) {
                           await UserDataFetcher().fetchAll();

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/cozy_colors.dart';
+import '../utils/haptics.dart';
 import '../utils/motion.dart';
 
-/// Branded touch and keyboard activation without Material ink overlays.
+/// Branded touch and keyboard activation with platform-native press feedback.
 class AppPressable extends StatefulWidget {
   const AppPressable({
     super.key,
@@ -14,35 +15,24 @@ class AppPressable extends StatefulWidget {
     this.selected,
     this.checked,
     this.expanded,
+    this.haptic = true,
   });
   final Widget child;
   final VoidCallback? onPressed;
   final String? label;
   final bool? selected, checked, expanded;
+  final bool haptic;
   @override
   State<AppPressable> createState() => _AppPressableState();
 }
 
-class _AppPressableState extends State<AppPressable>
-    with WidgetsBindingObserver {
+class _AppPressableState extends State<AppPressable> {
   bool _pressed = false, _focused = false;
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed && _pressed) {
-      setState(() => _pressed = false);
-    }
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
+  void _handleTap() {
+    if (widget.onPressed == null) return;
+    if (widget.haptic) AppHaptics.selection();
+    widget.onPressed!.call();
   }
 
   @override
@@ -50,6 +40,11 @@ class _AppPressableState extends State<AppPressable>
     final tokens = context.cozyColors.recording;
     final enabled = widget.onPressed != null;
     final reduced = shouldReduceMotion(context);
+    final platform = Theme.of(context).platform;
+    final isApple =
+        platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
+    final duration = reduced ? Duration.zero : tokens.pressDuration;
+
     return Semantics(
       excludeSemantics: widget.label != null,
       button: true,
@@ -68,7 +63,7 @@ class _AppPressableState extends State<AppPressable>
         actions: {
           ActivateIntent: CallbackAction<ActivateIntent>(
             onInvoke: (_) {
-              widget.onPressed?.call();
+              _handleTap();
               return null;
             },
           ),
@@ -77,35 +72,45 @@ class _AppPressableState extends State<AppPressable>
         child: GestureDetector(
           excludeFromSemantics: true,
           behavior: HitTestBehavior.opaque,
-          onTap: widget.onPressed,
+          onTap: enabled ? _handleTap : null,
           onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTapCancel: () => setState(() => _pressed = false),
+          onTapUp: (_) {
+            if (_pressed) setState(() => _pressed = false);
+          },
+          onTapCancel: () {
+            if (_pressed) setState(() => _pressed = false);
+          },
           child: AnimatedScale(
             scale: _pressed && enabled && !reduced ? tokens.pressScale : 1,
-            duration: reduced ? Duration.zero : tokens.pressDuration,
-            child: DecoratedBox(
-              position: DecorationPosition.foreground,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(tokens.controlRadius),
-                border: _focused
-                    ? Border.all(
-                        color: tokens.controlColor(
-                          Theme.of(context).colorScheme.primary,
-                          Theme.of(context).colorScheme.surface,
-                          Theme.of(context).colorScheme.onSurface,
-                          minimumContrast: 3,
-                        ),
-                        width: tokens.selectedBorder,
-                      )
-                    : null,
-              ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: tokens.touch,
-                  minHeight: tokens.touch,
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            child: AnimatedOpacity(
+              opacity: _pressed && enabled && !reduced && isApple ? 0.72 : 1.0,
+              duration: duration,
+              curve: Curves.easeOutCubic,
+              child: DecoratedBox(
+                position: DecorationPosition.foreground,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(tokens.controlRadius),
+                  border: _focused
+                      ? Border.all(
+                          color: tokens.controlColor(
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context).colorScheme.surface,
+                            Theme.of(context).colorScheme.onSurface,
+                            minimumContrast: 3,
+                          ),
+                          width: tokens.selectedBorder,
+                        )
+                      : null,
                 ),
-                child: widget.child,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: tokens.touch,
+                    minHeight: tokens.touch,
+                  ),
+                  child: widget.child,
+                ),
               ),
             ),
           ),

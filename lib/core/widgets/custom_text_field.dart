@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/haptics.dart';
 import '../../gen/assets.gen.dart';
 
 class CustomTextField extends StatefulWidget {
@@ -11,6 +12,9 @@ class CustomTextField extends StatefulWidget {
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final bool hasError;
+  final Iterable<String>? autofillHints;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onFieldSubmitted;
 
   const CustomTextField({
     super.key,
@@ -20,6 +24,9 @@ class CustomTextField extends StatefulWidget {
     this.validator,
     this.keyboardType,
     this.hasError = false,
+    this.autofillHints,
+    this.textInputAction,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -35,11 +42,15 @@ class _CustomTextFieldState extends State<CustomTextField> {
       controller: widget.controller,
       validator: widget.validator,
       keyboardType: widget.keyboardType,
-      autofillHints: widget.isPassword
-          ? const [AutofillHints.newPassword]
-          : widget.keyboardType == TextInputType.emailAddress
-          ? const [AutofillHints.email]
-          : null,
+      textInputAction: widget.textInputAction,
+      onFieldSubmitted: widget.onFieldSubmitted,
+      autofillHints:
+          widget.autofillHints ??
+          (widget.isPassword
+              ? const [AutofillHints.password]
+              : widget.keyboardType == TextInputType.emailAddress
+              ? const [AutofillHints.email]
+              : null),
       onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       obscureText: widget.isPassword ? _obscureText : false,
       style: AppTextStyles.body1.copyWith(
@@ -92,36 +103,35 @@ class _CustomTextFieldState extends State<CustomTextField> {
           vertical: 16,
         ),
         suffixIcon: widget.isPassword
-            ? GestureDetector(
-                onTap: () {
+            ? IconButton(
+                tooltip: _obscureText ? 'Show password' : 'Hide password',
+                onPressed: () {
+                  AppHaptics.selection();
                   setState(() {
                     _obscureText = !_obscureText;
                   });
                 },
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: widget.hasError
-                      ? SvgPicture.asset(
-                          Assets.svg.warning,
-                          width: 20,
-                          height: 20,
-                          colorFilter: const ColorFilter.mode(
-                            AppColors.danger,
-                            BlendMode.srcIn,
-                          ),
-                        )
-                      : SvgPicture.asset(
-                          _obscureText
-                              ? Assets.svg.padlockClosed
-                              : Assets.svg.padlockOpen,
-                          width: 20,
-                          height: 20,
-                          colorFilter: ColorFilter.mode(
-                            Theme.of(context).colorScheme.onSurfaceVariant,
-                            BlendMode.srcIn,
-                          ),
+                icon: widget.hasError
+                    ? SvgPicture.asset(
+                        Assets.svg.warning,
+                        width: 20,
+                        height: 20,
+                        colorFilter: const ColorFilter.mode(
+                          AppColors.danger,
+                          BlendMode.srcIn,
                         ),
-                ),
+                      )
+                    : SvgPicture.asset(
+                        _obscureText
+                            ? Assets.svg.padlockClosed
+                            : Assets.svg.padlockOpen,
+                        width: 20,
+                        height: 20,
+                        colorFilter: ColorFilter.mode(
+                          Theme.of(context).colorScheme.onSurfaceVariant,
+                          BlendMode.srcIn,
+                        ),
+                      ),
               )
             : widget.hasError
             ? Padding(

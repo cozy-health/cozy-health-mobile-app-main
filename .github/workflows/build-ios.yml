@@ -3,11 +3,13 @@ name: Build iOS Internal Test IPA
 on:
   push:
     branches: [develop]
+  pull_request:
+    branches: [develop, main]
   workflow_dispatch:
 
 jobs:
   build-ios:
-    if: github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/develop' || github.event_name == 'pull_request'
     runs-on: macos-15-intel
     timeout-minutes: 60
 

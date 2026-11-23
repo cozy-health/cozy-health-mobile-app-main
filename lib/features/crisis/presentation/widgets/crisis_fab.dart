@@ -3,7 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/motion.dart';
+import '../../../../core/utils/haptics.dart';
+import '../../../../core/widgets/wellness_sheet.dart';
 
 class CrisisFab extends StatefulWidget {
   const CrisisFab({super.key});
@@ -14,53 +15,35 @@ class CrisisFab extends StatefulWidget {
 
 class _CrisisFabState extends State<CrisisFab> {
   void _showQuickCalm() {
+    AppHaptics.medium();
     final router = GoRouter.of(context);
-    showModalBottomSheet<void>(
+    showWellnessSheet<void>(
       context: context,
-      sheetAnimationStyle: shouldReduceMotion(context)
-          ? AnimationStyle.noAnimation
-          : null,
       builder: (sheetContext) {
         void open(String route) {
           Navigator.of(sheetContext).pop();
           router.push(route);
         }
 
-        return SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    'I need a moment.',
-                    style: Theme.of(sheetContext).textTheme.titleLarge,
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.air),
-                  title: const Text('Breathe'),
-                  onTap: () => open(AppRouter.breathing),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.spa_outlined),
-                  title: const Text('Ground'),
-                  onTap: () => open(AppRouter.grounding),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.phone_outlined),
-                  title: const Text('Contact next of kin'),
-                  onTap: () => open(AppRouter.crisisContact),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.close),
-                  title: const Text('Close'),
-                  onTap: () => Navigator.of(sheetContext).pop(),
-                ),
-              ],
+        return WellnessSheet(
+          title: 'I need a moment.',
+          children: [
+            WellnessSheetOption(
+              icon: Icons.air_rounded,
+              label: 'Breathe',
+              onPressed: () => open(AppRouter.breathing),
             ),
-          ),
+            WellnessSheetOption(
+              icon: Icons.spa_outlined,
+              label: 'Ground',
+              onPressed: () => open(AppRouter.grounding),
+            ),
+            WellnessSheetOption(
+              icon: Icons.phone_outlined,
+              label: 'Contact next of kin',
+              onPressed: () => open(AppRouter.crisisContact),
+            ),
+          ],
         );
       },
     );

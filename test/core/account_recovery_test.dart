@@ -1,4 +1,5 @@
 import 'package:cozy_health/features/crisis/presentation/screens/crisis_screens.dart';
+import 'package:cozy_health/features/crisis/services/crisis_detector.dart';
 import 'package:cozy_health/features/settings/presentation/screens/report_problem_screen.dart';
 import 'package:cozy_health/features/settings/presentation/screens/change_password_screen.dart';
 import 'package:cozy_health/core/widgets/security_blur.dart';
@@ -106,6 +107,42 @@ void main() {
   tearDownAll(() async {
     resetLocalTestFonts();
     await fixture.close();
+  });
+
+  test('support prompt cooldown belongs to the current account', () async {
+    const detector = CrisisDetector();
+    final now = DateTime.utc(2026, 11, 21, 12);
+    for (final owner in ['B', 'A']) {
+      await local.activateAccount(owner);
+      detector.resetCooldown('journal');
+    }
+    addTearDown(() async {
+      for (final owner in ['B', 'A']) {
+        await local.activateAccount(owner);
+        detector.resetCooldown('journal');
+      }
+    });
+    detector.markTriggered('journal', now: now);
+    expect(
+      detector.canTrigger('journal', CrisisSignal.soft, now: now),
+      isFalse,
+    );
+    await local.activateAccount('B');
+    expect(detector.canTrigger('journal', CrisisSignal.soft, now: now), isTrue);
+    detector.markTriggered('journal', now: now);
+    await local.activateAccount('A');
+    expect(
+      detector.canTrigger('journal', CrisisSignal.soft, now: now),
+      isFalse,
+    );
+    expect(
+      detector.canTrigger(
+        'journal',
+        CrisisSignal.soft,
+        now: now.add(CrisisDetector.cooldown),
+      ),
+      isTrue,
+    );
   });
 
   for (final domain in ['mood', 'journal', 'profile']) {

@@ -11,8 +11,13 @@ verification. The CA has certificate-signing key usage and a ten-year lifetime.
 Do not extend the server lifetime or bypass TLS verification to fix expired tests.
 
 To renew the fixtures, run these OpenSSL commands from this directory (in a
-POSIX shell). Commit the updated certificates; the tests derive pins from them.
+POSIX shell). Commit the updated certificates and rerun the verification suite.
 The checked-in private keys are synthetic test keys only.
+
+`expired.pem` and `wrong-host.pem` reuse `current.key` and are signed by the same
+test CA. The expired certificate has fixed January 2024 validity dates. The
+wrong-host certificate has only `DNS:wrong.example` in its subject alternative
+names. Both must fail before an HTTP request reaches the loopback server.
 
 ```sh
 openssl req -x509 -new -key ca.key -out ca.pem -sha256 -days 3650 \

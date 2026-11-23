@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cozy_health/core/models/subscription_status.dart';
 import 'package:cozy_health/core/services/local_db_service.dart';
 import 'package:cozy_health/core/services/usage_analytics.dart';
@@ -49,8 +50,7 @@ void main() {
     await local.activateAccount('analytics-fixture');
     final box = await local.settingsBox();
     await box.clear();
-    analytics.routeChanged('/settings');
-    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await analytics.routeChanged('/settings');
     requests.clear();
   });
   tearDownAll(() async {
@@ -104,11 +104,10 @@ void main() {
       await (await local.settingsBox()).put('privacy_preferences', {
         'analytics': true,
       });
-      analytics.routeChanged('/safety-plan');
+      await analytics.routeChanged('/safety-plan');
       await analytics.track('feature_opened', feature: 'settings');
       expect(requests, isEmpty);
-      analytics.routeChanged('/settings');
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await analytics.routeChanged('/settings');
       requests.clear();
       await analytics.track('crisis_opened');
       await analytics.track('feature_opened', feature: 'private_health');
@@ -128,7 +127,7 @@ void main() {
         collector: 'https://us.i.posthog.com',
         environment: 'production',
       );
-      production.routeChanged('/settings');
+      await production.routeChanged('/settings');
       await production.track('feature_opened', feature: 'settings');
       expect(requests, isEmpty);
       await (await local.settingsBox()).put('privacy_preferences', {
@@ -140,10 +139,70 @@ void main() {
         ((requests.single.data as Map)['properties'] as Map)['environment'],
         'production',
       );
-      production.routeChanged('/safety-plan');
+      await production.routeChanged('/safety-plan');
       await production.track('feature_opened', feature: 'settings');
       expect(requests, hasLength(1));
       production.reset();
+    },
+  );
+
+  test(
+    'route completion waits for delayed legitimate events before privacy checks',
+    () async {
+      await (await local.settingsBox()).put('privacy_preferences', {
+        'analytics': true,
+      });
+      final delayed = Dio();
+      final release = Completer<void>();
+      final started = Completer<void>();
+      final captured = <RequestOptions>[];
+      var attempts = 0;
+      delayed.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            attempts++;
+            if (attempts == 2) started.complete();
+            await release.future;
+            captured.add(options);
+            handler.resolve(
+              Response(requestOptions: options, data: {}, statusCode: 200),
+            );
+          },
+        ),
+      );
+      final subject = UsageAnalytics.forTesting(
+        client: delayed,
+        apiKey: 'phc_fixture',
+        collector: 'https://us.i.posthog.com',
+      );
+      var completed = false;
+      final route = subject
+          .routeChanged('/settings')
+          .then((_) => completed = true);
+      try {
+        await started.future.timeout(const Duration(seconds: 5));
+        expect(completed, isFalse);
+        expect(captured, isEmpty);
+        release.complete();
+        await route;
+        expect(completed, isTrue);
+        expect(
+          captured.map((request) => (request.data as Map)['event']).toSet(),
+          {'app_active', 'feature_opened'},
+        );
+        expect(captured, hasLength(2));
+        captured.clear();
+        await subject.track('crisis_opened');
+        await subject.track('feature_opened', feature: 'private_health');
+        expect(captured, isEmpty);
+        await local.activateAccount('analytics-other-fixture');
+        await subject.track('feature_opened', feature: 'settings');
+        expect(captured, isEmpty);
+      } finally {
+        if (!release.isCompleted) release.complete();
+        subject.reset();
+        delayed.close(force: true);
+      }
     },
   );
 
@@ -171,7 +230,7 @@ void main() {
       apiKey: 'phc_fixture',
       collector: 'https://us.i.posthog.com',
     );
-    failing.routeChanged('/create-account');
+    await failing.routeChanged('/create-account');
     await failing.track('signup_started');
     expect(attempts, 1);
     broken.close(force: true);

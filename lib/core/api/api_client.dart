@@ -1,8 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'api_transport.dart';
-import 'leaf_pin_policy.dart';
-import 'network_build_policy.dart';
+import 'api_destination_policy.dart';
 import '../constants/api_constants.dart';
 import 'api_exceptions.dart';
 import '../storage/token_storage.dart';
@@ -39,12 +38,7 @@ class ApiClient {
     );
 
     _dio.httpClientAdapter = createApiTransport(
-      LeafPinPolicy(
-        host: Uri.parse(ApiConstants.baseUrl).host,
-        current: ApiConstants.currentLeafPin,
-        next: ApiConstants.nextLeafPin,
-      ),
-      requirePins: const NetworkBuildPolicy().requirePins,
+      ApiDestinationPolicy(host: Uri.parse(ApiConstants.baseUrl).host),
     );
 
     _dio.interceptors.addAll([

@@ -2,21 +2,17 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cozy_health/core/api/api_transport_io.dart';
-import 'package:cozy_health/core/api/leaf_pin_policy.dart';
-import 'package:cozy_health/core/api/network_build_policy.dart';
+import 'package:cozy_health/core/api/api_destination_policy.dart';
 import 'package:cozy_health/core/constants/api_constants.dart';
 
 void main() {
   test(
-    'internal release transport reaches production login validation',
+    'native transport reaches the configured API login validation',
     () async {
       // Opt-in network check: no account credentials, emails or mutations.
       final previousOverrides = HttpOverrides.current;
       HttpOverrides.global = null;
       final uri = Uri.parse(ApiConstants.baseUrl);
-      const build = NetworkBuildPolicy(debug: false);
-      expect(build.internalTesting, isTrue);
-      expect(build.requirePins, isFalse);
       final dio =
           Dio(
               BaseOptions(
@@ -27,12 +23,7 @@ void main() {
               ),
             )
             ..httpClientAdapter = createApiTransport(
-              LeafPinPolicy(
-                host: uri.host,
-                current: ApiConstants.currentLeafPin,
-                next: ApiConstants.nextLeafPin,
-              ),
-              requirePins: build.requirePins,
+              ApiDestinationPolicy(host: uri.host),
             );
       try {
         final health = await dio.getUri(uri.replace(path: '/up'));

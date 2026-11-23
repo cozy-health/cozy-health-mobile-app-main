@@ -48,6 +48,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _sendCode() async {
+    if (_isLoading) return;
     FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
     setState(() {
@@ -75,14 +76,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         description: 'Check your inbox.',
       );
       setState(() => _step = 1);
-    } on ApiException {
+    } on ApiException catch (e) {
       if (!mounted) return;
       showAuthToast(
         context,
-        type: AuthToastType.info,
-        title: 'If an account exists, you will receive a code.',
+        type: AuthToastType.error,
+        onRetry: _sendCode,
+        title: e is ApiRateLimitException
+            ? 'Too many requests. Please wait and try again.'
+            : "We couldn't request a reset code. Please try again.",
       );
-      setState(() => _step = 1);
     } catch (_) {
       if (!mounted) return;
       showAuthToast(
@@ -109,6 +112,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _resetPassword() async {
+    if (_isLoading) return;
     FocusScope.of(context).unfocus();
     final password = _passwordController.text;
     setState(() {

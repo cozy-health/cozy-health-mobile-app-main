@@ -1,3 +1,4 @@
+import 'package:cozy_health/core/widgets/mood_artwork.dart';
 import 'package:flutter/material.dart';
 
 /// An expressive preview backed by the recording flow's five intensity levels.
@@ -6,11 +7,13 @@ class MoodIntensityControl extends StatelessWidget {
     super.key,
     required this.value,
     required this.feeling,
+    required this.mood,
     required this.onChanged,
   });
 
   final int value;
   final String feeling;
+  final String mood;
   final ValueChanged<int> onChanged;
 
   static const _labels = [
@@ -38,34 +41,12 @@ class MoodIntensityControl extends StatelessWidget {
           child: SizedBox(
             height: 156,
             child: Center(
-              child: SizedBox.square(
-                dimension: 144,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    for (var layer = 3; layer >= 0; layer--)
-                      AnimatedContainer(
-                        key: ValueKey('intensity-visual-layer-$layer'),
-                        duration: duration,
-                        curve: Curves.easeOutCubic,
-                        width: 48 + value * 5.0 + layer * (8 + value * 2),
-                        height: 48 + value * 5.0 + layer * (8 + value * 2),
-                        transformAlignment: Alignment.center,
-                        transform: Matrix4.rotationZ(layer.isEven ? .25 : -.25),
-                        decoration: BoxDecoration(
-                          color: scheme.primary.withValues(
-                            alpha: layer == 0 ? 1 : .08 + (3 - layer) * .09,
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            18 + layer * 6.0 + (5 - value) * 2,
-                          ),
-                          border: highContrast
-                              ? Border.all(color: scheme.onSurface, width: 2)
-                              : null,
-                        ),
-                      ),
-                  ],
-                ),
+              child: AnimatedScale(
+                key: const ValueKey('intensity-mood-scale'),
+                duration: duration,
+                curve: Curves.easeOutCubic,
+                scale: .85 + (value - 1) * .0375,
+                child: MoodArtwork(mood: mood, size: 128),
               ),
             ),
           ),

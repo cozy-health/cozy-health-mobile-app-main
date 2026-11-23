@@ -81,6 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    if (_busy) return;
     FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -182,10 +183,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!canCheck || !isSupported) {
         if (!mounted) return;
+        final isApple =
+            Theme.of(context).platform == TargetPlatform.iOS ||
+            Theme.of(context).platform == TargetPlatform.macOS;
         showAuthToast(
           context,
           type: AuthToastType.warning,
-          title: "Face ID isn't set up on this device.",
+          title: isApple
+              ? "Face ID or Touch ID isn't set up on this device."
+              : "Biometric sign-in isn't set up on this device.",
         );
         return;
       }
