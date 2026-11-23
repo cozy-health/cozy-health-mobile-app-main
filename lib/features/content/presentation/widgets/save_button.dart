@@ -1,6 +1,7 @@
 import 'package:cozy_health/core/theme/app_surface.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_pressable.dart';
 
 class SaveButton extends StatelessWidget {
   final bool isSaved;
@@ -28,8 +29,10 @@ class SaveButton extends StatelessWidget {
       );
     }
 
-    return GestureDetector(
-      onTap: onToggle,
+    return AppPressable(
+      label: isSaved ? 'Saved for later' : 'Save for later',
+      selected: isSaved,
+      onPressed: onToggle,
       child: Container(
         constraints: const BoxConstraints(minHeight: 56),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

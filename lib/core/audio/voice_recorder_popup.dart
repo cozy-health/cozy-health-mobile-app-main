@@ -60,6 +60,7 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
   StreamSubscription<Amplitude>? _amplitudes;
   final List<double> _samples = [];
   bool _confirmDiscard = false;
+  bool _awaitingMicConsent = true;
   bool _recording = false, _busy = false;
   int _seconds = 0;
   String? _path, _error;
@@ -70,31 +71,12 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _clearing = TokenStorage.sessionClearing.listen((_) => _endSession());
     _sessions = TokenStorage.sessionChanges.listen((_) => _endSession());
-    WidgetsBinding.instance.addPostFrameCallback((_) => _offerMicrophone());
   }
 
-  Future<void> _offerMicrophone() async {
-    final proceed = await showWellnessDialog<bool>(
-      context: context,
-      builder: (context) => WellnessSheet(
-        title: 'Use your microphone?',
-        children: [
-          const Text(
-            'Your phone may ask for microphone permission. Continue to start recording.',
-          ),
-          WellnessAction(
-            label: 'Continue',
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
-      ),
-    );
+  Future<void> _confirmMicrophoneAndStart() async {
     if (!mounted || _sessionEnded) return;
-    if (proceed == true) {
-      await _start();
-    } else {
-      Navigator.pop(context);
-    }
+    setState(() => _awaitingMicConsent = false);
+    await _start();
   }
 
   Future<void> _explain(String title, String message) =>
@@ -192,7 +174,12 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
   }
 
   Future<void> _start() async {
-    if (_sessionEnded || _sessionGeneration != TokenStorage.generation) return;
+    if (_busy ||
+        _recording ||
+        _sessionEnded ||
+        _sessionGeneration != TokenStorage.generation) {
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -397,9 +384,17 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
                   ),
                 ],
               )
+            : _awaitingMicConsent
+            ? WellnessAction(
+                label: 'Continue',
+                icon: Icons.mic_rounded,
+                filled: true,
+                onPressed: _busy ? null : _confirmMicrophoneAndStart,
+              )
             : _recording
             ? Tooltip(
                 message: 'Stop',
+                triggerMode: TooltipTriggerMode.manual,
                 child: WellnessAction(
                   label: 'Stop',
                   icon: Icons.stop_rounded,
@@ -419,8 +414,28 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
               )
             : null,
         children: [
+          if (_awaitingMicConsent) ...[
+            WellnessPanel(
+              tinted: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Use your microphone?',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  SizedBox(height: w.tight),
+                  const Text(
+                    'Your phone may ask for microphone permission. Continue to start recording.',
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: w.contentGap),
+          ],
           Tooltip(
             message: 'How is this saved?',
+            triggerMode: TooltipTriggerMode.manual,
             child: WellnessAction(
               label: 'How is this saved?',
               icon: Icons.info_outline_rounded,
@@ -465,9 +480,10 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
               semanticsLabel: 'Preparing voice recording',
             ),
           SizedBox(height: w.contentGap),
-          if (!_recording)
+          if (!_recording && !_awaitingMicConsent)
             Tooltip(
               message: 'Record again',
+              triggerMode: TooltipTriggerMode.manual,
               child: WellnessAction(
                 label: 'Record again',
                 icon: Icons.refresh_rounded,
@@ -477,6 +493,7 @@ class _RecorderState extends State<_Recorder> with WidgetsBindingObserver {
           SizedBox(height: w.small),
           Tooltip(
             message: 'Discard recording',
+            triggerMode: TooltipTriggerMode.manual,
             child: WellnessAction(
               label: 'Discard recording',
               icon: Icons.delete_outline_rounded,

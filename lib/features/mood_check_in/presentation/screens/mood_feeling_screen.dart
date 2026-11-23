@@ -409,6 +409,7 @@ class _MoodFeelingScreenState extends State<MoodFeelingScreen> {
                                           _flow.state.intensity,
                                         ),
                                         feeling: _flow.feeling,
+                                        mood: _flow.state.mood ?? '',
                                         onChanged: _flow.setIntensity,
                                       ),
                                     ],
