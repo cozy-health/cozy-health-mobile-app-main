@@ -9,6 +9,8 @@ void main() {
     ValueNotifier<bool> ready, {
     bool reduced = false,
     VoidCallback? retry,
+    bool completeMotion = true,
+    ValueSetter<VoidCallback>? captureComplete,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -18,6 +20,13 @@ void main() {
           child: child!,
         ),
         home: StartupCover(
+          motionBuilder: (complete) {
+            captureComplete?.call(complete);
+            if (completeMotion) {
+              WidgetsBinding.instance.addPostFrameCallback((_) => complete());
+            }
+            return const StartupIcon();
+          },
           child: Builder(
             builder: (context) {
               StartupCover.retryWith(context, retry ?? () {});
@@ -37,7 +46,7 @@ void main() {
   }
 
   testWidgets(
-    'waits for ready content then shrinks and fades after its first frame',
+    'waits for ready content and finished clip then fades after its first frame',
     (tester) async {
       final ready = ValueNotifier(false);
       addTearDown(ready.dispose);
@@ -49,12 +58,52 @@ void main() {
       await tester.pump();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 140));
-      final scale = tester.widget<ScaleTransition>(
-        find.byKey(const ValueKey('startup-icon-scale')),
+      final scale = tester.widget<FadeTransition>(
+        find.byKey(const ValueKey('startup-cover-exit')),
       );
-      expect(scale.scale.value, lessThan(1));
-      expect(scale.scale.value, greaterThan(.92));
+      expect(scale.opacity.value, lessThan(1));
+      expect(scale.opacity.value, greaterThan(0));
       await tester.pump(const Duration(milliseconds: 160));
+      expect(find.byKey(const ValueKey('startup-cover')), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'ready Home waits for the one-shot clip; clip never reveals unready Home',
+    (tester) async {
+      final ready = ValueNotifier(false);
+      addTearDown(ready.dispose);
+      late VoidCallback complete;
+      await mount(
+        tester,
+        ready,
+        completeMotion: false,
+        captureComplete: (value) => complete = value,
+      );
+      await tester.pump(const Duration(seconds: 2));
+      complete();
+      await tester.pump();
+      expect(find.byKey(const ValueKey('startup-cover')), findsOneWidget);
+      ready.value = true;
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byKey(const ValueKey('startup-cover')), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      final fast = ValueNotifier(true);
+      addTearDown(fast.dispose);
+      await mount(
+        tester,
+        fast,
+        completeMotion: false,
+        captureComplete: (value) => complete = value,
+      );
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byKey(const ValueKey('startup-cover')), findsOneWidget);
+      complete();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.byKey(const ValueKey('startup-cover')), findsNothing);
       await tester.pumpWidget(const SizedBox.shrink());
     },
@@ -132,17 +181,17 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump(const Duration(milliseconds: 50));
-    final scale = tester.widget<ScaleTransition>(
-      find.byKey(const ValueKey('startup-icon-scale')),
+    final scale = tester.widget<FadeTransition>(
+      find.byKey(const ValueKey('startup-cover-exit')),
     );
-    expect(scale.scale.value, 1);
+    expect(scale.opacity.value, 1);
     await tester.pump(const Duration(milliseconds: 160));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    final pausedScale = scale.scale.value;
+    final pausedScale = scale.opacity.value;
     await tester.pump(const Duration(seconds: 1));
-    expect(scale.scale.value, pausedScale);
+    expect(scale.opacity.value, pausedScale);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
