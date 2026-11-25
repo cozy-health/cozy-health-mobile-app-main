@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import '../theme/cozy_colors.dart';
 import '../utils/motion.dart';
 import 'app_button.dart';
+import 'startup_motion.dart';
 
 /// Keeps the destination mounted while its first usable frame is prepared.
 class StartupCover extends StatefulWidget {
-  const StartupCover({super.key, required this.child});
+  const StartupCover({super.key, required this.child, this.motionBuilder});
   final Widget child;
+
+  /// Supplies a controllable clip in tests; production uses the bundled video.
+  final Widget Function(VoidCallback onComplete)? motionBuilder;
 
   static void ready(BuildContext context) =>
       context.findAncestorStateOfType<_StartupCoverState>()?._ready();
@@ -25,7 +29,7 @@ class _StartupCoverState extends State<StartupCover>
   late final AnimationController _exit;
   Timer? _minimum, _timeout;
   bool _revealed = false, _scheduled = false, _failed = false;
-  bool _minimumElapsed = false;
+  bool _minimumElapsed = false, _motionComplete = false;
   VoidCallback? _retry;
 
   @override
@@ -68,7 +72,10 @@ class _StartupCoverState extends State<StartupCover>
 
   Future<void> _finish() async {
     if (!mounted || _revealed) return;
-    if (!_minimumElapsed && !shouldReduceMotion(context)) return;
+    if ((!_minimumElapsed || !_motionComplete) &&
+        !shouldReduceMotion(context)) {
+      return;
+    }
     if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.paused ||
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.hidden) {
       return;
@@ -89,10 +96,16 @@ class _StartupCoverState extends State<StartupCover>
     }
   }
 
+  void _motionFinished() {
+    _motionComplete = true;
+    if (_scheduled) unawaited(_finish());
+  }
+
   void _tryAgain() {
     setState(() {
       _failed = false;
       _scheduled = false;
+      _motionComplete = true;
     });
     _timeout?.cancel();
     _timeout = null;
@@ -121,6 +134,7 @@ class _StartupCoverState extends State<StartupCover>
         ),
         if (!_revealed)
           FadeTransition(
+            key: const ValueKey('startup-cover-exit'),
             opacity: Tween<double>(
               begin: 1,
               end: 0,
@@ -128,38 +142,47 @@ class _StartupCoverState extends State<StartupCover>
             child: ColoredBox(
               key: const ValueKey('startup-cover'),
               color: Theme.of(context).scaffoldBackgroundColor,
-              child: SafeArea(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(w.section),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ScaleTransition(
-                          key: const ValueKey('startup-icon-scale'),
-                          scale: Tween<double>(begin: 1, end: w.launchEndScale)
-                              .animate(
-                                CurvedAnimation(
-                                  parent: _exit,
-                                  curve: w.exitCurve,
-                                ),
+              child: !_failed && !shouldReduceMotion(context)
+                  ? (widget.motionBuilder?.call(_motionFinished) ??
+                        StartupMotion(onComplete: _motionFinished))
+                  : SafeArea(
+                      child: Center(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.all(w.section),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ScaleTransition(
+                                key: const ValueKey('startup-icon-scale'),
+                                scale:
+                                    Tween<double>(
+                                      begin: 1,
+                                      end: w.launchEndScale,
+                                    ).animate(
+                                      CurvedAnimation(
+                                        parent: _exit,
+                                        curve: w.exitCurve,
+                                      ),
+                                    ),
+                                child: const StartupIcon(),
                               ),
-                          child: const StartupIcon(),
-                        ),
-                        if (_failed) ...[
-                          SizedBox(height: w.section),
-                          const Text(
-                            'Your space is taking longer to open. Please try again.',
-                            textAlign: TextAlign.center,
+                              if (_failed) ...[
+                                SizedBox(height: w.section),
+                                const Text(
+                                  'Your space is taking longer to open. Please try again.',
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: w.gap),
+                                AppButton(
+                                  text: 'Try again',
+                                  onPressed: _tryAgain,
+                                ),
+                              ],
+                            ],
                           ),
-                          SizedBox(height: w.gap),
-                          AppButton(text: 'Try again', onPressed: _tryAgain),
-                        ],
-                      ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
             ),
           ),
       ],
